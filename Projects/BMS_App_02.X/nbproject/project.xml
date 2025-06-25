@@ -14,18 +14,10 @@
             <make-dep-projects/>
             <sourceRootList>
                 <sourceRootElem>.</sourceRootElem>
-                <sourceRootElem>../../Libraries/PIC33_plib/inc</sourceRootElem>
-                <sourceRootElem>../../Libraries/PIC33_plib/src</sourceRootElem>
-                <sourceRootElem>../../RTOS/Scheduler</sourceRootElem>
-                <sourceRootElem>../../Libraries/Standard</sourceRootElem>
-                <sourceRootElem>../../CAN/generated</sourceRootElem>
-                <sourceRootElem>../../Libraries/Drivers/TFT_LCD/src</sourceRootElem>
-                <sourceRootElem>../../Libraries/Drivers/TFT_LCD/inc</sourceRootElem>
-                <sourceRootElem>../../Libraries/Drivers/ISO_TP_LITE</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>
-                    <name>502_DEBUG</name>
+                    <name>DEFAULT</name>
                     <type>2</type>
                 </confElem>
             </confList>
