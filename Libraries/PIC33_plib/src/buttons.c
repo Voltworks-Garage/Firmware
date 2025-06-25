@@ -1,5 +1,5 @@
 #include "buttons.h"
-#include "bolt_uart.h"
+#include "uart.h"
 
 BUTTONS_status_E BUTTONS_run(BUTTONS_object_S *thisButton) {
     
@@ -36,3 +36,4 @@ BUTTONS_status_E BUTTONS_run(BUTTONS_object_S *thisButton) {
     
     return thisButton->status;
 }
+

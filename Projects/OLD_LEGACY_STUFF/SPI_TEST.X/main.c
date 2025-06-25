@@ -11,8 +11,8 @@
 #include <xc.h>
 
 
-#include "bolt_uart.h"
-#include "bolt_init.h"
+#include "uart.h"
+#include "init.h"
 
 static uint16_t i = 0;
 

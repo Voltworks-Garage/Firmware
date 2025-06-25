@@ -7,8 +7,8 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include "bolt_init.h"
-#include "bolt_uart.h"
+#include "init.h"
+#include "uart.h"
 #include "pins.h"
 #include "ping.h"
 

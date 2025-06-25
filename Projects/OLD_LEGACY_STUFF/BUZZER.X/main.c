@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "bolt_clock.h"
+#include "clock.h"
 #include "tsk.h"
 
 
@@ -193,4 +193,5 @@ int main(int argc, char** argv) {
 
     return (EXIT_SUCCESS);
 }
+
 

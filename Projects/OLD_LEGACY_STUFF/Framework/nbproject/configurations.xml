@@ -8,8 +8,8 @@
         <itemPath>../../RTOS/framework/framework.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f1" displayName="inc" projectFiles="true">
-        <itemPath>../../Libraries/PIC33_plib/inc/bolt_uart.h</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/inc/bolt_init.h</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/inc/uart.h</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/inc/init.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f4" displayName="ProjectSpecific" projectFiles="true">
         <itemPath>Defines.h</itemPath>
@@ -34,8 +34,8 @@
         <itemPath>templateSerivce.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f2" displayName="src" projectFiles="true">
-        <itemPath>../../Libraries/PIC33_plib/src/bolt_uart.c</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/src/bolt_init.c</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/src/uart.c</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/src/init.c</itemPath>
       </logicalFolder>
       <itemPath>main.c</itemPath>
     </logicalFolder>
@@ -971,3 +971,4 @@
     </conf>
   </confs>
 </configurationDescriptor>
+

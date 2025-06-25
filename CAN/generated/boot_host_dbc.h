@@ -2,7 +2,7 @@
 #define boot_host_DBC_H
 
 #include <stdint.h>
-#include "bolt_CAN.h"
+#include "CAN.h"
 typedef enum{
     dash,
     mcu,
@@ -126,3 +126,4 @@ void CAN_send_1ms(void);
 
 
 #endif /*boot_host_DBC_H*/
+

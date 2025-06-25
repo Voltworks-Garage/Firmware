@@ -3,10 +3,10 @@
  *******************************************************************************/
 #include "SysTick.h"
 #include "IO.h"
-#include "bolt_CAN.h"
+#include "CAN.h"
 #include "bms_dbc.h"
 #include "pinSetup.h"
-#include "bolt_sleep.h"
+#include "sleep.h"
 #include "dcdc.h"
 #include "can_iso_tp_lite.h"
 
@@ -213,6 +213,7 @@ void sleep(STATE_MACHINE_entry_types_E entry_type) {
 
 
 /*** End of File **************************************************************/
+
 
 
 

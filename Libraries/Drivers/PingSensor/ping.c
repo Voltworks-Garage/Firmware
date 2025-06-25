@@ -9,8 +9,8 @@
 
 #include "ping.h"
 
-#include "bolt_init.h"
-#include "bolt_uart.h"
+#include "init.h"
+#include "uart.h"
 
 static uint32_t secondsPerTick;
 

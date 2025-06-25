@@ -9,7 +9,7 @@
 #include <xc.h>
 #include <string.h>
 #include "Bluetooth.h"
-#include "bolt_uart.h"
+#include "uart.h"
 #include "flags.h"
 
 static char BTBuffer[BTLE_BUFF_SIZE] = {};

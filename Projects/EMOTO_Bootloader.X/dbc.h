@@ -2,7 +2,7 @@
 #define DBC_H
 
 #include <stdint.h>
-#include "bolt_CAN.h"
+#include "CAN.h"
 
 typedef enum{
     DASH,
@@ -151,3 +151,4 @@ void CAN_BMS_cellVoltages_send(void);
 
 
 #endif /*DBC_H*/
+

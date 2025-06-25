@@ -11,13 +11,13 @@
 // *****************************************************************************
 // *****************************************************************************
 #include "pinSetup.h"
-#include "bolt_ADC.h"
-#include "bolt_uart.h"
-#include "bolt_CAN.h"
+#include "ADC.h"
+#include "uart.h"
+#include "CAN.h"
 #include "pins.h"
-#include "bolt_OC.h"
-#include "bolt_pps.h"
-//#include "bolt_sleep.h"
+#include "OC.h"
+#include "pps.h"
+//#include "sleep.h"
 #include <xc.h>
 
 // *****************************************************************************
@@ -106,5 +106,6 @@ void PinSetup_Init(void) {
     
 
 }
+
 
 

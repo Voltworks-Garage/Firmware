@@ -8,7 +8,7 @@
 
 #include <xc.h>
 #include "system.h"
-#include "clock.h"
+#include "mcc_generated_files/clock.h"
 #include "tsk.h"
 
 

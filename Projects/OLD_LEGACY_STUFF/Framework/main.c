@@ -8,7 +8,7 @@
 
 #include "Defines.h"
 #include "framework.h"
-#include "bolt_init.h"
+#include "init.h"
 
 /*
  * 
@@ -27,4 +27,5 @@ int main(void) {
 
     return 0;
 }
+
 

@@ -7,7 +7,7 @@
 
 
 #include "ltc_6802.h"
-#include "bolt_spi.h"
+#include "spi.h"
 #include "IO.h"
 #include "utils.h"
 
@@ -257,3 +257,4 @@ uint8_t LTC6802_AddressReadCommand(uint8_t address, uint8_t command, uint8_t len
         return 0;
     }
 }
+

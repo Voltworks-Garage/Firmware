@@ -64,7 +64,7 @@ Copyright (c) [2012-2025] Microchip Technology Inc.
 #include "mcc_generated_files/can1.h"
 #include "mcc_generated_files/pin_manager.h"
 #include "mcc_generated_files/uart1.h"
-#include "bolt_reset_control.h"
+#include "reset_control.h"
 
 #define DOWNLOADED_IMAGE    0u
 #define EXECUTION_IMAGE     0u

@@ -11,14 +11,14 @@
 // *****************************************************************************
 // *****************************************************************************
 #include "pinSetup.h"
-#include "bolt_ADC.h"
-#include "bolt_uart.h"
-#include "bolt_CAN.h"
+#include "ADC.h"
+#include "uart.h"
+#include "CAN.h"
 #include "pins.h"
-#include "bolt_OC.h"
-#include "bolt_pps.h"
+#include "OC.h"
+#include "pps.h"
 #include "mcc_generated_files/clock.h"
-#include "bolt_sleep.h"
+#include "sleep.h"
 #include <xc.h>
 
 // *****************************************************************************
@@ -165,5 +165,6 @@ void PinSetup_Init(void) {
     /*CAN is wake source already in CAN_Init()*/
 
 }
+
 
 

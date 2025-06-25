@@ -9,7 +9,7 @@
         <itemPath>../../RTOS/Scheduler/tsk.h</itemPath>
         <itemPath>../../RTOS/Scheduler/tsk_cfg.h</itemPath>
       </logicalFolder>
-      <itemPath>../../Libraries/PIC33_plib/inc/bolt_clock.h</itemPath>
+      <itemPath>../../Libraries/PIC33_plib/inc/clock.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -24,7 +24,7 @@
         <itemPath>../../RTOS/Scheduler/tsk_cfg.c</itemPath>
       </logicalFolder>
       <itemPath>main.c</itemPath>
-      <itemPath>../../Libraries/PIC33_plib/src/bolt_clock.c</itemPath>
+      <itemPath>../../Libraries/PIC33_plib/src/clock.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -278,3 +278,4 @@
     </conf>
   </confs>
 </configurationDescriptor>
+

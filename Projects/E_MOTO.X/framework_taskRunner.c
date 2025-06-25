@@ -10,7 +10,7 @@
  * ****************************************************************************/
 #ifdef DEBUG
 #include <stdio.h>
-#include "bolt_uart.h"
+#include "uart.h"
 #include "movingAverage.h"
 static uint8_t debugEnable = 1;
 #define framework_taskRunner_print(...) if(debugEnable){char tempArray[125]={};sprintf(tempArray,__VA_ARGS__);Uart1Write(tempArray);}

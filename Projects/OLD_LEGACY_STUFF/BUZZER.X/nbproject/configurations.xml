@@ -4,9 +4,9 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
-      <itemPath>../../Libraries/PIC33_plib/inc/bolt_OC.h</itemPath>
+      <itemPath>../../Libraries/PIC33_plib/inc/OC.h</itemPath>
       <itemPath>../../Libraries/PIC33_plib/inc/pins.h</itemPath>
-      <itemPath>../../Libraries/PIC33_plib/inc/bolt_clock.h</itemPath>
+      <itemPath>../../Libraries/PIC33_plib/inc/clock.h</itemPath>
       <itemPath>../../RTOS/Scheduler/SysTick.h</itemPath>
       <itemPath>../../RTOS/Scheduler/tsk.h</itemPath>
       <itemPath>pitches.h</itemPath>
@@ -20,8 +20,8 @@
                    projectFiles="true">
       <itemPath>main.c</itemPath>
       <itemPath>../../Libraries/PIC33_plib/src/pins.c</itemPath>
-      <itemPath>../../Libraries/PIC33_plib/src/bolt_OC.c</itemPath>
-      <itemPath>../../Libraries/PIC33_plib/src/bolt_clock.c</itemPath>
+      <itemPath>../../Libraries/PIC33_plib/src/OC.c</itemPath>
+      <itemPath>../../Libraries/PIC33_plib/src/clock.c</itemPath>
       <itemPath>../../RTOS/Scheduler/SysTick.c</itemPath>
       <itemPath>tsk.c</itemPath>
       <itemPath>tsk_cfg.c</itemPath>
@@ -243,3 +243,4 @@
     </conf>
   </confs>
 </configurationDescriptor>
+

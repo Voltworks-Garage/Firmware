@@ -10,7 +10,7 @@
  * Include
  * ****************************************************************************/
 #include <stdint.h>
-#include "bolt_ADC.h"
+#include "ADC.h"
 #include "pins.h"
 
 /*******************************************************************************
@@ -60,4 +60,5 @@ uint8_t TOUCH_SCREEN_run(void);
 TOUCH_SCREEN_touchData_S TOUCH_SCREEN_get_data(void);
 
 #endif	/* TOUCH_SCREEN_H */
+
 

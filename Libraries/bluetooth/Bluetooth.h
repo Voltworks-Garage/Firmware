@@ -13,7 +13,7 @@
 #include <xc.h> 
 #include "Init.h"
 //#include "freq.h"
-#include "bolt_uart.h"
+#include "uart.h"
 #include <stdio.h>
 
 #define  BTLE_BUFF_SIZE 50 
@@ -51,4 +51,5 @@ void BTLEConnection(uint8_t value);
 
 
 #endif	/* BLUETOOTH_H */
+
 

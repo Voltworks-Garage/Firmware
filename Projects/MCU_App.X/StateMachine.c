@@ -4,8 +4,8 @@
 #include <stdint.h>
 
 #include "StateMachine.h"
-#include "bolt_CAN.h"
-#include "bolt_sleep.h"
+#include "CAN.h"
+#include "sleep.h"
 #include "SysTick.h"
 
 #include "LightsControl.h"
@@ -365,6 +365,7 @@ void sleep(STATE_MACHINE_entry_types_E entry_type) {
 
 
 /*** End of File **************************************************************/
+
 
 
 

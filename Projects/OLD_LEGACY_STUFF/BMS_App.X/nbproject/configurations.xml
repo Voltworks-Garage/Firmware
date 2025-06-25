@@ -6,15 +6,15 @@
                    projectFiles="true">
       <logicalFolder name="f1" displayName="lib" projectFiles="true">
         <itemPath>../../Libraries/PIC33_plib/inc/pins.h</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/inc/bolt_uart.h</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/inc/bolt_clock.h</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/inc/bolt_ADC.h</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/inc/bolt_OC.h</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/inc/bolt_pps.h</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/inc/bolt_CAN.h</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/inc/uart.h</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/inc/clock.h</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/inc/ADC.h</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/inc/OC.h</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/inc/pps.h</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/inc/CAN.h</itemPath>
         <itemPath>../../RTOS/Scheduler/SysTick.h</itemPath>
         <itemPath>../../RTOS/Scheduler/tsk.h</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/inc/bolt_sleep.h</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/inc/sleep.h</itemPath>
         <itemPath>../../Libraries/Standard/movingAverage.h</itemPath>
         <itemPath>../../Libraries/Standard/utils.h</itemPath>
         <itemPath>../../Libraries/Drivers/ISO_TP_LITE/can_iso_tp_lite.h</itemPath>
@@ -43,7 +43,7 @@
         <itemPath>pinSetup.h</itemPath>
         <itemPath>../../CAN/generated/bms_dbc.h</itemPath>
         <itemPath>ltc_6802.h</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/inc/bolt_spi.h</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/inc/spi.h</itemPath>
         <itemPath>can_populate.h</itemPath>
         <itemPath>ev_charger.h</itemPath>
         <itemPath>can_iso_tp_lite_config.h</itemPath>
@@ -59,15 +59,15 @@
                    displayName="Source Files"
                    projectFiles="true">
       <logicalFolder name="f1" displayName="lib" projectFiles="true">
-        <itemPath>../../Libraries/PIC33_plib/src/bolt_uart.c</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/src/bolt_clock.c</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/src/bolt_ADC.c</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/src/uart.c</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/src/clock.c</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/src/ADC.c</itemPath>
         <itemPath>../../Libraries/PIC33_plib/src/pins.c</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/src/bolt_OC.c</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/src/bolt_CAN.c</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/src/bolt_sleep.c</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/src/OC.c</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/src/CAN.c</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/src/sleep.c</itemPath>
         <itemPath>../../Libraries/Standard/movingAverage.c</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/src/bolt_spi.c</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/src/spi.c</itemPath>
         <itemPath>../../Libraries/Standard/utils.c</itemPath>
         <itemPath>../../Libraries/Drivers/ISO_TP_LITE/can_iso_tp_lite.c</itemPath>
         <itemPath>../../RTOS/Scheduler/SysTick.c</itemPath>
@@ -693,3 +693,4 @@
     </conf>
   </confs>
 </configurationDescriptor>
+
