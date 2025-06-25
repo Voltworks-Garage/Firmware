@@ -2,7 +2,7 @@
 #define mcu_DBC_H
 
 #include <stdint.h>
-#include "bolt_CAN.h"
+#include "CAN.h"
 typedef enum{
     dash,
     mcu,
@@ -204,3 +204,4 @@ void CAN_send_1ms(void);
 
 
 #endif /*mcu_DBC_H*/
+

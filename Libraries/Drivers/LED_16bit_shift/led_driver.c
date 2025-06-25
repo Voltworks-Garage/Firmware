@@ -1,6 +1,6 @@
 #include "led_driver.h"
 #include "pins.h"
-#include "bolt_uart.h"
+#include "uart.h"
 
 /*Output PPS registers*/
 #define RP20_LED_PPS    _RP20R
@@ -207,4 +207,5 @@ uint8_t spi2Init(led_pin_number CLK, led_pin_number D_OUT) {
 
     return 0;
 }
+
 

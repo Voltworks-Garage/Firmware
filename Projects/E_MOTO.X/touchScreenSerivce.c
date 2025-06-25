@@ -7,7 +7,7 @@
  * ****************************************************************************/
 #ifdef DEBUG
 #include <stdio.h>
-#include "bolt_uart.h"
+#include "uart.h"
 static uint8_t debugEnable = 0;
 #define touchScreenService_print(...) if(debugEnable){char tempArray[125]={};sprintf(tempArray,__VA_ARGS__);Uart1Write(tempArray);}
 #else
@@ -690,5 +690,6 @@ static void intToString(char* str, uint16_t val) {
         str[2] = 0;
     }
 }
+
 
 

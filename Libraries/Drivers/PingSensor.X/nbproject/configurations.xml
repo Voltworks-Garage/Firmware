@@ -4,8 +4,8 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
-      <itemPath>../../Libraries/PIC33_plib/inc/bolt_uart.h</itemPath>
-      <itemPath>../../Libraries/PIC33_plib/inc/bolt_init.h</itemPath>
+      <itemPath>../../Libraries/PIC33_plib/inc/uart.h</itemPath>
+      <itemPath>../../Libraries/PIC33_plib/inc/init.h</itemPath>
       <itemPath>../PingSensor/ping.h</itemPath>
       <itemPath>../../Libraries/PIC33_plib/inc/pins.h</itemPath>
     </logicalFolder>
@@ -17,8 +17,8 @@
                    displayName="Source Files"
                    projectFiles="true">
       <itemPath>main.c</itemPath>
-      <itemPath>../../Libraries/PIC33_plib/src/bolt_uart.c</itemPath>
-      <itemPath>../../Libraries/PIC33_plib/src/bolt_init.c</itemPath>
+      <itemPath>../../Libraries/PIC33_plib/src/uart.c</itemPath>
+      <itemPath>../../Libraries/PIC33_plib/src/init.c</itemPath>
       <itemPath>../PingSensor/ping.c</itemPath>
       <itemPath>../../Libraries/PIC33_plib/src/pins.c</itemPath>
     </logicalFolder>
@@ -239,3 +239,4 @@
     </conf>
   </confs>
 </configurationDescriptor>
+

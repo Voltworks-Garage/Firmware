@@ -14,7 +14,7 @@
 #define DEBUG 0
 #if DEBUG
 #include <stdio.h>
-#include "bolt_uart.h"
+#include "uart.h"
 static uint8_t debugEnable = 0;
 #define framework_print(...) if(debugEnable){char tempArray[20]={};sprintf(tempArray,__VA_ARGS__);Uart1Write(tempArray);}
 #else
@@ -510,4 +510,5 @@ Event FRAMEWORK_TASKRUNNER_run(Event emptyEvent) {
 //    }
 //    return thisNode;
 //}
+
 

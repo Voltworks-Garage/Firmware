@@ -4,7 +4,7 @@
 #include "ev_charger.h"
 #include "SysTick.h"
 #include "IO.h"
-#include "bolt_CAN.h"
+#include "CAN.h"
 #include "bms_dbc.h"
 
 #include <stdio.h>

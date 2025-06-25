@@ -8,13 +8,13 @@
         <itemPath>../../RTOS/framework/framework.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f1" displayName="inc" projectFiles="true">
-        <itemPath>../../Libraries/PIC33_plib/inc/bolt_ADC.h</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/inc/bolt_init.h</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/inc/ADC.h</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/inc/init.h</itemPath>
         <itemPath>../../Libraries/PIC33_plib/inc/pins.h</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/inc/bolt_uart.h</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/inc/bolt_i2c.h</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/inc/uart.h</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/inc/i2c.h</itemPath>
         <itemPath>../../Libraries/PIC33_plib/inc/buttons.h</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/inc/bolt_CAN.h</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/inc/CAN.h</itemPath>
         <itemPath>../../Libraries/Drivers/PingSensor/ping.h</itemPath>
       </logicalFolder>
       <logicalFolder name="inc" displayName="inc" projectFiles="true">
@@ -53,19 +53,19 @@
         <itemPath>canSerivce.c</itemPath>
       </logicalFolder>
       <logicalFolder name="src" displayName="src" projectFiles="true">
-        <itemPath>../../Libraries/PIC33_plib/src/bolt_ADC.c</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/src/bolt_init.c</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/src/ADC.c</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/src/init.c</itemPath>
         <itemPath>../../Drivers/TFT_LCD/src/DISPLAY_INTERFACE.c</itemPath>
         <itemPath>../../Drivers/TFT_LCD/src/TFT_LCD.c</itemPath>
         <itemPath>../../Drivers/TFT_LCD/src/TFT_LCD_Q.c</itemPath>
         <itemPath>../../Drivers/TFT_LCD/src/TOUCH_SCREEN.c</itemPath>
         <itemPath>../../Libraries/PIC33_plib/src/pins.c</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/src/bolt_uart.c</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/src/uart.c</itemPath>
         <itemPath>../../Drivers/PingSensor/ping.c</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/src/bolt_i2c.c</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/src/i2c.c</itemPath>
         <itemPath>../../Libraries/PIC33_plib/inc/buttons.c</itemPath>
         <itemPath>../../Drivers/LED_16bit_shift/led_driver.c</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/src/bolt_CAN.c</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/src/CAN.c</itemPath>
       </logicalFolder>
       <itemPath>main.c</itemPath>
     </logicalFolder>
@@ -127,7 +127,7 @@
         <makeCustomizationEnableLongLines>false</makeCustomizationEnableLongLines>
         <makeCustomizationNormalizeHexFile>false</makeCustomizationNormalizeHexFile>
       </makeCustomizationType>
-      <item path="../../Libraries/PIC33_plib/inc/bolt_uart.h"
+      <item path="../../Libraries/PIC33_plib/inc/uart.h"
             ex="true"
             overriding="false">
         <C30>
@@ -143,7 +143,7 @@
         <C30Global>
         </C30Global>
       </item>
-      <item path="../../Libraries/PIC33_plib/src/bolt_uart.c"
+      <item path="../../Libraries/PIC33_plib/src/uart.c"
             ex="true"
             overriding="false">
         <C30>
@@ -1369,7 +1369,7 @@
         <makeCustomizationEnableLongLines>false</makeCustomizationEnableLongLines>
         <makeCustomizationNormalizeHexFile>false</makeCustomizationNormalizeHexFile>
       </makeCustomizationType>
-      <item path="../../Libraries/PIC33_plib/inc/bolt_uart.h"
+      <item path="../../Libraries/PIC33_plib/inc/uart.h"
             ex="true"
             overriding="false">
         <C30>
@@ -1385,7 +1385,7 @@
         <C30Global>
         </C30Global>
       </item>
-      <item path="../../Libraries/PIC33_plib/src/bolt_uart.c"
+      <item path="../../Libraries/PIC33_plib/src/uart.c"
             ex="true"
             overriding="false">
         <C30>
@@ -3193,3 +3193,4 @@
     </conf>
   </confs>
 </configurationDescriptor>
+

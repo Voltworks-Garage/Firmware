@@ -5,7 +5,7 @@
  * Revision history: initial build 2/4/16
  */
 
-#include "bolt_pins.h"
+#include "pins.h"
 
 static uint16_t IO_pinPortAInterruptStatus = 0;
 static uint16_t IO_pinPortBInterruptStatus = 0;

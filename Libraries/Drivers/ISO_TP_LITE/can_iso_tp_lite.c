@@ -1,6 +1,6 @@
 #include "can_iso_tp_lite.h"
 #include "can_iso_tp_lite_config.h"
-#include "bolt_can.h"
+#include "can.h"
 #include "ringBuffer.h"
 #include "mcc_generated_files/boot/boot_config.h"
 #include "IO.h"

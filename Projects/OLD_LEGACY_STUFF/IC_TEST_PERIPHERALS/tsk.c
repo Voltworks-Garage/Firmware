@@ -17,9 +17,9 @@
 
 //Direct low level access
 #include "pins.h"
-#include "bolt_uart.h"
-#include "bolt_sleep.h"
-#include "bolt_adc.h"
+#include "uart.h"
+#include "sleep.h"
+#include "adc.h"
 #include "pinSetup.h"
 #include "StateMachine.h"
 #include "TOUCH_SCREEN.h"
@@ -40,7 +40,7 @@
 #define DEBUG 0
 #if DEBUG
 #include <stdio.h>
-#include "bolt_uart.h"
+#include "uart.h"
 
 static uint8_t debugEnable = 1;
 #define tskService_print(...) if(debugEnable){char tempArray[125]={};sprintf(tempArray,__VA_ARGS__);Uart1Write(tempArray);}
@@ -184,4 +184,5 @@ void Tsk_Run(uint32_t SystemClock) {
 
 
 /*** End of File **************************************************************/
+
 

@@ -7,11 +7,11 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include "bolt_init.h"
+#include "init.h"
 #include "TFT_LCD.h"
 #include "pins.h"
 #include "TFT_DISPLAY.h"
-#include "bolt_uart.h"
+#include "uart.h"
 
 #define DEFINES_TOUCH_X0 (PINS_pin_s){PIN_PORTA,0}
 #define DEFINES_TOUCH_X1 (PINS_pin_s){PIN_PORTB,2}

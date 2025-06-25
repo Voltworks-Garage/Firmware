@@ -11,15 +11,15 @@
 // *****************************************************************************
 // *****************************************************************************
 #include "pinSetup.h"
-#include "bolt_ADC.h"
-#include "bolt_uart.h"
-#include "bolt_CAN.h"
+#include "ADC.h"
+#include "uart.h"
+#include "CAN.h"
 #include "pins.h"
-#include "bolt_OC.h"
-#include "bolt_pps.h"
+#include "OC.h"
+#include "pps.h"
 #include "TFT_LCD.h"
 #include "TOUCH_SCREEN.h"
-//#include "bolt_sleep.h"
+//#include "sleep.h"
 #include <xc.h>
 
 // *****************************************************************************
@@ -99,5 +99,6 @@ void PinSetup_Init(void) {
     TFT_LCD_init(TFT_LCD_RESET, TFT_LCD_CS, TFT_LCD_DC);
 
 }
+
 
 

@@ -8,7 +8,7 @@
 #define DEBUG 0
 #if DEBUG
 #include <stdio.h>
-#include "bolt_uart.h"
+#include "uart.h"
 static uint8_t debugEnable = 1;
 #define templateService_print(...) if(debugEnable){char tempArray[125]={};sprintf(tempArray,__VA_ARGS__);Uart1Write(tempArray);}
 #else
@@ -244,3 +244,4 @@ void template_Debug(uint8_t state) {
     debugEnable = state;
 #endif
 }
+

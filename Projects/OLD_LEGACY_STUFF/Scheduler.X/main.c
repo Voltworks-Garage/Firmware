@@ -2,7 +2,7 @@
 #include <stdint.h>
 
 #include "tsk.h"			// For task config
-#include "bolt_clock.h"
+#include "clock.h"
 
 #include <xc.h>
 
@@ -213,3 +213,4 @@ int main(void) {
     return 0;
 
 }
+

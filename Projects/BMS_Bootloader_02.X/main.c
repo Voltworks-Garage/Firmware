@@ -53,7 +53,7 @@
 #include "can_tp.h"
 #include "mcc_generated_files/boot/boot_demo.h"
 #include "mcc_generated_files/uart1.h"
-#include "bolt_reset_control.h"
+#include "reset_control.h"
 
 /*
                          Main application

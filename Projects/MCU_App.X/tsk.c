@@ -17,8 +17,8 @@
 
 //Direct low level access
 #include "pins.h"
-#include "bolt_uart.h"
-#include "bolt_sleep.h"
+#include "uart.h"
+#include "sleep.h"
 
 
 //Task Scheduler system control
@@ -45,7 +45,7 @@
 #define DEBUG 1
 #if DEBUG
 #include <stdio.h>
-#include "bolt_uart.h"
+#include "uart.h"
 #include "lvBattery.h"
 
 static uint8_t debugEnable = 1;
@@ -189,4 +189,5 @@ void Tsk_Run(uint32_t SystemClock) {
 
 
 /*** End of File **************************************************************/
+
 

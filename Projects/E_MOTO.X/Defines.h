@@ -9,14 +9,14 @@
 #define	DEFINES_H
 
 #ifdef USE_UART
-#include "bolt_uart.h"
+#include "uart.h"
 #endif
-#include "bolt_init.h"
-#include "bolt_ADC.h"
+#include "init.h"
+#include "ADC.h"
 #include "pins.h"
-#include "bolt_i2c.h"
+#include "i2c.h"
 #include "buttons.h"
-#include "bolt_uart.h"
+#include "uart.h"
 
 #include "ping.h"
 #include "TFT_LCD.h"
@@ -25,7 +25,7 @@
 #include "led_driver.h"
 
 #include "..\..\CAN\generated\dash_dbc.h"
-#include "bolt_CAN.h"
+#include "CAN.h"
 
 #define DEFINES_SYSTEM_CLOCK_FREQ FREQ_140MHZ
 
@@ -117,4 +117,5 @@
 
 
 #endif	/* DEFINES_H */
+
 

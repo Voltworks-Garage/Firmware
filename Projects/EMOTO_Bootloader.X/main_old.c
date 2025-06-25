@@ -8,7 +8,7 @@
 
 #include <xc.h>
 
-#include "bolt_clock.h"
+#include "clock.h"
 #include "tsk.h"
 
 /*
@@ -218,4 +218,5 @@ int main(void) {
 
     return (0);
 }
+
 
