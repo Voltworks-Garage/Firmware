@@ -6,6 +6,8 @@
 *.ko
 *.obj
 *.elf
+*.o.d
+*.mk
 
 # Linker output
 *.ilk
@@ -50,3 +52,11 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+#other
+*.bash
+*.properties
+__pycache__
+private
+thumbs.db
+memoryfile.xml
