@@ -2,7 +2,6 @@
 #define motorcontroller_DBC_H
 
 #include <stdint.h>
-#include "CAN.h"
 typedef enum{
     dash,
     mcu,
@@ -88,4 +87,3 @@ void CAN_send_10ms(void);
 
 
 #endif /*motorcontroller_DBC_H*/
-

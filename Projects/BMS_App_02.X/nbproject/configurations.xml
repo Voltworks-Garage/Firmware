@@ -123,6 +123,7 @@
   </logicalFolder>
   <sourceRootList>
     <Elem>.</Elem>
+    <Elem>../../RTOS/Scheduler</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>

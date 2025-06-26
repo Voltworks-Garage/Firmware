@@ -39,8 +39,8 @@ for node in range(0,numberOfNodes):
     dot_h.write("#ifndef "+str(data["NODE"][node]["name"]) +"_DBC_H\n")
     dot_h.write("#define "+str(data["NODE"][node]["name"]) +"_DBC_H\n\n")
     dot_h.write("#include <stdint.h>\n")
-    dot_h.write("#include \"CAN.h\"\n")
     dot_c.write("#include \""+str(data["NODE"][node]["name"]) + "_dbc.h\"\n")
+    dot_c.write("#include \"CAN.h\"\n")
     dot_c.write("#include \"utils.h\"\n")
 
     #find number of CAN nodes and create enum

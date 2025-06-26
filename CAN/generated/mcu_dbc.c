@@ -1,4 +1,5 @@
 #include "mcu_dbc.h"
+#include "CAN.h"
 #include "utils.h"
 /**********************************************************
  * dash NODE MESSAGES

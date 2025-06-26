@@ -2,7 +2,6 @@
 #define bms_DBC_H
 
 #include <stdint.h>
-#include "CAN.h"
 typedef enum{
     dash,
     mcu,
@@ -198,4 +197,3 @@ void CAN_send_1000ms(void);
 
 
 #endif /*bms_DBC_H*/
-

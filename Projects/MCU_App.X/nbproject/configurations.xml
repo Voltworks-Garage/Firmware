@@ -127,15 +127,7 @@
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
-    <Elem>../../Libraries/PIC33_plib/inc</Elem>
-    <Elem>../../Libraries/PIC33_plib/src</Elem>
-    <Elem>../../RTOS/framework</Elem>
     <Elem>.</Elem>
-    <Elem>../../RTOS/Scheduler</Elem>
-    <Elem>../../Libraries/Standard</Elem>
-    <Elem>../../CAN/generated</Elem>
-    <Elem>../../Libraries/Drivers/ISO_TP_LITE</Elem>
-    <Elem>../../Libraries/Drivers/Buttons</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
