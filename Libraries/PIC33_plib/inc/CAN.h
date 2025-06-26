@@ -13,7 +13,7 @@
 #ifndef CAN_H
 #define CAN_H
 
-#include <xc.h>
+#include "xc.h"
 #include <stdint.h>
 #include <stddef.h>
 
