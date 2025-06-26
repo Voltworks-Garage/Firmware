@@ -61,12 +61,10 @@
 *******************************************************************************/
 /**
  * Task configuration table.  Holds the task interval, last time executed, and
- * the function to be executed.  A continuous task is defined as a task with
- * an interval of 0.  Last time executed is set to 0.
+ * the function to be executed. 
  */
 static TaskType Tasks[] =
 {
-  	{ 0             ,  0, Tsk        },
     { INTERVAL_1MS  ,  0, Tsk_1ms    },
     { INTERVAL_5MS  ,  0, Tsk_5ms    },
 	{ INTERVAL_10MS ,  0, Tsk_10ms   },

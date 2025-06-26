@@ -4,6 +4,7 @@
 
 static uint32_t volatile Tick = 0;
 static uint32_t TicksPerMS = 0;
+static uint32_t CPU_Timer = 0;
 
 uint32_t SysTick_Get(void) {
     return Tick;
@@ -61,18 +62,17 @@ uint8_t SysTick_TimeOut(SysTick_Timer_S *timer){
     return 0;
 }
 
-uint8_t SysTick_PrecisionTimerStart(SysTick_Timer_S *timer){
-    timer->start_time = TMR5;
-    return 1;
+void SysTick_CPUTimerStart(void){
+    CPU_Timer = TMR5;
 }
 
-uint16_t SysTick_PrecisionTimerEnd(SysTick_Timer_S *timer){
-    timer->end_value = TMR5;
+uint16_t SysTick_CPUTimerEnd(void){
+    uint32_t end_value = TMR5;
     uint16_t delta_ticks = 0;
-    if (timer->end_value >= timer->start_time) {
-        delta_ticks = (uint16_t)(timer->end_value - timer->start_time);
+    if (end_value >= CPU_Timer) {
+        delta_ticks = (uint16_t)(end_value - CPU_Timer);
     } else {
-        delta_ticks = (uint16_t)((TicksPerMS - timer->start_time) + timer->end_value); // wrapped around
+        delta_ticks = (uint16_t)((TicksPerMS - CPU_Timer) + end_value); // wrapped around
     }
     return (uint16_t)((delta_ticks*100) / TicksPerMS);
 }

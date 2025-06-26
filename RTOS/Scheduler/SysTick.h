@@ -26,7 +26,7 @@ void SysTick_Resume(void);
 
 /**
  * @brief SystTick_Get will return the tick value 
- * @return current value of valiable "Tick"
+ * @return current value of variable "Tick"
  */
 uint32_t SysTick_Get(void);
 
@@ -52,5 +52,17 @@ void SysTick_TimerStart(SysTick_Timer_S *timer);
  * @return 
  */
 uint8_t SysTick_TimeOut(SysTick_Timer_S *timer);
+
+/**
+ * @brief SysTick_CPUTimerStart will grab the value of Timer 5
+ */
+void SysTick_CPUTimerStart(void);
+
+
+/**
+ * @brief SysTick_CPUTimerEnd will return the percentage of time in the millisecond.
+ * @return percentage of a millisecond
+ */
+uint16_t SysTick_CPUTimerEnd(void);
 
 #endif

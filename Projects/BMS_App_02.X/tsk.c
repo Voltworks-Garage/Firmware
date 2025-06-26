@@ -92,14 +92,6 @@ void Tsk_init(void) {
 }
 
 /**
- * Tsk is for continuously running tasks, will run when scheduler is Idle.
- */
-void Tsk(void) {
-
-
-}
-
-/**
  * Runs every 1ms
  */
 void Tsk_1ms(void) {
@@ -163,6 +155,7 @@ void Tsk_Sleep(void) {
 void Tsk_Run(uint32_t SystemClock) {
 
     static uint32_t tick = 0; // System tick
+    static uint32_t lastTick = 0; //System last tick
     static TaskType *Task_ptr; // Task pointer
     static uint8_t TaskIndex = 0; // Task index
     const uint8_t NumTasks = Tsk_GetNumTasks(); // Number of tasks
@@ -175,25 +168,28 @@ void Tsk_Run(uint32_t SystemClock) {
     Tsk_init();
     // The main while loop.  This while loop will run the program forever
     while (1) {
-        tick = SysTick_Get(); // Get current system tick
+        
+         // Get current system tick. If a single tick has occurred, run the tasks.
+        tick = SysTick_Get();
+        
+        if (tick != lastTick){
+            lastTick = tick;
+            
+            // Loop through all tasks. If the number of ticks since the last time the task was run is
+            // greater than or equal to the task interval, execute the task.
+            SysTick_CPUTimerStart();
+            for (TaskIndex = 0; TaskIndex < NumTasks; TaskIndex++) {
 
-        // Loop through all tasks.  First, run all continuous tasks.  Then,
-        // if the number of ticks since the last time the task was run is
-        // greater than or equal to the task interval, execute the task.
-//        SysTick_PrecisionTimerStart(CPU_Timer);
-        for (TaskIndex = 0; TaskIndex < NumTasks; TaskIndex++) {
-            if (Task_ptr[TaskIndex].Interval == 0) {
-                // Run continuous tasks.
-                (*Task_ptr[TaskIndex].Func)();
-            } else if ((tick - Task_ptr[TaskIndex].LastTick) >= Task_ptr[TaskIndex].Interval) {
-                (*Task_ptr[TaskIndex].Func)(); // Execute Task
+                if ((tick - Task_ptr[TaskIndex].LastTick) >= Task_ptr[TaskIndex].Interval) {
+                    (*Task_ptr[TaskIndex].Func)(); // Execute Task
 
-                Task_ptr[TaskIndex].LastTick = tick; // Save last tick the task was ran.
-            }
-        }// end for
-
-//        takeLowPassFilter(CPU_usage, SysTick_PrecisionTimerEnd(CPU_Timer));
-
+                    Task_ptr[TaskIndex].LastTick = tick; // Save last tick the task was ran.
+                }
+            }// end for
+            uint32_t CPU_percentage = SysTick_CPUTimerEnd();
+            takeLowPassFilter(CPU_usage, CPU_percentage);
+        }
+        
     }// end while(1)
 }
 
