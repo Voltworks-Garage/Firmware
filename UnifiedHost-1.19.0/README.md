@@ -1,17 +1,21 @@
 # Bootloader Download Tool
 ## How to use Bootloader Download Tool (BDT):
-Run the jar file UnifiedHost-1.19.0.jar (aka the BDT)
-Select Device Architecture dsPIC33
-Select Protocol CAN
+### 1. Run the jar file UnifiedHost-1.19.0.jar (aka the BDT)
+### 2. Select Device Architecture dsPIC33
+### 3. Select Protocol CAN
+
 ![image](https://github.com/user-attachments/assets/5e6380b8-0a08-481b-a255-ddc0d6f9afe8)
-Select Settings>CAN to configure the CAN dongle, bus speed, and host ID
-Bit Rate = 500kbps
-Host to device ID will change based on the target. 0xA1 for the BMS. 0xA3 for the MCU, 0xA5 for the DASH.
+
+### 4. Select Settings>CAN to configure the CAN dongle, bus speed, and host ID
+#### -Bit Rate = 500kbps
+#### -Host to device ID will change based on the target. 0xA1 for the BMS. 0xA3 for the MCU, 0xA5 for the DASH.
+
 ![image](https://github.com/user-attachments/assets/fc92f499-dde3-48a8-9b23-3b13a8537d5e)
-Select File>Open Hex to select a firmware image. Navigate to the hex (example Firmware\Projects\BMS_App_02.X\dist\DEFAULT\production)
-Once the ECU is powered on and connected, press the READ DEVICE SETTINGS button to trigger a reset and jump to the bootloader.
-You now have 5 seconds to press the PROGRAM DEVICE button.
-It is optional but recommended to check the box to verify the download.
+
+### 5. Select File>Open Hex to select a firmware image. Navigate to the hex (example Firmware\Projects\BMS_App_02.X\dist\DEFAULT\production)
+### 6. Once the ECU is powered on and connected, press the READ DEVICE SETTINGS button to trigger a reset and jump to the bootloader.
+### 7. You now have 5 seconds to press the PROGRAM DEVICE button.
+### 8. It is optional but recommended to check the box to verify the download.
 
 ## How to connect to BUSMaster while using the Bootloader Download Tool (BDT)
 If you have a PCANView or Busmaster session connected already, the BDT will fail to connect to the bus. The CAN bus MUST be free before starting.
