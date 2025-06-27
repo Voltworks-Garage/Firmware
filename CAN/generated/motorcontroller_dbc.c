@@ -130,7 +130,7 @@ float CAN_bms_debug_float2_get(void){
 }
 uint16_t CAN_bms_debug_CPU_USAGE_get(void){
 	uint16_t data = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_CPU_USAGE_OFFSET, CAN_BMS_DEBUG_CPU_USAGE_RANGE);
-	return (data * 1) + 0;
+	return (data * 0.1) + 0;
 }
 
 /**********************************************************

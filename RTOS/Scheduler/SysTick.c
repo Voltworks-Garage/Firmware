@@ -68,7 +68,7 @@ void SysTick_CPUTimerStart(void){
 
 uint16_t SysTick_CPUTimerEnd(void){
     uint32_t end_value = TMR5;
-    uint16_t delta_ticks = 0;
+    uint32_t delta_ticks = 0;
     if (end_value >= CPU_Timer) {
         delta_ticks = (uint16_t)(end_value - CPU_Timer);
     } else {

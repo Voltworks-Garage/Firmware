@@ -32,6 +32,7 @@
 #include "ev_charger.h"
 #include "bms.h"
 #include "dcdc.h"
+#include "mcc_generated_files/watchdog.h"
 
 /******************************************************************************
  * Constants
@@ -62,7 +63,7 @@ static uint8_t debugEnable = 1;
  * Variable Declarations
  *******************************************************************************/
 
-NEW_LOW_PASS_FILTER(CPU_usage, 100, 1000);
+NEW_LOW_PASS_FILTER(CPU_usage, 100.0, 1000.0);
 
 /******************************************************************************
  * Function Prototypes
@@ -85,6 +86,8 @@ void Tsk_init(void) {
     StateMachine_Init();
     IO_SET_DEBUG_LED_EN(HIGH);
     BMS_init();
+    WATCHDOG_TimerClear();
+    WATCHDOG_TimerSoftwareEnable();
 
 #if DEBUG
     Uart1Write("Hello World, Task Init Done.\n"); //hi
@@ -95,7 +98,6 @@ void Tsk_init(void) {
  * Runs every 1ms
  */
 void Tsk_1ms(void) {
-    ClrWdt(); 
     run_iso_tp_basic();
     DCDC_run_1ms();
     
@@ -125,6 +127,7 @@ void Tsk_10ms(void) {
  * Runs every 100ms
  */
 void Tsk_100ms(void) {
+    WATCHDOG_TimerClear();
     DCDC_run_100ms();
     IO_SET_DEBUG_LED_EN(TOGGLE); //Toggle Debug LED at 10Hz for scheduler running status
 }

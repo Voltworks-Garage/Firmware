@@ -123,7 +123,7 @@ for node in range(0,numberOfNodes):
                     this_signal_scale = data["NODE"][i]["messages"][j]["signals"][k]["scale"]
                     this_signal_offset = data["NODE"][i]["messages"][j]["signals"][k]["offset"]
                     this_signal_units = data["NODE"][i]["messages"][j]["signals"][k]["units"]
-                    if  this_signal_units in ["V", "A", "degC"]:
+                    if this_signal_units in ["V", "A", "degC", "%"]:
                         this_signal_datatype = "float"
                     else:
                         this_signal_datatype = "uint16_t"
