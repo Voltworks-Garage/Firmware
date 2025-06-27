@@ -65,6 +65,7 @@ Copyright (c) [2012-2025] Microchip Technology Inc.
 #include "mcc_generated_files/pin_manager.h"
 #include "mcc_generated_files/uart1.h"
 #include "reset_control.h"
+#include "mcc_generated_files/reset_types.h"
 
 #define DOWNLOADED_IMAGE    0u
 #define EXECUTION_IMAGE     0u
@@ -80,7 +81,7 @@ void BOOT_DEMO_Initialize(void)
     if ((thisReason & RESET_POR) || (thisReason & RESET_BOR)){
         bootloadTimeOutTime = 250;
     }
-    else if ((thisReason & RESET_SWR) || (thisReason & RESET_EXTR)){
+    else if ((thisReason & RESET_SWR) || (thisReason & RESET_EXTR) || (thisReason & RESET_WDTO)){
         bootloadTimeOutTime = 5000;
     } else {
         bootloadTimeOutTime = 250;
@@ -108,7 +109,7 @@ void BOOT_DEMO_Initialize(void)
 void BOOT_DEMO_Tasks(void)
 {
     
-    if (BOOT_ProcessCommand() == BOOT_COMMAND_SUCCESS){
+    if (BOOT_ProcessCommand() != BOOT_COMMAND_NONE){
         bootloadLastTime = TMR1_SoftwareCounterGet();
     }
 

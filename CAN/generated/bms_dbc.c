@@ -242,7 +242,7 @@ void CAN_bms_status_state_set(uint16_t state){
 	uint16_t data_scaled = (state - 0) / 1.0;
 	set_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_STATE_OFFSET, CAN_BMS_STATUS_STATE_RANGE, data_scaled);
 }
-void CAN_bms_status_SOC_set(uint16_t SOC){
+void CAN_bms_status_SOC_set(float SOC){
 	uint16_t data_scaled = (SOC - 0) / 0.1;
 	set_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_SOC_OFFSET, CAN_BMS_STATUS_SOC_RANGE, data_scaled);
 }
@@ -404,8 +404,8 @@ void CAN_bms_debug_float2_set(float float2){
 	uint16_t data_scaled = (float2 - 0) / 0.01;
 	set_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_FLOAT2_OFFSET, CAN_BMS_DEBUG_FLOAT2_RANGE, data_scaled);
 }
-void CAN_bms_debug_CPU_USAGE_set(uint16_t CPU_USAGE){
-	uint16_t data_scaled = (CPU_USAGE - 0) / 1;
+void CAN_bms_debug_CPU_USAGE_set(float CPU_USAGE){
+	uint16_t data_scaled = (CPU_USAGE - 0) / 0.1;
 	set_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_CPU_USAGE_OFFSET, CAN_BMS_DEBUG_CPU_USAGE_RANGE, data_scaled);
 }
 void CAN_bms_debug_dlc_set(uint8_t dlc){

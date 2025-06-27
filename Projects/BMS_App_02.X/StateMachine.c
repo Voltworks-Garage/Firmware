@@ -113,7 +113,6 @@ void StateMachine_Run(void) {
 void idle(STATE_MACHINE_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
-            PINS_pullUp(CAN_TX_PIN, HIGH);
             IO_SET_SW_EN(HIGH);
             CAN_changeOpMode(CAN_NORMAL);
             break;

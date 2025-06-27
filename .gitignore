@@ -8,6 +8,7 @@
 *.elf
 *.o.d
 *.mk
+*.generated_files/
 
 # Linker output
 *.ilk
@@ -43,6 +44,7 @@
 *.su
 *.idb
 *.pdb
+*.idea/
 
 # Kernel Module Compile Results
 *.mod*

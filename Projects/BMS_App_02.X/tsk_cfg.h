@@ -49,7 +49,7 @@
 #define SYS_TICK_INTERVAL			1000UL
 
 /**
- * The interval to call the 5 ms tasks
+ * The interval to call the 1 ms tasks
  */
 #define INTERVAL_1MS        (1000UL / SYS_TICK_INTERVAL)
 

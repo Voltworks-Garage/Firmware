@@ -57,7 +57,7 @@ uint16_t CAN_mcu_command_motor_controller_enable_get(void);
  */
 #define CAN_bms_status_interval() 10
 void CAN_bms_status_state_set(uint16_t state);
-void CAN_bms_status_SOC_set(uint16_t SOC);
+void CAN_bms_status_SOC_set(float SOC);
 void CAN_bms_status_packVoltage_set(float packVoltage);
 void CAN_bms_status_packCurrent_set(float packCurrent);
 void CAN_bms_status_minTemp_set(float minTemp);
@@ -93,7 +93,7 @@ void CAN_bms_debug_bool2_set(uint16_t bool2);
 void CAN_bms_debug_bool3_set(uint16_t bool3);
 void CAN_bms_debug_float1_set(float float1);
 void CAN_bms_debug_float2_set(float float2);
-void CAN_bms_debug_CPU_USAGE_set(uint16_t CPU_USAGE);
+void CAN_bms_debug_CPU_USAGE_set(float CPU_USAGE);
 void CAN_bms_debug_dlc_set(uint8_t dlc);
 
 
