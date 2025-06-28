@@ -26,10 +26,6 @@ from SerialComPorts import SerialCom_Thread
 import sys
 
 
-
-
-                
-                
 class myScreen(ttk.Frame):
     
     connectionState = "disconnected"
@@ -41,10 +37,8 @@ class myScreen(ttk.Frame):
         self.parent = parent
         self.initUI()
         
-        
     def initUI(self):
 
-      
         self.parent.title("Welcome to the E-Moto Debugger Tool!!!!")
         self.pack(fill=BOTH, expand=True)
         
@@ -96,10 +90,25 @@ class myScreen(ttk.Frame):
         self.connectionStatusLabel = Label(self, text=self.connectionStatus)
         self.connectionStatusLabel.grid(row=1, column=1, sticky = "W")
 
-        #Activate Button
+        #Connect Button
         self.connectButton = ttk.Button(self, text="Connect", state="disabled", width=20)
         self.connectButton["command"] = self.openIt
         self.connectButton.grid(row=2, column=cols-1, columnspan=2, rowspan=2)
+        #Refresh button
+        self.refreshButton = ttk.Button(self, text="Scan for Devices", width=30)
+        self.refreshButton["command"] = self.updateComs
+        self.refreshButton.grid(row=5, column=cols-1, columnspan=2, rowspan=2)
+
+        # Dropdown Menu UART/CAN PORTS
+        comm_choices = []
+        comm_choices.append("NONE")
+        comm_choices.append("CAN")
+        comm_choices.append("UART")
+        self.comm_Var1=StringVar()
+        self.comm_Var1.set("CAN") # default choice
+        self.comm_dropMenu1 = ttk.OptionMenu(self, self.comm_Var1, *comm_choices, command=self.setCommType)
+        self.comm_dropMenu1.config(width=6)
+        self.comm_dropMenu1.grid(column=cols-1,row=3)
         
         # Dropdown Menu COM PORTS
         choices = []
@@ -117,11 +126,7 @@ class myScreen(ttk.Frame):
         self.dropMenu2 = ttk.OptionMenu(self, self.dropVar2, *choices2, command=self.baudMenu)
         self.dropMenu2.config(width=6)
         self.dropMenu2.grid(column=cols,row=4)
-        
-        #Refresh button
-        self.refreshButton = ttk.Button(self, text="Scan for Devices", width=30)
-        self.refreshButton["command"] = self.updateComs
-        self.refreshButton.grid(row=5, column=cols-1, columnspan=2)
+
         
         #Create Serial Console Text Area
         self.consoleCount = 0
@@ -187,12 +192,21 @@ class myScreen(ttk.Frame):
 
 
 
-    def comMenu(self,value):
+    def comMenu(self, value):
         self.dropVar1.set(value)
         if value != "NONE" and self.dropVar2.get() != "Baud":
             self.connectButton["state"] = 'active'
         else:
             self.connectButton["state"] = 'disabled'
+
+    def setCommType(self, value):
+        self.comm_Var1.set(value)
+        if value == "CAN":
+            print("Selected CAN")
+            self.consoleTextArea.insert('end', "Selected CAN\n")
+        if value == "UART":
+            print("Selected UART")
+            self.consoleTextArea.insert('end', "Selected UART\n")
         
     def baudMenu(self,value):
         self.dropVar2.set(value)
@@ -210,7 +224,7 @@ class myScreen(ttk.Frame):
         self.connectButton["state"] = 'disabled'
         print("getting ports...")
         choices = self.serialCommunication.getPort()
-        if len(choices) is 0:   
+        if len(choices) == 0:
             choices.append("NONE")
         for val in choices:
             self.dropMenu1['menu'].add_command(label=val,command=lambda v=self,l=val:v.comMenu(l))
