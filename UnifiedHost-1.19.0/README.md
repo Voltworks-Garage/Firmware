@@ -1,4 +1,36 @@
-# README	General information
+# Bootloader Download Tool
+## How to use Bootloader Download Tool (BDT):
+### 1. Run the jar file UnifiedHost-1.19.0.jar (aka the BDT)
+### 2. Select Device Architecture dsPIC33
+### 3. Select Protocol CAN
+
+![image](https://github.com/user-attachments/assets/5e6380b8-0a08-481b-a255-ddc0d6f9afe8)
+
+### 4. Select Settings>CAN to configure the CAN dongle, bus speed, and host ID
+#### -Bit Rate = 500kbps
+#### -Host to device ID will change based on the target. 0xA1 for the BMS. 0xA3 for the MCU, 0xA5 for the DASH.
+
+![image](https://github.com/user-attachments/assets/fc92f499-dde3-48a8-9b23-3b13a8537d5e)
+
+### 5. Select File>Open Hex to select a firmware image. Navigate to the hex (example Firmware\Projects\BMS_App_02.X\dist\DEFAULT\production)
+### 6. Once the ECU is powered on and connected, press the READ DEVICE SETTINGS button to trigger a reset and jump to the bootloader.
+### 7. You now have 5 seconds to press the PROGRAM DEVICE button.
+### 8. It is optional but recommended to check the box to verify the download.
+
+## How to connect to BUSMaster while using the Bootloader Download Tool (BDT)
+If you have a PCANView or Busmaster session connected already, the BDT will fail to connect to the bus. The CAN bus MUST be free before starting.
+To use both tools at the same time, there is a tricky sequence required.
+1. Open the BDT, PCANView, and BUSMaster.
+2. Connect with the BDT and begin a download sequence.
+3. While the download is happening, connect to the bus with PCANView. It will give a warning to say that settings cannot be changed. This will create a public CAN net that any program can join.
+4. You should see CAN traffic on PCANView, and wait for the hex to download completely.
+5. Now you should be able to join with BUSMaster by clicking Connect.
+6. You can freely disconnect from PCANView (and close it), but do not do not disconnect from BUSMaster for the remainder of the session.
+7. Now Busmaster will be showing all CAN traffic in a live view, and the BDT should be able to connect and download as required.
+
+
+
+# UnifiedHost	General information
 * Unified Bootloader Host Application 
 - Used with the MCC Bootloader Generated Software Library for 8-bit or 16-bit MCU devices, or the 32-bit AN1388 bootloader.
 - The graphical front-end of the 8-bit, 16-bit and 32-bit Bootloader project.
