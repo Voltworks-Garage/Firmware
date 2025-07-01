@@ -1,4 +1,9 @@
 # Bootloader Download Tool
+## Requirements:
+### 1. Install PCAN USB Drivers: https://www.peak-system.com/PCAN-USB.199.0.html?&L=1
+### 2. Install PCAN-ISO-TP API: https://www.peak-system.com/PCAN-ISO-TP-API.369.0.html?&L=1
+### 3. Install Java 8 version 221 (might work with later versions but this seems to always work)
+
 ## How to use Bootloader Download Tool (BDT):
 ### 1. Run the jar file UnifiedHost-1.19.0.jar (aka the BDT)
 ### 2. Select Device Architecture dsPIC33
