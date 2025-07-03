@@ -12,7 +12,7 @@
 // *****************************************************************************
 #include "pinSetup.h"
 #include "ADC.h"
-#include "uart.h"
+//#include "uart.h"
 #include "CAN.h"
 #include "pins.h"
 #include "OC.h"
@@ -107,6 +107,7 @@ void PinSetup_Init(void) {
     ADC_Init();
     ADC_SetPin(ISOLATION_VOLTAGE_AI);
     ADC_SetPin(HV_BUS_VOLTAGE_AI);
+    ADC_SetPin(VBUS_VOLTAGE_AI);
     ADC_SetPin(EV_CHARGER_CURRENT_AI);
     ADC_SetPin(DCDC_OUTPUT_CURRENT_AI);
     ADC_SetPin(EV_CHARGER_VOLTAGE_AI);

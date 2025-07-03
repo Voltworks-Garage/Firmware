@@ -21,6 +21,30 @@ uint16_t set_bits(size_t * payload, uint8_t offset, uint8_t range, uint16_t valu
     return 0;
 }
 
+
+//uint16_t set_bits(uint16_t *payload, uint8_t offset, uint8_t range, uint16_t value) {
+//
+//    if (value >= (1U << range)) {
+//        value &= (1U << range) - 1;
+//    }
+//
+//    uint8_t word = offset >> 4;
+//    uint8_t shift = offset & 0xF;
+//
+//    uint16_t mask = ((1U << range) - 1) << shift;
+//    payload[word] = (payload[word] & ~mask) | ((value << shift) & mask);
+//
+//    // If value spans into next word
+//    uint8_t overlap = (shift + range > 16) ? 1 : 0;
+//    if (overlap) {
+//        uint8_t bitsInNext = shift + range - 16;
+//        uint16_t nextMask = (1U << bitsInNext) - 1;
+//        payload[word + 1] = (payload[word + 1] & ~nextMask) | ((value >> (16 - shift)) & nextMask);
+//    }
+//    return 0;
+//}
+
+
 uint16_t get_bits(size_t * payload, uint8_t offset, uint8_t range){
     uint16_t word = (offset / wordWidth);  //find word offset from bit offset
     uint16_t shift = offset - word*wordWidth;  //find shift amount required from start of word

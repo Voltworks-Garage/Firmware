@@ -8,6 +8,7 @@ static uint8_t dcdc_run = 0;
 static uint8_t dcdc_state = DCDC_OFF;
 NEW_LOW_PASS_FILTER(dcdc_voltage, 10.0, 1000.0);
 NEW_LOW_PASS_FILTER(dcdc_current, 10.0, 1000.0);
+NEW_LOW_PASS_FILTER(hv_bus_voltage, 10.0, 1000.0);
 
 void DCDC_init(void) {
     dcdc_run = 1;
@@ -19,6 +20,7 @@ void DCDC_run_1ms(void) {
         float myval = IO_GET_DCDC_OUTPUT_VOLTAGE();
         takeLowPassFilter(dcdc_voltage, myval);
         takeLowPassFilter(dcdc_current, IO_GET_DCDC_CURRENT());
+        takeLowPassFilter(hv_bus_voltage, IO_GET_HV_BUS_VOLTAGE());
     }
 }
 
@@ -35,7 +37,7 @@ void DCDC_run_100ms(void) {
                 }
                 break;
             case DCDC_PRECHARGE:
-                if (dcdc_voltage->accum > 80.0) {
+                if (getLowPassFilter(dcdc_voltage)> getLowPassFilter(hv_bus_voltage)*0.90) {
                     dcdc_state = DCDC_ENABLE;
                     IO_SET_DCDC_EN(HIGH);
                     IO_SET_PRE_CHARGE_EN(LOW);
@@ -47,6 +49,9 @@ void DCDC_run_100ms(void) {
                 break;
             case DCDC_ENABLE:
                 if (IO_GET_DCDC_FAULT()) {
+                    dcdc_state = DCDC_FAULT;
+                }
+                if(getLowPassFilter(dcdc_voltage)< getLowPassFilter(hv_bus_voltage)*0.90){
                     dcdc_state = DCDC_FAULT;
                 }
                 if (dcdcCommandFromMCU == 0) {

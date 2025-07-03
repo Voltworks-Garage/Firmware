@@ -32,11 +32,11 @@ uint16_t CAN_mcu_command_motor_controller_enable_get(void);
 uint8_t CAN_bms_debug_checkDataIsFresh(void);
 uint16_t CAN_bms_debug_bool0_get(void);
 uint16_t CAN_bms_debug_bool1_get(void);
-uint16_t CAN_bms_debug_bool2_get(void);
-uint16_t CAN_bms_debug_bool3_get(void);
 float CAN_bms_debug_float1_get(void);
 float CAN_bms_debug_float2_get(void);
+float CAN_bms_debug_VBUS_Voltage_get(void);
 uint16_t CAN_bms_debug_CPU_USAGE_get(void);
+uint16_t CAN_bms_debug_CPU_peak_get(void);
 
 #define CAN_bms_charger_request_interval() 1000
 uint8_t CAN_bms_charger_request_checkDataIsFresh(void);

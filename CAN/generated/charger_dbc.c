@@ -72,16 +72,16 @@ uint8_t CAN_bms_debug_checkDataIsFresh(void){
 #define CAN_BMS_DEBUG_BOOL0_OFFSET 0
 #define CAN_BMS_DEBUG_BOOL1_RANGE 1
 #define CAN_BMS_DEBUG_BOOL1_OFFSET 1
-#define CAN_BMS_DEBUG_BOOL2_RANGE 1
-#define CAN_BMS_DEBUG_BOOL2_OFFSET 2
-#define CAN_BMS_DEBUG_BOOL3_RANGE 1
-#define CAN_BMS_DEBUG_BOOL3_OFFSET 3
 #define CAN_BMS_DEBUG_FLOAT1_RANGE 16
-#define CAN_BMS_DEBUG_FLOAT1_OFFSET 4
+#define CAN_BMS_DEBUG_FLOAT1_OFFSET 2
 #define CAN_BMS_DEBUG_FLOAT2_RANGE 16
-#define CAN_BMS_DEBUG_FLOAT2_OFFSET 20
-#define CAN_BMS_DEBUG_CPU_USAGE_RANGE 16
-#define CAN_BMS_DEBUG_CPU_USAGE_OFFSET 36
+#define CAN_BMS_DEBUG_FLOAT2_OFFSET 18
+#define CAN_BMS_DEBUG_VBUS_VOLTAGE_RANGE 10
+#define CAN_BMS_DEBUG_VBUS_VOLTAGE_OFFSET 34
+#define CAN_BMS_DEBUG_CPU_USAGE_RANGE 10
+#define CAN_BMS_DEBUG_CPU_USAGE_OFFSET 44
+#define CAN_BMS_DEBUG_CPU_PEAK_RANGE 10
+#define CAN_BMS_DEBUG_CPU_PEAK_OFFSET 54
 
 uint16_t CAN_bms_debug_bool0_get(void){
 	uint16_t data = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_BOOL0_OFFSET, CAN_BMS_DEBUG_BOOL0_RANGE);
@@ -89,14 +89,6 @@ uint16_t CAN_bms_debug_bool0_get(void){
 }
 uint16_t CAN_bms_debug_bool1_get(void){
 	uint16_t data = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_BOOL1_OFFSET, CAN_BMS_DEBUG_BOOL1_RANGE);
-	return (data * 1.0) + 0;
-}
-uint16_t CAN_bms_debug_bool2_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_BOOL2_OFFSET, CAN_BMS_DEBUG_BOOL2_RANGE);
-	return (data * 1.0) + 0;
-}
-uint16_t CAN_bms_debug_bool3_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_BOOL3_OFFSET, CAN_BMS_DEBUG_BOOL3_RANGE);
 	return (data * 1.0) + 0;
 }
 float CAN_bms_debug_float1_get(void){
@@ -107,8 +99,16 @@ float CAN_bms_debug_float2_get(void){
 	uint16_t data = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_FLOAT2_OFFSET, CAN_BMS_DEBUG_FLOAT2_RANGE);
 	return (data * 0.01) + 0;
 }
+float CAN_bms_debug_VBUS_Voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_VBUS_VOLTAGE_OFFSET, CAN_BMS_DEBUG_VBUS_VOLTAGE_RANGE);
+	return (data * 0.1) + 0;
+}
 uint16_t CAN_bms_debug_CPU_USAGE_get(void){
 	uint16_t data = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_CPU_USAGE_OFFSET, CAN_BMS_DEBUG_CPU_USAGE_RANGE);
+	return (data * 0.1) + 0;
+}
+uint16_t CAN_bms_debug_CPU_peak_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_CPU_PEAK_OFFSET, CAN_BMS_DEBUG_CPU_PEAK_RANGE);
 	return (data * 0.1) + 0;
 }
 

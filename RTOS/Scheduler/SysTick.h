@@ -30,6 +30,7 @@ void SysTick_Resume(void);
  */
 uint32_t SysTick_Get(void);
 
+void SysTick_Set(uint32_t value);
 
 /**
  * SysTick_Timer will create a timer variable with a given name.
@@ -60,9 +61,11 @@ void SysTick_CPUTimerStart(void);
 
 
 /**
- * @brief SysTick_CPUTimerEnd will return the percentage of time in the millisecond.
- * @return percentage of a millisecond
+ * @brief SysTick_CPUTimerEnd will complete the timer can calculate the usage.
  */
-uint16_t SysTick_CPUTimerEnd(void);
+void SysTick_CPUTimerEnd(void);
+
+float SysTick_GetCPUPercentage(void);
+float SysTick_GetCPUPeak(void);
 
 #endif

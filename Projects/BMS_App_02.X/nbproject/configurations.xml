@@ -6,7 +6,6 @@
                    projectFiles="true">
       <logicalFolder name="f1" displayName="lib" projectFiles="true">
         <itemPath>../../Libraries/PIC33_plib/inc/pins.h</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/inc/uart.h</itemPath>
         <itemPath>../../Libraries/PIC33_plib/inc/ADC.h</itemPath>
         <itemPath>../../Libraries/PIC33_plib/inc/OC.h</itemPath>
         <itemPath>../../Libraries/PIC33_plib/inc/pps.h</itemPath>
@@ -34,6 +33,7 @@
         <itemPath>mcc_generated_files/interrupt_manager.h</itemPath>
         <itemPath>mcc_generated_files/traps.h</itemPath>
         <itemPath>mcc_generated_files/reset_types.h</itemPath>
+        <itemPath>mcc_generated_files/clock.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f2" displayName="ProjectSpecific" projectFiles="true">
         <itemPath>tsk_cfg.h</itemPath>
@@ -50,6 +50,19 @@
         <itemPath>can_iso_tp_lite_config.h</itemPath>
       </logicalFolder>
     </logicalFolder>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="true">
+      <logicalFolder name="MCC Generated Files"
+                     displayName="MCC Generated Files"
+                     projectFiles="true">
+        <logicalFolder name="boot" displayName="boot" projectFiles="true">
+          <itemPath>mcc_generated_files/boot/combineAppAndBootloaderHex.bat</itemPath>
+        </logicalFolder>
+      </logicalFolder>
+      <itemPath>Makefile</itemPath>
+      <itemPath>BMS_App_02.mc3</itemPath>
+    </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
                    projectFiles="true">
@@ -58,8 +71,6 @@
                    displayName="Source Files"
                    projectFiles="true">
       <logicalFolder name="f1" displayName="lib" projectFiles="true">
-        <itemPath>../../Libraries/PIC33_plib/src/uart.c</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/src/clock.c</itemPath>
         <itemPath>../../Libraries/PIC33_plib/src/ADC.c</itemPath>
         <itemPath>../../Libraries/PIC33_plib/src/pins.c</itemPath>
         <itemPath>../../Libraries/PIC33_plib/src/OC.c</itemPath>
@@ -90,6 +101,7 @@
         <itemPath>mcc_generated_files/interrupt_manager.c</itemPath>
         <itemPath>mcc_generated_files/pin_manager.c</itemPath>
         <itemPath>mcc_generated_files/clock.c</itemPath>
+        <itemPath>mcc_generated_files/where_was_i.s</itemPath>
       </logicalFolder>
       <logicalFolder name="f2" displayName="ProjectSpecific" projectFiles="true">
         <itemPath>main.c</itemPath>
@@ -106,24 +118,9 @@
         <itemPath>dcdc.c</itemPath>
       </logicalFolder>
     </logicalFolder>
-    <logicalFolder name="ExternalFiles"
-                   displayName="Important Files"
-                   projectFiles="false">
-      <logicalFolder name="MCC Generated Files"
-                     displayName="MCC Generated Files"
-                     projectFiles="true">
-        <logicalFolder name="boot" displayName="boot" projectFiles="true">
-          <itemPath>mcc_generated_files/boot/combineAppAndBootloaderHex.bat</itemPath>
-        </logicalFolder>
-      </logicalFolder>
-      <itemPath>Makefile</itemPath>
-      <itemPath>BMS_Controller_BL_APP.mc3</itemPath>
-      <itemPath>BMS_App.mc3</itemPath>
-    </logicalFolder>
   </logicalFolder>
   <sourceRootList>
     <Elem>.</Elem>
-    <Elem>../../RTOS/Scheduler</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -135,11 +132,11 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>PICkit3PlatformTool</platformTool>
         <languageToolchain>XC16</languageToolchain>
-        <languageToolchainVersion>2.00</languageToolchainVersion>
+        <languageToolchainVersion>2.10</languageToolchainVersion>
         <platform>3</platform>
       </toolsSet>
       <packs>
-        <pack name="dsPIC33E-GM-GP-MC-GU-MU_DFP" vendor="Microchip" version="1.3.85"/>
+        <pack name="dsPIC33E-GM-GP-MC-GU-MU_DFP" vendor="Microchip" version="1.5.258"/>
       </packs>
       <ScriptingSettings>
       </ScriptingSettings>
@@ -186,7 +183,7 @@
         <property key="enable-unroll-loops" value="false"/>
         <property key="expand-pragma-config" value="false"/>
         <property key="extra-include-directories"
-                  value=".;..\..\RTOS\Scheduler;..\..\Libraries\PIC33_plib\inc;..\..\Libraries\PIC33_plib\src;..\..\CAN\generated;..\..\Libraries\Standard;mcc_generated_files\boot;mcc_generated_files;..\..\Libraries\Drivers\ISO_TP_LITE"/>
+                  value="mcc_generated_files;mcc_generated_files\boot;..\..\Libraries\PIC33_plib\inc;..\..\Libraries\PIC33_plib\src;..\..\Libraries\Standard;..\..\Libraries\Drivers\ISO_TP_LITE;..\..\RTOS\Scheduler;..\..\CAN\generated;."/>
         <property key="isolate-each-function" value="false"/>
         <property key="keep-inline" value="false"/>
         <property key="oXC16gcc-align-arr" value="false"/>
@@ -334,8 +331,11 @@
         <property key="debugoptions.debug-startup" value="Use system settings"/>
         <property key="debugoptions.reset-behaviour" value="Use system settings"/>
         <property key="debugoptions.useswbreakpoints" value="false"/>
-        <property key="firmware.download.all" value="false"/>
+        <property key="event.recorder.debugger.behavior" value="Running"/>
+        <property key="event.recorder.enabled" value="false"/>
+        <property key="event.recorder.scvd.files" value=""/>
         <property key="hwtoolclock.frcindebug" value="false"/>
+        <property key="lastid" value=""/>
         <property key="memories.aux" value="false"/>
         <property key="memories.bootflash" value="true"/>
         <property key="memories.configurationmemory" value="true"/>
@@ -348,7 +348,7 @@
         <property key="memories.instruction.ram.ranges"
                   value="${memories.instruction.ram.ranges}"/>
         <property key="memories.programmemory" value="true"/>
-        <property key="memories.programmemory.ranges" value="0-2abff"/>
+        <property key="memories.programmemory.ranges" value="0-2afeb"/>
         <property key="poweroptions.powerenable" value="true"/>
         <property key="programmertogo.imagename" value=""/>
         <property key="programoptions.donoteraseauxmem" value="false"/>
@@ -641,8 +641,12 @@
         <property key="debugoptions.debug-startup" value="Use system settings"/>
         <property key="debugoptions.reset-behaviour" value="Use system settings"/>
         <property key="debugoptions.useswbreakpoints" value="false"/>
+        <property key="event.recorder.debugger.behavior" value="Running"/>
+        <property key="event.recorder.enabled" value="false"/>
+        <property key="event.recorder.scvd.files" value=""/>
         <property key="firmware.download.all" value="false"/>
         <property key="hwtoolclock.frcindebug" value="false"/>
+        <property key="lastid" value=""/>
         <property key="memories.aux" value="false"/>
         <property key="memories.bootflash" value="true"/>
         <property key="memories.configurationmemory" value="true"/>
@@ -661,7 +665,7 @@
                   value="${memories.programmemory.partition2.end.value}"/>
         <property key="memories.programmemory.partition2.start"
                   value="${memories.programmemory.partition2.start.value}"/>
-        <property key="memories.programmemory.ranges" value="0-2abff"/>
+        <property key="memories.programmemory.ranges" value="0-2afeb"/>
         <property key="memories.programmemory.start" value="0x0"/>
         <property key="poweroptions.powerenable" value="true"/>
         <property key="programmertogo.imagename" value=""/>

@@ -64,6 +64,8 @@ static STATE_MACHINE_states_E prevState = 0; /* initialize previous state */
 static STATE_MACHINE_states_E curState = 0; /* initialize current state */
 static STATE_MACHINE_states_E nextState = standby_state; /* initialize current state */
 
+uint64_t my_64_bit_word = 0;
+
 /******************************************************************************
  * Function Prototypes
  *******************************************************************************/
@@ -77,7 +79,7 @@ void StateMachine_Init(void) {
 
 void StateMachine_Run(void) {
 
-    switch (isoTP_getCommand()) {
+    switch (isoTP_getCommand().command) {
         case ISO_TP_NONE:
             break;
         case ISO_TP_RESET:
@@ -190,6 +192,7 @@ void sleep(STATE_MACHINE_entry_types_E entry_type) {
             IO_SET_DEBUG_LED_EN(LOW);
             break;
         case EXIT:
+            DCDC_init();
             break;
         case RUN:
             SysTick_Stop();

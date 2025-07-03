@@ -1,5 +1,5 @@
 import json
-import easygui
+
 
 file = '.\\dbc.json' #easygui.fileopenbox("select json dbc file", default='C:\\Repos\\E_Moto\\Firmware\\CAN\\dbc.json')
 

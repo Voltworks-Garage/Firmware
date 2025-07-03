@@ -18,10 +18,14 @@ typedef enum {
     ISO_TP_TESTER_PRESENT
 } isoTP_command_E;
 
+typedef struct isoTP_command_S{
+    isoTP_command_E command;
+    uint8_t * payload;
+    uint8_t payloadLength;
+} isoTP_command_S;
+
 void isoTP_init(void);
-uint8_t run_iso_tp_basic(void);
-uint8_t isoTP_getCommand(void);
-uint8_t * get_payload(void);
-uint8_t get_payloadLength(void);
+isoTP_command_S run_iso_tp_basic(void);
+isoTP_command_S isoTP_getCommand(void);
 #endif	/* CAN_ISO_TP_H */
 

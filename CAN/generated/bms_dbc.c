@@ -369,16 +369,16 @@ static CAN_message_S CAN_bms_debug={
 #define CAN_BMS_DEBUG_BOOL0_OFFSET 0
 #define CAN_BMS_DEBUG_BOOL1_RANGE 1
 #define CAN_BMS_DEBUG_BOOL1_OFFSET 1
-#define CAN_BMS_DEBUG_BOOL2_RANGE 1
-#define CAN_BMS_DEBUG_BOOL2_OFFSET 2
-#define CAN_BMS_DEBUG_BOOL3_RANGE 1
-#define CAN_BMS_DEBUG_BOOL3_OFFSET 3
 #define CAN_BMS_DEBUG_FLOAT1_RANGE 16
-#define CAN_BMS_DEBUG_FLOAT1_OFFSET 4
+#define CAN_BMS_DEBUG_FLOAT1_OFFSET 2
 #define CAN_BMS_DEBUG_FLOAT2_RANGE 16
-#define CAN_BMS_DEBUG_FLOAT2_OFFSET 20
-#define CAN_BMS_DEBUG_CPU_USAGE_RANGE 16
-#define CAN_BMS_DEBUG_CPU_USAGE_OFFSET 36
+#define CAN_BMS_DEBUG_FLOAT2_OFFSET 18
+#define CAN_BMS_DEBUG_VBUS_VOLTAGE_RANGE 10
+#define CAN_BMS_DEBUG_VBUS_VOLTAGE_OFFSET 34
+#define CAN_BMS_DEBUG_CPU_USAGE_RANGE 10
+#define CAN_BMS_DEBUG_CPU_USAGE_OFFSET 44
+#define CAN_BMS_DEBUG_CPU_PEAK_RANGE 10
+#define CAN_BMS_DEBUG_CPU_PEAK_OFFSET 54
 
 void CAN_bms_debug_bool0_set(uint16_t bool0){
 	uint16_t data_scaled = (bool0 - 0) / 1.0;
@@ -388,14 +388,6 @@ void CAN_bms_debug_bool1_set(uint16_t bool1){
 	uint16_t data_scaled = (bool1 - 0) / 1.0;
 	set_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_BOOL1_OFFSET, CAN_BMS_DEBUG_BOOL1_RANGE, data_scaled);
 }
-void CAN_bms_debug_bool2_set(uint16_t bool2){
-	uint16_t data_scaled = (bool2 - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_BOOL2_OFFSET, CAN_BMS_DEBUG_BOOL2_RANGE, data_scaled);
-}
-void CAN_bms_debug_bool3_set(uint16_t bool3){
-	uint16_t data_scaled = (bool3 - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_BOOL3_OFFSET, CAN_BMS_DEBUG_BOOL3_RANGE, data_scaled);
-}
 void CAN_bms_debug_float1_set(float float1){
 	uint16_t data_scaled = (float1 - 0) / 0.01;
 	set_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_FLOAT1_OFFSET, CAN_BMS_DEBUG_FLOAT1_RANGE, data_scaled);
@@ -404,9 +396,17 @@ void CAN_bms_debug_float2_set(float float2){
 	uint16_t data_scaled = (float2 - 0) / 0.01;
 	set_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_FLOAT2_OFFSET, CAN_BMS_DEBUG_FLOAT2_RANGE, data_scaled);
 }
+void CAN_bms_debug_VBUS_Voltage_set(float VBUS_Voltage){
+	uint16_t data_scaled = (VBUS_Voltage - 0) / 0.1;
+	set_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_VBUS_VOLTAGE_OFFSET, CAN_BMS_DEBUG_VBUS_VOLTAGE_RANGE, data_scaled);
+}
 void CAN_bms_debug_CPU_USAGE_set(float CPU_USAGE){
 	uint16_t data_scaled = (CPU_USAGE - 0) / 0.1;
 	set_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_CPU_USAGE_OFFSET, CAN_BMS_DEBUG_CPU_USAGE_RANGE, data_scaled);
+}
+void CAN_bms_debug_CPU_peak_set(float CPU_peak){
+	uint16_t data_scaled = (CPU_peak - 0) / 0.1;
+	set_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_CPU_PEAK_OFFSET, CAN_BMS_DEBUG_CPU_PEAK_RANGE, data_scaled);
 }
 void CAN_bms_debug_dlc_set(uint8_t dlc){
 	CAN_bms_debug.dlc = dlc;

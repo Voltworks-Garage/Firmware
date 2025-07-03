@@ -89,11 +89,11 @@ void CAN_bms_status_2_send(void);
 #define CAN_bms_debug_interval() 10
 void CAN_bms_debug_bool0_set(uint16_t bool0);
 void CAN_bms_debug_bool1_set(uint16_t bool1);
-void CAN_bms_debug_bool2_set(uint16_t bool2);
-void CAN_bms_debug_bool3_set(uint16_t bool3);
 void CAN_bms_debug_float1_set(float float1);
 void CAN_bms_debug_float2_set(float float2);
+void CAN_bms_debug_VBUS_Voltage_set(float VBUS_Voltage);
 void CAN_bms_debug_CPU_USAGE_set(float CPU_USAGE);
+void CAN_bms_debug_CPU_peak_set(float CPU_peak);
 void CAN_bms_debug_dlc_set(uint8_t dlc);
 
 

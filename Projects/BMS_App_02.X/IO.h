@@ -64,6 +64,7 @@ uint8_t IO_GET_EV_CHARGER_FAULT(void);
  */
 float IO_GET_ISOLATION_VOLTAGE(void);
 float IO_GET_HV_BUS_VOLTAGE(void);
+float IO_GET_VBUS_VOLTAGE(void);
 float IO_GET_EV_CHARGER_VOLTAGE(void);
 float IO_GET_DCDC_OUTPUT_VOLTAGE(void);
 float IO_GET_MUX_1_VOLTAGE(void);

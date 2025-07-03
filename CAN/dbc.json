@@ -678,20 +678,6 @@
                             "units": "bool"
                         },
                         {
-                            "name": "bool2",
-                            "length": 1,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "bool"
-                        },
-                        {
-                            "name": "bool3",
-                            "length": 1,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "bool"
-                        },
-                        {
                             "name": "float1",
                             "length": 16,
                             "scale": 0.01,
@@ -706,8 +692,22 @@
                             "units": "V"
                         },
                         {
+                            "name": "VBUS_Voltage",
+                            "length": 10,
+                            "scale": 0.1,
+                            "offset": 0,
+                            "units": "V"
+                        },
+                        {
                             "name": "CPU_USAGE",
-                            "length": 16,
+                            "length": 10,
+                            "scale": 0.1,
+                            "offset": 0,
+                            "units": "%"
+                        },
+                                                {
+                            "name": "CPU_peak",
+                            "length": 10,
                             "scale": 0.1,
                             "offset": 0,
                             "units": "%"

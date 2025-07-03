@@ -17,7 +17,7 @@
 #include "movingAverage.h"
 
 //Direct low level access
-#include "uart.h"
+//#include "uart.h"
 #include "sleep.h"
 
 
@@ -63,7 +63,7 @@ static uint8_t debugEnable = 1;
  * Variable Declarations
  *******************************************************************************/
 
-NEW_LOW_PASS_FILTER(CPU_usage, 100.0, 1000.0);
+
 
 /******************************************************************************
  * Function Prototypes
@@ -117,8 +117,8 @@ void Tsk_5ms(void) {
 void Tsk_10ms(void) {
     EV_CHARGER_Run_10ms();
     BMS_run_10ms();
-    
-    CAN_bms_debug_CPU_USAGE_set(getLowPassFilter(CPU_usage));
+    CAN_bms_debug_CPU_USAGE_set(SysTick_GetCPUPercentage());
+    CAN_bms_debug_CPU_peak_set(SysTick_GetCPUPeak());
     CAN_populate_10ms();
     CAN_send_10ms();
 }
@@ -162,11 +162,12 @@ void Tsk_Run(uint32_t SystemClock) {
     static TaskType *Task_ptr; // Task pointer
     static uint8_t TaskIndex = 0; // Task index
     const uint8_t NumTasks = Tsk_GetNumTasks(); // Number of tasks
-    SysTick_Timer_S CPU_Timer;
 
     SysTick_Init(SystemClock);
 
     Task_ptr = Tsk_GetConfig(); // Get a pointer to the task configuration
+    
+    SysTick_Set(Task_ptr[0].LastTick);// Set the Tick to the first task to allow for the phase offset
 
     Tsk_init();
     // The main while loop.  This while loop will run the program forever
@@ -189,8 +190,7 @@ void Tsk_Run(uint32_t SystemClock) {
                     Task_ptr[TaskIndex].LastTick = tick; // Save last tick the task was ran.
                 }
             }// end for
-            uint32_t CPU_percentage = SysTick_CPUTimerEnd();
-            takeLowPassFilter(CPU_usage, CPU_percentage);
+            SysTick_CPUTimerEnd();
         }
         
     }// end while(1)

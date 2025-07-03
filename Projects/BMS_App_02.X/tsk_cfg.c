@@ -65,10 +65,10 @@
  */
 static TaskType Tasks[] =
 {
-    { INTERVAL_1MS  ,  0, Tsk_1ms    },
-    { INTERVAL_5MS  ,  0, Tsk_5ms    },
-	{ INTERVAL_10MS ,  0, Tsk_10ms   },
-  	{ INTERVAL_100MS,  0, Tsk_100ms  },
+    { INTERVAL_1MS  ,  71, Tsk_1ms    },
+    { INTERVAL_5MS  ,  53, Tsk_5ms    },
+	{ INTERVAL_10MS , 35, Tsk_10ms   },
+  	{ INTERVAL_100MS,  20, Tsk_100ms  },
     { INTERVAL_1000MS,  0, Tsk_1000ms  },
 };
 

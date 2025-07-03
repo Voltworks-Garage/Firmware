@@ -16,16 +16,21 @@ typedef enum {
 } flowcontrol_E;
 
 #define BLOCK_SIZE 0
-#define SEPARATION_TIME 2
+#define SEPARATION_TIME 1
 
 frametype_E currentFrameType = SINGLE;
-uint16_t payloadSize = 0;
+//uint16_t payloadSize = 0;
 uint16_t payloadIndex = 0;
 uint8_t payloadMessage[64];
 uint8_t consecutiveFrame_SN = 0;
-isoTP_command_E currentCommand = ISO_TP_NONE;
+//isoTP_command_E currentCommand = ISO_TP_NONE;
 uint16_t timeoutCounter = 0;
 #define ISO_TP_TIMOUT 10
+static isoTP_command_S currentCommand={
+    .command = ISO_TP_NONE,
+    .payload = payloadMessage,
+    .payloadLength = 0,
+};
 
 #define MESSAGE_BUFFER_SIZE 8
 uint8_t messageBufferIndex = 0;
@@ -43,17 +48,17 @@ uint8_t isoTP_TesterPresent(void);
 
 void isoTP_init(void){
     currentFrameType = SINGLE;
-    payloadSize = 0;
+    currentCommand.payloadLength = 0;
     payloadIndex = 0;
     consecutiveFrame_SN = 0;
-    currentCommand = ISO_TP_NONE;
+    currentCommand.command = ISO_TP_NONE;
     timeoutCounter = 0;
 
     messageBufferIndex = 0;
     messageBufferPointer = 0;
 }
 
-uint8_t run_iso_tp_basic(void) {
+isoTP_command_S run_iso_tp_basic(void) {
     uint8_t messageComplete = 0;
     
     if (timeoutCounter++ > ISO_TP_TIMOUT) {
@@ -68,8 +73,8 @@ uint8_t run_iso_tp_basic(void) {
             case SINGLE:
                 currentFrameType = SINGLE;
                 //payload side here is from the 3...0 bits of the first byte.
-                payloadSize = CAN_boot_host_type_get();
-                if (payloadSize == 0) {
+                currentCommand.payloadLength = CAN_boot_host_type_get();
+                if (currentCommand.payloadLength == 0) {
                     break;
                 }
                 payloadIndex = 0;
@@ -77,8 +82,8 @@ uint8_t run_iso_tp_basic(void) {
                 break;
             case FIRST:
                 currentFrameType = FIRST;
-                payloadSize = (CAN_boot_host_type_get() << 8) | CAN_boot_host_getBytesFp[0]();
-                if (payloadSize == 0) {
+                currentCommand.payloadLength = (CAN_boot_host_type_get() << 8) | CAN_boot_host_getBytesFp[0]();
+                if (currentCommand.payloadLength == 0) {
                     break;
                 }
                 payloadIndex = 0;
@@ -106,20 +111,12 @@ uint8_t run_iso_tp_basic(void) {
         }
     }
     //If there is anything in the payload buffer, send it.
-    return messageBufferPop();
+    messageBufferPop();
+    return currentCommand;
 }
 
-uint8_t isoTP_getCommand(void) {
-    isoTP_command_E command = currentCommand;
-    return command;
-}
-
-uint8_t * get_payload(void) {
-    return payloadMessage;
-}
-
-uint8_t get_payloadLength(void) {
-    return payloadSize;
+isoTP_command_S isoTP_getCommand(void) {
+    return currentCommand;
 }
 
 uint8_t set_flow_control(void) {
@@ -134,8 +131,8 @@ uint8_t set_flow_control(void) {
     CAN_boot_response_byte7_set(0x55);
     CAN_boot_response_dlc_set(3);
     CAN_boot_response_send();
-    currentCommand = ISO_TP_NONE;
-    return currentCommand;
+    currentCommand.command = ISO_TP_NONE;
+    return currentCommand.command;
 }
 
 uint8_t set_app_size_response_1(void) {
@@ -150,8 +147,8 @@ uint8_t set_app_size_response_1(void) {
     CAN_boot_response_byte7_set(0x00);
     CAN_boot_response_dlc_set(8);
     CAN_boot_response_send();
-    currentCommand = ISO_TP_NONE;
-    return currentCommand;
+    currentCommand.command = ISO_TP_NONE;
+    return currentCommand.command;
 }
 
 uint8_t set_app_size_response_2(void) {
@@ -165,8 +162,8 @@ uint8_t set_app_size_response_2(void) {
     CAN_boot_response_byte6_set(0x01);
     CAN_boot_response_byte7_set(0x00);
     CAN_boot_response_send();
-    currentCommand = ISO_TP_NONE;
-    return currentCommand;
+    currentCommand.command = ISO_TP_NONE;
+    return currentCommand.command;
 }
 
 uint8_t set_app_size_response_3(void) {
@@ -180,19 +177,19 @@ uint8_t set_app_size_response_3(void) {
     CAN_boot_response_byte6_set(BOOT_CONFIG_PROGRAMMABLE_ADDRESS_HIGH >> 16 & 0xFF);
     CAN_boot_response_byte7_set(BOOT_CONFIG_PROGRAMMABLE_ADDRESS_HIGH >> 24 & 0xFF);
     CAN_boot_response_send();
-    currentCommand = ISO_TP_NONE;
-    return currentCommand;
+    currentCommand.command = ISO_TP_NONE;
+    return currentCommand.command;
 }
 
 uint8_t isoTP_Reset(void) {
-    currentCommand = ISO_TP_RESET;
+    currentCommand.command = ISO_TP_RESET;
     asm ("reset");
-    return currentCommand;
+    return currentCommand.command;
 }
 
 uint8_t isoTP_Sleep(void) {
-    currentCommand = ISO_TP_SLEEP;
-    return currentCommand;
+    currentCommand.command = ISO_TP_SLEEP;
+    return currentCommand.command;
 }
 
 uint8_t isoTP_IOControl(void) {
@@ -206,8 +203,8 @@ uint8_t isoTP_IOControl(void) {
     CAN_boot_response_byte6_set(0x05);
     CAN_boot_response_byte7_set(0x06);
     CAN_boot_response_send();
-    currentCommand = ISO_TP_IO_CONTROL;
-    return currentCommand;
+    currentCommand.command = ISO_TP_IO_CONTROL;
+    return currentCommand.command;
 }
 
 uint8_t isoTP_TesterPresent(void) {
@@ -221,22 +218,24 @@ uint8_t isoTP_TesterPresent(void) {
     CAN_boot_response_byte6_set(0x0F);
     CAN_boot_response_byte7_set(0x0F);
     CAN_boot_response_send();
-    currentCommand = ISO_TP_TESTER_PRESENT;
-    return currentCommand;
+    currentCommand.command = ISO_TP_TESTER_PRESENT;
+    return currentCommand.command;
 }
 
 uint8_t get_frame_payload(void) {
     uint8_t byteIndex = 0;
+    uint8_t payloadMaxSizeBytes = 7;
     if (currentFrameType == FIRST) {
+        payloadMaxSizeBytes = 6;
         byteIndex = 1;
     }
-    while (payloadIndex < payloadSize) {
+    while (payloadIndex < currentCommand.payloadLength) {
         payloadMessage[payloadIndex++] = CAN_boot_host_getBytesFp[byteIndex++]();
-        if (byteIndex >= 7) {
+        if (byteIndex >= payloadMaxSizeBytes) {
             break;
         }
     }
-    if (payloadIndex == payloadSize) {
+    if (payloadIndex == currentCommand.payloadLength) {
         return 1;
     }
     return 0;

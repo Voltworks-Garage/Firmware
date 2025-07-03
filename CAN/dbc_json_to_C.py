@@ -112,7 +112,7 @@ for node in range(0,numberOfNodes):
                 offset += this_signal_length
                 print("\t\t" + this_signal_name)
             if offset > 64:
-                print("too much data in {} {}".format(this_message_name, this_signal_name))
+                s = input("ERROR: too much data in {} {}. Press any key to quit and try again. ERROR.".format(this_message_name, this_signal_name))
                 quit()
             dot_c.write("\n")
 
