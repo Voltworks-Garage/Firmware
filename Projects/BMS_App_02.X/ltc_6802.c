@@ -65,10 +65,10 @@
 #define STOWDC_CELL(CELL) 0x7##CELL //Start Single Cell Open-Wire with Discharge Permitted
 
 // Aligning so we can reach insto structures larger than 64 bit and perform bitwise operations
-static uint8_t config_data[CONFIG_REGISTER_SIZE] __attribute__((aligned(NEXT_POWER(CONFIG_REGISTER_SIZE))));
-static uint8_t flag_data[FLAG_REGISTER_SIZE] __attribute__((aligned(NEXT_POWER(FLAG_REGISTER_SIZE))));
-static uint8_t cellVoltage[CELL_VOLTAGE_REGISTER_SIZE] __attribute__((aligned(NEXT_POWER(CELL_VOLTAGE_REGISTER_SIZE))));
-static uint8_t temperature[TEMPERATURE_REGISTER_SIZE] __attribute__((aligned(NEXT_POWER(TEMPERATURE_REGISTER_SIZE))));
+static uint8_t ltc_configData[CONFIG_REGISTER_SIZE] __attribute__((aligned(NEXT_POWER(CONFIG_REGISTER_SIZE))));
+static uint8_t ltc_statusFlags[FLAG_REGISTER_SIZE] __attribute__((aligned(NEXT_POWER(FLAG_REGISTER_SIZE))));
+static uint8_t ltc_cellVoltage[CELL_VOLTAGE_REGISTER_SIZE] __attribute__((aligned(NEXT_POWER(CELL_VOLTAGE_REGISTER_SIZE))));
+static uint8_t ltc_temperatureData[TEMPERATURE_REGISTER_SIZE] __attribute__((aligned(NEXT_POWER(TEMPERATURE_REGISTER_SIZE))));
     
 static uint8_t LTC6802_BroadcastPollCommand(uint8_t command);
 static uint8_t LTC6802_BroadcastReadCommand(uint8_t command, uint8_t len, uint8_t * recieveData);
@@ -82,54 +82,54 @@ void LTC6802_Init(void){
 void LTC6802_set_CDC(uint8_t cdc){
     uint8_t i = 0;
     for (i=0; i<NUMBER_OF_LTC6802_STACKS; i++){
-        set_bits((size_t *)&config_data[i*(CONFIG_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS)], CDC_OFFSET, CDC_RANGE, cdc);
+        set_bits((size_t *)&ltc_configData[i*(CONFIG_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS)], CDC_OFFSET, CDC_RANGE, cdc);
     }
 }
 
 void LTC6802_set_CELL10(uint8_t cell10){
     uint8_t i = 0;
     for (i=0; i<NUMBER_OF_LTC6802_STACKS; i++){
-        set_bits((size_t *)&config_data[i*(CONFIG_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS)], CELL10_OFFSET, CELL10_RANGE, cell10);
+        set_bits((size_t *)&ltc_configData[i*(CONFIG_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS)], CELL10_OFFSET, CELL10_RANGE, cell10);
     }
 }
 
 void LTC6802_set_LVPL(uint8_t lvpl){
     uint8_t i = 0;
     for (i=0; i<NUMBER_OF_LTC6802_STACKS; i++){
-        set_bits((size_t *)&config_data[i*(CONFIG_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS)], LVPL_OFFSET, LVPL_RANGE, lvpl);
+        set_bits((size_t *)&ltc_configData[i*(CONFIG_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS)], LVPL_OFFSET, LVPL_RANGE, lvpl);
     }
 }
 
-void LTC6802_set_GPIO1(uint8_t address, uint8_t gpio1){
-    set_bits((size_t *)&config_data[address*(CONFIG_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS)], GPIO1_OFFSET, GPIO1_RANGE, gpio1);
+void LTC6802_set_GPIO1(uint8_t chipAddress, uint8_t gpio1){
+    set_bits((size_t *)&ltc_configData[chipAddress*(CONFIG_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS)], GPIO1_OFFSET, GPIO1_RANGE, gpio1);
 }
 
-void LTC6802_set_GPIO2(uint8_t address, uint8_t gpio2){
-    set_bits((size_t *)&config_data[address*(CONFIG_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS)], GPIO2_OFFSET, GPIO2_RANGE, gpio2);
+void LTC6802_set_GPIO2(uint8_t chipAddress, uint8_t gpio2){
+    set_bits((size_t *)&ltc_configData[chipAddress*(CONFIG_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS)], GPIO2_OFFSET, GPIO2_RANGE, gpio2);
 }
 
 void LTC6802_set_cell_discharge(uint8_t cell, uint8_t value){
-    uint8_t address = cell/12;
-    set_bits((size_t *)&config_data[address*(CONFIG_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS)], DCC_OFFSET+(cell-1), 1, value);
+    uint8_t chipAddress = cell/12;
+    set_bits((size_t *)&ltc_configData[chipAddress*(CONFIG_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS)], DCC_OFFSET+(cell-1), 1, value);
 }
 
 void LTC6802_stop_all_cell_dischage(){
     uint8_t i = 0;
     for (i=0; i<NUMBER_OF_LTC6802_STACKS; i++){
-        set_bits((size_t *)&config_data[i*(CONFIG_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS)], DCC_OFFSET, DCC_RANGE, 0x0000);
+        set_bits((size_t *)&ltc_configData[i*(CONFIG_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS)], DCC_OFFSET, DCC_RANGE, 0x0000);
     }
 }
 
 void LTC6802_set_MCI(uint8_t cell){
-    uint8_t address = cell/12;
-    set_bits((size_t *)&config_data[address*(CONFIG_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS)], MC_OFFSET, MC_RANGE, 1<<(cell-1));
+    uint8_t chipAddress = cell/12;
+    set_bits((size_t *)&ltc_configData[chipAddress*(CONFIG_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS)], MC_OFFSET, MC_RANGE, 1<<(cell-1));
 }
 
 void LTC6802_set_VUV(float underVoltage){
     uint8_t uv = (uint8_t)(underVoltage/(16*.0015));
     uint8_t i = 0;
     for (i=0; i<NUMBER_OF_LTC6802_STACKS; i++){
-        set_bits((size_t *)&config_data[i*(CONFIG_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS)], VUV_OFFSET, VUV_RANGE, uv);
+        set_bits((size_t *)&ltc_configData[i*(CONFIG_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS)], VUV_OFFSET, VUV_RANGE, uv);
     }
 }
 
@@ -137,14 +137,14 @@ void LTC6802_set_VOV(float overVoltage){
     uint8_t ov = (uint8_t)(overVoltage/(16*.0015));
     uint8_t i = 0;
     for (i=0; i<NUMBER_OF_LTC6802_STACKS; i++){
-        set_bits((size_t *)&config_data[i*(CONFIG_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS)], VOV_OFFSET, VOV_RANGE, ov);
+        set_bits((size_t *)&ltc_configData[i*(CONFIG_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS)], VOV_OFFSET, VOV_RANGE, ov);
     }
 }
 
 void LTC6802_writeConfig(void){
     uint8_t i = 0;
     for (i=0; i<NUMBER_OF_LTC6802_STACKS; i++){
-        LTC6802_AddressWriteCommand(i, WRCFG, sizeof(config_data)/NUMBER_OF_LTC6802_STACKS, &config_data[i*(CONFIG_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS)]);
+        LTC6802_AddressWriteCommand(i, WRCFG, sizeof(ltc_configData)/NUMBER_OF_LTC6802_STACKS, &ltc_configData[i*(CONFIG_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS)]);
     }
 }
 
@@ -161,7 +161,7 @@ uint8_t LTC6802_ReadAllCellADC(void){
     uint8_t i = 0;
     uint16_t range = CELL_VOLTAGE_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS;
     for (i=0; i<NUMBER_OF_LTC6802_STACKS; i++){
-        returnVal += LTC6802_AddressReadCommand(i, RDCV, range, &cellVoltage[range*i]);
+        returnVal += LTC6802_AddressReadCommand(i, RDCV, range, &ltc_cellVoltage[range*i]);
     }
     return returnVal;
 }
@@ -175,22 +175,22 @@ uint8_t LTC6802_ReadAllTempADC(void){
     uint8_t i = 0;
     uint16_t range = TEMPERATURE_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS;
     for (i=0; i<NUMBER_OF_LTC6802_STACKS; i++){
-        returnVal += LTC6802_AddressReadCommand(i, RDTMP, range, &temperature[range*i]);
+        returnVal += LTC6802_AddressReadCommand(i, RDTMP, range, &ltc_temperatureData[range*i]);
     }
     return returnVal;
 }
 
 float LTC6802_get_cell_voltage(uint8_t cell){
     float val = 0;
-    val = 0.0015*(float)(get_bits((size_t *)cellVoltage, (cell-1)*12, 12));
+    val = 0.0015*(float)(get_bits((size_t *)ltc_cellVoltage, (cell-1)*12, 12));
     return val;
 }
 
 float LTC6802_get_temp_voltage(uint8_t temp){
     temp = temp-1;
-    uint8_t address = temp/3;
+    uint8_t chipAddress = temp/3;
     temp = temp%3;
-    return 0.0015*(float)(get_bits((size_t *)temperature, address*8*TEMPERATURE_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS + (temp)*12, 12));
+    return 0.0015*(float)(get_bits((size_t *)ltc_temperatureData, chipAddress*8*TEMPERATURE_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS + (temp)*12, 12));
 }
 
 static uint8_t LTC6802_BroadcastPollCommand(uint8_t command){

@@ -28,33 +28,33 @@ void BMS_Init(void){
 
 void BMS_Run_10ms(void){
     LTC6802_writeConfig();
-    static uint8_t state = 0;
-    switch(state){
+    static uint8_t bms_currentState = 0;
+    switch(bms_currentState){
         case 0:
             LTC6802_StartAllTempADC();
-            state++;
+            bms_currentState++;
             break;
         case 1:
             if (LTC6802_check_ADC_status()){
                 LTC6802_ReadAllTempADC();
-                state++;
+                bms_currentState++;
             }
             break;
         case 2:
             LTC6802_set_cell_discharge(3,0);
             LTC6802_writeConfig();
             LTC6802_StartAllCellADC();
-            state++;
+            bms_currentState++;
             break;
         case 3:
             if (LTC6802_check_ADC_status()){
                 LTC6802_set_cell_discharge(3,0);
                 LTC6802_writeConfig();
                 LTC6802_ReadAllCellADC();
-                state++;
+                bms_currentState++;
             }
         default:
-            state = 0;
+            bms_currentState = 0;
             break;
     }
 }

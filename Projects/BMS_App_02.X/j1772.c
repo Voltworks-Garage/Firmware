@@ -45,15 +45,15 @@ static uint8_t debugEnable = 1;
 /******************************************************************************
  * Variable Declarations
  *******************************************************************************/
-static uint8_t j1772run = 1;
+static uint8_t j1772_isRunning = 1;
 
-static prox_status_E proximity = J1772_SNA_PROX;
+static prox_status_E j1772_proximityState = J1772_SNA_PROX;
 
 NEW_AVERAGE(proximityAverage, PROXIMITY_AVERAGE_WINDOW_SIZE);
 
 NEW_LOW_PASS_FILTER(pilotFilter, 1.0, 10.0);
 
-static float pilotVoltagePeak = 0;
+static float j1772_pilotVoltagePeak = 0;
 static float pilotVoltageFiltered = 0;
 static uint8_t pilotDutyCycle = 0;
 static uint8_t pilotEncodedCurrent = 0;
@@ -67,26 +67,26 @@ static uint8_t pilotEncodedCurrent = 0;
 
 
 void j1772Control_Init(void) {
-    pilotVoltagePeak = 0;
+    j1772_pilotVoltagePeak = 0;
     pilotVoltageFiltered = 0;
     pilotDutyCycle = 0;
     pilotEncodedCurrent = 0;
-    j1772run = 1;
+    j1772_isRunning = 1;
 }
 
 void j1772Control_Run_cont(void) {
-    if (j1772run) {
+    if (j1772_isRunning) {
         float pilot_instantaneousVoltage = IO_GET_PILOT_MONITOR_VOLTAGE();
         pilotVoltageFiltered = takeLowPassFilter(pilotFilter, pilot_instantaneousVoltage);
         
         /*If the value is above 50mV, we assume that we are on a "HIGH" cycle of
           the PWM. This will represent the peak value of the signal.*/
-        pilotVoltagePeak = (pilot_instantaneousVoltage > 50) ? pilot_instantaneousVoltage : 0;
+        j1772_pilotVoltagePeak = (pilot_instantaneousVoltage > 50) ? pilot_instantaneousVoltage : 0;
         
         /*If peak voltage greater than 1V, then we can attempt to calculate 
           the duty cycle*/
-        if (pilotVoltagePeak > 1){
-            pilotDutyCycle = (uint16_t)(pilotVoltageFiltered * 100 / pilotVoltagePeak);
+        if (j1772_pilotVoltagePeak > 1){
+            pilotDutyCycle = (uint16_t)(pilotVoltageFiltered * 100 / j1772_pilotVoltagePeak);
         }
         
         /*If the filtered voltage is less than 1V, assume the signal is low 
@@ -99,32 +99,32 @@ void j1772Control_Run_cont(void) {
 }
 
 void j1772Control_Run_100ms(void) {
-    if (j1772run) {
+    if (j1772_isRunning) {
         /*Take moving average of Proximity value*/
-        uint16_t currentProxAve = takeMovingAverage(proximityAverage, IO_GET_PROXIMITY_VOLTAGE());
+        uint16_t j1772_proximityAverage = takeMovingAverage(proximityAverage, IO_GET_PROXIMITY_VOLTAGE());
 
-        j1772Service_print("PILOT Voltage: %d\nPROX Voltage: %d\n\n", pilotVoltagePeak, currentProxAve);
+        j1772Service_print("PILOT Voltage: %d\nPROX Voltage: %d\n\n", j1772_pilotVoltagePeak, j1772_proximityAverage);
 
         /*Determine the state of the Proximity Detector*/
-        switch (currentProxAve*1000) {
+        switch (j1772_proximityAverage*1000) {
             case PROX_DISCONNECT_LOWER ... PROX_DISCONNECT_UPPER:
-                proximity = J1772_DISCONNECTED;
+                j1772_proximityState = J1772_DISCONNECTED;
                 j1772Service_print("Disconnected\n")
                 IO_SET_PILOT_EN(LOW);
                 /*Do something*/
                 break;
             case PROX_CONNECT_LOWER ... PROX_CONNECT_UPPER:
-                proximity = J1772_CONNECTED;
+                j1772_proximityState = J1772_CONNECTED;
                 j1772Service_print("Connected\n")
                 IO_SET_PILOT_EN(HIGH);
                 break;
             case PROX_REQUEST_DISCONNECT_LOWER ... PROX_REQUEST_DISCONNECT_UPPER:
-                proximity = J1772_REQUEST_DISCONNECT;
+                j1772_proximityState = J1772_REQUEST_DISCONNECT;
                 j1772Service_print("Request Disconnect\n")
                 IO_SET_PILOT_EN(LOW);
                 break;
             default:
-                proximity = J1772_SNA_PROX;
+                j1772_proximityState = J1772_SNA_PROX;
                 break;
         }
 
@@ -149,18 +149,18 @@ void j1772Control_Run_100ms(void) {
 
 void j1772Control_Halt(void) {
     IO_SET_PILOT_EN(LOW);
-    j1772run = 0;
-    pilotVoltagePeak = 0;
+    j1772_isRunning = 0;
+    j1772_pilotVoltagePeak = 0;
     pilotVoltageFiltered = 0;
     pilotDutyCycle = 0;
     pilotEncodedCurrent = 0;
     clearMovingAverage(proximityAverage);
     clearLowPassFilter(pilotFilter);   
-    proximity = J1772_SNA_PROX;
+    j1772_proximityState = J1772_SNA_PROX;
 }
 
 prox_status_E J1772_GetProxState(void) {
-    return proximity;
+    return j1772_proximityState;
 }
 
 uint8_t J1772_GetPilotCurrent(void) {
