@@ -45,11 +45,11 @@ void IgnitionControl_Run_10ms(void) {
     buttonRun(killButton);
 }
 
-ButtonStatus_E IgnitionControl_getKillStatus(void) {
+ButtonStatus_E IgnitionControl_GetKillStatus(void) {
     return buttonGetState(killButton);
 }
 
-ButtonStatus_E IgnitionControl_getIgnitionStatus(void) {
+ButtonStatus_E IgnitionControl_GetIgnitionStatus(void) {
     return buttonGetState(ignitionButton);
 }
 

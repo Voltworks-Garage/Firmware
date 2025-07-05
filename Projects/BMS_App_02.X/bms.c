@@ -9,8 +9,8 @@
 #include "ltc_6802.h"
 #include <stdint.h>
 
-void BMS_init(void){
-    LTC6802_init();
+void BMS_Init(void){
+    LTC6802_Init();
     LTC6802_set_CDC(1);
     LTC6802_set_CELL10(0);
     LTC6802_set_LVPL(1);
@@ -26,31 +26,31 @@ void BMS_init(void){
     LTC6802_writeConfig();
 }
 
-void BMS_run_10ms(void){
+void BMS_Run_10ms(void){
     LTC6802_writeConfig();
     static uint8_t state = 0;
     switch(state){
         case 0:
-            LTC6802_start_all_temp_ADC();
+            LTC6802_StartAllTempADC();
             state++;
             break;
         case 1:
             if (LTC6802_check_ADC_status()){
-                LTC6802_read_all_temp_ADC();
+                LTC6802_ReadAllTempADC();
                 state++;
             }
             break;
         case 2:
             LTC6802_set_cell_discharge(3,0);
             LTC6802_writeConfig();
-            LTC6802_start_all_cell_ADC();
+            LTC6802_StartAllCellADC();
             state++;
             break;
         case 3:
             if (LTC6802_check_ADC_status()){
                 LTC6802_set_cell_discharge(3,0);
                 LTC6802_writeConfig();
-                LTC6802_read_all_cell_ADC();
+                LTC6802_ReadAllCellADC();
                 state++;
             }
         default:
@@ -59,6 +59,6 @@ void BMS_run_10ms(void){
     }
 }
 
-void BMS_run_1000ms(void){
+void BMS_Run_1000ms(void){
     ;
 }

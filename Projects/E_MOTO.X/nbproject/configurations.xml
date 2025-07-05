@@ -35,6 +35,11 @@
       </logicalFolder>
       <itemPath>movingAverage.h</itemPath>
     </logicalFolder>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="true">
+      <itemPath>Makefile</itemPath>
+    </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
                    projectFiles="true">
@@ -46,11 +51,11 @@
         <itemPath>../../RTOS/framework/framework.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f1" displayName="ProjectSpecific" projectFiles="true">
-        <itemPath>touchScreenSerivce.c</itemPath>
+        <itemPath>touchScreenService.c</itemPath>
         <itemPath>framework_taskRunner.c</itemPath>
-        <itemPath>debuggerSerivce.c</itemPath>
+        <itemPath>debuggerService.c</itemPath>
         <itemPath>movingAverage.c</itemPath>
-        <itemPath>canSerivce.c</itemPath>
+        <itemPath>canService.c</itemPath>
       </logicalFolder>
       <logicalFolder name="src" displayName="src" projectFiles="true">
         <itemPath>../../Libraries/PIC33_plib/src/ADC.c</itemPath>
@@ -68,11 +73,6 @@
         <itemPath>../../Libraries/PIC33_plib/src/CAN.c</itemPath>
       </logicalFolder>
       <itemPath>main.c</itemPath>
-    </logicalFolder>
-    <logicalFolder name="ExternalFiles"
-                   displayName="Important Files"
-                   projectFiles="false">
-      <itemPath>Makefile</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
@@ -127,9 +127,7 @@
         <makeCustomizationEnableLongLines>false</makeCustomizationEnableLongLines>
         <makeCustomizationNormalizeHexFile>false</makeCustomizationNormalizeHexFile>
       </makeCustomizationType>
-      <item path="../../Libraries/PIC33_plib/inc/uart.h"
-            ex="true"
-            overriding="false">
+      <item path="../../Libraries/PIC33_plib/inc/uart.h" ex="true" overriding="false">
         <C30>
         </C30>
         <C30-AR>
@@ -143,9 +141,7 @@
         <C30Global>
         </C30Global>
       </item>
-      <item path="../../Libraries/PIC33_plib/src/uart.c"
-            ex="true"
-            overriding="false">
+      <item path="../../Libraries/PIC33_plib/src/uart.c" ex="true" overriding="false">
         <C30>
         </C30>
         <C30-AR>
@@ -1369,9 +1365,7 @@
         <makeCustomizationEnableLongLines>false</makeCustomizationEnableLongLines>
         <makeCustomizationNormalizeHexFile>false</makeCustomizationNormalizeHexFile>
       </makeCustomizationType>
-      <item path="../../Libraries/PIC33_plib/inc/uart.h"
-            ex="true"
-            overriding="false">
+      <item path="../../Libraries/PIC33_plib/inc/uart.h" ex="true" overriding="false">
         <C30>
         </C30>
         <C30-AR>
@@ -1385,9 +1379,7 @@
         <C30Global>
         </C30Global>
       </item>
-      <item path="../../Libraries/PIC33_plib/src/uart.c"
-            ex="true"
-            overriding="false">
+      <item path="../../Libraries/PIC33_plib/src/uart.c" ex="true" overriding="false">
         <C30>
         </C30>
         <C30-AR>
@@ -3193,4 +3185,3 @@
     </conf>
   </confs>
 </configurationDescriptor>
-

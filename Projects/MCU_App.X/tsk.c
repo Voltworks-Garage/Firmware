@@ -102,7 +102,7 @@ void Tsk(void) {
  */
 void Tsk_1ms(void) {
     ClrWdt(); 
-    run_iso_tp_basic();
+    run_iso_tp_1ms();
     
     StateMachine_Run();
    
@@ -118,7 +118,7 @@ void Tsk_10ms(void) {
     IO_Efuse_Run_10ms(); //Run the Efuse System
     IgnitionControl_Run_10ms();
     HornControl_Run_10ms(); //Run Horn. Horn is disabled if button is held for too long.
-    lvBattery_Run_10ms();
+    LvBattery_Run_10ms();
     
     CAN_populate_10ms();
     CAN_send_10ms();

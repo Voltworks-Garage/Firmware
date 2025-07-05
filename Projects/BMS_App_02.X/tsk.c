@@ -85,7 +85,7 @@ void Tsk_init(void) {
     CAN_DBC_init(); // Initialize the CAN mailboxes
     StateMachine_Init();
     IO_SET_DEBUG_LED_EN(HIGH);
-    BMS_init();
+    BMS_Init();
     WATCHDOG_TimerClear();
     WATCHDOG_TimerSoftwareEnable();
 
@@ -116,7 +116,7 @@ void Tsk_5ms(void) {
  */
 void Tsk_10ms(void) {
     EV_CHARGER_Run_10ms();
-    BMS_run_10ms();
+    BMS_Run_10ms();
     CAN_bms_debug_CPU_USAGE_set(SysTick_GetCPUPercentage());
     CAN_bms_debug_CPU_peak_set(SysTick_GetCPUPeak());
     CAN_populate_10ms();
@@ -136,7 +136,7 @@ void Tsk_100ms(void) {
  * Runs every 1000ms
  */
 void Tsk_1000ms(void) {
-    BMS_run_1000ms();
+    BMS_Run_1000ms();
     CAN_populate_1000ms();
     CAN_send_1000ms();
 }

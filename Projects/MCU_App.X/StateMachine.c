@@ -89,7 +89,7 @@ void StateMachine_Init(void) {
 
 void StateMachine_Run(void) {
     
-    switch(isoTP_getCommand()){
+    switch(isoTP_getCommand().command){
         case ISO_TP_NONE:
             keepAwake = 0;
             break;
@@ -111,7 +111,7 @@ void StateMachine_Run(void) {
     }
     
     //If the kill switch is pressed, go straight to sleep. Regardless of state.
-//    switch(IgnitionControl_getKillStatus()){
+//    switch(IgnitionControl_GetKillStatus()){
 //        case BUTTON_PRESSED:
 //        case BUTTON_HELD:
 //            nextState = sleep_state;
@@ -156,7 +156,7 @@ void idle(STATE_MACHINE_entry_types_E entry_type) {
             HeatedGripControl_Init();
             HornControl_Init();
             j1772Control_Init();
-            lvBattery_Init();
+            LvBattery_Init();
 
             break;
 
@@ -182,7 +182,7 @@ void idle(STATE_MACHINE_entry_types_E entry_type) {
                 nextState = charging_state;
             }
             //If the kill switch is pressed, go straight to sleep. Regardless of state.
-            if (IgnitionControl_getKillStatus() == BUTTON_PRESSED || IgnitionControl_getKillStatus() == BUTTON_HELD) {
+            if (IgnitionControl_GetKillStatus() == BUTTON_PRESSED || IgnitionControl_GetKillStatus() == BUTTON_HELD) {
                 nextState = sleep_state;
             }
 
@@ -227,14 +227,14 @@ void silent_wake(STATE_MACHINE_entry_types_E entry_type) {
         case ENTRY:
             SysTick_TimerStart(chargeTimer);
             IO_SET_SW_EN(HIGH);
-            lvBattery_Init();
+            LvBattery_Init();
             IO_SET_DEBUG_LED_EN(HIGH);
             break;
         case EXIT:
             IO_SET_DEBUG_LED_EN(LOW);
             break;
         case RUN:
-            switch (lvBattery_GetState()) {
+            switch (LvBattery_GetState()) {
                 case LV_BATTERY_NOMINAL:
                     //Just go back to sleep if nominal.
                     nextState = sleep_state;
@@ -256,7 +256,7 @@ void silent_wake(STATE_MACHINE_entry_types_E entry_type) {
                     IO_SET_DCDC_EN(LOW);
                     IO_SET_BATT_EN(LOW);
                     IO_SET_SW_EN(LOW);
-                    lvBattery_Halt();
+                    LvBattery_Halt();
                     nextState = sleep_state;
                     break;
                 default:
@@ -268,7 +268,7 @@ void silent_wake(STATE_MACHINE_entry_types_E entry_type) {
             }
             
             //If the kill switch is pressed, go straight to sleep. Regardless of state.
-            if (IgnitionControl_getKillStatus() == BUTTON_PRESSED || IgnitionControl_getKillStatus() == BUTTON_HELD) {
+            if (IgnitionControl_GetKillStatus() == BUTTON_PRESSED || IgnitionControl_GetKillStatus() == BUTTON_HELD) {
                 nextState = sleep_state;
             }
             nextState = idle_state;
@@ -337,7 +337,7 @@ void sleep(STATE_MACHINE_entry_types_E entry_type) {
             HornControl_Halt();
             j1772Control_Halt();
             IgnitionControl_Halt();
-            lvBattery_Halt();
+            LvBattery_Halt();
             break;
 
         case EXIT:

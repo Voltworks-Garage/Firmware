@@ -75,7 +75,7 @@ static uint8_t LTC6802_BroadcastReadCommand(uint8_t command, uint8_t len, uint8_
 static void LTC6802_BroadcastWriteCommand(uint8_t command, uint8_t len, uint8_t * transmitData);
 
 
-void LTC6802_init(void){
+void LTC6802_Init(void){
     spi1Init();
 }
 
@@ -148,7 +148,7 @@ void LTC6802_writeConfig(void){
     }
 }
 
-void LTC6802_start_all_cell_ADC(void){
+void LTC6802_StartAllCellADC(void){
     LTC6802_BroadcastWriteCommand(STCVDC, 0, 0);
 }
 
@@ -156,7 +156,7 @@ uint8_t LTC6802_check_ADC_status(void){
     return 0xFF & LTC6802_BroadcastPollCommand(PLADC);
 }
 
-uint8_t LTC6802_read_all_cell_ADC(void){
+uint8_t LTC6802_ReadAllCellADC(void){
     uint8_t returnVal = 0;
     uint8_t i = 0;
     uint16_t range = CELL_VOLTAGE_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS;
@@ -166,11 +166,11 @@ uint8_t LTC6802_read_all_cell_ADC(void){
     return returnVal;
 }
 
-void LTC6802_start_all_temp_ADC(void){
+void LTC6802_StartAllTempADC(void){
     LTC6802_BroadcastWriteCommand(STTMPAD, 0, 0);
 }
 
-uint8_t LTC6802_read_all_temp_ADC(void){
+uint8_t LTC6802_ReadAllTempADC(void){
     uint8_t returnVal = 0;
     uint8_t i = 0;
     uint16_t range = TEMPERATURE_REGISTER_SIZE/NUMBER_OF_LTC6802_STACKS;

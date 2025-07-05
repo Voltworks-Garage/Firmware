@@ -12,7 +12,7 @@
 
 #include <stdint.h>
 
-void LTC6802_init(void);
+void LTC6802_Init(void);
 
 void LTC6802_set_CDC(uint8_t cdc);
 void LTC6802_set_CELL10(uint8_t cell10);
@@ -25,11 +25,11 @@ void LTC6802_set_VUV(float underVoltage);
 void LTC6802_set_VOV(float overVoltage);
 
 void LTC6802_writeConfig(void);
-void LTC6802_start_all_cell_ADC(void);
-void LTC6802_start_all_temp_ADC(void);
+void LTC6802_StartAllCellADC(void);
+void LTC6802_StartAllTempADC(void);
 uint8_t LTC6802_check_ADC_status(void);
-uint8_t LTC6802_read_all_cell_ADC(void);
-uint8_t LTC6802_read_all_temp_ADC(void);
+uint8_t LTC6802_ReadAllCellADC(void);
+uint8_t LTC6802_ReadAllTempADC(void);
 float LTC6802_get_cell_voltage(uint8_t cell);
 float LTC6802_get_temp_voltage(uint8_t temp);
 

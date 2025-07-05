@@ -38,7 +38,7 @@ NEW_LOW_PASS_FILTER(lvBatteryCurrent, 1.0, 100.0);
 /******************************************************************************
  * Function Definitions
  *******************************************************************************/
-void lvBattery_Init(void) {
+void LvBattery_Init(void) {
     lvBattery_run = 1;
     lvBatteryState = LV_BATTERY_NOMINAL;
     /*Initialize the fast filter so we can get up and running more quickly*/
@@ -47,7 +47,7 @@ void lvBattery_Init(void) {
     }
 }
 
-void lvBattery_Run_10ms(void) {
+void LvBattery_Run_10ms(void) {
     if (lvBattery_run && IO_GET_SW_EN()) {
         /*Get all voltage and current readings*/
         takeLowPassFilter(lvBatteryVoltage, IO_GET_VOLTAGE_VBAT_SW());
@@ -78,10 +78,10 @@ void lvBattery_Run_10ms(void) {
     }
 }
 
-void lvBattery_Halt(void) {
+void LvBattery_Halt(void) {
     lvBattery_run = 0;
 }
 
-lvBatteryState_E lvBattery_GetState(void) {
+lvBatteryState_E LvBattery_GetState(void) {
     return lvBatteryState;
 }

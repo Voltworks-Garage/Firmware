@@ -10,11 +10,11 @@
 #ifndef BMS
 #define	BMS
 
-void BMS_init(void);
+void BMS_Init(void);
 
-void BMS_run_10ms(void);
+void BMS_Run_10ms(void);
 
-void BMS_run_1000ms(void);
+void BMS_Run_1000ms(void);
 
 
 #endif	/* BMS */

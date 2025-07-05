@@ -159,10 +159,10 @@ void j1772Control_Halt(void) {
     proximity = J1772_SNA_PROX;
 }
 
-prox_status_E j1772getProxState(void) {
+prox_status_E J1772_GetProxState(void) {
     return proximity;
 }
 
-uint8_t j1772getPilotCurrent(void) {
+uint8_t J1772_GetPilotCurrent(void) {
     return pilotEncodedCurrent;
 }
