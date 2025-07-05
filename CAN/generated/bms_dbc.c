@@ -240,27 +240,39 @@ static CAN_message_S CAN_bms_status={
 
 void CAN_bms_status_state_set(uint16_t state){
 	uint16_t data_scaled = (state - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_STATE_OFFSET, CAN_BMS_STATUS_STATE_RANGE, data_scaled);
+	CAN_bms_status.payload->word0 &= ~0x0007;
+	CAN_bms_status.payload->word0 |= (data_scaled << 0) & 0x0007;
 }
 void CAN_bms_status_SOC_set(float SOC){
 	uint16_t data_scaled = (SOC - 0) / 0.1;
-	set_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_SOC_OFFSET, CAN_BMS_STATUS_SOC_RANGE, data_scaled);
+	CAN_bms_status.payload->word0 &= ~0x0FF8;
+	CAN_bms_status.payload->word0 |= (data_scaled << 3) & 0x0FF8;
 }
 void CAN_bms_status_packVoltage_set(float packVoltage){
 	uint16_t data_scaled = (packVoltage - 0) / 0.01;
-	set_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_PACKVOLTAGE_OFFSET, CAN_BMS_STATUS_PACKVOLTAGE_RANGE, data_scaled);
+	CAN_bms_status.payload->word0 &= ~0xF000;
+	CAN_bms_status.payload->word0 |= (data_scaled << 12) & 0xF000;
+	CAN_bms_status.payload->word1 &= ~0x0FFF;
+	CAN_bms_status.payload->word1 |= (data_scaled >> 4) & 0x0FFF;
 }
 void CAN_bms_status_packCurrent_set(float packCurrent){
 	uint16_t data_scaled = (packCurrent - 0) / 0.01;
-	set_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_PACKCURRENT_OFFSET, CAN_BMS_STATUS_PACKCURRENT_RANGE, data_scaled);
+	CAN_bms_status.payload->word1 &= ~0xF000;
+	CAN_bms_status.payload->word1 |= (data_scaled << 12) & 0xF000;
+	CAN_bms_status.payload->word2 &= ~0x0FFF;
+	CAN_bms_status.payload->word2 |= (data_scaled >> 4) & 0x0FFF;
 }
 void CAN_bms_status_minTemp_set(float minTemp){
 	uint16_t data_scaled = (minTemp - -40) / 0.1;
-	set_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MINTEMP_OFFSET, CAN_BMS_STATUS_MINTEMP_RANGE, data_scaled);
+	CAN_bms_status.payload->word2 &= ~0xF000;
+	CAN_bms_status.payload->word2 |= (data_scaled << 12) & 0xF000;
+	CAN_bms_status.payload->word3 &= ~0x003F;
+	CAN_bms_status.payload->word3 |= (data_scaled >> 4) & 0x003F;
 }
 void CAN_bms_status_maxTemp_set(float maxTemp){
 	uint16_t data_scaled = (maxTemp - -40) / 0.1;
-	set_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MAXTEMP_OFFSET, CAN_BMS_STATUS_MAXTEMP_RANGE, data_scaled);
+	CAN_bms_status.payload->word3 &= ~0xFFC0;
+	CAN_bms_status.payload->word3 |= (data_scaled << 6) & 0xFFC0;
 }
 void CAN_bms_status_dlc_set(uint8_t dlc){
 	CAN_bms_status.dlc = dlc;
@@ -305,47 +317,64 @@ static CAN_message_S CAN_bms_status_2={
 
 void CAN_bms_status_2_DCDC_state_set(uint16_t DCDC_state){
 	uint16_t data_scaled = (DCDC_state - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_status_2.payload, CAN_BMS_STATUS_2_DCDC_STATE_OFFSET, CAN_BMS_STATUS_2_DCDC_STATE_RANGE, data_scaled);
+	CAN_bms_status_2.payload->word0 &= ~0x0001;
+	CAN_bms_status_2.payload->word0 |= (data_scaled << 0) & 0x0001;
 }
 void CAN_bms_status_2_DCDC_fault_set(uint16_t DCDC_fault){
 	uint16_t data_scaled = (DCDC_fault - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_status_2.payload, CAN_BMS_STATUS_2_DCDC_FAULT_OFFSET, CAN_BMS_STATUS_2_DCDC_FAULT_RANGE, data_scaled);
+	CAN_bms_status_2.payload->word0 &= ~0x0002;
+	CAN_bms_status_2.payload->word0 |= (data_scaled << 1) & 0x0002;
 }
 void CAN_bms_status_2_DCDC_voltage_set(float DCDC_voltage){
 	uint16_t data_scaled = (DCDC_voltage - 0) / 0.1;
-	set_bits((size_t*)CAN_bms_status_2.payload, CAN_BMS_STATUS_2_DCDC_VOLTAGE_OFFSET, CAN_BMS_STATUS_2_DCDC_VOLTAGE_RANGE, data_scaled);
+	CAN_bms_status_2.payload->word0 &= ~0x0FFC;
+	CAN_bms_status_2.payload->word0 |= (data_scaled << 2) & 0x0FFC;
 }
 void CAN_bms_status_2_DCDC_current_set(float DCDC_current){
 	uint16_t data_scaled = (DCDC_current - 0) / 0.1;
-	set_bits((size_t*)CAN_bms_status_2.payload, CAN_BMS_STATUS_2_DCDC_CURRENT_OFFSET, CAN_BMS_STATUS_2_DCDC_CURRENT_RANGE, data_scaled);
+	CAN_bms_status_2.payload->word0 &= ~0xF000;
+	CAN_bms_status_2.payload->word0 |= (data_scaled << 12) & 0xF000;
+	CAN_bms_status_2.payload->word1 &= ~0x003F;
+	CAN_bms_status_2.payload->word1 |= (data_scaled >> 4) & 0x003F;
 }
 void CAN_bms_status_2_EV_charger_state_set(uint16_t EV_charger_state){
 	uint16_t data_scaled = (EV_charger_state - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_status_2.payload, CAN_BMS_STATUS_2_EV_CHARGER_STATE_OFFSET, CAN_BMS_STATUS_2_EV_CHARGER_STATE_RANGE, data_scaled);
+	CAN_bms_status_2.payload->word1 &= ~0x0040;
+	CAN_bms_status_2.payload->word1 |= (data_scaled << 6) & 0x0040;
 }
 void CAN_bms_status_2_EV_charger_fault_set(uint16_t EV_charger_fault){
 	uint16_t data_scaled = (EV_charger_fault - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_status_2.payload, CAN_BMS_STATUS_2_EV_CHARGER_FAULT_OFFSET, CAN_BMS_STATUS_2_EV_CHARGER_FAULT_RANGE, data_scaled);
+	CAN_bms_status_2.payload->word1 &= ~0x0080;
+	CAN_bms_status_2.payload->word1 |= (data_scaled << 7) & 0x0080;
 }
 void CAN_bms_status_2_EV_charger_voltage_set(float EV_charger_voltage){
 	uint16_t data_scaled = (EV_charger_voltage - 0) / 0.1;
-	set_bits((size_t*)CAN_bms_status_2.payload, CAN_BMS_STATUS_2_EV_CHARGER_VOLTAGE_OFFSET, CAN_BMS_STATUS_2_EV_CHARGER_VOLTAGE_RANGE, data_scaled);
+	CAN_bms_status_2.payload->word1 &= ~0xFF00;
+	CAN_bms_status_2.payload->word1 |= (data_scaled << 8) & 0xFF00;
+	CAN_bms_status_2.payload->word2 &= ~0x0003;
+	CAN_bms_status_2.payload->word2 |= (data_scaled >> 8) & 0x0003;
 }
 void CAN_bms_status_2_EV_charger_current_set(float EV_charger_current){
 	uint16_t data_scaled = (EV_charger_current - 0) / 0.1;
-	set_bits((size_t*)CAN_bms_status_2.payload, CAN_BMS_STATUS_2_EV_CHARGER_CURRENT_OFFSET, CAN_BMS_STATUS_2_EV_CHARGER_CURRENT_RANGE, data_scaled);
+	CAN_bms_status_2.payload->word2 &= ~0x0FFC;
+	CAN_bms_status_2.payload->word2 |= (data_scaled << 2) & 0x0FFC;
 }
 void CAN_bms_status_2_HV_precharge_state_set(uint16_t HV_precharge_state){
 	uint16_t data_scaled = (HV_precharge_state - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_status_2.payload, CAN_BMS_STATUS_2_HV_PRECHARGE_STATE_OFFSET, CAN_BMS_STATUS_2_HV_PRECHARGE_STATE_RANGE, data_scaled);
+	CAN_bms_status_2.payload->word2 &= ~0x1000;
+	CAN_bms_status_2.payload->word2 |= (data_scaled << 12) & 0x1000;
 }
 void CAN_bms_status_2_HV_isolation_voltage_set(float HV_isolation_voltage){
 	uint16_t data_scaled = (HV_isolation_voltage - 0) / 0.1;
-	set_bits((size_t*)CAN_bms_status_2.payload, CAN_BMS_STATUS_2_HV_ISOLATION_VOLTAGE_OFFSET, CAN_BMS_STATUS_2_HV_ISOLATION_VOLTAGE_RANGE, data_scaled);
+	CAN_bms_status_2.payload->word2 &= ~0xE000;
+	CAN_bms_status_2.payload->word2 |= (data_scaled << 13) & 0xE000;
+	CAN_bms_status_2.payload->word3 &= ~0x007F;
+	CAN_bms_status_2.payload->word3 |= (data_scaled >> 3) & 0x007F;
 }
 void CAN_bms_status_2_HV_contactor_state_set(uint16_t HV_contactor_state){
 	uint16_t data_scaled = (HV_contactor_state - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_status_2.payload, CAN_BMS_STATUS_2_HV_CONTACTOR_STATE_OFFSET, CAN_BMS_STATUS_2_HV_CONTACTOR_STATE_RANGE, data_scaled);
+	CAN_bms_status_2.payload->word3 &= ~0x0080;
+	CAN_bms_status_2.payload->word3 |= (data_scaled << 7) & 0x0080;
 }
 void CAN_bms_status_2_dlc_set(uint8_t dlc){
 	CAN_bms_status_2.dlc = dlc;
@@ -382,31 +411,44 @@ static CAN_message_S CAN_bms_debug={
 
 void CAN_bms_debug_bool0_set(uint16_t bool0){
 	uint16_t data_scaled = (bool0 - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_BOOL0_OFFSET, CAN_BMS_DEBUG_BOOL0_RANGE, data_scaled);
+	CAN_bms_debug.payload->word0 &= ~0x0001;
+	CAN_bms_debug.payload->word0 |= (data_scaled << 0) & 0x0001;
 }
 void CAN_bms_debug_bool1_set(uint16_t bool1){
 	uint16_t data_scaled = (bool1 - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_BOOL1_OFFSET, CAN_BMS_DEBUG_BOOL1_RANGE, data_scaled);
+	CAN_bms_debug.payload->word0 &= ~0x0002;
+	CAN_bms_debug.payload->word0 |= (data_scaled << 1) & 0x0002;
 }
 void CAN_bms_debug_float1_set(float float1){
 	uint16_t data_scaled = (float1 - 0) / 0.01;
-	set_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_FLOAT1_OFFSET, CAN_BMS_DEBUG_FLOAT1_RANGE, data_scaled);
+	CAN_bms_debug.payload->word0 &= ~0xFFFC;
+	CAN_bms_debug.payload->word0 |= (data_scaled << 2) & 0xFFFC;
+	CAN_bms_debug.payload->word1 &= ~0x0003;
+	CAN_bms_debug.payload->word1 |= (data_scaled >> 14) & 0x0003;
 }
 void CAN_bms_debug_float2_set(float float2){
 	uint16_t data_scaled = (float2 - 0) / 0.01;
-	set_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_FLOAT2_OFFSET, CAN_BMS_DEBUG_FLOAT2_RANGE, data_scaled);
+	CAN_bms_debug.payload->word1 &= ~0xFFFC;
+	CAN_bms_debug.payload->word1 |= (data_scaled << 2) & 0xFFFC;
+	CAN_bms_debug.payload->word2 &= ~0x0003;
+	CAN_bms_debug.payload->word2 |= (data_scaled >> 14) & 0x0003;
 }
 void CAN_bms_debug_VBUS_Voltage_set(float VBUS_Voltage){
 	uint16_t data_scaled = (VBUS_Voltage - 0) / 0.1;
-	set_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_VBUS_VOLTAGE_OFFSET, CAN_BMS_DEBUG_VBUS_VOLTAGE_RANGE, data_scaled);
+	CAN_bms_debug.payload->word2 &= ~0x0FFC;
+	CAN_bms_debug.payload->word2 |= (data_scaled << 2) & 0x0FFC;
 }
 void CAN_bms_debug_CPU_USAGE_set(float CPU_USAGE){
 	uint16_t data_scaled = (CPU_USAGE - 0) / 0.1;
-	set_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_CPU_USAGE_OFFSET, CAN_BMS_DEBUG_CPU_USAGE_RANGE, data_scaled);
+	CAN_bms_debug.payload->word2 &= ~0xF000;
+	CAN_bms_debug.payload->word2 |= (data_scaled << 12) & 0xF000;
+	CAN_bms_debug.payload->word3 &= ~0x003F;
+	CAN_bms_debug.payload->word3 |= (data_scaled >> 4) & 0x003F;
 }
 void CAN_bms_debug_CPU_peak_set(float CPU_peak){
 	uint16_t data_scaled = (CPU_peak - 0) / 0.1;
-	set_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_CPU_PEAK_OFFSET, CAN_BMS_DEBUG_CPU_PEAK_RANGE, data_scaled);
+	CAN_bms_debug.payload->word3 &= ~0xFFC0;
+	CAN_bms_debug.payload->word3 |= (data_scaled << 6) & 0xFFC0;
 }
 void CAN_bms_debug_dlc_set(uint8_t dlc){
 	CAN_bms_debug.dlc = dlc;
@@ -447,39 +489,48 @@ static CAN_message_S CAN_bms_boot_response={
 
 void CAN_bms_boot_response_type_set(uint16_t type){
 	uint16_t data_scaled = (type - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_boot_response.payload, CAN_BMS_BOOT_RESPONSE_TYPE_OFFSET, CAN_BMS_BOOT_RESPONSE_TYPE_RANGE, data_scaled);
+	CAN_bms_boot_response.payload->word0 &= ~0x000F;
+	CAN_bms_boot_response.payload->word0 |= (data_scaled << 0) & 0x000F;
 }
 void CAN_bms_boot_response_code_set(uint16_t code){
 	uint16_t data_scaled = (code - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_boot_response.payload, CAN_BMS_BOOT_RESPONSE_CODE_OFFSET, CAN_BMS_BOOT_RESPONSE_CODE_RANGE, data_scaled);
+	CAN_bms_boot_response.payload->word0 &= ~0x00F0;
+	CAN_bms_boot_response.payload->word0 |= (data_scaled << 4) & 0x00F0;
 }
 void CAN_bms_boot_response_byte1_set(uint16_t byte1){
 	uint16_t data_scaled = (byte1 - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_boot_response.payload, CAN_BMS_BOOT_RESPONSE_BYTE1_OFFSET, CAN_BMS_BOOT_RESPONSE_BYTE1_RANGE, data_scaled);
+	CAN_bms_boot_response.payload->word0 &= ~0xFF00;
+	CAN_bms_boot_response.payload->word0 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_bms_boot_response_byte2_set(uint16_t byte2){
 	uint16_t data_scaled = (byte2 - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_boot_response.payload, CAN_BMS_BOOT_RESPONSE_BYTE2_OFFSET, CAN_BMS_BOOT_RESPONSE_BYTE2_RANGE, data_scaled);
+	CAN_bms_boot_response.payload->word1 &= ~0x00FF;
+	CAN_bms_boot_response.payload->word1 |= (data_scaled << 0) & 0x00FF;
 }
 void CAN_bms_boot_response_byte3_set(uint16_t byte3){
 	uint16_t data_scaled = (byte3 - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_boot_response.payload, CAN_BMS_BOOT_RESPONSE_BYTE3_OFFSET, CAN_BMS_BOOT_RESPONSE_BYTE3_RANGE, data_scaled);
+	CAN_bms_boot_response.payload->word1 &= ~0xFF00;
+	CAN_bms_boot_response.payload->word1 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_bms_boot_response_byte4_set(uint16_t byte4){
 	uint16_t data_scaled = (byte4 - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_boot_response.payload, CAN_BMS_BOOT_RESPONSE_BYTE4_OFFSET, CAN_BMS_BOOT_RESPONSE_BYTE4_RANGE, data_scaled);
+	CAN_bms_boot_response.payload->word2 &= ~0x00FF;
+	CAN_bms_boot_response.payload->word2 |= (data_scaled << 0) & 0x00FF;
 }
 void CAN_bms_boot_response_byte5_set(uint16_t byte5){
 	uint16_t data_scaled = (byte5 - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_boot_response.payload, CAN_BMS_BOOT_RESPONSE_BYTE5_OFFSET, CAN_BMS_BOOT_RESPONSE_BYTE5_RANGE, data_scaled);
+	CAN_bms_boot_response.payload->word2 &= ~0xFF00;
+	CAN_bms_boot_response.payload->word2 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_bms_boot_response_byte6_set(uint16_t byte6){
 	uint16_t data_scaled = (byte6 - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_boot_response.payload, CAN_BMS_BOOT_RESPONSE_BYTE6_OFFSET, CAN_BMS_BOOT_RESPONSE_BYTE6_RANGE, data_scaled);
+	CAN_bms_boot_response.payload->word3 &= ~0x00FF;
+	CAN_bms_boot_response.payload->word3 |= (data_scaled << 0) & 0x00FF;
 }
 void CAN_bms_boot_response_byte7_set(uint16_t byte7){
 	uint16_t data_scaled = (byte7 - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_boot_response.payload, CAN_BMS_BOOT_RESPONSE_BYTE7_OFFSET, CAN_BMS_BOOT_RESPONSE_BYTE7_RANGE, data_scaled);
+	CAN_bms_boot_response.payload->word3 &= ~0xFF00;
+	CAN_bms_boot_response.payload->word3 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_bms_boot_response_dlc_set(uint8_t dlc){
 	CAN_bms_boot_response.dlc = dlc;
@@ -518,35 +569,43 @@ static CAN_message_S CAN_bms_charger_request={
 
 void CAN_bms_charger_request_output_voltage_high_byte_set(uint16_t output_voltage_high_byte){
 	uint16_t data_scaled = (output_voltage_high_byte - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_charger_request.payload, CAN_BMS_CHARGER_REQUEST_OUTPUT_VOLTAGE_HIGH_BYTE_OFFSET, CAN_BMS_CHARGER_REQUEST_OUTPUT_VOLTAGE_HIGH_BYTE_RANGE, data_scaled);
+	CAN_bms_charger_request.payload->word0 &= ~0x00FF;
+	CAN_bms_charger_request.payload->word0 |= (data_scaled << 0) & 0x00FF;
 }
 void CAN_bms_charger_request_output_voltage_low_byte_set(uint16_t output_voltage_low_byte){
 	uint16_t data_scaled = (output_voltage_low_byte - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_charger_request.payload, CAN_BMS_CHARGER_REQUEST_OUTPUT_VOLTAGE_LOW_BYTE_OFFSET, CAN_BMS_CHARGER_REQUEST_OUTPUT_VOLTAGE_LOW_BYTE_RANGE, data_scaled);
+	CAN_bms_charger_request.payload->word0 &= ~0xFF00;
+	CAN_bms_charger_request.payload->word0 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_bms_charger_request_output_current_high_byte_set(uint16_t output_current_high_byte){
 	uint16_t data_scaled = (output_current_high_byte - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_charger_request.payload, CAN_BMS_CHARGER_REQUEST_OUTPUT_CURRENT_HIGH_BYTE_OFFSET, CAN_BMS_CHARGER_REQUEST_OUTPUT_CURRENT_HIGH_BYTE_RANGE, data_scaled);
+	CAN_bms_charger_request.payload->word1 &= ~0x00FF;
+	CAN_bms_charger_request.payload->word1 |= (data_scaled << 0) & 0x00FF;
 }
 void CAN_bms_charger_request_output_current_low_byte_set(uint16_t output_current_low_byte){
 	uint16_t data_scaled = (output_current_low_byte - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_charger_request.payload, CAN_BMS_CHARGER_REQUEST_OUTPUT_CURRENT_LOW_BYTE_OFFSET, CAN_BMS_CHARGER_REQUEST_OUTPUT_CURRENT_LOW_BYTE_RANGE, data_scaled);
+	CAN_bms_charger_request.payload->word1 &= ~0xFF00;
+	CAN_bms_charger_request.payload->word1 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_bms_charger_request_start_charge_not_request_set(uint16_t start_charge_not_request){
 	uint16_t data_scaled = (start_charge_not_request - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_charger_request.payload, CAN_BMS_CHARGER_REQUEST_START_CHARGE_NOT_REQUEST_OFFSET, CAN_BMS_CHARGER_REQUEST_START_CHARGE_NOT_REQUEST_RANGE, data_scaled);
+	CAN_bms_charger_request.payload->word2 &= ~0x00FF;
+	CAN_bms_charger_request.payload->word2 |= (data_scaled << 0) & 0x00FF;
 }
 void CAN_bms_charger_request_charge_mode_set(uint16_t charge_mode){
 	uint16_t data_scaled = (charge_mode - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_charger_request.payload, CAN_BMS_CHARGER_REQUEST_CHARGE_MODE_OFFSET, CAN_BMS_CHARGER_REQUEST_CHARGE_MODE_RANGE, data_scaled);
+	CAN_bms_charger_request.payload->word2 &= ~0xFF00;
+	CAN_bms_charger_request.payload->word2 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_bms_charger_request_byte_7_set(uint16_t byte_7){
 	uint16_t data_scaled = (byte_7 - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_charger_request.payload, CAN_BMS_CHARGER_REQUEST_BYTE_7_OFFSET, CAN_BMS_CHARGER_REQUEST_BYTE_7_RANGE, data_scaled);
+	CAN_bms_charger_request.payload->word3 &= ~0x00FF;
+	CAN_bms_charger_request.payload->word3 |= (data_scaled << 0) & 0x00FF;
 }
 void CAN_bms_charger_request_byte_8_set(uint16_t byte_8){
 	uint16_t data_scaled = (byte_8 - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_charger_request.payload, CAN_BMS_CHARGER_REQUEST_BYTE_8_OFFSET, CAN_BMS_CHARGER_REQUEST_BYTE_8_RANGE, data_scaled);
+	CAN_bms_charger_request.payload->word3 &= ~0xFF00;
+	CAN_bms_charger_request.payload->word3 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_bms_charger_request_dlc_set(uint8_t dlc){
 	CAN_bms_charger_request.dlc = dlc;
@@ -579,23 +638,34 @@ static CAN_message_S CAN_bms_cellVoltages={
 
 void CAN_bms_cellVoltages_MultiPlex_set(uint16_t MultiPlex){
 	uint16_t data_scaled = (MultiPlex - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELLVOLTAGES_MULTIPLEX_RANGE, data_scaled);
+	CAN_bms_cellVoltages.payload->word0 &= ~0x000F;
+	CAN_bms_cellVoltages.payload->word0 |= (data_scaled << 0) & 0x000F;
 }
 void CAN_bms_cellVoltages_cell_1_voltage_set(float cell_1_voltage){
 	uint16_t data_scaled = (cell_1_voltage - 0) / 0.001;
-	set_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_CELL_1_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_CELL_1_VOLTAGE_RANGE, data_scaled);
+	CAN_bms_cellVoltages.payload->word0 &= ~0xFFF0;
+	CAN_bms_cellVoltages.payload->word0 |= (data_scaled << 4) & 0xFFF0;
+	CAN_bms_cellVoltages.payload->word1 &= ~0x0007;
+	CAN_bms_cellVoltages.payload->word1 |= (data_scaled >> 12) & 0x0007;
 }
 void CAN_bms_cellVoltages_cell_2_voltage_set(float cell_2_voltage){
 	uint16_t data_scaled = (cell_2_voltage - 0) / 0.001;
-	set_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_CELL_2_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_CELL_2_VOLTAGE_RANGE, data_scaled);
+	CAN_bms_cellVoltages.payload->word1 &= ~0xFFF8;
+	CAN_bms_cellVoltages.payload->word1 |= (data_scaled << 3) & 0xFFF8;
+	CAN_bms_cellVoltages.payload->word2 &= ~0x0003;
+	CAN_bms_cellVoltages.payload->word2 |= (data_scaled >> 13) & 0x0003;
 }
 void CAN_bms_cellVoltages_cell_3_voltage_set(float cell_3_voltage){
 	uint16_t data_scaled = (cell_3_voltage - 0) / 0.001;
-	set_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_CELL_3_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_CELL_3_VOLTAGE_RANGE, data_scaled);
+	CAN_bms_cellVoltages.payload->word2 &= ~0xFFFC;
+	CAN_bms_cellVoltages.payload->word2 |= (data_scaled << 2) & 0xFFFC;
+	CAN_bms_cellVoltages.payload->word3 &= ~0x0001;
+	CAN_bms_cellVoltages.payload->word3 |= (data_scaled >> 14) & 0x0001;
 }
 void CAN_bms_cellVoltages_cell_4_voltage_set(float cell_4_voltage){
 	uint16_t data_scaled = (cell_4_voltage - 0) / 0.001;
-	set_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_CELL_4_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_CELL_4_VOLTAGE_RANGE, data_scaled);
+	CAN_bms_cellVoltages.payload->word3 &= ~0xFFFE;
+	CAN_bms_cellVoltages.payload->word3 |= (data_scaled << 1) & 0xFFFE;
 }
 void CAN_bms_cellVoltages_dlc_set(uint8_t dlc){
 	CAN_bms_cellVoltages.dlc = dlc;
@@ -628,23 +698,32 @@ static CAN_message_S CAN_bms_cellTemperaturs={
 
 void CAN_bms_cellTemperaturs_MultiPlex_set(uint16_t MultiPlex){
 	uint16_t data_scaled = (MultiPlex - 0) / 1.0;
-	set_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_MULTIPLEX_OFFSET, CAN_BMS_CELLTEMPERATURS_MULTIPLEX_RANGE, data_scaled);
+	CAN_bms_cellTemperaturs.payload->word0 &= ~0x000F;
+	CAN_bms_cellTemperaturs.payload->word0 |= (data_scaled << 0) & 0x000F;
 }
 void CAN_bms_cellTemperaturs_temp_1_set(float temp_1){
 	uint16_t data_scaled = (temp_1 - -40) / 0.1;
-	set_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_TEMP_1_OFFSET, CAN_BMS_CELLTEMPERATURS_TEMP_1_RANGE, data_scaled);
+	CAN_bms_cellTemperaturs.payload->word0 &= ~0xFFF0;
+	CAN_bms_cellTemperaturs.payload->word0 |= (data_scaled << 4) & 0xFFF0;
 }
 void CAN_bms_cellTemperaturs_temp_2_set(float temp_2){
 	uint16_t data_scaled = (temp_2 - -40) / 0.1;
-	set_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_TEMP_2_OFFSET, CAN_BMS_CELLTEMPERATURS_TEMP_2_RANGE, data_scaled);
+	CAN_bms_cellTemperaturs.payload->word1 &= ~0x0FFF;
+	CAN_bms_cellTemperaturs.payload->word1 |= (data_scaled << 0) & 0x0FFF;
 }
 void CAN_bms_cellTemperaturs_temp_3_set(float temp_3){
 	uint16_t data_scaled = (temp_3 - -40) / 0.1;
-	set_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_TEMP_3_OFFSET, CAN_BMS_CELLTEMPERATURS_TEMP_3_RANGE, data_scaled);
+	CAN_bms_cellTemperaturs.payload->word1 &= ~0xF000;
+	CAN_bms_cellTemperaturs.payload->word1 |= (data_scaled << 12) & 0xF000;
+	CAN_bms_cellTemperaturs.payload->word2 &= ~0x00FF;
+	CAN_bms_cellTemperaturs.payload->word2 |= (data_scaled >> 4) & 0x00FF;
 }
 void CAN_bms_cellTemperaturs_temp_4_set(float temp_4){
 	uint16_t data_scaled = (temp_4 - -40) / 0.1;
-	set_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_TEMP_4_OFFSET, CAN_BMS_CELLTEMPERATURS_TEMP_4_RANGE, data_scaled);
+	CAN_bms_cellTemperaturs.payload->word2 &= ~0xFF00;
+	CAN_bms_cellTemperaturs.payload->word2 |= (data_scaled << 8) & 0xFF00;
+	CAN_bms_cellTemperaturs.payload->word3 &= ~0x000F;
+	CAN_bms_cellTemperaturs.payload->word3 |= (data_scaled >> 8) & 0x000F;
 }
 void CAN_bms_cellTemperaturs_dlc_set(uint8_t dlc){
 	CAN_bms_cellTemperaturs.dlc = dlc;

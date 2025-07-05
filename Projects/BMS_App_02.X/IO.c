@@ -82,6 +82,10 @@ void IO_SET_CONTACTOR_2_PWM(uint8_t duty){
     pwmOCwriteDuty(CONTACTOR_2_PWM, duty);
 }
 
+void IO_SET_PILOT_EN(uint8_t state){
+    PINS_write(PILOT_EN, state);
+}
+
 /*INPUTS*/
 
 uint8_t IO_GET_DEBUG_LED_EN(void) {
@@ -189,8 +193,6 @@ float IO_GET_DCDC_CURRENT(void){
 #define EV_CHARGER_CURRENT_RTOP 10000.0
 #define EV_CHARGER_CURRENT_RBOT 20000.0
 #define EV_CHARGER_CURRENT_DIVIDER (EV_CHARGER_CURRENT_RBOT/(EV_CHARGER_CURRENT_RBOT+EV_CHARGER_CURRENT_RTOP))
-
-
 float IO_GET_EV_CHARGER_CURRENT(void){
     return (((float)ADC_GetValue(EV_CHARGER_CURRENT_AI))*ADC_FACTOR)/EV_CHARGER_CURRENT_DIVIDER;
 }
@@ -207,8 +209,13 @@ float IO_GET_TRANSDUCER_CURRENT(void){
     return 0;
 }
 
+float IO_GET_PILOT_MONITOR_VOLTAGE(void){
+    return ADC_GetValue(PILOT_MONITOR_AI);
+}
 
-
+float IO_GET_PROXIMITY_VOLTAGE(void){
+    return ADC_GetValue(PROMIXITY_MONINOTR_AI);
+}
 
 /*** End of File **************************************************************/
 

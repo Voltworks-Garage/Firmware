@@ -9,6 +9,8 @@
 #include "sleep.h"
 #include "dcdc.h"
 #include "can_iso_tp_lite.h"
+#include "watchdog.h"
+#include "Events.h"
 
 
 /******************************************************************************
@@ -25,6 +27,7 @@ state(standby)\
 state(running)\
 state(charging)\
 state(sleep)\
+state(diag)\
 
 /*Creates an enum of states suffixed with _state*/
 #define STATE_FORM(WORD) WORD##_state,
@@ -66,10 +69,13 @@ static STATE_MACHINE_states_E nextState = standby_state; /* initialize current s
 
 uint64_t my_64_bit_word = 0;
 
+NEW_TIMER(diag_timeout, 1000);
+
 /******************************************************************************
  * Function Prototypes
  *******************************************************************************/
-
+void halt_all_tasks(void);
+void resume_all_tasks(void);
 /******************************************************************************
  * Function Definitions
  *******************************************************************************/
@@ -78,26 +84,8 @@ void StateMachine_Init(void) {
 }
 
 void StateMachine_Run(void) {
-
-    switch (isoTP_getCommand().command) {
-        case ISO_TP_NONE:
-            break;
-        case ISO_TP_RESET:
-            CAN_changeOpMode(CAN_DISABLE);
-            //IO_SET_SW_EN(LOW);
-            asm ("reset");
-            break;
-        case ISO_TP_SLEEP:
-            nextState = sleep_state;
-            break;
-        case ISO_TP_IO_CONTROL:
-            break;
-        case ISO_TP_TESTER_PRESENT:
-            break;
-        default:
-            break;
-    }
-
+    
+    CAN_bms_debug_float1_set(curState);
     /* This only happens during state transition
      * State transitions thus have priority over posting new events
      * State transitions always consist of an exit event to curState and entry event to nextState */
@@ -117,13 +105,17 @@ void idle(STATE_MACHINE_entry_types_E entry_type) {
         case ENTRY:
             IO_SET_SW_EN(HIGH);
             CAN_changeOpMode(CAN_NORMAL);
+            DCDC_init();
             break;
         case EXIT:
             break;
         case RUN:
-            //StateMachine_DCDC_helper();
-            //StateMachine_precharge_helper();
-
+            if (isoTP_peekCommand() == ISO_TP_TESTER_PRESENT){
+                nextState = diag_state;
+            }
+            if (isoTP_peekCommand() == ISO_TP_IO_CONTROL){
+                nextState = diag_state;
+            }
             if (IO_GET_V12_POWER_STATUS() == 0) {
                 nextState = standby_state;
             }
@@ -139,9 +131,6 @@ void standby(STATE_MACHINE_entry_types_E entry_type) {
         case ENTRY:
             CAN_changeOpMode(CAN_DISABLE);
             IO_SET_SW_EN(LOW);
-            PINS_pullUp(CAN_TX_PIN, LOW);
-            IO_SET_DCDC_EN(LOW);
-            IO_SET_EV_CHARGER_EN(LOW);
             break;
         case EXIT:
             break;
@@ -188,21 +177,40 @@ void charging(STATE_MACHINE_entry_types_E entry_type) {
 void sleep(STATE_MACHINE_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
-            DCDC_halt();
+            halt_all_tasks();
             IO_SET_DEBUG_LED_EN(LOW);
             break;
         case EXIT:
-            DCDC_init();
+            resume_all_tasks();
             break;
         case RUN:
             SysTick_Stop();
-            RCONbits.SWDTEN = 0;
+            WATCHDOG_TimerSoftwareDisable();
             SleepNow(); //Go to sleep
-            RCONbits.SWDTEN = 1;
+            WATCHDOG_TimerSoftwareEnable();
+            WATCHDOG_TimerClear();
             SysTick_Resume();
-            if (RCONbits.WDTO) {
-                //nextState = silent_wake_state;
-            } else {
+            nextState = idle_state;
+            break;
+        default:
+            break;
+    }
+}
+
+void diag(STATE_MACHINE_entry_types_E entry_type) {
+    switch (entry_type) {
+        case ENTRY:
+            halt_all_tasks();
+            SysTick_TimerStart(diag_timeout);
+            break;
+        case EXIT:
+            break;
+        case RUN:
+            IO_SET_DEBUG_LED_EN(!IO_GET_DEBUG_LED_EN());
+            if (isoTP_peekCommand() != ISO_TP_NONE){
+                SysTick_TimerStart(diag_timeout);
+            }
+            if(SysTick_TimeOut(diag_timeout)){
                 nextState = idle_state;
             }
             break;
@@ -212,7 +220,13 @@ void sleep(STATE_MACHINE_entry_types_E entry_type) {
 }
 
 /****Helpers*******************************************************************/
+void halt_all_tasks(void){
+    DCDC_halt();
+}
 
+void resume_all_tasks(void){
+    DCDC_run();
+}
 
 /*** End of File **************************************************************/
 

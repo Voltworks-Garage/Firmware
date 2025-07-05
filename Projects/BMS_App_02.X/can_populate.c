@@ -27,11 +27,6 @@ void CAN_populate_1ms(void){
     //CAN_bms_status_2_HV_contactor_state_set(IO_GET_)
     CAN_bms_status_2_HV_isolation_voltage_set(IO_GET_ISOLATION_VOLTAGE());
     CAN_bms_debug_VBUS_Voltage_set(IO_GET_VBUS_VOLTAGE());
-    CAN_bms_debug_VBUS_Voltage_set(IO_GET_VBUS_VOLTAGE());
-    CAN_bms_debug_VBUS_Voltage_set(IO_GET_VBUS_VOLTAGE());
-    CAN_bms_debug_VBUS_Voltage_set(IO_GET_VBUS_VOLTAGE());
-    CAN_bms_debug_VBUS_Voltage_set(IO_GET_VBUS_VOLTAGE());
-
     
 }
 

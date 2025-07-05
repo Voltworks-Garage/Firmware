@@ -1,6 +1,7 @@
 #include "can_iso_tp_lite.h"
 #include "can_iso_tp_lite_config.h"
 #include "./mcc_generated_files/boot/boot_config.h"
+#include "ringBuffer.h"
 
 typedef enum {
     SINGLE,
@@ -19,11 +20,9 @@ typedef enum {
 #define SEPARATION_TIME 1
 
 frametype_E currentFrameType = SINGLE;
-//uint16_t payloadSize = 0;
 uint16_t payloadIndex = 0;
 uint8_t payloadMessage[64];
 uint8_t consecutiveFrame_SN = 0;
-//isoTP_command_E currentCommand = ISO_TP_NONE;
 uint16_t timeoutCounter = 0;
 #define ISO_TP_TIMOUT 10
 static isoTP_command_S currentCommand={
@@ -33,15 +32,15 @@ static isoTP_command_S currentCommand={
 };
 
 #define MESSAGE_BUFFER_SIZE 8
-uint8_t messageBufferIndex = 0;
-uint8_t messageBufferPointer = 0;
-uint8_t(*messageBuffer[MESSAGE_BUFFER_SIZE])(void);
+uint8_t actionBufferIndex = 0;
+uint8_t actionBufferPointer = 0;
+uint8_t(*actionBuffer[MESSAGE_BUFFER_SIZE])(void);
 
 uint8_t get_frame_payload(void);
 uint8_t set_flow_control(void);
 void decode_message(void);
-void messageBufferPush(void * message);
-uint8_t messageBufferPop(void);
+void actionBufferPush(void * message);
+uint8_t actionBufferPop(void);
 uint8_t isoTP_Reset(void);
 uint8_t isoTP_Sleep(void);
 uint8_t isoTP_TesterPresent(void);
@@ -54,11 +53,11 @@ void isoTP_init(void){
     currentCommand.command = ISO_TP_NONE;
     timeoutCounter = 0;
 
-    messageBufferIndex = 0;
-    messageBufferPointer = 0;
+    actionBufferIndex = 0;
+    actionBufferPointer = 0;
 }
 
-isoTP_command_S run_iso_tp_basic(void) {
+void run_iso_tp_1ms(void) {
     uint8_t messageComplete = 0;
     
     if (timeoutCounter++ > ISO_TP_TIMOUT) {
@@ -89,7 +88,7 @@ isoTP_command_S run_iso_tp_basic(void) {
                 payloadIndex = 0;
                 consecutiveFrame_SN = 1;
                 messageComplete = get_frame_payload();
-                messageBufferPush(set_flow_control);
+                actionBufferPush(set_flow_control);
                 break;
             case CONSECUTIVE:
                 currentFrameType = CONSECUTIVE;
@@ -111,12 +110,17 @@ isoTP_command_S run_iso_tp_basic(void) {
         }
     }
     //If there is anything in the payload buffer, send it.
-    messageBufferPop();
-    return currentCommand;
+    actionBufferPop();
+}
+
+isoTP_command_E isoTP_peekCommand(void) {
+    return currentCommand.command;
 }
 
 isoTP_command_S isoTP_getCommand(void) {
-    return currentCommand;
+    isoTP_command_S thisCommand = currentCommand;
+    currentCommand.command = ISO_TP_NONE;
+    return thisCommand;
 }
 
 uint8_t set_flow_control(void) {
@@ -242,39 +246,40 @@ uint8_t get_frame_payload(void) {
 }
 
 void decode_message(void) {
-
-    if (payloadMessage[0] == 0x0B) {
-        messageBufferPush(set_app_size_response_1);
-        messageBufferPush(set_app_size_response_2);
-        messageBufferPush(set_app_size_response_3);
-        messageBufferPush(isoTP_Reset);
-    }
-    if (payloadMessage[0] == 0x0A) {
-        messageBufferPush(isoTP_Sleep);
-    }
-    if (payloadMessage[0] == 0x0C) {
-        messageBufferPush(isoTP_IOControl);
-    }
-    if (payloadMessage[0] == 0x0D) {
-        messageBufferPush(isoTP_TesterPresent);
-    }
-
-}
-
-void messageBufferPush(void * message) {
-    messageBuffer[messageBufferPointer++] = message;
-    if (messageBufferPointer > MESSAGE_BUFFER_SIZE - 1) {
-        messageBufferPointer = 0;
+    
+    switch(payloadMessage[0]){
+        case 0x0A:
+            actionBufferPush(isoTP_Sleep);
+            break;
+        case 0x0B:
+            actionBufferPush(set_app_size_response_1);
+            actionBufferPush(set_app_size_response_2);
+            actionBufferPush(set_app_size_response_3);
+            actionBufferPush(isoTP_Reset);
+            break;
+        case 0x0C:
+            actionBufferPush(isoTP_IOControl);
+            break;
+        case 0x0D:
+            actionBufferPush(isoTP_TesterPresent);
+            break;
     }
 }
 
-uint8_t messageBufferPop(void) {
+void actionBufferPush(void * message) {
+    actionBuffer[actionBufferPointer++] = message;
+    if (actionBufferPointer > MESSAGE_BUFFER_SIZE - 1) {
+        actionBufferPointer = 0;
+    }
+}
+
+uint8_t actionBufferPop(void) {
     uint8_t returnVal = 0;
-    if (messageBufferPointer != messageBufferIndex) {
-        returnVal = messageBuffer[messageBufferIndex++]();
+    if (actionBufferPointer != actionBufferIndex) {
+        returnVal = actionBuffer[actionBufferIndex++]();
     }
-    if (messageBufferIndex > MESSAGE_BUFFER_SIZE - 1) {
-        messageBufferIndex = 0;
+    if (actionBufferIndex > MESSAGE_BUFFER_SIZE - 1) {
+        actionBufferIndex = 0;
     }
 
     return returnVal;

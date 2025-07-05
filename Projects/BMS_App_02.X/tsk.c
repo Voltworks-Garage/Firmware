@@ -98,7 +98,7 @@ void Tsk_init(void) {
  * Runs every 1ms
  */
 void Tsk_1ms(void) {
-    run_iso_tp_basic();
+    run_iso_tp_1ms();
     DCDC_run_1ms();
     
     CAN_populate_1ms();
@@ -108,7 +108,7 @@ void Tsk_1ms(void) {
  * Runs every 5ms
  */
 void Tsk_5ms(void) {
-    StateMachine_Run();
+    Nop();
 }
 
 /**
@@ -190,6 +190,7 @@ void Tsk_Run(uint32_t SystemClock) {
                     Task_ptr[TaskIndex].LastTick = tick; // Save last tick the task was ran.
                 }
             }// end for
+            StateMachine_Run();
             SysTick_CPUTimerEnd();
         }
         

@@ -25,6 +25,8 @@ void DCDC_run_100ms(void);
 
 void DCDC_halt();
 
+void DCDC_run(void);
+
 DCDC_state_E DCDC_getState(void);
 
 float DCDC_getVoltage(void);

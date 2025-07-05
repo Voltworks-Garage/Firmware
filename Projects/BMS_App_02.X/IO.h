@@ -26,6 +26,7 @@ void IO_SET_MUX_A(uint8_t state);
 void IO_SET_MUX_B(uint8_t state);
 void IO_SET_MUX_C(uint8_t state);
 void IO_SET_SPI_CS(uint8_t state);
+void IO_SET_PILOT_EN(uint8_t state);
 
 void IO_SET_CHARGEPUMP_PWM(uint8_t duty);
 void IO_SET_CONTACTOR_1_PWM(uint8_t duty);
@@ -70,6 +71,8 @@ float IO_GET_DCDC_OUTPUT_VOLTAGE(void);
 float IO_GET_MUX_1_VOLTAGE(void);
 float IO_GET_MUX_2_VOLTAGE(void);
 float IO_GET_MUX_3_VOLTAGE(void);
+float IO_GET_PILOT_MONITOR_VOLTAGE(void);
+float IO_GET_PROXIMITY_VOLTAGE(void);
 
 /**
  * IO_GET_xxx_CURRENT will return the converted current (including divider) in Amps

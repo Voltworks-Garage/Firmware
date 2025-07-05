@@ -32,31 +32,40 @@ static CAN_message_S CAN_dash_status={
 
 void CAN_dash_status_heartBeat_set(uint16_t heartBeat){
 	uint16_t data_scaled = (heartBeat - 0) / 1.0;
-	set_bits((size_t*)CAN_dash_status.payload, CAN_DASH_STATUS_HEARTBEAT_OFFSET, CAN_DASH_STATUS_HEARTBEAT_RANGE, data_scaled);
+	CAN_dash_status.payload->word0 &= ~0x000F;
+	CAN_dash_status.payload->word0 |= (data_scaled << 0) & 0x000F;
 }
 void CAN_dash_status_state_set(uint16_t state){
 	uint16_t data_scaled = (state - 0) / 1.0;
-	set_bits((size_t*)CAN_dash_status.payload, CAN_DASH_STATUS_STATE_OFFSET, CAN_DASH_STATUS_STATE_RANGE, data_scaled);
+	CAN_dash_status.payload->word0 &= ~0x0070;
+	CAN_dash_status.payload->word0 |= (data_scaled << 4) & 0x0070;
 }
 void CAN_dash_status_killButton_set(uint16_t killButton){
 	uint16_t data_scaled = (killButton - 0) / 1.0;
-	set_bits((size_t*)CAN_dash_status.payload, CAN_DASH_STATUS_KILLBUTTON_OFFSET, CAN_DASH_STATUS_KILLBUTTON_RANGE, data_scaled);
+	CAN_dash_status.payload->word0 &= ~0x0180;
+	CAN_dash_status.payload->word0 |= (data_scaled << 7) & 0x0180;
 }
 void CAN_dash_status_ignButton_set(uint16_t ignButton){
 	uint16_t data_scaled = (ignButton - 0) / 1.0;
-	set_bits((size_t*)CAN_dash_status.payload, CAN_DASH_STATUS_IGNBUTTON_OFFSET, CAN_DASH_STATUS_IGNBUTTON_RANGE, data_scaled);
+	CAN_dash_status.payload->word0 &= ~0x0600;
+	CAN_dash_status.payload->word0 |= (data_scaled << 9) & 0x0600;
 }
 void CAN_dash_status_modeButton_set(uint16_t modeButton){
 	uint16_t data_scaled = (modeButton - 0) / 1.0;
-	set_bits((size_t*)CAN_dash_status.payload, CAN_DASH_STATUS_MODEBUTTON_OFFSET, CAN_DASH_STATUS_MODEBUTTON_RANGE, data_scaled);
+	CAN_dash_status.payload->word0 &= ~0x1800;
+	CAN_dash_status.payload->word0 |= (data_scaled << 11) & 0x1800;
 }
 void CAN_dash_status_selectButton_set(uint16_t selectButton){
 	uint16_t data_scaled = (selectButton - 0) / 1.0;
-	set_bits((size_t*)CAN_dash_status.payload, CAN_DASH_STATUS_SELECTBUTTON_OFFSET, CAN_DASH_STATUS_SELECTBUTTON_RANGE, data_scaled);
+	CAN_dash_status.payload->word0 &= ~0x6000;
+	CAN_dash_status.payload->word0 |= (data_scaled << 13) & 0x6000;
 }
 void CAN_dash_status_driveMode_set(uint16_t driveMode){
 	uint16_t data_scaled = (driveMode - 0) / 1.0;
-	set_bits((size_t*)CAN_dash_status.payload, CAN_DASH_STATUS_DRIVEMODE_OFFSET, CAN_DASH_STATUS_DRIVEMODE_RANGE, data_scaled);
+	CAN_dash_status.payload->word0 &= ~0x8000;
+	CAN_dash_status.payload->word0 |= (data_scaled << 15) & 0x8000;
+	CAN_dash_status.payload->word1 &= ~0x0003;
+	CAN_dash_status.payload->word1 |= (data_scaled >> 1) & 0x0003;
 }
 void CAN_dash_status_dlc_set(uint8_t dlc){
 	CAN_dash_status.dlc = dlc;
@@ -89,23 +98,28 @@ static CAN_message_S CAN_dash_command={
 
 void CAN_dash_command_ignitionRequest_set(uint16_t ignitionRequest){
 	uint16_t data_scaled = (ignitionRequest - 0) / 1.0;
-	set_bits((size_t*)CAN_dash_command.payload, CAN_DASH_COMMAND_IGNITIONREQUEST_OFFSET, CAN_DASH_COMMAND_IGNITIONREQUEST_RANGE, data_scaled);
+	CAN_dash_command.payload->word0 &= ~0x0001;
+	CAN_dash_command.payload->word0 |= (data_scaled << 0) & 0x0001;
 }
 void CAN_dash_command_killRequest_set(uint16_t killRequest){
 	uint16_t data_scaled = (killRequest - 0) / 1.0;
-	set_bits((size_t*)CAN_dash_command.payload, CAN_DASH_COMMAND_KILLREQUEST_OFFSET, CAN_DASH_COMMAND_KILLREQUEST_RANGE, data_scaled);
+	CAN_dash_command.payload->word0 &= ~0x0002;
+	CAN_dash_command.payload->word0 |= (data_scaled << 1) & 0x0002;
 }
 void CAN_dash_command_batteryEjectRequest_set(uint16_t batteryEjectRequest){
 	uint16_t data_scaled = (batteryEjectRequest - 0) / 1.0;
-	set_bits((size_t*)CAN_dash_command.payload, CAN_DASH_COMMAND_BATTERYEJECTREQUEST_OFFSET, CAN_DASH_COMMAND_BATTERYEJECTREQUEST_RANGE, data_scaled);
+	CAN_dash_command.payload->word0 &= ~0x0004;
+	CAN_dash_command.payload->word0 |= (data_scaled << 2) & 0x0004;
 }
 void CAN_dash_command_lightsRequest_set(uint16_t lightsRequest){
 	uint16_t data_scaled = (lightsRequest - 0) / 1.0;
-	set_bits((size_t*)CAN_dash_command.payload, CAN_DASH_COMMAND_LIGHTSREQUEST_OFFSET, CAN_DASH_COMMAND_LIGHTSREQUEST_RANGE, data_scaled);
+	CAN_dash_command.payload->word0 &= ~0x0008;
+	CAN_dash_command.payload->word0 |= (data_scaled << 3) & 0x0008;
 }
 void CAN_dash_command_hornRequest_set(uint16_t hornRequest){
 	uint16_t data_scaled = (hornRequest - 0) / 1.0;
-	set_bits((size_t*)CAN_dash_command.payload, CAN_DASH_COMMAND_HORNREQUEST_OFFSET, CAN_DASH_COMMAND_HORNREQUEST_RANGE, data_scaled);
+	CAN_dash_command.payload->word0 &= ~0x0010;
+	CAN_dash_command.payload->word0 |= (data_scaled << 4) & 0x0010;
 }
 void CAN_dash_command_dlc_set(uint8_t dlc){
 	CAN_dash_command.dlc = dlc;
@@ -136,19 +150,23 @@ static CAN_message_S CAN_dash_data1={
 
 void CAN_dash_data1_speed_set(uint16_t speed){
 	uint16_t data_scaled = (speed - 0) / 1.0;
-	set_bits((size_t*)CAN_dash_data1.payload, CAN_DASH_DATA1_SPEED_OFFSET, CAN_DASH_DATA1_SPEED_RANGE, data_scaled);
+	CAN_dash_data1.payload->word0 &= ~0xFFFF;
+	CAN_dash_data1.payload->word0 |= (data_scaled << 0) & 0xFFFF;
 }
 void CAN_dash_data1_odometer_set(uint16_t odometer){
 	uint16_t data_scaled = (odometer - 0) / 1.0;
-	set_bits((size_t*)CAN_dash_data1.payload, CAN_DASH_DATA1_ODOMETER_OFFSET, CAN_DASH_DATA1_ODOMETER_RANGE, data_scaled);
+	CAN_dash_data1.payload->word1 &= ~0xFFFF;
+	CAN_dash_data1.payload->word1 |= (data_scaled << 0) & 0xFFFF;
 }
 void CAN_dash_data1_tripA_set(uint16_t tripA){
 	uint16_t data_scaled = (tripA - 0) / 1.0;
-	set_bits((size_t*)CAN_dash_data1.payload, CAN_DASH_DATA1_TRIPA_OFFSET, CAN_DASH_DATA1_TRIPA_RANGE, data_scaled);
+	CAN_dash_data1.payload->word2 &= ~0xFFFF;
+	CAN_dash_data1.payload->word2 |= (data_scaled << 0) & 0xFFFF;
 }
 void CAN_dash_data1_tripB_set(uint16_t tripB){
 	uint16_t data_scaled = (tripB - 0) / 1.0;
-	set_bits((size_t*)CAN_dash_data1.payload, CAN_DASH_DATA1_TRIPB_OFFSET, CAN_DASH_DATA1_TRIPB_RANGE, data_scaled);
+	CAN_dash_data1.payload->word3 &= ~0xFFFF;
+	CAN_dash_data1.payload->word3 |= (data_scaled << 0) & 0xFFFF;
 }
 void CAN_dash_data1_dlc_set(uint8_t dlc){
 	CAN_dash_data1.dlc = dlc;
@@ -179,19 +197,23 @@ static CAN_message_S CAN_dash_data2={
 
 void CAN_dash_data2_runningTime_set(uint16_t runningTime){
 	uint16_t data_scaled = (runningTime - 0) / 1.0;
-	set_bits((size_t*)CAN_dash_data2.payload, CAN_DASH_DATA2_RUNNINGTIME_OFFSET, CAN_DASH_DATA2_RUNNINGTIME_RANGE, data_scaled);
+	CAN_dash_data2.payload->word0 &= ~0xFFFF;
+	CAN_dash_data2.payload->word0 |= (data_scaled << 0) & 0xFFFF;
 }
 void CAN_dash_data2_odometer_set(uint16_t odometer){
 	uint16_t data_scaled = (odometer - 0) / 1.0;
-	set_bits((size_t*)CAN_dash_data2.payload, CAN_DASH_DATA2_ODOMETER_OFFSET, CAN_DASH_DATA2_ODOMETER_RANGE, data_scaled);
+	CAN_dash_data2.payload->word1 &= ~0xFFFF;
+	CAN_dash_data2.payload->word1 |= (data_scaled << 0) & 0xFFFF;
 }
 void CAN_dash_data2_tripA_set(uint16_t tripA){
 	uint16_t data_scaled = (tripA - 0) / 1.0;
-	set_bits((size_t*)CAN_dash_data2.payload, CAN_DASH_DATA2_TRIPA_OFFSET, CAN_DASH_DATA2_TRIPA_RANGE, data_scaled);
+	CAN_dash_data2.payload->word2 &= ~0xFFFF;
+	CAN_dash_data2.payload->word2 |= (data_scaled << 0) & 0xFFFF;
 }
 void CAN_dash_data2_tripB_set(uint16_t tripB){
 	uint16_t data_scaled = (tripB - 0) / 1.0;
-	set_bits((size_t*)CAN_dash_data2.payload, CAN_DASH_DATA2_TRIPB_OFFSET, CAN_DASH_DATA2_TRIPB_RANGE, data_scaled);
+	CAN_dash_data2.payload->word3 &= ~0xFFFF;
+	CAN_dash_data2.payload->word3 |= (data_scaled << 0) & 0xFFFF;
 }
 void CAN_dash_data2_dlc_set(uint8_t dlc){
 	CAN_dash_data2.dlc = dlc;

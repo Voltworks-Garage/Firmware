@@ -2,6 +2,7 @@
 #include "IO.h"
 #include "movingAverage.h"
 #include "bms_dbc.h"
+#include "SysTick.h"
 #include <stdint.h>
 
 static uint8_t dcdc_run = 0;
@@ -9,6 +10,7 @@ static uint8_t dcdc_state = DCDC_OFF;
 NEW_LOW_PASS_FILTER(dcdc_voltage, 10.0, 1000.0);
 NEW_LOW_PASS_FILTER(dcdc_current, 10.0, 1000.0);
 NEW_LOW_PASS_FILTER(hv_bus_voltage, 10.0, 1000.0);
+NEW_TIMER(precharge_timer,3000);
 
 void DCDC_init(void) {
     dcdc_run = 1;
@@ -33,10 +35,11 @@ void DCDC_run_100ms(void) {
                 IO_SET_DCDC_EN(LOW);
                 if (dcdcCommandFromMCU) {
                     dcdc_state = DCDC_PRECHARGE;
-                    IO_SET_PRE_CHARGE_EN(HIGH);
+                    SysTick_TimerStart(precharge_timer);
                 }
                 break;
             case DCDC_PRECHARGE:
+                IO_SET_PRE_CHARGE_EN(HIGH);
                 if (getLowPassFilter(dcdc_voltage)> getLowPassFilter(hv_bus_voltage)*0.90) {
                     dcdc_state = DCDC_ENABLE;
                     IO_SET_DCDC_EN(HIGH);
@@ -46,8 +49,13 @@ void DCDC_run_100ms(void) {
                     dcdc_state = DCDC_OFF;
                     IO_SET_PRE_CHARGE_EN(LOW);
                 }
+                if (SysTick_TimeOut(precharge_timer)){
+                    dcdc_state = DCDC_OFF;
+                    IO_SET_PRE_CHARGE_EN(LOW);
+                }
                 break;
             case DCDC_ENABLE:
+                IO_SET_DCDC_EN(HIGH);
                 if (IO_GET_DCDC_FAULT()) {
                     dcdc_state = DCDC_FAULT;
                 }
@@ -73,10 +81,14 @@ void DCDC_run_100ms(void) {
     }
 }
 
-void DCDC_halt() {
+void DCDC_halt(void) {
     dcdc_run = 0;
     dcdc_state = DCDC_OFF;
     IO_SET_DCDC_EN(LOW);
+}
+
+void DCDC_run(void){
+    dcdc_run = 1;
 }
 
 DCDC_state_E DCDC_getState(void){
@@ -84,9 +96,9 @@ DCDC_state_E DCDC_getState(void){
 }
 
 float DCDC_getVoltage(void){
-    return dcdc_voltage->accum;
+    return getLowPassFilter(dcdc_voltage);
 }
 
 float DCDC_getCurrent(void){
-    return dcdc_current->accum;
+    return getLowPassFilter(dcdc_current);
 }

@@ -20,6 +20,7 @@
 #include "sleep.h"
 #include <xc.h>
 #include "mcc_generated_files/clock.h"
+#include "ic.h"
 
 // *****************************************************************************
 // *****************************************************************************
@@ -118,12 +119,16 @@ void PinSetup_Init(void) {
     ADC_SetPin(MUX_1_AI);
     ADC_SetPin(MUX_2_AI);
     ADC_SetPin(MUX_3_AI);
-
+    ADC_SetPin(PILOT_MONITOR_AI);
+    ADC_SetPin(PROMIXITY_MONINOTR_AI);
     /*PWM*/
     pwmOCinit(CONTACTOR_1_PWM);
     pwmOCwriteFreq(CONTACTOR_1_PWM, 3000); //10kHz
     pwmOCinit(CONTACTOR_2_PWM);
     pwmOCwriteFreq(CONTACTOR_2_PWM, 3000); //20kHz
+    
+    ic_Init(PILOT_PWM_IN, IC_16_BIT);
+    
     /*UART*/
     //Uart1INIT(UART_TX, UART_RX, UART_BAUD_115200);
     

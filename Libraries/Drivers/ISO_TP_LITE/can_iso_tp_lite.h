@@ -25,7 +25,8 @@ typedef struct isoTP_command_S{
 } isoTP_command_S;
 
 void isoTP_init(void);
-isoTP_command_S run_iso_tp_basic(void);
+void run_iso_tp_1ms(void);
+isoTP_command_E isoTP_peekCommand(void);
 isoTP_command_S isoTP_getCommand(void);
 #endif	/* CAN_ISO_TP_H */
 

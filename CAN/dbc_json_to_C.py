@@ -105,6 +105,7 @@ for node in range(0,numberOfNodes):
             for k in range(0,numberOfSignals):
                 this_signal_name = data["NODE"][i]["messages"][j]["signals"][k]["name"]
                 this_signal_length = data["NODE"][i]["messages"][j]["signals"][k]["length"]
+                this_signal_bit_offset = data["NODE"][i]["messages"][j]["signals"][k]["bitOffset"] = offset
                 dot_c.write(
                     "#define " + ID_name.upper() + "_" + this_signal_name.upper() + "_RANGE " + str(this_signal_length) + "\n")
                 dot_c.write(
@@ -122,7 +123,9 @@ for node in range(0,numberOfNodes):
                     this_signal_name = data["NODE"][i]["messages"][j]["signals"][k]["name"]
                     this_signal_scale = data["NODE"][i]["messages"][j]["signals"][k]["scale"]
                     this_signal_offset = data["NODE"][i]["messages"][j]["signals"][k]["offset"]
+                    this_signal_bit_offset = data["NODE"][i]["messages"][j]["signals"][k]["bitOffset"]
                     this_signal_units = data["NODE"][i]["messages"][j]["signals"][k]["units"]
+                    this_signal_length = data["NODE"][i]["messages"][j]["signals"][k]["length"]
                     if this_signal_units in ["V", "A", "degC", "%"]:
                         this_signal_datatype = "float"
                     else:
@@ -132,10 +135,34 @@ for node in range(0,numberOfNodes):
                     dot_c.write("void " + ID_name + "_" + this_signal_name
                         + "_set(" + this_signal_datatype + " " + this_signal_name + "){\n")
                     dot_c.write("\tuint16_t data_scaled = ({} - {}) / {};\n".format(this_signal_name, this_signal_offset, this_signal_scale))
-                    dot_c.write("\tset_bits((size_t*)"+ ID_name + ".payload, "
-                                + ID_name.upper() + "_" + this_signal_name.upper() + "_OFFSET, "
-                                + ID_name.upper() + "_" + this_signal_name.upper() + "_RANGE, "
-                                + "data_scaled);\n}\n")
+                    # dot_c.write("\tset_bits((size_t*)"+ ID_name + ".payload, "
+                    #             + ID_name.upper() + "_" + this_signal_name.upper() + "_OFFSET, "
+                    #             + ID_name.upper() + "_" + this_signal_name.upper() + "_RANGE, "
+                    #             + "data_scaled);\n}\n")
+                    bit_offset = this_signal_bit_offset
+                    bit_length = this_signal_length
+                    word = bit_offset // 16
+                    shift = bit_offset % 16
+
+                    if shift + bit_length <= 16:
+                        mask = ((1 << bit_length) - 1) << shift
+                        dot_c.write("\t{}.payload->word{} &= ~0x{:04X};\n".format(ID_name, word, mask))
+                        dot_c.write(
+                            "\t{}.payload->word{} |= (data_scaled << {}) & 0x{:04X};\n}}\n".format(ID_name, word, shift, mask))
+                    else:
+                        bits_first = 16 - shift
+                        bits_second = bit_length - bits_first
+                        low_mask = ((1 << bits_first) - 1) << shift
+                        high_mask = (1 << bits_second) - 1
+                        dot_c.write("\t{}.payload->word{} &= ~0x{:04X};\n".format(ID_name, word, low_mask))
+                        dot_c.write(
+                            "\t{}.payload->word{} |= (data_scaled << {}) & 0x{:04X};\n".format(ID_name, word, shift,
+                                                                                            low_mask))
+                        dot_c.write("\t{}.payload->word{} &= ~0x{:04X};\n".format(ID_name, word + 1, high_mask))
+                        dot_c.write("\t{}.payload->word{} |= (data_scaled >> {}) & 0x{:04X};\n}}\n".format(ID_name, word + 1,
+                                                                                                    bits_first,
+                                                                                                    high_mask))
+
                 if this_message_freq:
                     if not send_message_dict.get(str(this_message_freq)):
                         send_message_dict[str(this_message_freq)] = []

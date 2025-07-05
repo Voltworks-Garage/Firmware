@@ -17,6 +17,7 @@
         <itemPath>../../Libraries/Standard/utils.h</itemPath>
         <itemPath>../../Libraries/Drivers/ISO_TP_LITE/can_iso_tp_lite.h</itemPath>
         <itemPath>../../Libraries/Standard/ringBuffer.h</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/inc/ic.h</itemPath>
       </logicalFolder>
       <logicalFolder name="MCC Generated Files"
                      displayName="MCC Generated Files"
@@ -48,6 +49,8 @@
         <itemPath>bms.h</itemPath>
         <itemPath>dcdc.h</itemPath>
         <itemPath>can_iso_tp_lite_config.h</itemPath>
+        <itemPath>diagnostic.h</itemPath>
+        <itemPath>j1772.h</itemPath>
       </logicalFolder>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
@@ -82,6 +85,7 @@
         <itemPath>../../Libraries/Drivers/ISO_TP_LITE/can_iso_tp_lite.c</itemPath>
         <itemPath>../../RTOS/Scheduler/SysTick.c</itemPath>
         <itemPath>../../Libraries/Standard/ringBuffer.c</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/src/ic.c</itemPath>
       </logicalFolder>
       <logicalFolder name="MCC Generated Files"
                      displayName="MCC Generated Files"
@@ -116,11 +120,15 @@
         <itemPath>ev_charger.c</itemPath>
         <itemPath>bms.c</itemPath>
         <itemPath>dcdc.c</itemPath>
+        <itemPath>diagnostic.c</itemPath>
+        <itemPath>j1772.c</itemPath>
       </logicalFolder>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
     <Elem>.</Elem>
+    <Elem>../../Libraries/PIC33_plib/src</Elem>
+    <Elem>../../Libraries/PIC33_plib/inc</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -200,7 +208,7 @@
         <property key="oXC16gcc-sfr-warn" value="false"/>
         <property key="oXC16gcc-smar-io-lvl" value="1"/>
         <property key="oXC16gcc-smart-io-fmt" value=""/>
-        <property key="optimization-level" value="0"/>
+        <property key="optimization-level" value="1"/>
         <property key="post-instruction-scheduling" value="default"/>
         <property key="pre-instruction-scheduling" value="default"/>
         <property key="preprocessor-macros" value=""/>

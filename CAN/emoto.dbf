@@ -153,7 +153,7 @@
 [START_SIGNALS] cell_2_voltage,15,3,3.0,U,32767,0,1,0,0.001,V,
 [START_SIGNALS] cell_3_voltage,15,5,2.0,U,32767,0,1,0,0.001,V,
 [START_SIGNALS] cell_4_voltage,15,7,1.0,U,32767,0,1,0,0.001,V,
-
+[END_MSG]
 
 [START_MSG] bms_cellTemperaturs,1830,8,5,1,S
 [START_SIGNALS] MultiPlex,4,1,0.0,U,15,0,1,0,1.0,,
