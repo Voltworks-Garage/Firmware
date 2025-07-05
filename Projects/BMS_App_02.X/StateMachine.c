@@ -83,9 +83,10 @@ void StateMachine_Init(void) {
     DCDC_init();
 }
 
+
+
 void StateMachine_Run(void) {
     
-    CAN_bms_debug_float1_set(curState);
     /* This only happens during state transition
      * State transitions thus have priority over posting new events
      * State transitions always consist of an exit event to curState and entry event to nextState */

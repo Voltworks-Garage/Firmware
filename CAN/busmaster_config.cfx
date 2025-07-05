@@ -18,10 +18,10 @@
     <Window_Position>
       <Visibility>SHOWNORMAL</Visibility>
       <WindowPlacement>HIDE</WindowPlacement>
-      <Top>649</Top>
+      <Top>426</Top>
       <Left>0</Left>
-      <Bottom>866</Bottom>
-      <Right>1532</Right>
+      <Bottom>852</Bottom>
+      <Right>1703</Right>
     </Window_Position>
   </Global_Configuration>
   <Module_Configuration>
@@ -64,8 +64,8 @@
           <AccMaskByte4_0>FF</AccMaskByte4_0>
           <AccMaskByte4_1>FF</AccMaskByte4_1>
           <HardwareDesc>PCAN-USB Driver Id 16</HardwareDesc>
-          <ItemUnderFocus>0</ItemUnderFocus>
-          <BTR0BTR1>28</BTR0BTR1>
+          <ItemUnderFocus>64</ItemUnderFocus>
+          <BTR0BTR1>49210</BTR0BTR1>
           <AccFilterMode>0</AccFilterMode>
           <ControllerMode>1</ControllerMode>
           <SelfReception>1</SelfReception>
@@ -218,7 +218,7 @@
         <ID>Time</ID>
         <Order>7</Order>
         <IsVisible>1</IsVisible>
-        <Width>170</Width>
+        <Width>116</Width>
       </COLUMN>
       <COLUMN>
         <ID>Tx/Rx</ID>
@@ -228,39 +228,39 @@
       </COLUMN>
       <COLUMN>
         <ID>Channel</ID>
-        <Order>5</Order>
+        <Order>4</Order>
         <IsVisible>1</IsVisible>
-        <Width>92</Width>
+        <Width>102</Width>
       </COLUMN>
       <COLUMN>
         <ID>Msg Type</ID>
-        <Order>4</Order>
+        <Order>3</Order>
         <IsVisible>1</IsVisible>
-        <Width>71</Width>
+        <Width>81</Width>
       </COLUMN>
       <COLUMN>
         <ID>ID</ID>
-        <Order>3</Order>
+        <Order>5</Order>
         <IsVisible>1</IsVisible>
-        <Width>127</Width>
+        <Width>250</Width>
       </COLUMN>
       <COLUMN>
         <ID>Message</ID>
         <Order>8</Order>
         <IsVisible>1</IsVisible>
-        <Width>267</Width>
+        <Width>265</Width>
       </COLUMN>
       <COLUMN>
         <ID>DLC</ID>
         <Order>9</Order>
         <IsVisible>1</IsVisible>
-        <Width>66</Width>
+        <Width>25</Width>
       </COLUMN>
       <COLUMN>
         <ID>Data Byte(s)</ID>
         <Order>2</Order>
         <IsVisible>1</IsVisible>
-        <Width>814</Width>
+        <Width>718</Width>
       </COLUMN>
       <IsHex>1</IsHex>
       <IsAppend>0</IsAppend>
@@ -269,18 +269,18 @@
       <Window_Position>
         <Visibility>SHOWNORMAL</Visibility>
         <WindowPlacement>RESTORETOMAXIMIZED</WindowPlacement>
-        <Top>0</Top>
-        <Left>0</Left>
-        <Bottom>648</Bottom>
-        <Right>1727</Right>
+        <Top>1</Top>
+        <Left>10</Left>
+        <Bottom>436</Bottom>
+        <Right>1687</Right>
       </Window_Position>
       <Interpretation_Window_Position>
         <Visibility>SHOWNORMAL</Visibility>
         <WindowPlacement>RESTORETOMAXIMIZED</WindowPlacement>
-        <Top>124</Top>
-        <Left>3</Left>
-        <Bottom>402</Bottom>
-        <Right>352</Right>
+        <Top>179</Top>
+        <Left>10</Left>
+        <Bottom>457</Bottom>
+        <Right>359</Right>
       </Interpretation_Window_Position>
     </CAN_Message_Window>
     <J1939_Message_Window>
@@ -360,7 +360,7 @@
         <ID>Data Byte(s)</ID>
         <Order>13</Order>
         <IsVisible>1</IsVisible>
-        <Width>720</Width>
+        <Width>533</Width>
       </COLUMN>
       <IsHex>1</IsHex>
       <IsAppend>0</IsAppend>
@@ -371,16 +371,16 @@
         <WindowPlacement>RESTORETOMAXIMIZED</WindowPlacement>
         <Top>0</Top>
         <Left>0</Left>
-        <Bottom>541</Bottom>
-        <Right>1614</Right>
+        <Bottom>548</Bottom>
+        <Right>1427</Right>
       </Window_Position>
       <Interpretation_Window_Position>
         <Visibility>SHOWNORMAL</Visibility>
         <WindowPlacement>RESTORETOMAXIMIZED</WindowPlacement>
-        <Top>124</Top>
-        <Left>3</Left>
-        <Bottom>402</Bottom>
-        <Right>352</Right>
+        <Top>179</Top>
+        <Left>10</Left>
+        <Bottom>457</Bottom>
+        <Right>359</Right>
       </Interpretation_Window_Position>
     </J1939_Message_Window>
     <LIN_Message_Window>
@@ -445,7 +445,7 @@
         <ID>Checksum</ID>
         <Order>10</Order>
         <IsVisible>1</IsVisible>
-        <Width>734</Width>
+        <Width>547</Width>
       </COLUMN>
       <IsHex>1</IsHex>
       <IsAppend>0</IsAppend>
@@ -456,37 +456,37 @@
         <WindowPlacement>RESTORETOMAXIMIZED</WindowPlacement>
         <Top>0</Top>
         <Left>0</Left>
-        <Bottom>541</Bottom>
-        <Right>1614</Right>
+        <Bottom>548</Bottom>
+        <Right>1427</Right>
       </Window_Position>
       <Interpretation_Window_Position>
         <Visibility>SHOWNORMAL</Visibility>
         <WindowPlacement>RESTORETOMAXIMIZED</WindowPlacement>
-        <Top>124</Top>
-        <Left>3</Left>
-        <Bottom>402</Bottom>
-        <Right>352</Right>
+        <Top>179</Top>
+        <Left>10</Left>
+        <Bottom>457</Bottom>
+        <Right>359</Right>
       </Interpretation_Window_Position>
     </LIN_Message_Window>
     <CAN_Tx_Window>
       <Window_Position>
         <Visibility>SHOWNORMAL</Visibility>
         <WindowPlacement>SETMINPOSITION</WindowPlacement>
-        <Top>593</Top>
-        <Left>836</Left>
-        <Bottom>1248</Bottom>
-        <Right>1696</Right>
+        <Top>233</Top>
+        <Left>630</Left>
+        <Bottom>888</Bottom>
+        <Right>1490</Right>
       </Window_Position>
       <Message_List>
         <Message>
           <Channel>1</Channel>
-          <Message_ID>1810</Message_ID>
+          <Message_ID>161</Message_ID>
           <IsExtended>FALSE</IsExtended>
           <IsRtr>FALSE</IsRtr>
           <DLC>8</DLC>
-          <DataBytes>0,0,0,0,0,0,0,0</DataBytes>
+          <DataBytes>1,12,0,0,0,0,0,0</DataBytes>
           <Repetion>10</Repetion>
-          <Repetition_Enabled>TRUE</Repetition_Enabled>
+          <Repetition_Enabled>FALSE</Repetition_Enabled>
           <Key_Value>a</Key_Value>
           <Key_Enabled>FALSE</Key_Enabled>
         </Message>
