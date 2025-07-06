@@ -51,6 +51,7 @@
         <itemPath>can_iso_tp_lite_config.h</itemPath>
         <itemPath>diagnostic.h</itemPath>
         <itemPath>j1772.h</itemPath>
+        <itemPath>ltc6802_1_nb.h</itemPath>
       </logicalFolder>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
@@ -122,6 +123,7 @@
         <itemPath>dcdc.c</itemPath>
         <itemPath>diagnostic.c</itemPath>
         <itemPath>j1772.c</itemPath>
+        <itemPath>ltc6802_1_nb.c</itemPath>
       </logicalFolder>
     </logicalFolder>
   </logicalFolder>
@@ -342,6 +344,7 @@
         <property key="event.recorder.debugger.behavior" value="Running"/>
         <property key="event.recorder.enabled" value="false"/>
         <property key="event.recorder.scvd.files" value=""/>
+        <property key="firmware.download.all" value="false"/>
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="lastid" value=""/>
         <property key="memories.aux" value="false"/>

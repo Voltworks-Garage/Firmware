@@ -6,6 +6,7 @@
  */
 
 #include "spi.h"
+#include "stddef.h"
 
 /*Output PPS registers*/
 #define RP20_SPI_PPS    _RP20R
@@ -42,6 +43,18 @@ static const uint8_t ppsOut[2] = {SCK2, SDO2};
 
 static volatile uint8_t spi1Status = 1;
 static volatile uint8_t spi2Status = 0;
+
+// Buffered transaction support for SPI1
+#define SPI1_BUFFER_SIZE 32
+static uint8_t spi1_tx_buffer[SPI1_BUFFER_SIZE];
+static uint8_t* spi1_rx_buffer_ptr = NULL;
+static volatile uint8_t spi1_tx_index = 0;
+static volatile uint8_t spi1_rx_index = 0;
+static volatile uint8_t spi1_tx_length = 0;
+static volatile uint8_t spi1_rx_length = 0;
+static volatile uint8_t spi1_transaction_active = 0;
+static volatile uint8_t spi1_transaction_complete = 0;
+static volatile uint8_t spi1_bytes_transferred = 0;
 
 void spi1Init(void) {
 
@@ -188,9 +201,56 @@ uint8_t spi2Ready(void) {
 
 void __attribute__((__interrupt__, auto_psv)) _SPI1Interrupt(void) {
     _SPI1IF = 0; /* Clear the Interrupt flag*/
-    spi1Status = 1;
-    //uint16_t temp = SPI1BUF; /*clear input buffer because it just always fills up*/
-    //temp = 0; /*Suppress Warning*/
+    
+    // Handle buffered transactions
+    if (spi1_transaction_active) {
+        // Read all available bytes from RX FIFO
+        while (SPI1STATbits.SPIRBF && spi1_rx_buffer_ptr != 0 && spi1_rx_index < spi1_rx_length) {
+            spi1_rx_buffer_ptr[spi1_rx_index] = (uint8_t)SPI1BUF;
+            spi1_rx_index++;
+            spi1_bytes_transferred++;
+        }
+        
+        // Clear any remaining RX data if buffer is full or not needed
+        while (SPI1STATbits.SPIRBF) {
+            volatile uint8_t dummy = (uint8_t)SPI1BUF;
+            (void)dummy; // Suppress warning
+            if (spi1_rx_buffer_ptr == 0) {
+                spi1_bytes_transferred++;
+            }
+        }
+        
+        // Fill TX FIFO with up to 4 bytes at once
+        while (!SPI1STATbits.SPITBF && 
+               (spi1_tx_index < spi1_tx_length || spi1_rx_index < spi1_rx_length)) {
+            
+            if (spi1_tx_index < spi1_tx_length) {
+                // Send actual data
+                SPI1BUF = spi1_tx_buffer[spi1_tx_index];
+                spi1_tx_index++;
+            } else if (spi1_rx_index < spi1_rx_length) {
+                // Send dummy byte to clock in RX data
+                SPI1BUF = 0xFF;
+            } else {
+                break;
+            }
+        }
+        
+        // Check if transaction is complete
+        if (spi1_tx_index >= spi1_tx_length && spi1_rx_index >= spi1_rx_length && 
+            !SPI1STATbits.SPIRBF && SPI1STATbits.SPITBF) {
+            spi1_transaction_active = 0;
+            spi1_transaction_complete = 1;
+        }
+    } else {
+        // Legacy mode for simple transfers
+        spi1Status = 1;
+        // Clear RX buffer
+        while (SPI1STATbits.SPIRBF) {
+            volatile uint8_t dummy = (uint8_t)SPI1BUF;
+            (void)dummy; // Suppress warning
+        }
+    }
 }
 
 void __attribute__((__interrupt__, auto_psv)) _SPI2Interrupt(void) {
@@ -198,5 +258,74 @@ void __attribute__((__interrupt__, auto_psv)) _SPI2Interrupt(void) {
     spi2Status = 1;
     uint16_t temp = SPI2BUF; /*clear input buffer because it just always fills up*/
     temp = 0; /*Suppress Warning*/
+}
+
+/******************************************************************************
+ * Buffered Transaction Functions
+ *******************************************************************************/
+
+uint8_t spi1StartBufferedTransaction(const uint8_t* tx_buffer, uint8_t tx_length, 
+                                    uint8_t* rx_buffer, uint8_t rx_length) {
+    // Check if SPI is busy
+    if (spi1_transaction_active) {
+        return 0; // Busy
+    }
+    
+    // Validate parameters
+    if (tx_buffer == 0 && tx_length > 0) {
+        return 0; // Invalid parameters
+    }
+    
+    if (tx_length > SPI1_BUFFER_SIZE) {
+        return 0; // TX buffer too large
+    }
+    
+    // Copy transmit data to internal buffer
+    if (tx_buffer != 0 && tx_length > 0) {
+        for (uint8_t i = 0; i < tx_length; i++) {
+            spi1_tx_buffer[i] = tx_buffer[i];
+        }
+    }
+    
+    // Set up transaction parameters
+    spi1_tx_length = tx_length;
+    spi1_rx_length = rx_length;
+    spi1_rx_buffer_ptr = rx_buffer;
+    spi1_tx_index = 0;
+    spi1_rx_index = 0;
+    spi1_bytes_transferred = 0;
+    spi1_transaction_complete = 0;
+    
+    // Start transaction
+    spi1_transaction_active = 1;
+    
+    // Fill TX FIFO with up to 4 bytes to start transaction
+    while (!SPI1STATbits.SPITBF && 
+           (spi1_tx_index < spi1_tx_length || (spi1_tx_index == 0 && spi1_rx_length > 0))) {
+        
+        if (spi1_tx_index < spi1_tx_length) {
+            // Send actual data
+            SPI1BUF = spi1_tx_buffer[spi1_tx_index];
+            spi1_tx_index++;
+        } else if (spi1_rx_length > 0) {
+            // Send dummy byte to clock in RX data
+            SPI1BUF = 0xFF;
+            break; // Only send one dummy to start
+        }
+    }
+    
+    return 1; // Success
+}
+
+uint8_t spi1IsBufferedTransactionComplete(void) {
+    return spi1_transaction_complete;
+}
+
+uint8_t spi1GetBufferedTransactionResult(void) {
+    if (spi1_transaction_complete) {
+        spi1_transaction_complete = 0; // Clear flag
+        return spi1_bytes_transferred;
+    }
+    return 0;
 }
 

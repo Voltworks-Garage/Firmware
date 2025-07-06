@@ -65,11 +65,11 @@
  */
 static TaskType Tasks[] =
 {
-    { INTERVAL_1MS  ,  71, Tsk_1ms    },
-    { INTERVAL_5MS  ,  53, Tsk_5ms    },
-	{ INTERVAL_10MS , 35, Tsk_10ms   },
-  	{ INTERVAL_100MS,  20, Tsk_100ms  },
-    { INTERVAL_1000MS,  0, Tsk_1000ms  },
+    { INTERVAL_1MS,   1000, Tsk_1ms    },  // Re-enabled to test individual functions
+    { INTERVAL_5MS,   996,  Tsk_5ms    },  // Re-enabled
+    { INTERVAL_10MS,  991,  Tsk_10ms   },  // Re-enabled to test individual functions
+    { INTERVAL_100MS, 904,  Tsk_100ms  },  // Re-enabled - now contains CPU reporting
+    { INTERVAL_1000MS, 4,   Tsk_1000ms },  // Re-enabled
 };
 
 /**
