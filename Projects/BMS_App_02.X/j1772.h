@@ -25,9 +25,9 @@ void j1772Control_Run_100ms(void);
 
 void j1772Control_Halt(void);
 
-prox_status_E j1772getProxState(void);
+prox_status_E J1772_GetProxState(void);
 
-uint8_t j1772getPilotCurrent(void);
+uint8_t J1772_GetPilotCurrent(void);
 
 #endif	/* J1772_H */
 

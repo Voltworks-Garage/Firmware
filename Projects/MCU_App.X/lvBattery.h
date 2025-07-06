@@ -32,13 +32,13 @@ typedef enum {
 } lvBatteryHealthState_E;
 
 
-void lvBattery_Init(void);
+void LvBattery_Init(void);
 
-void lvBattery_Run_10ms(void);
+void LvBattery_Run_10ms(void);
 
-void lvBattery_Halt(void);
+void LvBattery_Halt(void);
 
-lvBatteryState_E lvBattery_GetState(void);
+lvBatteryState_E LvBattery_GetState(void);
 
 
 #endif	/* LV_BATTERY_H */

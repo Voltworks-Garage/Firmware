@@ -41,8 +41,8 @@
 /******************************************************************************
  * Macros
  *******************************************************************************/
-#define DEBUG 0
-#if DEBUG
+#define TSK_DEBUG_ENABLE 0
+#if TSK_DEBUG_ENABLE
 #include <stdio.h>
 #include "uart.h"
 
@@ -85,11 +85,11 @@ void Tsk_init(void) {
     CAN_DBC_init(); // Initialize the CAN mailboxes
     StateMachine_Init();
     IO_SET_DEBUG_LED_EN(HIGH);
-    BMS_init();
+    BMS_Init();
     WATCHDOG_TimerClear();
     WATCHDOG_TimerSoftwareEnable();
 
-#if DEBUG
+#if TSK_DEBUG_ENABLE
     Uart1Write("Hello World, Task Init Done.\n"); //hi
 #endif
 }
@@ -116,7 +116,7 @@ void Tsk_5ms(void) {
  */
 void Tsk_10ms(void) {
     EV_CHARGER_Run_10ms();
-    BMS_run_10ms();
+    BMS_Run_10ms();
     CAN_bms_debug_CPU_USAGE_set(SysTick_GetCPUPercentage());
     CAN_bms_debug_CPU_peak_set(SysTick_GetCPUPeak());
     CAN_populate_10ms();
@@ -136,7 +136,7 @@ void Tsk_100ms(void) {
  * Runs every 1000ms
  */
 void Tsk_1000ms(void) {
-    BMS_run_1000ms();
+    BMS_Run_1000ms();
     CAN_populate_1000ms();
     CAN_send_1000ms();
 }
@@ -159,15 +159,15 @@ void Tsk_Run(uint32_t SystemClock) {
 
     static uint32_t tick = 0; // System tick
     static uint32_t lastTick = 0; //System last tick
-    static TaskType *Task_ptr; // Task pointer
-    static uint8_t TaskIndex = 0; // Task index
+    static TaskType *tsk_configPtr; // Task pointer
+    static uint8_t tsk_currentIndex = 0; // Task index
     const uint8_t NumTasks = Tsk_GetNumTasks(); // Number of tasks
 
     SysTick_Init(SystemClock);
 
-    Task_ptr = Tsk_GetConfig(); // Get a pointer to the task configuration
+    tsk_configPtr = Tsk_GetConfig(); // Get a pointer to the task configuration
     
-    SysTick_Set(Task_ptr[0].LastTick);// Set the Tick to the first task to allow for the phase offset
+    SysTick_Set(tsk_configPtr[0].LastTick);// Set the Tick to the first task to allow for the phase offset
 
     Tsk_init();
     // The main while loop.  This while loop will run the program forever
@@ -182,12 +182,12 @@ void Tsk_Run(uint32_t SystemClock) {
             // Loop through all tasks. If the number of ticks since the last time the task was run is
             // greater than or equal to the task interval, execute the task.
             SysTick_CPUTimerStart();
-            for (TaskIndex = 0; TaskIndex < NumTasks; TaskIndex++) {
+            for (tsk_currentIndex = 0; tsk_currentIndex < NumTasks; tsk_currentIndex++) {
 
-                if ((tick - Task_ptr[TaskIndex].LastTick) >= Task_ptr[TaskIndex].Interval) {
-                    (*Task_ptr[TaskIndex].Func)(); // Execute Task
+                if ((tick - tsk_configPtr[tsk_currentIndex].LastTick) >= tsk_configPtr[tsk_currentIndex].Interval) {
+                    (*tsk_configPtr[tsk_currentIndex].Func)(); // Execute Task
 
-                    Task_ptr[TaskIndex].LastTick = tick; // Save last tick the task was ran.
+                    tsk_configPtr[tsk_currentIndex].LastTick = tick; // Save last tick the task was ran.
                 }
             }// end for
             StateMachine_Run();
