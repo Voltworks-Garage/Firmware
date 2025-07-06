@@ -87,7 +87,7 @@ void Tsk_init(void) {
     IO_SET_DEBUG_LED_EN(HIGH);
     BMS_Init();
     WATCHDOG_TimerClear();
-    WATCHDOG_TimerSoftwareEnable();
+    //WATCHDOG_TimerSoftwareEnable();
 
 #if TSK_DEBUG_ENABLE
     Uart1Write("Hello World, Task Init Done.\n"); //hi
@@ -116,7 +116,7 @@ void Tsk_5ms(void) {
  */
 void Tsk_10ms(void) {
     EV_CHARGER_Run_10ms();
-    BMS_Run_10ms();
+    //BMS_Run_10ms();              // This is the CPU hog!
     CAN_bms_debug_CPU_USAGE_set(SysTick_GetCPUPercentage());
     CAN_bms_debug_CPU_peak_set(SysTick_GetCPUPeak());
     CAN_populate_10ms();

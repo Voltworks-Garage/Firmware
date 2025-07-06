@@ -114,6 +114,33 @@ void spi2Write(uint16_t input);
  */
 uint8_t spi2Ready(void);
 
+/**
+ * @function: spi1StartBufferedTransaction - Start a buffered SPI transaction
+ * @param tx_buffer: Pointer to transmit data buffer
+ * @param tx_length: Number of bytes to transmit
+ * @param rx_buffer: Pointer to receive data buffer (can be NULL if not needed)
+ * @param rx_length: Number of bytes to receive
+ * @return: 1 if transaction started successfully, 0 if SPI is busy
+ * 
+ * @note: CS pin management is handled by the calling application
+ *        Assert CS before calling this function
+ *        Deassert CS after spi1IsBufferedTransactionComplete() returns 1
+ */
+uint8_t spi1StartBufferedTransaction(const uint8_t* tx_buffer, uint8_t tx_length, 
+                                    uint8_t* rx_buffer, uint8_t rx_length);
+
+/**
+ * @function: spi1IsBufferedTransactionComplete - Check if buffered transaction is complete
+ * @return: 1 if complete, 0 if still in progress
+ */
+uint8_t spi1IsBufferedTransactionComplete(void);
+
+/**
+ * @function: spi1GetBufferedTransactionResult - Get result of last transaction
+ * @return: Number of bytes successfully transferred, 0 if error
+ */
+uint8_t spi1GetBufferedTransactionResult(void);
+
 #endif	/* SPI_H */
 
 
