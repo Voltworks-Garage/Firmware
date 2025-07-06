@@ -42,8 +42,8 @@
 /******************************************************************************
  * Macros
  *******************************************************************************/
-#define DEBUG 1
-#if DEBUG
+#define TSK_DEBUG_ENABLE 1
+#if TSK_DEBUG_ENABLE
 #include <stdio.h>
 #include "uart.h"
 #include "lvBattery.h"

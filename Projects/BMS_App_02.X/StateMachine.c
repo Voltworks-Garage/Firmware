@@ -63,11 +63,11 @@ typedef void(*statePtr)(STATE_MACHINE_entry_types_E);
 STATE_MACHINE_STATES(FUNCTION_FORM)
 static statePtr state_functions[] = {STATE_MACHINE_STATES(FUNC_PTR_FORM)};
 
-static STATE_MACHINE_states_E prevState = 0; /* initialize previous state */
-static STATE_MACHINE_states_E curState = 0; /* initialize current state */
-static STATE_MACHINE_states_E nextState = standby_state; /* initialize current state */
+static STATE_MACHINE_states_E sm_prevState = idle_state; /* initialize previous state */
+static STATE_MACHINE_states_E sm_curState = idle_state; /* initialize current state */
+static STATE_MACHINE_states_E sm_nextState = standby_state; /* initialize next state */
 
-uint64_t my_64_bit_word = 0;
+uint64_t sm_debugWord = 0;
 
 NEW_TIMER(diag_timeout, 1000);
 
@@ -89,15 +89,15 @@ void StateMachine_Run(void) {
     
     /* This only happens during state transition
      * State transitions thus have priority over posting new events
-     * State transitions always consist of an exit event to curState and entry event to nextState */
-    if (nextState != curState) {
-        state_functions[curState](EXIT);
-        prevState = curState;
-        curState = nextState;
-        state_functions[curState](ENTRY);
+     * State transitions always consist of an exit event to sm_curState and entry event to sm_nextState */
+    if (sm_nextState != sm_curState) {
+        state_functions[sm_curState](EXIT);
+        sm_prevState = sm_curState;
+        sm_curState = sm_nextState;
+        state_functions[sm_curState](ENTRY);
     }
     
-    state_functions[curState](RUN);
+    state_functions[sm_curState](RUN);
 
 }
 
@@ -112,13 +112,13 @@ void idle(STATE_MACHINE_entry_types_E entry_type) {
             break;
         case RUN:
             if (isoTP_peekCommand() == ISO_TP_TESTER_PRESENT){
-                nextState = diag_state;
+                sm_nextState = diag_state;
             }
             if (isoTP_peekCommand() == ISO_TP_IO_CONTROL){
-                nextState = diag_state;
+                sm_nextState = diag_state;
             }
             if (IO_GET_V12_POWER_STATUS() == 0) {
-                nextState = standby_state;
+                sm_nextState = standby_state;
             }
             break;
         default:
@@ -137,9 +137,9 @@ void standby(STATE_MACHINE_entry_types_E entry_type) {
             break;
         case RUN:
             if (IO_GET_V12_POWER_STATUS()) {
-                nextState = idle_state;
+                sm_nextState = idle_state;
             } else {
-                nextState = sleep_state;
+                sm_nextState = sleep_state;
             }
             break;
         default:
@@ -191,7 +191,7 @@ void sleep(STATE_MACHINE_entry_types_E entry_type) {
             WATCHDOG_TimerSoftwareEnable();
             WATCHDOG_TimerClear();
             SysTick_Resume();
-            nextState = idle_state;
+            sm_nextState = idle_state;
             break;
         default:
             break;
@@ -212,7 +212,7 @@ void diag(STATE_MACHINE_entry_types_E entry_type) {
                 SysTick_TimerStart(diag_timeout);
             }
             if(SysTick_TimeOut(diag_timeout)){
-                nextState = idle_state;
+                sm_nextState = idle_state;
             }
             break;
         default:
