@@ -58,8 +58,6 @@ typedef enum {
     RPI58_IC = 0x3A,
 } ic_pin_number;
 
-static uint8_t testVar = 0;
-
 /**
  * Init an Input Capture module on the specified Pin
  * @param newICPin from #define list above

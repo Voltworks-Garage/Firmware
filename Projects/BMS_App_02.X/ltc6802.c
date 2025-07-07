@@ -6,7 +6,7 @@
  */
 
 
-#include "ltc_6802.h"
+#include "ltc6802.h"
 #include "spi.h"
 #include "IO.h"
 #include "utils.h"

@@ -33,7 +33,7 @@ uint16_t get_bits(size_t * payload, uint8_t offset, uint8_t range);
 uint16_t set_bits(size_t * payload, uint8_t offset, uint8_t range, uint16_t value);
 
 
-uint8_t crc8ccitt(uint8_t * data, uint8_t size);
+uint8_t crc8ccitt(const uint8_t * data, uint8_t size);
 
 
 #endif //UTILS_H

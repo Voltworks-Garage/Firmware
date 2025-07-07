@@ -33,6 +33,7 @@
 #include "bms.h"
 #include "dcdc.h"
 #include "mcc_generated_files/watchdog.h"
+#include "../../Libraries/CommandService/commandService.h"
 
 /******************************************************************************
  * Constants
@@ -86,6 +87,7 @@ void Tsk_init(void) {
     StateMachine_Init();
     IO_SET_DEBUG_LED_EN(HIGH);
     BMS_Init();
+    CommandService_Init();
     WATCHDOG_TimerClear();
     //WATCHDOG_TimerSoftwareEnable();
 
@@ -117,6 +119,7 @@ void Tsk_5ms(void) {
 void Tsk_10ms(void) {
     EV_CHARGER_Run_10ms();
     //BMS_Run_10ms();              // This is the CPU hog!
+    CommandService_Run();
     CAN_bms_debug_CPU_USAGE_set(SysTick_GetCPUPercentage());
     CAN_bms_debug_CPU_peak_set(SysTick_GetCPUPeak());
     CAN_populate_10ms();

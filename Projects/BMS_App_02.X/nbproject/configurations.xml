@@ -18,6 +18,7 @@
         <itemPath>../../Libraries/Drivers/ISO_TP_LITE/can_iso_tp_lite.h</itemPath>
         <itemPath>../../Libraries/Standard/ringBuffer.h</itemPath>
         <itemPath>../../Libraries/PIC33_plib/inc/ic.h</itemPath>
+        <itemPath>../../Libraries/CommandService/commandService.h</itemPath>
       </logicalFolder>
       <logicalFolder name="MCC Generated Files"
                      displayName="MCC Generated Files"
@@ -42,16 +43,16 @@
         <itemPath>StateMachine.h</itemPath>
         <itemPath>pinSetup.h</itemPath>
         <itemPath>../../CAN/generated/bms_dbc.h</itemPath>
-        <itemPath>ltc_6802.h</itemPath>
+        <itemPath>ltc6802.h</itemPath>
         <itemPath>../../Libraries/PIC33_plib/inc/spi.h</itemPath>
         <itemPath>can_populate.h</itemPath>
         <itemPath>ev_charger.h</itemPath>
         <itemPath>bms.h</itemPath>
         <itemPath>dcdc.h</itemPath>
         <itemPath>can_iso_tp_lite_config.h</itemPath>
-        <itemPath>diagnostic.h</itemPath>
         <itemPath>j1772.h</itemPath>
         <itemPath>ltc6802_1_nb.h</itemPath>
+        <itemPath>commandService_config.h</itemPath>
       </logicalFolder>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
@@ -87,6 +88,7 @@
         <itemPath>../../RTOS/Scheduler/SysTick.c</itemPath>
         <itemPath>../../Libraries/Standard/ringBuffer.c</itemPath>
         <itemPath>../../Libraries/PIC33_plib/src/ic.c</itemPath>
+        <itemPath>../../Libraries/CommandService/commandService.c</itemPath>
       </logicalFolder>
       <logicalFolder name="MCC Generated Files"
                      displayName="MCC Generated Files"
@@ -116,12 +118,11 @@
         <itemPath>StateMachine.c</itemPath>
         <itemPath>pinSetup.c</itemPath>
         <itemPath>../../CAN/generated/bms_dbc.c</itemPath>
-        <itemPath>ltc_6802.c</itemPath>
+        <itemPath>ltc6802.c</itemPath>
         <itemPath>can_populate.c</itemPath>
         <itemPath>ev_charger.c</itemPath>
         <itemPath>bms.c</itemPath>
         <itemPath>dcdc.c</itemPath>
-        <itemPath>diagnostic.c</itemPath>
         <itemPath>j1772.c</itemPath>
         <itemPath>ltc6802_1_nb.c</itemPath>
       </logicalFolder>
@@ -131,6 +132,8 @@
     <Elem>.</Elem>
     <Elem>../../Libraries/PIC33_plib/src</Elem>
     <Elem>../../Libraries/PIC33_plib/inc</Elem>
+    <Elem>../../Libraries/CommandHandler</Elem>
+    <Elem>../../Libraries/CommandService</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>

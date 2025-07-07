@@ -9,7 +9,7 @@
 #include "can_populate.h"
 #include "bms_dbc.h"
 #include "IO.h"
-#include "ltc_6802.h"
+#include "ltc6802.h"
 #include "ev_charger.h"
 
 

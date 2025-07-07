@@ -6,7 +6,7 @@
  */
 
 
-#include "ltc_6802.h"
+#include "ltc6802.h"
 #include <stdint.h>
 
 void BMS_Init(void){

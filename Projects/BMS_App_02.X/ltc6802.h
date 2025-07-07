@@ -7,8 +7,8 @@
 
 // This is a guard condition so that contents of this file are not included
 // more than once.  
-#ifndef LTC6802__H
-#define	LTC6802__H
+#ifndef LTC6802_H
+#define	LTC6802_H
 
 #include <stdint.h>
 
@@ -37,5 +37,5 @@ float LTC6802_get_temp_voltage(uint8_t temp);
 uint8_t LTC6802_AddressReadCommand(uint8_t address, uint8_t command, uint8_t len, uint8_t * recieveData);
 void LTC6802_AddressWriteCommand(uint8_t address, uint8_t command, uint8_t len, uint8_t * transmitData);
 
-#endif	/* XC_HEADER_TEMPLATE_H */
+#endif	/* LTC6802_H */
 

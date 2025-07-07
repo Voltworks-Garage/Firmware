@@ -138,7 +138,7 @@ void LTC6802_1_Run(void) {
     if (ltc_module.spi_transaction_active) {
         if (spi1IsBufferedTransactionComplete()) {
             // Transaction completed
-            uint8_t bytes_transferred = spi1GetBufferedTransactionResult();
+            (void)spi1GetBufferedTransactionResult();  // Consume result to clear status
             ltc_module.spi_transaction_active = false;
             
             // Validate CRC if we received data
@@ -292,7 +292,6 @@ void LTC6802_1_Run(void) {
             {
                 uint8_t stack_id = (ltc_module.target_stack == 0xFF) ? 
                                   ltc_module.current_stack_index : ltc_module.target_stack;
-                uint8_t* data_ptr = &ltc_module.voltage_data[stack_id * LTC6802_1_VOLTAGE_REG_SIZE];
                 
                 LTC6802_1_Error_E error = StartSPITransaction(stack_id, LTC6802_1_CMD_RDCV, 
                                                              NULL, 0, true, LTC6802_1_VOLTAGE_REG_SIZE + 1);
@@ -308,7 +307,6 @@ void LTC6802_1_Run(void) {
             {
                 uint8_t stack_id = (ltc_module.target_stack == 0xFF) ? 
                                   ltc_module.current_stack_index : ltc_module.target_stack;
-                uint8_t* data_ptr = &ltc_module.temp_data[stack_id * LTC6802_1_TEMP_REG_SIZE];
                 
                 LTC6802_1_Error_E error = StartSPITransaction(stack_id, LTC6802_1_CMD_RDTMP, 
                                                              NULL, 0, true, LTC6802_1_TEMP_REG_SIZE + 1);
