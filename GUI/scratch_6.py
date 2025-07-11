@@ -173,8 +173,12 @@ class CANTableView:
         for signal_name, signal_value in msg.decoded_signals.items():
             if signal_name in msg.signal_item_ids:
                 # Update existing signal child value
-                self.tree.item(msg.signal_item_ids[signal_name],
-                             values=("", f"  {signal_name}", "", signal_value, "", ""))
+                try:
+                    self.tree.item(msg.signal_item_ids[signal_name],
+                                 values=("", f"  {signal_name}", "", signal_value, "", ""))
+                except tk.TclError:
+                    # Signal item was deleted, remove from tracking
+                    del msg.signal_item_ids[signal_name]
     
     def _clear_signal_children(self, msg: CANMessage):
         """Remove all signal children (used only when clearing entire table)"""
@@ -386,6 +390,11 @@ class CANApp:
         dbf_parser = BusmasterDBFParser(dbf_path)
         self.message_manager = CANMessageManager(dbf_parser)
         
+        # GUI refresh throttling (10Hz = 100ms)
+        self.gui_refresh_rate_ms = 100
+        self.pending_gui_updates = set()  # Track which messages need GUI updates
+        self.gui_update_timer = None
+        
         self.create_widgets()
 
     def create_widgets(self):
@@ -499,6 +508,12 @@ class CANApp:
             self.bus = None
             self.log("🔌 Disconnected.")
 
+        # Cancel any pending GUI updates
+        if self.gui_update_timer is not None:
+            self.root.after_cancel(self.gui_update_timer)
+            self.gui_update_timer = None
+        self.pending_gui_updates.clear()
+
         for task in self.tx_tasks.values():
             task["running"] = False
             if task.get("timer"):
@@ -524,13 +539,14 @@ class CANApp:
 
         msg_id = msg.arbitration_id
         
-        # Update message through the manager
+        # Update message data immediately (for accurate counting and timing)
         can_msg = self.message_manager.update_message(msg_id, msg.dlc, msg.data)
         
-        # Update the display
-        self.table_view.update_message_display(can_msg)
+        # Queue this message for GUI update (throttled)
+        self.pending_gui_updates.add(msg_id)
+        self._schedule_gui_update()
         
-        # Console logging
+        # Console logging (immediate, not throttled)
         if self.console_rx_enabled.get():
             msg_hex_id = f"{msg_id:X}"
             data_str = " ".join(f"{b:02X}" for b in msg.data)
@@ -541,6 +557,23 @@ class CANApp:
                 console_msg += f"\n    Decoded: {signal_str}"
             
             self.log(console_msg)
+    
+    def _schedule_gui_update(self):
+        """Schedule a GUI update if one isn't already pending"""
+        if self.gui_update_timer is None:
+            self.gui_update_timer = self.root.after(self.gui_refresh_rate_ms, self._perform_gui_updates)
+    
+    def _perform_gui_updates(self):
+        """Update GUI for all pending messages (called at 10Hz)"""
+        # Update all messages that have pending changes
+        for msg_id in list(self.pending_gui_updates):
+            can_msg = self.message_manager.get_message(msg_id)
+            if can_msg:
+                self.table_view.update_message_display(can_msg)
+        
+        # Clear pending updates and reset timer
+        self.pending_gui_updates.clear()
+        self.gui_update_timer = None
 
     def clear_rx_table(self):
         self.message_manager.clear_all()
