@@ -25,10 +25,15 @@ class CANMessage:
     is_expanded: bool = False
     tree_item_id: Optional[str] = None
     signal_item_ids: Optional[Dict[str, str]] = None
+    # For multiplexed messages - accumulate all received signals
+    accumulated_mux_signals: Optional[Dict[str, str]] = None
+    last_mux_value: Optional[int] = None
     
     def __post_init__(self):
         if self.signal_item_ids is None:
             self.signal_item_ids = {}
+        if self.accumulated_mux_signals is None:
+            self.accumulated_mux_signals = {}
 
 class CANMessageManager:
     """Manages CAN message storage, decoding, and expansion state"""
@@ -45,15 +50,32 @@ class CANMessageManager:
         decoded = self.dbf_parser.decode_message(msg_id, data)
         msg_name = decoded['name'] if decoded else "Unknown"
         decoded_signals = decoded['signals'] if decoded else None
+        is_multiplexed = decoded.get('is_multiplexed', False) if decoded else False
+        multiplex_value = decoded.get('multiplex_value') if decoded else None
         
         if msg_id in self.messages:
             # Update existing message
             msg = self.messages[msg_id]
+            
+            # Calculate cycle time from actual message intervals
+            if hasattr(msg, '_prev_msg_time') and msg._prev_msg_time is not None:
+                cycle_ms = (now - msg._prev_msg_time) * 1000
+                msg.cycle_time_str = f"{cycle_ms:.1f} ms"
+            else:
+                msg.cycle_time_str = "-"
+            
+            msg._prev_msg_time = now
             msg.dlc = dlc
             msg.data = data
             msg.count += 1
             msg.last_time = now
             msg.decoded_signals = decoded_signals
+            msg.last_mux_value = multiplex_value
+            
+            # For multiplexed messages, accumulate all received signals
+            if is_multiplexed and decoded_signals:
+                self._accumulate_mux_signals(msg, decoded_signals, multiplex_value)
+                
         else:
             # Create new message
             msg = CANMessage(
@@ -65,9 +87,84 @@ class CANMessageManager:
                 last_time=now,
                 decoded_signals=decoded_signals
             )
+            msg.cycle_time_str = "-"
+            msg._prev_msg_time = now
+            msg.last_mux_value = multiplex_value
             self.messages[msg_id] = msg
+            
+            # For multiplexed messages, initialize accumulation
+            if is_multiplexed and decoded_signals:
+                self._accumulate_mux_signals(msg, decoded_signals, multiplex_value)
         
         return msg
+    
+    def _accumulate_mux_signals(self, msg: CANMessage, decoded_signals: Dict[str, str], multiplex_value: Optional[int]):
+        """Accumulate signals from multiplexed messages for complete view"""
+        if not decoded_signals:
+            return
+            
+        # Update accumulated signals with new values
+        for signal_name, signal_value in decoded_signals.items():
+            # Skip the multiplex signal itself (it's just "Mode X")
+            if 'MultiPlex' in signal_name:
+                continue
+                
+            # Store the signal with current timestamp for freshness tracking
+            msg.accumulated_mux_signals[signal_name] = {
+                'value': signal_value,
+                'timestamp': time.time(),
+                'mux_value': multiplex_value
+            }
+    
+    def get_display_signals(self, msg: CANMessage) -> Dict[str, str]:
+        """Get signals to display - for multiplexed messages, show accumulated signals"""
+        if not msg.decoded_signals:
+            return {}
+            
+        # Check if this is a multiplexed message with accumulated signals
+        if msg.accumulated_mux_signals:
+            current_time = time.time()
+            display_signals = {}
+            
+            # Add multiplex mode indicator
+            if msg.last_mux_value is not None:
+                display_signals['MultiPlex'] = f"Mode {msg.last_mux_value}"
+            
+            # Show accumulated signals (mark stale ones) in sorted order
+            sorted_signals = self._sort_mux_signals(msg.accumulated_mux_signals)
+            
+            for signal_name, signal_info in sorted_signals.items():
+                age = current_time - signal_info['timestamp']
+                value = signal_info['value']
+                
+                # Mark signals older than 5 seconds as stale
+                if age > 5.0:
+                    value += " (stale)"
+                
+                display_signals[signal_name] = value
+            
+            return display_signals
+        else:
+            # Non-multiplexed message - return current signals
+            return msg.decoded_signals
+    
+    def _sort_mux_signals(self, accumulated_signals: Dict[str, Dict]) -> Dict[str, Dict]:
+        """Sort multiplexed signals for better organization (Cell_01, Cell_02, etc.)"""
+        def signal_sort_key(item):
+            signal_name = item[0]
+            # Extract number for sorting (Cell_01_voltage -> 1, Temp_05 -> 5)
+            try:
+                if 'Cell_' in signal_name:
+                    return (0, int(signal_name.split('_')[1]))  # Cells first
+                elif 'Temp_' in signal_name:
+                    return (1, int(signal_name.split('_')[1]))  # Temps second
+                else:
+                    return (2, signal_name)  # Other signals last
+            except (ValueError, IndexError):
+                return (3, signal_name)  # Fallback for unparseable names
+        
+        sorted_items = sorted(accumulated_signals.items(), key=signal_sort_key)
+        return dict(sorted_items)
     
     def toggle_expansion(self, msg_id: int) -> bool:
         """Toggle expansion state of a message. Returns new expansion state."""
@@ -111,8 +208,7 @@ class CANTableView:
             self.tree.heading(col, text=col)
             self.tree.column(col, width=w)
         
-        # Bind events
-        self.tree.bind("<Double-1>", self._on_double_click)
+        # Bind events (only single-click on tree column)
         self.tree.bind("<Button-1>", self._on_single_click)
     
     def pack(self, **kwargs):
@@ -125,36 +221,38 @@ class CANTableView:
         msg_hex_id = f"{msg.msg_id:X}"
         data_str = " ".join(f"{b:02X}" for b in msg.data)
         
-        # Calculate cycle time if we have previous timing
-        cycle_str = "-"
-        if hasattr(msg, '_prev_time') and msg._prev_time is not None:
-            cycle_ms = (msg.last_time - msg._prev_time) * 1000
-            cycle_str = f"{cycle_ms:.1f} ms"
-        msg._prev_time = msg.last_time
+        # Get cycle time from message (calculated in real-time)
+        cycle_str = getattr(msg, 'cycle_time_str', "-")
         
         if msg.tree_item_id is None:
             # Create new tree item
-            expand_indicator = "▶" if msg.decoded_signals else ""
             msg.tree_item_id = self.tree.insert("", tk.END, 
-                                               text=expand_indicator,
-                                               values=(msg_hex_id, msg.name, msg.dlc, data_str, msg.count, cycle_str))
+                                               values=(msg_hex_id, msg.name, msg.dlc, data_str, msg.count, cycle_str),
+                                               open=msg.is_expanded)
+            msg.dummy_item_id = self.tree.insert(msg.tree_item_id, tk.END, text="", values=("", "  Dummy", "", "", "", ""))
         else:
             # Update existing tree item
-            expand_indicator = "▼" if msg.is_expanded else ("▶" if msg.decoded_signals else "")
             self.tree.item(msg.tree_item_id,
-                          text=expand_indicator,
-                          values=(msg_hex_id, msg.name, msg.dlc, data_str, msg.count, cycle_str))
+                          values=(msg_hex_id, msg.name, msg.dlc, data_str, msg.count, cycle_str),
+                          open=msg.is_expanded)
         
         # Handle signal children (only update values if expanded)
-        if msg.is_expanded and msg.decoded_signals:
-            self._update_signal_children(msg)
+        # Use display signals which handles multiplexed signal accumulation
+        display_signals = self.message_manager.get_display_signals(msg)
+        if msg.is_expanded and display_signals:
+            self._update_signal_children(msg, display_signals)
+        else:
+            pass
     
-    def _ensure_signal_children(self, msg: CANMessage):
+    def _ensure_signal_children(self, msg: CANMessage, display_signals: Dict[str, str] = None):
         """Ensure signal children exist for this message (create only if needed)"""
-        if not msg.decoded_signals:
+        if display_signals is None:
+            display_signals = self.message_manager.get_display_signals(msg)
+            
+        if not display_signals:
             return
             
-        for signal_name, signal_value in msg.decoded_signals.items():
+        for signal_name, signal_value in display_signals.items():
             if signal_name not in msg.signal_item_ids:
                 # Create new signal child only if it doesn't exist
                 signal_item = self.tree.insert(msg.tree_item_id, tk.END, text="",
@@ -165,20 +263,33 @@ class CANTableView:
                 self.tree.item(msg.signal_item_ids[signal_name],
                              values=("", f"  {signal_name}", "", signal_value, "", ""))
     
-    def _update_signal_children(self, msg: CANMessage):
+    def _update_signal_children(self, msg: CANMessage, display_signals: Dict[str, str]):
         """Update signal children values (only if they exist and message is expanded)"""
-        if not msg.is_expanded or not msg.decoded_signals:
+        if not msg.is_expanded or not display_signals:
             return
-            
-        for signal_name, signal_value in msg.decoded_signals.items():
+
+        if msg.dummy_item_id is not None:
+            # Remove dummy item if it exists (used to ensure children are created)
+            self.tree.delete(msg.dummy_item_id)
+            msg.dummy_item_id = None
+
+        # First, ensure all signals have tree items
+        self._ensure_signal_children(msg, display_signals)
+
+        # Then update all signal values
+        for signal_name, signal_value in display_signals.items():
             if signal_name in msg.signal_item_ids:
                 # Update existing signal child value
                 try:
                     self.tree.item(msg.signal_item_ids[signal_name],
                                  values=("", f"  {signal_name}", "", signal_value, "", ""))
                 except tk.TclError:
-                    # Signal item was deleted, remove from tracking
+                    # Signal item was deleted, remove from tracking and recreate
+                    print(f"  ERROR: Signal item {signal_name} was deleted, recreating")
                     del msg.signal_item_ids[signal_name]
+                    signal_item = self.tree.insert(msg.tree_item_id, tk.END, text="",
+                                                 values=("", f"  {signal_name}", "", signal_value, "", ""))
+                    msg.signal_item_ids[signal_name] = signal_item
     
     def _clear_signal_children(self, msg: CANMessage):
         """Remove all signal children (used only when clearing entire table)"""
@@ -208,11 +319,12 @@ class CANTableView:
                 is_expanded = self.message_manager.toggle_expansion(msg_id)
                 if is_expanded:
                     # Ensure children exist, then open
-                    self._ensure_signal_children(msg)
-                    self.tree.item(tree_item_id, text="▼", open=True)
+                    display_signals = self.message_manager.get_display_signals(msg)
+                    self._ensure_signal_children(msg, display_signals)
+                    print("DEBUG: Expanded message", msg_id)
                 else:
                     # Just close the tree item, don't delete children
-                    self.tree.item(tree_item_id, text="▶", open=False)
+                    print("DEBUG: Collapsed message", msg_id)
                 break
     
     def clear_all(self):
@@ -272,7 +384,24 @@ class BusmasterDBFParser:
                         'multiplex_value': None
                     }
                     
-                    # Detect multiplexor signal (typically named "MultiPlex", "Mux", etc.)
+                    # Check for multiplex notation in the DBF (M0, M1, etc. or just 'm' for multiplexor)
+                    multiplex_notation = parts[11] if len(parts) > 11 else ''
+                    
+                    if multiplex_notation.lower() == 'm':
+                        # This is the multiplexor signal itself
+                        signal['is_multiplexor'] = True
+                        current_msg['multiplex_signal'] = signal['name']
+                        current_msg['is_multiplexed'] = True
+                    elif multiplex_notation.startswith('M') and len(multiplex_notation) > 1:
+                        # This is a multiplexed signal (M0, M1, M2, etc.)
+                        try:
+                            mux_value = int(multiplex_notation[1:])  # Extract number after 'M'
+                            signal['multiplex_value'] = mux_value
+                            current_msg['is_multiplexed'] = True
+                        except ValueError:
+                            pass
+                    
+                    # Also detect multiplexor signal by name (fallback)
                     if signal['name'].lower() in ['multiplex', 'mux', 'multiplexor']:
                         signal['is_multiplexor'] = True
                         current_msg['multiplex_signal'] = signal['name']
@@ -335,10 +464,19 @@ class BusmasterDBFParser:
                         decoded['signals'][signal['name']] = 'Error'
                     break
         
-        # Second pass: decode all other signals
+        # Second pass: decode signals that match the current multiplex value
         for signal in msg_def['signals']:
             if signal['is_multiplexor']:
                 continue  # Already handled above
+            
+            # For multiplexed messages, only decode signals that match current mux value
+            if msg_def['is_multiplexed'] and multiplex_value is not None:
+                # Skip signals that don't match current mux value
+                if signal.get('multiplex_value') is not None and signal['multiplex_value'] != multiplex_value:
+                    continue
+                # Skip signals that have no mux value (they shouldn't exist in pure mux messages)
+                if signal.get('multiplex_value') is None:
+                    continue
                 
             try:
                 value = self.extract_signal_value(signal, data)
@@ -346,33 +484,51 @@ class BusmasterDBFParser:
                 # For multiplexed messages, create descriptive signal names
                 signal_name = signal['name']
                 if msg_def['is_multiplexed'] and multiplex_value is not None:
-                    # Handle cell voltages and temperatures with proper indexing
-                    if 'cell' in signal['name'] and 'voltage' in signal['name']:
-                        cell_num = int(signal['name'].split('_')[1])
-                        absolute_cell = (multiplex_value * 4) + cell_num
-                        signal_name = f"Cell_{absolute_cell:02d}_voltage"
-                    elif 'temp' in signal['name']:
-                        temp_num = int(signal['name'].split('_')[1])
-                        absolute_temp = (multiplex_value * 4) + temp_num
-                        signal_name = f"Temp_{absolute_temp:02d}"
-                    else:
-                        # For other multiplexed signals, just add the mode prefix
-                        signal_name = f"M{multiplex_value}_{signal['name']}"
+                    signal_name = self._generate_mux_signal_name(signal['name'], multiplex_value)
                 
-                if signal['type'] == 'B':
-                    decoded['signals'][signal_name] = 'True' if value else 'False'
-                else:
-                    unit_str = f" {signal['unit']}" if signal['unit'] else ''
-                    if signal['factor'] == 1.0 and signal['offset'] == 0.0:
-                        decoded['signals'][signal_name] = f"{int(value)}{unit_str}"
-                    else:
-                        # Use higher precision for voltage/current measurements
-                        precision = 3 if 'voltage' in signal['name'].lower() or 'current' in signal['name'].lower() else 2
-                        decoded['signals'][signal_name] = f"{value:.{precision}f}{unit_str}"
+                # Format the value
+                formatted_value = self._format_signal_value(signal, value)
+                decoded['signals'][signal_name] = formatted_value
+                
             except Exception:
                 decoded['signals'][signal.get('name', 'unknown')] = 'Error'
         
         return decoded
+    
+    def _generate_mux_signal_name(self, signal_name, multiplex_value):
+        """Generate proper signal names for multiplexed signals"""
+        # Handle cell voltages - signal name already has correct number (1-24)
+        if 'cell' in signal_name and 'voltage' in signal_name:
+            try:
+                cell_num = int(signal_name.split('_')[1])
+                return f"Cell_{cell_num:02d}_voltage"
+            except (ValueError, IndexError):
+                return f"M{multiplex_value}_{signal_name}"
+        
+        # Handle temperatures - signal name already has correct number (1-24)
+        elif 'temp' in signal_name:
+            try:
+                temp_num = int(signal_name.split('_')[1])
+                return f"Temp_{temp_num:02d}"
+            except (ValueError, IndexError):
+                return f"M{multiplex_value}_{signal_name}"
+        
+        # For other multiplexed signals, use standard prefix
+        else:
+            return f"M{multiplex_value}_{signal_name}"
+    
+    def _format_signal_value(self, signal, value):
+        """Format signal value with appropriate precision and units"""
+        if signal['type'] == 'B':
+            return 'True' if value else 'False'
+        else:
+            unit_str = f" {signal['unit']}" if signal['unit'] else ''
+            if signal['factor'] == 1.0 and signal['offset'] == 0.0:
+                return f"{int(value)}{unit_str}"
+            else:
+                # Use higher precision for voltage/current measurements
+                precision = 3 if 'voltage' in signal['name'].lower() or 'current' in signal['name'].lower() else 2
+                return f"{value:.{precision}f}{unit_str}"
 
 class CANApp:
     def __init__(self, root):
@@ -440,17 +596,52 @@ class CANApp:
         self.create_tx_section()
 
     def scan_devices(self):
-        try:
-            configs = can.detect_available_configs()
-            self.available_channels = [cfg['channel'] for cfg in configs if cfg.get('interface') == 'pcan']
-            self.device_combo['values'] = self.available_channels
-            if self.available_channels:
-                self.device_combo.current(0)
-                self.log(f"🔍 Found devices: {', '.join(self.available_channels)}")
-            else:
-                self.log("⚠️  No PCAN USB devices found.")
-        except Exception as e:
-            self.log(f"❌ Error scanning devices: {e}")
+        # Disable scan button and show progress
+        scan_btn = None
+        for widget in self.root.winfo_children():
+            if isinstance(widget, ttk.Frame):
+                for child in widget.winfo_children():
+                    if isinstance(child, ttk.Button) and 'scan' in child.cget('text').lower():
+                        scan_btn = child
+                        break
+        
+        if scan_btn:
+            scan_btn.config(text="Scanning...", state="disabled")
+        
+        self.log("🔍 Scanning for PCAN devices...")
+        
+        # Run scan in background thread to avoid blocking GUI
+        def scan_thread():
+            try:
+                configs = can.detect_available_configs()
+                channels = [cfg['channel'] for cfg in configs if cfg.get('interface') == 'pcan']
+                
+                # Update GUI from main thread
+                self.root.after(0, self._scan_complete, channels, scan_btn)
+            except Exception as e:
+                self.root.after(0, self._scan_error, str(e), scan_btn)
+        
+        threading.Thread(target=scan_thread, daemon=True).start()
+    
+    def _scan_complete(self, channels, scan_btn):
+        """Called when scan completes successfully"""
+        self.available_channels = channels
+        self.device_combo['values'] = self.available_channels
+        
+        if self.available_channels:
+            self.device_combo.current(0)
+            self.log(f"✅ Found {len(channels)} PCAN device(s): {', '.join(channels)}")
+        else:
+            self.log("⚠️  No PCAN USB devices found.")
+        
+        if scan_btn:
+            scan_btn.config(text="Scan Devices", state="normal")
+    
+    def _scan_error(self, error_msg, scan_btn):
+        """Called when scan encounters an error"""
+        self.log(f"❌ Error scanning devices: {error_msg}")
+        if scan_btn:
+            scan_btn.config(text="Scan Devices", state="normal")
 
     def create_tx_section(self):
         tx_frame = ttk.LabelFrame(self.root, text="TX Message Scheduler")
@@ -553,6 +744,7 @@ class CANApp:
             console_msg = f"⬇️  RX ID: 0x{msg_hex_id} ({can_msg.name})  DLC: {msg.dlc}  Data: {data_str}"
             
             if can_msg.decoded_signals and self.show_decoded.get():
+                # For console logging, show only current frame's signals (not accumulated)
                 signal_str = ", ".join([f"{name}: {value}" for name, value in can_msg.decoded_signals.items()])
                 console_msg += f"\n    Decoded: {signal_str}"
             

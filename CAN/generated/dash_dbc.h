@@ -150,18 +150,58 @@ uint16_t CAN_bms_charger_request_byte_8_get(void);
 #define CAN_bms_cellVoltages_interval() 1000
 uint8_t CAN_bms_cellVoltages_checkDataIsFresh(void);
 uint16_t CAN_bms_cellVoltages_MultiPlex_get(void);
-float CAN_bms_cellVoltages_cell_1_voltage_get(void);
-float CAN_bms_cellVoltages_cell_2_voltage_get(void);
-float CAN_bms_cellVoltages_cell_3_voltage_get(void);
-float CAN_bms_cellVoltages_cell_4_voltage_get(void);
+float CAN_bms_cellVoltages_M0_cell_1_voltage_get(void);
+float CAN_bms_cellVoltages_M0_cell_2_voltage_get(void);
+float CAN_bms_cellVoltages_M0_cell_3_voltage_get(void);
+float CAN_bms_cellVoltages_M0_cell_4_voltage_get(void);
+float CAN_bms_cellVoltages_M1_cell_5_voltage_get(void);
+float CAN_bms_cellVoltages_M1_cell_6_voltage_get(void);
+float CAN_bms_cellVoltages_M1_cell_7_voltage_get(void);
+float CAN_bms_cellVoltages_M1_cell_8_voltage_get(void);
+float CAN_bms_cellVoltages_M2_cell_9_voltage_get(void);
+float CAN_bms_cellVoltages_M2_cell_10_voltage_get(void);
+float CAN_bms_cellVoltages_M2_cell_11_voltage_get(void);
+float CAN_bms_cellVoltages_M2_cell_12_voltage_get(void);
+float CAN_bms_cellVoltages_M3_cell_13_voltage_get(void);
+float CAN_bms_cellVoltages_M3_cell_14_voltage_get(void);
+float CAN_bms_cellVoltages_M3_cell_15_voltage_get(void);
+float CAN_bms_cellVoltages_M3_cell_16_voltage_get(void);
+float CAN_bms_cellVoltages_M4_cell_17_voltage_get(void);
+float CAN_bms_cellVoltages_M4_cell_18_voltage_get(void);
+float CAN_bms_cellVoltages_M4_cell_19_voltage_get(void);
+float CAN_bms_cellVoltages_M4_cell_20_voltage_get(void);
+float CAN_bms_cellVoltages_M5_cell_21_voltage_get(void);
+float CAN_bms_cellVoltages_M5_cell_22_voltage_get(void);
+float CAN_bms_cellVoltages_M5_cell_23_voltage_get(void);
+float CAN_bms_cellVoltages_M5_cell_24_voltage_get(void);
 
 #define CAN_bms_cellTemperaturs_interval() 1000
 uint8_t CAN_bms_cellTemperaturs_checkDataIsFresh(void);
 uint16_t CAN_bms_cellTemperaturs_MultiPlex_get(void);
-float CAN_bms_cellTemperaturs_temp_1_get(void);
-float CAN_bms_cellTemperaturs_temp_2_get(void);
-float CAN_bms_cellTemperaturs_temp_3_get(void);
-float CAN_bms_cellTemperaturs_temp_4_get(void);
+float CAN_bms_cellTemperaturs_M0_temp_1_get(void);
+float CAN_bms_cellTemperaturs_M0_temp_2_get(void);
+float CAN_bms_cellTemperaturs_M0_temp_3_get(void);
+float CAN_bms_cellTemperaturs_M0_temp_4_get(void);
+float CAN_bms_cellTemperaturs_M1_temp_5_get(void);
+float CAN_bms_cellTemperaturs_M1_temp_6_get(void);
+float CAN_bms_cellTemperaturs_M1_temp_7_get(void);
+float CAN_bms_cellTemperaturs_M1_temp_8_get(void);
+float CAN_bms_cellTemperaturs_M2_temp_9_get(void);
+float CAN_bms_cellTemperaturs_M2_temp_10_get(void);
+float CAN_bms_cellTemperaturs_M2_temp_11_get(void);
+float CAN_bms_cellTemperaturs_M2_temp_12_get(void);
+float CAN_bms_cellTemperaturs_M3_temp_13_get(void);
+float CAN_bms_cellTemperaturs_M3_temp_14_get(void);
+float CAN_bms_cellTemperaturs_M3_temp_15_get(void);
+float CAN_bms_cellTemperaturs_M3_temp_16_get(void);
+float CAN_bms_cellTemperaturs_M4_temp_17_get(void);
+float CAN_bms_cellTemperaturs_M4_temp_18_get(void);
+float CAN_bms_cellTemperaturs_M4_temp_19_get(void);
+float CAN_bms_cellTemperaturs_M4_temp_20_get(void);
+float CAN_bms_cellTemperaturs_M5_temp_21_get(void);
+float CAN_bms_cellTemperaturs_M5_temp_22_get(void);
+float CAN_bms_cellTemperaturs_M5_temp_23_get(void);
+float CAN_bms_cellTemperaturs_M5_temp_24_get(void);
 
 /**********************************************************
  * motorcontroller NODE MESSAGES

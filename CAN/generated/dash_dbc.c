@@ -699,33 +699,153 @@ uint8_t CAN_bms_cellVoltages_checkDataIsFresh(void){
 }
 #define CAN_BMS_CELLVOLTAGES_MULTIPLEX_RANGE 4
 #define CAN_BMS_CELLVOLTAGES_MULTIPLEX_OFFSET 0
-#define CAN_BMS_CELLVOLTAGES_CELL_1_VOLTAGE_RANGE 15
-#define CAN_BMS_CELLVOLTAGES_CELL_1_VOLTAGE_OFFSET 4
-#define CAN_BMS_CELLVOLTAGES_CELL_2_VOLTAGE_RANGE 15
-#define CAN_BMS_CELLVOLTAGES_CELL_2_VOLTAGE_OFFSET 19
-#define CAN_BMS_CELLVOLTAGES_CELL_3_VOLTAGE_RANGE 15
-#define CAN_BMS_CELLVOLTAGES_CELL_3_VOLTAGE_OFFSET 34
-#define CAN_BMS_CELLVOLTAGES_CELL_4_VOLTAGE_RANGE 15
-#define CAN_BMS_CELLVOLTAGES_CELL_4_VOLTAGE_OFFSET 49
+#define CAN_BMS_CELLVOLTAGES_M0_CELL_1_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M0_CELL_1_VOLTAGE_OFFSET 4
+#define CAN_BMS_CELLVOLTAGES_M0_CELL_2_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M0_CELL_2_VOLTAGE_OFFSET 19
+#define CAN_BMS_CELLVOLTAGES_M0_CELL_3_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M0_CELL_3_VOLTAGE_OFFSET 34
+#define CAN_BMS_CELLVOLTAGES_M0_CELL_4_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M0_CELL_4_VOLTAGE_OFFSET 49
+#define CAN_BMS_CELLVOLTAGES_M1_CELL_5_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M1_CELL_5_VOLTAGE_OFFSET 4
+#define CAN_BMS_CELLVOLTAGES_M1_CELL_6_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M1_CELL_6_VOLTAGE_OFFSET 19
+#define CAN_BMS_CELLVOLTAGES_M1_CELL_7_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M1_CELL_7_VOLTAGE_OFFSET 34
+#define CAN_BMS_CELLVOLTAGES_M1_CELL_8_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M1_CELL_8_VOLTAGE_OFFSET 49
+#define CAN_BMS_CELLVOLTAGES_M2_CELL_9_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M2_CELL_9_VOLTAGE_OFFSET 4
+#define CAN_BMS_CELLVOLTAGES_M2_CELL_10_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M2_CELL_10_VOLTAGE_OFFSET 19
+#define CAN_BMS_CELLVOLTAGES_M2_CELL_11_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M2_CELL_11_VOLTAGE_OFFSET 34
+#define CAN_BMS_CELLVOLTAGES_M2_CELL_12_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M2_CELL_12_VOLTAGE_OFFSET 49
+#define CAN_BMS_CELLVOLTAGES_M3_CELL_13_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M3_CELL_13_VOLTAGE_OFFSET 4
+#define CAN_BMS_CELLVOLTAGES_M3_CELL_14_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M3_CELL_14_VOLTAGE_OFFSET 19
+#define CAN_BMS_CELLVOLTAGES_M3_CELL_15_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M3_CELL_15_VOLTAGE_OFFSET 34
+#define CAN_BMS_CELLVOLTAGES_M3_CELL_16_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M3_CELL_16_VOLTAGE_OFFSET 49
+#define CAN_BMS_CELLVOLTAGES_M4_CELL_17_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M4_CELL_17_VOLTAGE_OFFSET 4
+#define CAN_BMS_CELLVOLTAGES_M4_CELL_18_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M4_CELL_18_VOLTAGE_OFFSET 19
+#define CAN_BMS_CELLVOLTAGES_M4_CELL_19_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M4_CELL_19_VOLTAGE_OFFSET 34
+#define CAN_BMS_CELLVOLTAGES_M4_CELL_20_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M4_CELL_20_VOLTAGE_OFFSET 49
+#define CAN_BMS_CELLVOLTAGES_M5_CELL_21_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M5_CELL_21_VOLTAGE_OFFSET 4
+#define CAN_BMS_CELLVOLTAGES_M5_CELL_22_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M5_CELL_22_VOLTAGE_OFFSET 19
+#define CAN_BMS_CELLVOLTAGES_M5_CELL_23_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M5_CELL_23_VOLTAGE_OFFSET 34
+#define CAN_BMS_CELLVOLTAGES_M5_CELL_24_VOLTAGE_RANGE 15
+#define CAN_BMS_CELLVOLTAGES_M5_CELL_24_VOLTAGE_OFFSET 49
 
 uint16_t CAN_bms_cellVoltages_MultiPlex_get(void){
 	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELLVOLTAGES_MULTIPLEX_RANGE);
 	return (data * 1.0) + 0;
 }
-float CAN_bms_cellVoltages_cell_1_voltage_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_CELL_1_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_CELL_1_VOLTAGE_RANGE);
+float CAN_bms_cellVoltages_M0_cell_1_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M0_CELL_1_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M0_CELL_1_VOLTAGE_RANGE);
 	return (data * 0.001) + 0;
 }
-float CAN_bms_cellVoltages_cell_2_voltage_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_CELL_2_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_CELL_2_VOLTAGE_RANGE);
+float CAN_bms_cellVoltages_M0_cell_2_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M0_CELL_2_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M0_CELL_2_VOLTAGE_RANGE);
 	return (data * 0.001) + 0;
 }
-float CAN_bms_cellVoltages_cell_3_voltage_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_CELL_3_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_CELL_3_VOLTAGE_RANGE);
+float CAN_bms_cellVoltages_M0_cell_3_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M0_CELL_3_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M0_CELL_3_VOLTAGE_RANGE);
 	return (data * 0.001) + 0;
 }
-float CAN_bms_cellVoltages_cell_4_voltage_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_CELL_4_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_CELL_4_VOLTAGE_RANGE);
+float CAN_bms_cellVoltages_M0_cell_4_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M0_CELL_4_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M0_CELL_4_VOLTAGE_RANGE);
+	return (data * 0.001) + 0;
+}
+float CAN_bms_cellVoltages_M1_cell_5_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M1_CELL_5_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M1_CELL_5_VOLTAGE_RANGE);
+	return (data * 0.001) + 0;
+}
+float CAN_bms_cellVoltages_M1_cell_6_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M1_CELL_6_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M1_CELL_6_VOLTAGE_RANGE);
+	return (data * 0.001) + 0;
+}
+float CAN_bms_cellVoltages_M1_cell_7_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M1_CELL_7_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M1_CELL_7_VOLTAGE_RANGE);
+	return (data * 0.001) + 0;
+}
+float CAN_bms_cellVoltages_M1_cell_8_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M1_CELL_8_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M1_CELL_8_VOLTAGE_RANGE);
+	return (data * 0.001) + 0;
+}
+float CAN_bms_cellVoltages_M2_cell_9_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M2_CELL_9_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M2_CELL_9_VOLTAGE_RANGE);
+	return (data * 0.001) + 0;
+}
+float CAN_bms_cellVoltages_M2_cell_10_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M2_CELL_10_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M2_CELL_10_VOLTAGE_RANGE);
+	return (data * 0.001) + 0;
+}
+float CAN_bms_cellVoltages_M2_cell_11_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M2_CELL_11_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M2_CELL_11_VOLTAGE_RANGE);
+	return (data * 0.001) + 0;
+}
+float CAN_bms_cellVoltages_M2_cell_12_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M2_CELL_12_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M2_CELL_12_VOLTAGE_RANGE);
+	return (data * 0.001) + 0;
+}
+float CAN_bms_cellVoltages_M3_cell_13_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M3_CELL_13_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M3_CELL_13_VOLTAGE_RANGE);
+	return (data * 0.001) + 0;
+}
+float CAN_bms_cellVoltages_M3_cell_14_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M3_CELL_14_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M3_CELL_14_VOLTAGE_RANGE);
+	return (data * 0.001) + 0;
+}
+float CAN_bms_cellVoltages_M3_cell_15_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M3_CELL_15_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M3_CELL_15_VOLTAGE_RANGE);
+	return (data * 0.001) + 0;
+}
+float CAN_bms_cellVoltages_M3_cell_16_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M3_CELL_16_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M3_CELL_16_VOLTAGE_RANGE);
+	return (data * 0.001) + 0;
+}
+float CAN_bms_cellVoltages_M4_cell_17_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M4_CELL_17_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M4_CELL_17_VOLTAGE_RANGE);
+	return (data * 0.001) + 0;
+}
+float CAN_bms_cellVoltages_M4_cell_18_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M4_CELL_18_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M4_CELL_18_VOLTAGE_RANGE);
+	return (data * 0.001) + 0;
+}
+float CAN_bms_cellVoltages_M4_cell_19_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M4_CELL_19_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M4_CELL_19_VOLTAGE_RANGE);
+	return (data * 0.001) + 0;
+}
+float CAN_bms_cellVoltages_M4_cell_20_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M4_CELL_20_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M4_CELL_20_VOLTAGE_RANGE);
+	return (data * 0.001) + 0;
+}
+float CAN_bms_cellVoltages_M5_cell_21_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M5_CELL_21_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M5_CELL_21_VOLTAGE_RANGE);
+	return (data * 0.001) + 0;
+}
+float CAN_bms_cellVoltages_M5_cell_22_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M5_CELL_22_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M5_CELL_22_VOLTAGE_RANGE);
+	return (data * 0.001) + 0;
+}
+float CAN_bms_cellVoltages_M5_cell_23_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M5_CELL_23_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M5_CELL_23_VOLTAGE_RANGE);
+	return (data * 0.001) + 0;
+}
+float CAN_bms_cellVoltages_M5_cell_24_voltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellVoltages.payload, CAN_BMS_CELLVOLTAGES_M5_CELL_24_VOLTAGE_OFFSET, CAN_BMS_CELLVOLTAGES_M5_CELL_24_VOLTAGE_RANGE);
 	return (data * 0.001) + 0;
 }
 
@@ -744,33 +864,153 @@ uint8_t CAN_bms_cellTemperaturs_checkDataIsFresh(void){
 }
 #define CAN_BMS_CELLTEMPERATURS_MULTIPLEX_RANGE 4
 #define CAN_BMS_CELLTEMPERATURS_MULTIPLEX_OFFSET 0
-#define CAN_BMS_CELLTEMPERATURS_TEMP_1_RANGE 12
-#define CAN_BMS_CELLTEMPERATURS_TEMP_1_OFFSET 4
-#define CAN_BMS_CELLTEMPERATURS_TEMP_2_RANGE 12
-#define CAN_BMS_CELLTEMPERATURS_TEMP_2_OFFSET 16
-#define CAN_BMS_CELLTEMPERATURS_TEMP_3_RANGE 12
-#define CAN_BMS_CELLTEMPERATURS_TEMP_3_OFFSET 28
-#define CAN_BMS_CELLTEMPERATURS_TEMP_4_RANGE 12
-#define CAN_BMS_CELLTEMPERATURS_TEMP_4_OFFSET 40
+#define CAN_BMS_CELLTEMPERATURS_M0_TEMP_1_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M0_TEMP_1_OFFSET 4
+#define CAN_BMS_CELLTEMPERATURS_M0_TEMP_2_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M0_TEMP_2_OFFSET 16
+#define CAN_BMS_CELLTEMPERATURS_M0_TEMP_3_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M0_TEMP_3_OFFSET 28
+#define CAN_BMS_CELLTEMPERATURS_M0_TEMP_4_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M0_TEMP_4_OFFSET 40
+#define CAN_BMS_CELLTEMPERATURS_M1_TEMP_5_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M1_TEMP_5_OFFSET 4
+#define CAN_BMS_CELLTEMPERATURS_M1_TEMP_6_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M1_TEMP_6_OFFSET 16
+#define CAN_BMS_CELLTEMPERATURS_M1_TEMP_7_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M1_TEMP_7_OFFSET 28
+#define CAN_BMS_CELLTEMPERATURS_M1_TEMP_8_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M1_TEMP_8_OFFSET 40
+#define CAN_BMS_CELLTEMPERATURS_M2_TEMP_9_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M2_TEMP_9_OFFSET 4
+#define CAN_BMS_CELLTEMPERATURS_M2_TEMP_10_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M2_TEMP_10_OFFSET 16
+#define CAN_BMS_CELLTEMPERATURS_M2_TEMP_11_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M2_TEMP_11_OFFSET 28
+#define CAN_BMS_CELLTEMPERATURS_M2_TEMP_12_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M2_TEMP_12_OFFSET 40
+#define CAN_BMS_CELLTEMPERATURS_M3_TEMP_13_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M3_TEMP_13_OFFSET 4
+#define CAN_BMS_CELLTEMPERATURS_M3_TEMP_14_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M3_TEMP_14_OFFSET 16
+#define CAN_BMS_CELLTEMPERATURS_M3_TEMP_15_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M3_TEMP_15_OFFSET 28
+#define CAN_BMS_CELLTEMPERATURS_M3_TEMP_16_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M3_TEMP_16_OFFSET 40
+#define CAN_BMS_CELLTEMPERATURS_M4_TEMP_17_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M4_TEMP_17_OFFSET 4
+#define CAN_BMS_CELLTEMPERATURS_M4_TEMP_18_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M4_TEMP_18_OFFSET 16
+#define CAN_BMS_CELLTEMPERATURS_M4_TEMP_19_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M4_TEMP_19_OFFSET 28
+#define CAN_BMS_CELLTEMPERATURS_M4_TEMP_20_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M4_TEMP_20_OFFSET 40
+#define CAN_BMS_CELLTEMPERATURS_M5_TEMP_21_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M5_TEMP_21_OFFSET 4
+#define CAN_BMS_CELLTEMPERATURS_M5_TEMP_22_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M5_TEMP_22_OFFSET 16
+#define CAN_BMS_CELLTEMPERATURS_M5_TEMP_23_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M5_TEMP_23_OFFSET 28
+#define CAN_BMS_CELLTEMPERATURS_M5_TEMP_24_RANGE 12
+#define CAN_BMS_CELLTEMPERATURS_M5_TEMP_24_OFFSET 40
 
 uint16_t CAN_bms_cellTemperaturs_MultiPlex_get(void){
 	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_MULTIPLEX_OFFSET, CAN_BMS_CELLTEMPERATURS_MULTIPLEX_RANGE);
 	return (data * 1.0) + 0;
 }
-float CAN_bms_cellTemperaturs_temp_1_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_TEMP_1_OFFSET, CAN_BMS_CELLTEMPERATURS_TEMP_1_RANGE);
+float CAN_bms_cellTemperaturs_M0_temp_1_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M0_TEMP_1_OFFSET, CAN_BMS_CELLTEMPERATURS_M0_TEMP_1_RANGE);
 	return (data * 0.1) + -40;
 }
-float CAN_bms_cellTemperaturs_temp_2_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_TEMP_2_OFFSET, CAN_BMS_CELLTEMPERATURS_TEMP_2_RANGE);
+float CAN_bms_cellTemperaturs_M0_temp_2_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M0_TEMP_2_OFFSET, CAN_BMS_CELLTEMPERATURS_M0_TEMP_2_RANGE);
 	return (data * 0.1) + -40;
 }
-float CAN_bms_cellTemperaturs_temp_3_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_TEMP_3_OFFSET, CAN_BMS_CELLTEMPERATURS_TEMP_3_RANGE);
+float CAN_bms_cellTemperaturs_M0_temp_3_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M0_TEMP_3_OFFSET, CAN_BMS_CELLTEMPERATURS_M0_TEMP_3_RANGE);
 	return (data * 0.1) + -40;
 }
-float CAN_bms_cellTemperaturs_temp_4_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_TEMP_4_OFFSET, CAN_BMS_CELLTEMPERATURS_TEMP_4_RANGE);
+float CAN_bms_cellTemperaturs_M0_temp_4_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M0_TEMP_4_OFFSET, CAN_BMS_CELLTEMPERATURS_M0_TEMP_4_RANGE);
+	return (data * 0.1) + -40;
+}
+float CAN_bms_cellTemperaturs_M1_temp_5_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M1_TEMP_5_OFFSET, CAN_BMS_CELLTEMPERATURS_M1_TEMP_5_RANGE);
+	return (data * 0.1) + -40;
+}
+float CAN_bms_cellTemperaturs_M1_temp_6_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M1_TEMP_6_OFFSET, CAN_BMS_CELLTEMPERATURS_M1_TEMP_6_RANGE);
+	return (data * 0.1) + -40;
+}
+float CAN_bms_cellTemperaturs_M1_temp_7_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M1_TEMP_7_OFFSET, CAN_BMS_CELLTEMPERATURS_M1_TEMP_7_RANGE);
+	return (data * 0.1) + -40;
+}
+float CAN_bms_cellTemperaturs_M1_temp_8_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M1_TEMP_8_OFFSET, CAN_BMS_CELLTEMPERATURS_M1_TEMP_8_RANGE);
+	return (data * 0.1) + -40;
+}
+float CAN_bms_cellTemperaturs_M2_temp_9_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M2_TEMP_9_OFFSET, CAN_BMS_CELLTEMPERATURS_M2_TEMP_9_RANGE);
+	return (data * 0.1) + -40;
+}
+float CAN_bms_cellTemperaturs_M2_temp_10_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M2_TEMP_10_OFFSET, CAN_BMS_CELLTEMPERATURS_M2_TEMP_10_RANGE);
+	return (data * 0.1) + -40;
+}
+float CAN_bms_cellTemperaturs_M2_temp_11_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M2_TEMP_11_OFFSET, CAN_BMS_CELLTEMPERATURS_M2_TEMP_11_RANGE);
+	return (data * 0.1) + -40;
+}
+float CAN_bms_cellTemperaturs_M2_temp_12_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M2_TEMP_12_OFFSET, CAN_BMS_CELLTEMPERATURS_M2_TEMP_12_RANGE);
+	return (data * 0.1) + -40;
+}
+float CAN_bms_cellTemperaturs_M3_temp_13_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M3_TEMP_13_OFFSET, CAN_BMS_CELLTEMPERATURS_M3_TEMP_13_RANGE);
+	return (data * 0.1) + -40;
+}
+float CAN_bms_cellTemperaturs_M3_temp_14_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M3_TEMP_14_OFFSET, CAN_BMS_CELLTEMPERATURS_M3_TEMP_14_RANGE);
+	return (data * 0.1) + -40;
+}
+float CAN_bms_cellTemperaturs_M3_temp_15_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M3_TEMP_15_OFFSET, CAN_BMS_CELLTEMPERATURS_M3_TEMP_15_RANGE);
+	return (data * 0.1) + -40;
+}
+float CAN_bms_cellTemperaturs_M3_temp_16_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M3_TEMP_16_OFFSET, CAN_BMS_CELLTEMPERATURS_M3_TEMP_16_RANGE);
+	return (data * 0.1) + -40;
+}
+float CAN_bms_cellTemperaturs_M4_temp_17_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M4_TEMP_17_OFFSET, CAN_BMS_CELLTEMPERATURS_M4_TEMP_17_RANGE);
+	return (data * 0.1) + -40;
+}
+float CAN_bms_cellTemperaturs_M4_temp_18_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M4_TEMP_18_OFFSET, CAN_BMS_CELLTEMPERATURS_M4_TEMP_18_RANGE);
+	return (data * 0.1) + -40;
+}
+float CAN_bms_cellTemperaturs_M4_temp_19_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M4_TEMP_19_OFFSET, CAN_BMS_CELLTEMPERATURS_M4_TEMP_19_RANGE);
+	return (data * 0.1) + -40;
+}
+float CAN_bms_cellTemperaturs_M4_temp_20_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M4_TEMP_20_OFFSET, CAN_BMS_CELLTEMPERATURS_M4_TEMP_20_RANGE);
+	return (data * 0.1) + -40;
+}
+float CAN_bms_cellTemperaturs_M5_temp_21_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M5_TEMP_21_OFFSET, CAN_BMS_CELLTEMPERATURS_M5_TEMP_21_RANGE);
+	return (data * 0.1) + -40;
+}
+float CAN_bms_cellTemperaturs_M5_temp_22_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M5_TEMP_22_OFFSET, CAN_BMS_CELLTEMPERATURS_M5_TEMP_22_RANGE);
+	return (data * 0.1) + -40;
+}
+float CAN_bms_cellTemperaturs_M5_temp_23_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M5_TEMP_23_OFFSET, CAN_BMS_CELLTEMPERATURS_M5_TEMP_23_RANGE);
+	return (data * 0.1) + -40;
+}
+float CAN_bms_cellTemperaturs_M5_temp_24_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_cellTemperaturs.payload, CAN_BMS_CELLTEMPERATURS_M5_TEMP_24_OFFSET, CAN_BMS_CELLTEMPERATURS_M5_TEMP_24_RANGE);
 	return (data * 0.1) + -40;
 }
 

@@ -1,11 +1,11 @@
 import json
 
 
-file = '.\\dbc.json' #easygui.fileopenbox("select json dbc file", default='C:\\Repos\\E_Moto\\Firmware\\CAN\\dbc.json')
+file = './dbc.json' #easygui.fileopenbox("select json dbc file", default='C:\\Repos\\E_Moto\\Firmware\\CAN\\dbc.json')
 
 dbc_dict = json.load(open(file))
 
-f_DBF = open('.\\emoto.dbf', 'w')
+f_DBF = open('./emoto.dbf', 'w')
 
 f_DBF.write("//******************************BUSMASTER Messages and signals Database ******************************//\n\n")
 f_DBF.write("[DATABASE_VERSION] 1.3\n\n")
@@ -33,6 +33,28 @@ for node in dbc_dict["NODE"]:
                 data_type = "B"
             else:
                 data_type = "U"
-            f_DBF.write("[START_SIGNALS] {},{},{},{},{},{},{},{},{},{},{},{}\n".format(signal['name'], signal['length'], int(offset/8) + 1, float(offset%8), data_type, 2**signal['length']-1, 0, 1, signal["offset"], signal["scale"],signal["units"],""))
+            
+            # Handle multiplex signals
+            multiplex_info = ""
+            if signal.get("multiplex") is not None:
+                multiplex_info = f",M{signal['multiplex']}"
+            elif signal.get("name") and signal["name"].lower() in ["multiplex", "mux"]:
+                # This is the multiplexor signal itself
+                multiplex_info = ",m"
+            
+            f_DBF.write("[START_SIGNALS] {},{},{},{},{},{},{},{},{},{},{}{}\n".format(
+                signal['name'], 
+                signal['length'], 
+                int(offset/8) + 1, 
+                float(offset%8), 
+                data_type, 
+                2**signal['length']-1, 
+                0, 
+                1, 
+                signal["offset"], 
+                signal["scale"],
+                signal["units"],
+                multiplex_info
+            ))
             offset += int(signal['length'])
         f_DBF.write("[END_MSG]\n\n")
