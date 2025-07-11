@@ -168,11 +168,8 @@ class CANTableView:
     
     def _clear_signal_children(self, msg: CANMessage):
         """Remove all signal children for a collapsed message"""
-        if msg.tree_item_id:
-            # Delete all children of this tree item
-            for child in self.tree.get_children(msg.tree_item_id):
-                self.tree.delete(child)
-        # Clear the signal item tracking
+        for signal_item_id in msg.signal_item_ids.values():
+            self.tree.delete(signal_item_id)
         msg.signal_item_ids.clear()
     
     def _on_double_click(self, event):
