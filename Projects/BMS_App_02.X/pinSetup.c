@@ -136,7 +136,7 @@ void PinSetup_Init(void) {
     CAN_Init(CAN_TX, CAN_RX, CAN_BAUD_500k, CAN_DISABLE, CLOCK_SystemFrequencyGet());
     
     /*Wake inputs*/
-    PINS_internalRegisters_SetInterrupt(V12_POWER_STATUS, 1);
+    PINS_setInterrupt(V12_POWER_STATUS, 1);
 }
 
 

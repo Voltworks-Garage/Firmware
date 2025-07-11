@@ -6,7 +6,37 @@
 #define toggle(reg, val) (*(reg) ^= (val))
 #define get(reg,val) (*(reg) & (val))
 
-typedef struct _PINS_internalRegisters_S {
+// Support for new STM32-style enum format
+#define PINS_PIN_TO_PORT(pin) ((pin) >> 4)
+#define PINS_PIN_TO_NUM(pin) ((pin) & 0x0F)
+#define PINS_PIN_TO_PINS_S(pin) (PINS_pin_S){PINS_PIN_TO_PORT(pin), PINS_PIN_TO_NUM(pin)}
+
+typedef enum {
+#ifdef PORTA
+    PIN_PORTA,
+#endif
+#ifdef PORTB
+    PIN_PORTB,
+#endif
+#ifdef PORTC
+    PIN_PORTC,
+#endif
+#ifdef PORTD
+    PIN_PORTD,
+#endif
+#ifdef PORTE
+    PIN_PORTE,
+#endif
+#ifdef PORTF
+    PIN_PORTF,
+#endif
+#ifdef PORTG
+    PIN_PORTG,
+#endif
+    PINS_NUMBER_OF_PORTS
+} PINS_portNumber_E;
+
+typedef struct {
     volatile uint16_t* const tris;
     volatile uint16_t* const port;
     volatile uint16_t* const lat;
@@ -14,12 +44,12 @@ typedef struct _PINS_internalRegisters_S {
     volatile uint16_t* const pd;
     volatile uint16_t* const od;
     volatile uint16_t* const inter;
-} PINS_internalRegisters_S;
+} PINS_S;
 
 /*******************************************************************************
  * PORTA
  */
-static const PINS_internalRegisters_S PINS_portsArray[PINS_NUMBER_OF_PORTS] = {
+static const PINS_S PINS_portsArray[PINS_NUMBER_OF_PORTS] = {
 #ifdef PORTA
     [PIN_PORTA].tris = &TRISA,
     [PIN_PORTA].port = &PORTA,
@@ -35,7 +65,7 @@ static const PINS_internalRegisters_S PINS_portsArray[PINS_NUMBER_OF_PORTS] = {
     [PIN_PORTB].lat = &LATB,
     [PIN_PORTB].pu = &CNPUB,
     [PIN_PORTB].pd = &CNPDB,
-    //[PIN_PORTB].od = &ODCB,
+    [PIN_PORTB].od = &ODCB,
     [PIN_PORTB].inter = &CNENB,
 #endif
 #ifdef PORTC
@@ -44,7 +74,7 @@ static const PINS_internalRegisters_S PINS_portsArray[PINS_NUMBER_OF_PORTS] = {
     [PIN_PORTC].lat = &LATC,
     [PIN_PORTC].pu = &CNPUC,
     [PIN_PORTC].pd = &CNPDC,
-    //[PIN_PORTC].od = &ODCC,
+    [PIN_PORTC].od = &ODCC,
     [PIN_PORTC].inter = &CNENC,
 #endif
 #ifdef PORTD
@@ -62,7 +92,7 @@ static const PINS_internalRegisters_S PINS_portsArray[PINS_NUMBER_OF_PORTS] = {
     [PIN_PORTE].lat = &LATE,
     [PIN_PORTE].pu = &CNPUE,
     [PIN_PORTE].pd = &CNPDE,
-    //[PIN_PORTE].od = &ODCE,
+    [PIN_PORTE].od = &ODCE,
     [PIN_PORTE].inter = &CNENE,
 #endif
 #ifdef PORTF
@@ -86,68 +116,94 @@ static const PINS_internalRegisters_S PINS_portsArray[PINS_NUMBER_OF_PORTS] = {
 };
 
 
-void PINS_direction(PINS_pin_S pin, PINS_direction_E dir) {
-    uint16_t thisPin = 1 << pin.pin;
-    if (dir == 0) {
-        clear(PINS_portsArray[pin.port].tris, thisPin);
+/*******************************************************************************
+ * GPIO pin functions implementation (Simplified)
+ * ****************************************************************************/
+
+void PINS_direction(gpio_pin_t pin, PINS_direction_E dir) {
+    uint8_t port = PINS_PIN_TO_PORT(pin);
+    uint8_t pin_num = PINS_PIN_TO_NUM(pin);
+    uint16_t pin_mask = 1 << pin_num;
+    
+    if (dir == OUTPUT) {
+        clear(PINS_portsArray[port].tris, pin_mask);
     } else {
-        set(PINS_portsArray[pin.port].tris, thisPin);
+        set(PINS_portsArray[port].tris, pin_mask);
     }
 }
 
-void PINS_write(PINS_pin_S pin, PINS_internalRegisters_State_E state) {
-    uint16_t thisPin = (1 << pin.pin);
+void PINS_write(gpio_pin_t pin, PINS_State_E state) {
+    uint8_t port = PINS_PIN_TO_PORT(pin);
+    uint8_t pin_num = PINS_PIN_TO_NUM(pin);
+    uint16_t pin_mask = 1 << pin_num;
+    
     switch (state) {
         case LOW:
-            clear(PINS_portsArray[pin.port].lat, thisPin);
+            clear(PINS_portsArray[port].lat, pin_mask);
             break;
         case HIGH:
-            set(PINS_portsArray[pin.port].lat, thisPin);
+            set(PINS_portsArray[port].lat, pin_mask);
             break;
         case TOGGLE:
-            toggle(PINS_portsArray[pin.port].lat, thisPin);
+            toggle(PINS_portsArray[port].lat, pin_mask);
             break;
         default:
             break;
     }
 }
 
-PINS_internalRegisters_State_E PINS_read(PINS_pin_S pin) {
-    return get(PINS_portsArray[pin.port].port, 1<<pin.pin) >> pin.pin;
+PINS_State_E PINS_read(gpio_pin_t pin) {
+    uint8_t port = PINS_PIN_TO_PORT(pin);
+    uint8_t pin_num = PINS_PIN_TO_NUM(pin);
+    uint16_t pin_mask = 1 << pin_num;
+    
+    return get(PINS_portsArray[port].port, pin_mask) >> pin_num;
 }
 
-void PINS_pullUp(PINS_pin_S pin, PINS_internalRegisters_State_E state) {
-    uint16_t thisPin = 1 << pin.pin;
-    if (state == 0) {
-        clear(PINS_portsArray[pin.port].pu, thisPin);
+void PINS_pullUp(gpio_pin_t pin, PINS_State_E state) {
+    uint8_t port = PINS_PIN_TO_PORT(pin);
+    uint8_t pin_num = PINS_PIN_TO_NUM(pin);
+    uint16_t pin_mask = 1 << pin_num;
+    
+    if (state == LOW) {
+        clear(PINS_portsArray[port].pu, pin_mask);
     } else {
-        set(PINS_portsArray[pin.port].pu, thisPin);
+        set(PINS_portsArray[port].pu, pin_mask);
     }
 }
 
-void PINS_pullDown(PINS_pin_S pin, PINS_internalRegisters_State_E state) {
-    uint16_t thisPin = 1 << pin.pin;
-    if (state == 0) {
-        clear(PINS_portsArray[pin.port].pd, thisPin);
+void PINS_pullDown(gpio_pin_t pin, PINS_State_E state) {
+    uint8_t port = PINS_PIN_TO_PORT(pin);
+    uint8_t pin_num = PINS_PIN_TO_NUM(pin);
+    uint16_t pin_mask = 1 << pin_num;
+    
+    if (state == LOW) {
+        clear(PINS_portsArray[port].pd, pin_mask);
     } else {
-        set(PINS_portsArray[pin.port].pd, thisPin);
+        set(PINS_portsArray[port].pd, pin_mask);
     }
 }
 
-void PINS_openDrain(PINS_pin_S pin, PINS_internalRegisters_State_E state) {
-    uint16_t thisPin = 1 << pin.pin;
-    if (state == 0) {
-        clear(PINS_portsArray[pin.port].pd, thisPin);
+void PINS_openDrain(gpio_pin_t pin, PINS_State_E state) {
+    uint8_t port = PINS_PIN_TO_PORT(pin);
+    uint8_t pin_num = PINS_PIN_TO_NUM(pin);
+    uint16_t pin_mask = 1 << pin_num;
+    
+    if (state == LOW) {
+        clear(PINS_portsArray[port].od, pin_mask);
     } else {
-        set(PINS_portsArray[pin.port].pd, thisPin);
+        set(PINS_portsArray[port].od, pin_mask);
     }
 }
 
-void PINS_internalRegisters_SetInterrupt(PINS_pin_S pin, PINS_internalRegisters_State_E state) {
-    uint16_t thisPin = 1 << pin.pin;
-    if (state == 0) {
-        clear(PINS_portsArray[pin.port].inter, thisPin);
+void PINS_setInterrupt(gpio_pin_t pin, PINS_State_E state) {
+    uint8_t port = PINS_PIN_TO_PORT(pin);
+    uint8_t pin_num = PINS_PIN_TO_NUM(pin);
+    uint16_t pin_mask = 1 << pin_num;
+    
+    if (state == LOW) {
+        clear(PINS_portsArray[port].inter, pin_mask);
     } else {
-        set(PINS_portsArray[pin.port].inter, thisPin);
+        set(PINS_portsArray[port].inter, pin_mask);
     }
 }
