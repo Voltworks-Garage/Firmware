@@ -543,9 +543,9 @@ class CANApp:
         
         # Initialize components
         dbf_path = r"C:\REPOS\Voltworks_Garage\Firmware\CAN\emoto.dbf"
-        dbf_parser = BusmasterDBFParser(dbf_path)
-        self.message_manager = CANMessageManager(dbf_parser)
-        
+        self.dbf_parser = BusmasterDBFParser(dbf_path)
+        self.message_manager = CANMessageManager(self.dbf_parser)
+
         # GUI refresh throttling (10Hz = 100ms)
         self.gui_refresh_rate_ms = 100
         self.pending_gui_updates = set()  # Track which messages need GUI updates
@@ -672,37 +672,52 @@ class CANApp:
         ttk.Entry(input_frame, textvariable=self.tx_cycle_var, width=6).grid(row=0, column=5, padx=5, pady=2)
 
         ttk.Button(input_frame, text="Add TX", command=self.add_tx_row).grid(row=0, column=6, padx=5, pady=2)
-        ttk.Button(input_frame, text="Add Blank", command=self.add_blank_tx_row).grid(row=0, column=7, padx=5, pady=2)
+        ttk.Button(input_frame, text="Add Message", command=self.add_dbf_message).grid(row=0, column=7, padx=5, pady=2)
 
         # Header row with consistent column configuration
         header_frame = ttk.Frame(tx_frame)
-        header_frame.pack(fill=tk.X, padx=5, pady=(0, 5))
+        header_frame.pack(fill=tk.X, padx=(5, 25), pady=(0, 5))  # Extra right padding for scrollbar
         
         # Configure columns for consistent alignment
-        header_frame.grid_columnconfigure(0, weight=0, minsize=80)   # ID column
-        header_frame.grid_columnconfigure(1, weight=1, minsize=300)  # Data column (expandable)
-        header_frame.grid_columnconfigure(2, weight=0, minsize=70)   # Cycle column
-        header_frame.grid_columnconfigure(3, weight=0, minsize=80)   # Status column
-        header_frame.grid_columnconfigure(4, weight=0, minsize=140)  # Actions column
+        header_frame.grid_columnconfigure(0, weight=0, minsize=75)   # ID column
+        header_frame.grid_columnconfigure(1, weight=1, minsize=280)  # Data column (expandable)
+        header_frame.grid_columnconfigure(2, weight=0, minsize=65)   # Cycle column
+        header_frame.grid_columnconfigure(3, weight=0, minsize=75)   # Status column
+        header_frame.grid_columnconfigure(4, weight=0, minsize=135)  # Actions column
         
-        ttk.Label(header_frame, text="ID", anchor="center", relief="ridge").grid(row=0, column=0, sticky="ew", padx=1)
-        ttk.Label(header_frame, text="Data", anchor="center", relief="ridge").grid(row=0, column=1, sticky="ew", padx=1)
-        ttk.Label(header_frame, text="Cycle", anchor="center", relief="ridge").grid(row=0, column=2, sticky="ew", padx=1)
-        ttk.Label(header_frame, text="Status", anchor="center", relief="ridge").grid(row=0, column=3, sticky="ew", padx=1)
-        ttk.Label(header_frame, text="Actions", anchor="center", relief="ridge").grid(row=0, column=4, sticky="ew", padx=1)
+        ttk.Label(header_frame, text="ID", anchor="center", relief="solid", borderwidth=1, width=10).grid(row=0, column=0, sticky="ew", padx=1, ipady=2)
+        ttk.Label(header_frame, text="Data", anchor="center", relief="solid", borderwidth=1, width=35).grid(row=0, column=1, sticky="ew", padx=1, ipady=2)
+        ttk.Label(header_frame, text="Cycle", anchor="center", relief="solid", borderwidth=1, width=8).grid(row=0, column=2, sticky="ew", padx=1, ipady=2)
+        ttk.Label(header_frame, text="Status", anchor="center", relief="solid", borderwidth=1, width=10).grid(row=0, column=3, sticky="ew", padx=1, ipady=2)
+        ttk.Label(header_frame, text="Actions", anchor="center", relief="solid", borderwidth=1, width=21).grid(row=0, column=4, sticky="ew", padx=1, ipady=2)
 
         # Scrollable frame for TX messages
         self.tx_canvas = tk.Canvas(tx_frame)
         self.tx_scrollbar = ttk.Scrollbar(tx_frame, orient="vertical", command=self.tx_canvas.yview)
         self.tx_scroll_frame = ttk.Frame(self.tx_canvas)
         
-        self.tx_scroll_frame.bind(
-            "<Configure>",
-            lambda e: self.tx_canvas.configure(scrollregion=self.tx_canvas.bbox("all"))
-        )
+        def configure_scroll_frame(event):
+            # Update scroll region
+            self.tx_canvas.configure(scrollregion=self.tx_canvas.bbox("all"))
         
-        self.tx_canvas.create_window((0, 0), window=self.tx_scroll_frame, anchor="nw")
+        def configure_canvas(event):
+            # Force scroll frame to match canvas width for proper column alignment
+            canvas_width = self.tx_canvas.winfo_width()
+            if canvas_width > 1:  # Avoid setting width when canvas is not realized
+                self.tx_canvas.itemconfig(self.tx_canvas_window, width=canvas_width)
+        
+        self.tx_scroll_frame.bind("<Configure>", configure_scroll_frame)
+        self.tx_canvas.bind("<Configure>", configure_canvas)
+        
+        self.tx_canvas_window = self.tx_canvas.create_window((0, 0), window=self.tx_scroll_frame, anchor="nw")
         self.tx_canvas.configure(yscrollcommand=self.tx_scrollbar.set)
+        
+        # Configure scroll frame columns to match header (ensures proper alignment)
+        self.tx_scroll_frame.grid_columnconfigure(0, weight=0, minsize=75)   # ID column
+        self.tx_scroll_frame.grid_columnconfigure(1, weight=1, minsize=280)  # Data column (expandable)
+        self.tx_scroll_frame.grid_columnconfigure(2, weight=0, minsize=65)   # Cycle column
+        self.tx_scroll_frame.grid_columnconfigure(3, weight=0, minsize=75)   # Status column
+        self.tx_scroll_frame.grid_columnconfigure(4, weight=0, minsize=135)  # Actions column
         
         self.tx_canvas.pack(side="left", fill="both", expand=True, padx=5)
         self.tx_scrollbar.pack(side="right", fill="y")
@@ -710,7 +725,19 @@ class CANApp:
         # Add mouse wheel scrolling
         def on_mousewheel(event):
             self.tx_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        
+        def bind_mousewheel_to_widget(widget):
+            """Bind mouse wheel scrolling to a widget so it propagates to canvas"""
+            widget.bind("<MouseWheel>", on_mousewheel)
+            # Also bind to all children recursively
+            for child in widget.winfo_children():
+                bind_mousewheel_to_widget(child)
+        
         self.tx_canvas.bind("<MouseWheel>", on_mousewheel)
+        self.tx_scroll_frame.bind("<MouseWheel>", on_mousewheel)
+        
+        # Store the binding function for use when creating message rows
+        self.bind_mousewheel_to_widget = bind_mousewheel_to_widget
         
 
     def log(self, message):
@@ -814,32 +841,32 @@ class CANApp:
 
 
     def add_tx_row(self):
-        try:
-            tx_id = self.tx_id_var.get().strip()
-            tx_data = self.tx_data_var.get().strip()
-            tx_cycle_str = self.tx_cycle_var.get().strip()
-            
-            # Validate inputs
-            if tx_id:
-                int(tx_id, 16)
-            if tx_data:
-                bytes(int(b, 16) for b in tx_data.split())
-            if tx_cycle_str:
-                int(tx_cycle_str)
-        except Exception:
-            messagebox.showerror("Invalid Input", "Please check ID, Data, and Cycle format.")
-            return
+        tx_id = self.tx_id_var.get().strip()
+        tx_data = self.tx_data_var.get().strip()
+        tx_cycle_str = self.tx_cycle_var.get().strip()
+        
+        # If all fields are empty, create a blank message
+        if not tx_id and not tx_data and not tx_cycle_str:
+            self._create_tx_message_row("", "", "")
+        else:
+            # Validate non-empty inputs
+            try:
+                if tx_id:
+                    int(tx_id, 16)
+                if tx_data:
+                    bytes(int(b, 16) for b in tx_data.split())
+                if tx_cycle_str:
+                    int(tx_cycle_str)
+            except Exception:
+                messagebox.showerror("Invalid Input", "Please check ID, Data, and Cycle format.")
+                return
 
-        self._create_tx_message_row(tx_id, tx_data, tx_cycle_str)
+            self._create_tx_message_row(tx_id, tx_data, tx_cycle_str)
         
         # Clear input fields
         self.tx_id_var.set("")
         self.tx_data_var.set("")
         self.tx_cycle_var.set("")
-
-    def add_blank_tx_row(self):
-        """Add a blank TX message row for editing"""
-        self._create_tx_message_row("", "", "")
 
     def _create_tx_message_row(self, tx_id="", tx_data="", tx_cycle=""):
         """Create a new TX message row with editable fields"""
@@ -851,15 +878,15 @@ class CANApp:
         msg_frame.pack(fill=tk.X, pady=1)
         
         # Configure columns to match header alignment
-        msg_frame.grid_columnconfigure(0, weight=0, minsize=80)   # ID column
-        msg_frame.grid_columnconfigure(1, weight=1, minsize=300)  # Data column (expandable)
-        msg_frame.grid_columnconfigure(2, weight=0, minsize=70)   # Cycle column
-        msg_frame.grid_columnconfigure(3, weight=0, minsize=80)   # Status column
-        msg_frame.grid_columnconfigure(4, weight=0, minsize=140)  # Actions column
+        msg_frame.grid_columnconfigure(0, weight=0, minsize=75)   # ID column
+        msg_frame.grid_columnconfigure(1, weight=1, minsize=280)  # Data column (expandable)
+        msg_frame.grid_columnconfigure(2, weight=0, minsize=65)   # Cycle column
+        msg_frame.grid_columnconfigure(3, weight=0, minsize=75)   # Status column
+        msg_frame.grid_columnconfigure(4, weight=0, minsize=135)  # Actions column
         
         # Create editable widgets for this message
         id_var = tk.StringVar(value=tx_id)
-        id_entry = ttk.Entry(msg_frame, textvariable=id_var, justify="center")
+        id_entry = ttk.Entry(msg_frame, textvariable=id_var, justify="center", width=10)
         id_entry.grid(row=0, column=0, sticky="ew", padx=1)
         if not tx_id:  # Add placeholder for empty fields
             id_entry.insert(0, "e.g. 123")
@@ -876,7 +903,7 @@ class CANApp:
             id_entry.bind("<FocusOut>", on_id_focus_out)
         
         data_var = tk.StringVar(value=tx_data)
-        data_entry = ttk.Entry(msg_frame, textvariable=data_var)
+        data_entry = ttk.Entry(msg_frame, textvariable=data_var, width=35)
         data_entry.grid(row=0, column=1, sticky="ew", padx=1)
         if not tx_data:  # Add placeholder for empty fields
             data_entry.insert(0, "e.g. 01 02 03 04 05 06 07 08")
@@ -893,7 +920,7 @@ class CANApp:
             data_entry.bind("<FocusOut>", on_data_focus_out)
         
         cycle_var = tk.StringVar(value=tx_cycle)
-        cycle_entry = ttk.Entry(msg_frame, textvariable=cycle_var, justify="center")
+        cycle_entry = ttk.Entry(msg_frame, textvariable=cycle_var, justify="center", width=8)
         cycle_entry.grid(row=0, column=2, sticky="ew", padx=1)
         if not tx_cycle:  # Add placeholder for empty fields
             cycle_entry.insert(0, "e.g. 100")
@@ -909,7 +936,7 @@ class CANApp:
             cycle_entry.bind("<FocusIn>", on_cycle_focus_in)
             cycle_entry.bind("<FocusOut>", on_cycle_focus_out)
         
-        status_label = ttk.Label(msg_frame, text="Stopped", anchor="center", relief="sunken")
+        status_label = ttk.Label(msg_frame, text="Stopped", anchor="center", relief="sunken", width=10)
         status_label.grid(row=0, column=3, sticky="ew", padx=1)
         
         # Create button frame for start/stop/delete
@@ -943,6 +970,9 @@ class CANApp:
             }
         }
         
+        # Bind mouse wheel scrolling to all widgets in this message row
+        self.bind_mousewheel_to_widget(msg_frame)
+        
         # Update scroll region
         self.tx_canvas.configure(scrollregion=self.tx_canvas.bbox("all"))
 
@@ -960,7 +990,12 @@ class CANApp:
         if msg_info["running"]:
             return  # Already running
         
-        # Get current values from entry widgets
+        # Check if this is a DBF message and delegate to the DBF handler
+        if msg_info.get("type") == "dbf":
+            self.start_dbf_tx_message(msg_id)
+            return
+        
+        # Handle regular TX messages
         try:
             tx_id = msg_info["widgets"]["id_var"].get().strip()
             tx_data = msg_info["widgets"]["data_var"].get().strip()
@@ -993,13 +1028,19 @@ class CANApp:
             messagebox.showerror("Invalid Input", f"Please check format: {e}")
             return
             
+        # Log the start action
+        if tx_cycle == 0:
+            self.log(f"🚀 Starting one-shot TX: ID 0x{tx_id_int:X}, Data: {tx_data}")
+        else:
+            self.log(f"🚀 Starting periodic TX: ID 0x{tx_id_int:X}, Cycle: {tx_cycle}ms, Data: {tx_data}")
+        
         # Update UI
         msg_info["widgets"]["status"].config(text="Running", foreground="green")
         msg_info["widgets"]["start_btn"].config(state="disabled")
         msg_info["widgets"]["stop_btn"].config(state="normal")
         msg_info["running"] = True
         
-        def send_message():
+        def send_message(log_tx=False):
             if not self.running or not msg_info["running"]:
                 return
             try:
@@ -1019,34 +1060,46 @@ class CANApp:
                     is_extended_id=False
                 )
                 self.bus.send(msg)
-                self.log(f"⬆️  [TX] ID: 0x{msg.arbitration_id:X} Data: {' '.join(format(b, '02X') for b in msg.data)}")
+                
+                # Only log TX details for one-shot or first transmission
+                if log_tx:
+                    self.log(f"⬆️  [TX] ID: 0x{msg.arbitration_id:X} Data: {' '.join(format(b, '02X') for b in msg.data)}")
+                    
             except Exception as e:
                 self.log(f"❌ TX error: {e}")
                 self.stop_tx_message(msg_id)
                 return
 
-        # Send immediately if not a one-shot (cycle = 0)
-        send_message()
+        # Send immediately
+        send_message(log_tx=(tx_cycle == 0))  # Log details for one-shot messages
         
-        # Schedule recurring sends
-        if tx_cycle > 0:
-            def schedule_next():
-                if not self.running or not msg_info["running"]:
-                    return
-                send_message()
-                # Re-read cycle time in case user changed it
-                try:
-                    current_cycle = int(msg_info["widgets"]["cycle_var"].get().strip())
+        # Handle cycle time 0 (one-shot) - auto-stop after sending
+        if tx_cycle == 0:
+            self.stop_tx_message(msg_id)
+            return
+        
+        # Schedule recurring sends for periodic messages
+        def schedule_next():
+            if not self.running or not msg_info["running"]:
+                return
+            send_message(log_tx=False)  # Don't log repetitive sends
+            # Re-read cycle time in case user changed it
+            try:
+                current_cycle = int(msg_info["widgets"]["cycle_var"].get().strip())
+                if current_cycle > 0:
                     msg_info["timer"] = threading.Timer(current_cycle / 1000.0, schedule_next)
                     msg_info["timer"].daemon = True
                     msg_info["timer"].start()
-                except ValueError:
-                    # If cycle becomes invalid, stop transmission
+                else:
+                    # If cycle becomes 0, stop transmission
                     self.stop_tx_message(msg_id)
-            
-            msg_info["timer"] = threading.Timer(tx_cycle / 1000.0, schedule_next)
-            msg_info["timer"].daemon = True
-            msg_info["timer"].start()
+            except ValueError:
+                # If cycle becomes invalid, stop transmission
+                self.stop_tx_message(msg_id)
+        
+        msg_info["timer"] = threading.Timer(tx_cycle / 1000.0, schedule_next)
+        msg_info["timer"].daemon = True
+        msg_info["timer"].start()
 
     def stop_tx_message(self, msg_id):
         """Stop transmitting a specific message"""
@@ -1054,6 +1107,18 @@ class CANApp:
             return
             
         msg_info = self.tx_messages[msg_id]
+        
+        # Only log if it was actually running
+        if msg_info["running"]:
+            # Get message identifier for logging
+            if msg_info.get("type") == "dbf":
+                msg_name = msg_info["msg_info"]["name"]
+                msg_identifier = f"0x{msg_info['msg_id']:X} ({msg_name})"
+            else:
+                tx_id = msg_info["widgets"]["id_var"].get().strip()
+                msg_identifier = f"0x{tx_id}"
+            
+            self.log(f"⏹️  Stopped TX: {msg_identifier}")
         
         # Update UI
         msg_info["widgets"]["status"].config(text="Stopped", foreground="black")
@@ -1073,17 +1138,418 @@ class CANApp:
             
         msg_info = self.tx_messages[msg_id]
         
+        # Get message identifier for logging before deletion
+        if msg_info.get("type") == "dbf":
+            msg_name = msg_info["msg_info"]["name"]
+            msg_identifier = f"0x{msg_info['msg_id']:X} ({msg_name})"
+        else:
+            tx_id = msg_info["widgets"]["id_var"].get().strip()
+            msg_identifier = f"0x{tx_id}" if tx_id else "Empty message"
+        
         # Stop transmission if running
         self.stop_tx_message(msg_id)
         
+        # Log the deletion
+        self.log(f"🗑️  Deleted TX: {msg_identifier}")
+        
         # Remove widgets
         msg_info["widgets"]["frame"].destroy()
+        
+        # Also remove signals frame if it exists (for DBF messages)
+        if "signals_frame" in msg_info["widgets"]:
+            msg_info["widgets"]["signals_frame"].destroy()
         
         # Remove from storage
         del self.tx_messages[msg_id]
         
         # Update scroll region
         self.tx_canvas.configure(scrollregion=self.tx_canvas.bbox("all"))
+
+    def add_dbf_message(self):
+        """Show dialog to select a message from the DBF file"""
+        if not self.dbf_parser.messages:
+            messagebox.showinfo("No Messages", "No messages found in DBF file.")
+            return
+        
+        # Create selection dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Select CAN Message")
+        dialog.geometry("500x400")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        
+        # Center dialog on parent
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() // 2) - (dialog.winfo_width() // 2)
+        y = (dialog.winfo_screenheight() // 2) - (dialog.winfo_height() // 2)
+        dialog.geometry(f"+{x}+{y}")
+        
+        ttk.Label(dialog, text="Select a message to add to TX scheduler:").pack(pady=10)
+        
+        # Create listbox with scrollbar
+        frame = ttk.Frame(dialog)
+        frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        
+        listbox = tk.Listbox(frame)
+        scrollbar = ttk.Scrollbar(frame, orient="vertical", command=listbox.yview)
+        listbox.configure(yscrollcommand=scrollbar.set)
+        
+        listbox.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        
+        # Populate with messages from DBF
+        for msg_id, msg_info in self.dbf_parser.messages.items():
+            msg_name = msg_info.get('name', 'Unknown')
+            msg_text = f"0x{msg_id:X} - {msg_name}"
+            listbox.insert(tk.END, msg_text)
+        
+        # Button frame
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(pady=10)
+        
+        selected_msg = None
+        
+        def on_add():
+            nonlocal selected_msg
+            selection = listbox.curselection()
+            if not selection:
+                messagebox.showwarning("No Selection", "Please select a message.")
+                return
+            
+            # Get the selected message ID
+            msg_ids = list(self.dbf_parser.messages.keys())
+            selected_msg = msg_ids[selection[0]]
+            dialog.destroy()
+        
+        def on_cancel():
+            dialog.destroy()
+        
+        ttk.Button(btn_frame, text="Add", command=on_add).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=on_cancel).pack(side=tk.LEFT, padx=5)
+        
+        # Wait for dialog to close
+        dialog.wait_window()
+        
+        if selected_msg is not None:
+            self._create_dbf_message_row(selected_msg)
+
+    def _create_dbf_message_row(self, msg_id):
+        """Create a TX message row for a DBF message with expandable signals"""
+        msg_info = self.dbf_parser.messages[msg_id]
+        msg_name = msg_info.get('name', 'Unknown')
+        
+        # Generate unique ID for this TX message
+        tx_msg_id = f"tx_{len(self.tx_messages)}"
+        
+        # Create message row frame
+        msg_frame = ttk.Frame(self.tx_scroll_frame)
+        msg_frame.pack(fill=tk.X, pady=1)
+        
+        # Configure columns to match header alignment
+        msg_frame.grid_columnconfigure(0, weight=0, minsize=75)   # ID column
+        msg_frame.grid_columnconfigure(1, weight=1, minsize=280)  # Data column (expandable)
+        msg_frame.grid_columnconfigure(2, weight=0, minsize=65)   # Cycle column
+        msg_frame.grid_columnconfigure(3, weight=0, minsize=75)   # Status column
+        msg_frame.grid_columnconfigure(4, weight=0, minsize=135)  # Actions column
+        
+        # Create main row widgets
+        id_var = tk.StringVar(value=f"{msg_id:X}")
+        id_entry = ttk.Entry(msg_frame, textvariable=id_var, justify="center", state="readonly", width=10)
+        id_entry.grid(row=0, column=0, sticky="ew", padx=1)
+        
+        # Data column shows message name with expand/collapse button
+        data_frame = ttk.Frame(msg_frame)
+        data_frame.grid(row=0, column=1, sticky="ew", padx=1)
+        
+        expand_var = tk.BooleanVar()
+        expand_btn = ttk.Checkbutton(data_frame, text="▶", variable=expand_var, width=3,
+                                    command=lambda: self._toggle_dbf_signals(tx_msg_id))
+        expand_btn.pack(side=tk.LEFT)
+        
+        name_label = ttk.Label(data_frame, text=msg_name)
+        name_label.pack(side=tk.LEFT, padx=(5, 0))
+        
+        cycle_var = tk.StringVar(value="100")
+        cycle_entry = ttk.Entry(msg_frame, textvariable=cycle_var, justify="center", width=8)
+        cycle_entry.grid(row=0, column=2, sticky="ew", padx=1)
+        
+        status_label = ttk.Label(msg_frame, text="Stopped", anchor="center", relief="sunken", width=10)
+        status_label.grid(row=0, column=3, sticky="ew", padx=1)
+        
+        # Create button frame for start/stop/delete
+        button_frame = ttk.Frame(msg_frame)
+        button_frame.grid(row=0, column=4, sticky="ew", padx=1)
+        
+        start_btn = ttk.Button(button_frame, text="Start", width=6, 
+                              command=lambda: self.start_dbf_tx_message(tx_msg_id))
+        start_btn.pack(side=tk.LEFT, padx=1)
+        
+        stop_btn = ttk.Button(button_frame, text="Stop", width=6, state="disabled",
+                             command=lambda: self.stop_tx_message(tx_msg_id))
+        stop_btn.pack(side=tk.LEFT, padx=1)
+        
+        delete_btn = ttk.Button(button_frame, text="Del", width=4,
+                               command=lambda: self.delete_tx_message(tx_msg_id))
+        delete_btn.pack(side=tk.LEFT, padx=1)
+        
+        # Create signal editing frame (initially hidden)
+        signals_frame = ttk.Frame(self.tx_scroll_frame)
+        
+        # Store message info and widgets
+        self.tx_messages[tx_msg_id] = {
+            "running": False,
+            "timer": None,
+            "type": "dbf",
+            "msg_id": msg_id,
+            "msg_info": msg_info,
+            "signals": {},  # Will store signal values
+            "widgets": {
+                "frame": msg_frame,
+                "signals_frame": signals_frame,
+                "id_var": id_var,
+                "cycle_var": cycle_var,
+                "status": status_label,
+                "start_btn": start_btn,
+                "stop_btn": stop_btn,
+                "expand_var": expand_var,
+                "expand_btn": expand_btn
+            }
+        }
+        
+        # Initialize signal values to defaults
+        for signal in msg_info.get('signals', []):
+            signal_name = signal['name']
+            self.tx_messages[tx_msg_id]["signals"][signal_name] = 0
+        
+        # Bind mouse wheel scrolling to all widgets in this message row
+        self.bind_mousewheel_to_widget(msg_frame)
+        
+        # Update scroll region
+        self.tx_canvas.configure(scrollregion=self.tx_canvas.bbox("all"))
+
+    def _toggle_dbf_signals(self, tx_msg_id):
+        """Toggle the display of signal editing widgets for a DBF message"""
+        if tx_msg_id not in self.tx_messages:
+            return
+            
+        msg_data = self.tx_messages[tx_msg_id]
+        expand_var = msg_data["widgets"]["expand_var"]
+        signals_frame = msg_data["widgets"]["signals_frame"]
+        expand_btn = msg_data["widgets"]["expand_btn"]
+        
+        if expand_var.get():
+            # Expand - show signals
+            expand_btn.config(text="▼")
+            self._create_signal_widgets(tx_msg_id)
+            signals_frame.pack(fill=tk.X, padx=20, pady=2, after=msg_data["widgets"]["frame"])
+        else:
+            # Collapse - hide signals
+            expand_btn.config(text="▶")
+            signals_frame.pack_forget()
+            # Clear signal widgets
+            for widget in signals_frame.winfo_children():
+                widget.destroy()
+        
+        # Update scroll region
+        self.tx_canvas.configure(scrollregion=self.tx_canvas.bbox("all"))
+
+    def _create_signal_widgets(self, tx_msg_id):
+        """Create signal editing widgets for a DBF message"""
+        msg_data = self.tx_messages[tx_msg_id]
+        signals_frame = msg_data["widgets"]["signals_frame"]
+        msg_info = msg_data["msg_info"]
+        
+        # Create header for signals
+        header_frame = ttk.Frame(signals_frame)
+        header_frame.pack(fill=tk.X, pady=2)
+        
+        ttk.Label(header_frame, text="Signal", width=20, relief="ridge").pack(side=tk.LEFT, padx=1)
+        ttk.Label(header_frame, text="Value", width=15, relief="ridge").pack(side=tk.LEFT, padx=1)
+        ttk.Label(header_frame, text="Unit", width=10, relief="ridge").pack(side=tk.LEFT, padx=1)
+        ttk.Label(header_frame, text="Range", width=20, relief="ridge").pack(side=tk.LEFT, padx=1)
+        
+        # Create signal editing rows
+        for signal in msg_info.get('signals', []):
+            signal_name = signal['name']
+            signal_frame = ttk.Frame(signals_frame)
+            signal_frame.pack(fill=tk.X, pady=1)
+            
+            # Signal name
+            ttk.Label(signal_frame, text=signal_name, width=20, anchor="w").pack(side=tk.LEFT, padx=1)
+            
+            # Signal value entry
+            signal_var = tk.StringVar(value=str(msg_data["signals"].get(signal_name, 0)))
+            signal_entry = ttk.Entry(signal_frame, textvariable=signal_var, width=15, justify="center")
+            signal_entry.pack(side=tk.LEFT, padx=1)
+            
+            # Update signal value when changed
+            def on_signal_change(var=signal_var, name=signal_name):
+                try:
+                    value = float(var.get())
+                    msg_data["signals"][name] = value
+                except ValueError:
+                    pass
+            
+            signal_var.trace("w", lambda *args, var=signal_var, name=signal_name: on_signal_change(var, name))
+            
+            # Signal unit
+            unit = signal.get('unit', '')
+            ttk.Label(signal_frame, text=unit, width=10, anchor="center").pack(side=tk.LEFT, padx=1)
+            
+            # Signal range
+            min_val = signal.get('min', 0)
+            max_val = signal.get('max', 0)
+            range_text = f"{min_val} to {max_val}"
+            ttk.Label(signal_frame, text=range_text, width=20, anchor="center").pack(side=tk.LEFT, padx=1)
+            
+            # Store signal widget reference
+            if "signal_widgets" not in msg_data["widgets"]:
+                msg_data["widgets"]["signal_widgets"] = {}
+            msg_data["widgets"]["signal_widgets"][signal_name] = signal_var
+        
+        # Bind mouse wheel scrolling to all signal widgets
+        self.bind_mousewheel_to_widget(signals_frame)
+
+    def start_dbf_tx_message(self, tx_msg_id):
+        """Start transmitting a DBF message with signal encoding"""
+        if tx_msg_id not in self.tx_messages:
+            return
+            
+        msg_data = self.tx_messages[tx_msg_id]
+        
+        if not self.running or not self.bus:
+            messagebox.showerror("Not Connected", "Please connect to CAN bus first.")
+            return
+            
+        if msg_data["running"]:
+            return  # Already running
+        
+        # Get cycle time
+        try:
+            tx_cycle_str = msg_data["widgets"]["cycle_var"].get().strip()
+            tx_cycle = int(tx_cycle_str)
+        except ValueError:
+            messagebox.showerror("Invalid Input", "Cycle time must be a number.")
+            return
+        
+        # Log the start action
+        msg_name = msg_data["msg_info"]["name"]
+        msg_id = msg_data["msg_id"]
+        if tx_cycle == 0:
+            self.log(f"🚀 Starting one-shot TX: 0x{msg_id:X} ({msg_name})")
+        else:
+            self.log(f"🚀 Starting periodic TX: 0x{msg_id:X} ({msg_name}), Cycle: {tx_cycle}ms")
+            
+        # Update UI
+        msg_data["widgets"]["status"].config(text="Running", foreground="green")
+        msg_data["widgets"]["start_btn"].config(state="disabled")
+        msg_data["widgets"]["stop_btn"].config(state="normal")
+        msg_data["running"] = True
+        
+        def send_message(log_tx=False):
+            if not self.running or not msg_data["running"]:
+                return
+            try:
+                # Encode signals into CAN message data
+                can_data = self._encode_dbf_signals(tx_msg_id)
+                
+                msg = can.Message(
+                    arbitration_id=msg_data["msg_id"],
+                    data=can_data,
+                    is_extended_id=False
+                )
+                self.bus.send(msg)
+                
+                # Only log TX details for one-shot messages
+                if log_tx:
+                    signals_str = ", ".join([f"{name}: {value}" for name, value in msg_data["signals"].items()])
+                    self.log(f"⬆️  [TX] ID: 0x{msg.arbitration_id:X} ({msg_data['msg_info']['name']}) Data: {' '.join(format(b, '02X') for b in msg.data)}")
+                    if signals_str:
+                        self.log(f"    Signals: {signals_str}")
+                    
+            except Exception as e:
+                self.log(f"❌ TX error: {e}")
+                self.stop_tx_message(tx_msg_id)
+                return
+
+        # Send immediately
+        send_message(log_tx=(tx_cycle == 0))  # Log details for one-shot messages
+        
+        # Handle cycle time 0 (one-shot) - auto-stop after sending
+        if tx_cycle == 0:
+            self.stop_tx_message(tx_msg_id)
+            return
+        
+        # Schedule recurring sends for periodic messages
+        def schedule_next():
+            if not self.running or not msg_data["running"]:
+                return
+            send_message(log_tx=False)  # Don't log repetitive sends
+            # Re-read cycle time in case user changed it
+            try:
+                current_cycle = int(msg_data["widgets"]["cycle_var"].get().strip())
+                if current_cycle > 0:
+                    msg_data["timer"] = threading.Timer(current_cycle / 1000.0, schedule_next)
+                    msg_data["timer"].daemon = True
+                    msg_data["timer"].start()
+                else:
+                    # If cycle becomes 0, stop transmission
+                    self.stop_tx_message(tx_msg_id)
+            except ValueError:
+                # If cycle becomes invalid, stop transmission
+                self.stop_tx_message(tx_msg_id)
+        
+        msg_data["timer"] = threading.Timer(tx_cycle / 1000.0, schedule_next)
+        msg_data["timer"].daemon = True
+        msg_data["timer"].start()
+
+    def _encode_dbf_signals(self, tx_msg_id):
+        """Encode signal values into CAN message data bytes"""
+        msg_data = self.tx_messages[tx_msg_id]
+        msg_info = msg_data["msg_info"]
+        
+        # Initialize 8 bytes to zero
+        data = bytearray(8)
+        
+        # Encode each signal
+        for signal in msg_info.get('signals', []):
+            signal_name = signal['name']
+            value = msg_data["signals"].get(signal_name, 0)
+            
+            # Get signal properties
+            start_bit = signal.get('start_bit', 0)
+            length = signal.get('length', 1)
+            factor = signal.get('factor', 1.0)
+            offset = signal.get('offset', 0.0)
+            
+            # Apply scaling: raw_value = (value - offset) / factor
+            raw_value = int((value - offset) / factor)
+            
+            # Clamp to signal bit range
+            max_raw = (1 << length) - 1
+            raw_value = max(0, min(raw_value, max_raw))
+            
+            # Pack into data bytes (assuming little-endian bit ordering)
+            byte_offset = start_bit // 8
+            bit_offset = start_bit % 8
+            
+            # Simple bit packing for signals that fit in byte boundaries
+            if bit_offset == 0 and length == 8:
+                data[byte_offset] = raw_value
+            elif bit_offset == 0 and length == 16 and byte_offset < 7:
+                data[byte_offset] = raw_value & 0xFF
+                data[byte_offset + 1] = (raw_value >> 8) & 0xFF
+            else:
+                # More complex bit manipulation for non-byte-aligned signals
+                for i in range(length):
+                    bit_pos = start_bit + i
+                    byte_idx = bit_pos // 8
+                    bit_idx = bit_pos % 8
+                    
+                    if byte_idx < 8 and (raw_value >> i) & 1:
+                        data[byte_idx] |= (1 << bit_idx)
+        
+        return bytes(data)
 
 
 if __name__ == "__main__":
