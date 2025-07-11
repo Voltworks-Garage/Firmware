@@ -1,0 +1,21 @@
+# Ensure Windows line endings for MPLAB X compatibility
+*.c text eol=crlf
+*.h text eol=crlf
+*.S text eol=crlf
+*.s text eol=crlf
+*.py text eol=crlf
+*.md text eol=crlf
+*.txt text eol=crlf
+*.bat text eol=crlf
+*.xml text eol=crlf
+*.json text eol=crlf
+*.yml text eol=crlf
+
+# Binary files
+*.hex binary
+*.elf binary
+*.o binary
+*.a binary
+*.exe binary
+*.dll binary
+*.so binary

@@ -46,7 +46,7 @@ static uint16_t icTime[NUMBER_IC_MODULES] = {};
 
 typedef struct _ic_module {
     uint8_t moduleNumber;
-    ic_pin_number Pin;
+    pps_input_pin_t Pin;
     uint8_t availability;
     uint16_t time;
 } ic_module;
@@ -63,7 +63,7 @@ static ic_module modules[NUMBER_IC_MODULES];
  * @param newICPin
  * @return 
  */
-uint8_t ic_Init(ic_pin_number newICPin, ic_mode mode) {
+uint8_t ic_Init(pps_input_pin_t newICPin, ic_mode mode) {
     uint8_t returnVal = 0;
 
     /*check the pin for available modules*/
@@ -144,7 +144,7 @@ uint8_t ic_Ready(void) {
  * @param thisModule
  * @return 
  */
-uint16_t ic_getTime(ic_pin_number thisModule) {
+uint16_t ic_getTime(pps_input_pin_t thisModule) {
     /*check the pin for available modules*/
     uint16_t time = 0;
     uint8_t i = 0;

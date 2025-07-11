@@ -10,63 +10,83 @@
 
 #include <stdint.h>
 #include "pins.h"
+#include "ADC.h"
+#include "oc.h"
+#include "pps.h"
 
-/*DIGITAL INPUTS AND OUTPUTS*/
+/*FUNCTIONAL PIN ASSIGNMENTS*/
 
-//Outputs
-#define SW_EN PIN_DEF(B,4)
-#define DCDC_EN PIN_DEF(B,7)
-#define EV_CHARGER_EN PIN_DEF(B,8)
-#define PRE_CHARGE_EN PIN_DEF(B,12)
-#define DEBUG_PIN PIN_DEF(B,14)
-#define DEBUG_LED_EN PIN_DEF(C,5)
-#define PILOT_EN PIN_DEF(C,6)
-#define MUX_A PIN_DEF(E,15)
-#define MUX_B PIN_DEF(C,10)
-#define MUX_C PIN_DEF(C,13)
-#define CAN_TX_PIN PIN_DEF(G,6)
+// Digital pin assignments (using gpio_pin_t from pins.h)
+typedef enum {
+    // Outputs
+    SW_EN = PB4,
+    DCDC_EN = PB7,
+    EV_CHARGER_EN = PB8,
+    PRE_CHARGE_EN = PB12,
+    DEBUG_PIN = PB14,
+    DEBUG_LED_EN = PC5,
+    PILOT_EN = PC6,
+    MUX_A = PE15,
+    MUX_B = PC10,
+    MUX_C = PC13,
+    CAN_TX_PIN = PG6,
+    SPI_CS = PC4,
+    
+    // Inputs
+    V5_SW_nFAULT = PA8,
+    V12_POWER_STATUS = PD8,
+    DCDC_nFAULT = PD6,
+    EV_CHARGER_nFAULT = PD5
+} pin_assignments_t;
 
-//Inputs
-#define V5_SW_nFAULT PIN_DEF(A,8)
-#define V12_POWER_STATUS PIN_DEF(D,8)
-#define DCDC_nFAULT PIN_DEF(D,6)
-#define EV_CHARGER_nFAULT PIN_DEF(D,5)
-
-/*ANALOG*/
-#define ISOLATION_VOLTAGE_AI AN0
-#define HV_BUS_VOLTAGE_AI AN1
-#define EV_CHARGER_CURRENT_AI AN2
-#define DCDC_OUTPUT_CURRENT_AI AN3
-#define EV_CHARGER_VOLTAGE_AI AN4
-#define DCDC_OUTPUT_VOLTAGE_AI AN5
-#define HIGH_CURRENT_SHUNT_AI AN6
-#define PROMIXITY_MONINOTR_AI AN7
-#define MUX_1_AI AN8
-#define TRANSDUCER_INPUT_AI AN9
-#define LOW_CURRENT_SHUNT_AI AN10
-#define MUX_2_AI AN11
-#define MUX_3_AI AN12
-#define PILOT_MONITOR_AI AN13
-#define VBUS_VOLTAGE_AI AN14
+/*ANALOG INPUT DEFINITIONS*/
 
 
-/*PWM*/
-#define CONTACTOR_1_PWM PWM_PIN_RP57
-#define CONTACTOR_2_PWM PWM_PIN_RP56
 
-#define PILOT_PWM_IN RP55_IC
+// Functional analog assignments
+typedef enum {
+    ISOLATION_VOLTAGE_AI = AN0,
+    HV_BUS_VOLTAGE_AI = AN1,
+    EV_CHARGER_CURRENT_AI = AN2,
+    DCDC_OUTPUT_CURRENT_AI = AN3,
+    EV_CHARGER_VOLTAGE_AI = AN4,
+    DCDC_OUTPUT_VOLTAGE_AI = AN5,
+    HIGH_CURRENT_SHUNT_AI = AN6,
+    PROMIXITY_MONINOTR_AI = AN7,
+    MUX_1_AI = AN8,
+    TRANSDUCER_INPUT_AI = AN9,
+    LOW_CURRENT_SHUNT_AI = AN10,
+    MUX_2_AI = AN11,
+    MUX_3_AI = AN12,
+    PILOT_MONITOR_AI = AN13,
+    VBUS_VOLTAGE_AI = AN14
+} analog_assignments_t;
 
-/*COMUNICATION*/
-//Uart
-#define UART_TX RP97_OUT
-#define UART_RX RPI96_IN
 
-//CAN
-#define CAN_TX RP118_OUT
-#define CAN_RX RPI119_IN
+/*PWM DEFINITIONS*/
 
-//SPI
-#define SPI_CS PIN_DEF(C,4)
+#define PILOT_PWM_IN RP55_IN
+
+// Functional PWM assignments
+typedef enum {
+    CONTACTOR_1_PWM = PWM_PIN_RP57,
+    CONTACTOR_2_PWM = PWM_PIN_RP56
+} pwm_assignments_t;
+
+/*COMMUNICATION DEFINITIONS*/
+
+// Communication pin assignments
+//typedef enum {
+    // UART
+    #define UART_TX _RP97R
+    #define UART_RX RPI96_IN
+    
+    // CAN
+    #define CAN_TX _RP118R
+    #define CAN_RX RPI119_IN
+    
+\
+//} comm_assignments_t;
 
 
 /**

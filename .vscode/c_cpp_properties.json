@@ -1,0 +1,38 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/mnt/c/Program Files/Microchip/xc16/v2.10/include",
+                "/mnt/c/Program Files/Microchip/MPLABX/v6.20/packs/Microchip/dsPIC33E-GM-GP-MC-GU-MU_DFP/1.5.258/xc16/support/generic/h"
+            ],
+            "defines": [],
+            "compilerPath": "\"/mnt/c/Program Files/Microchip/xc16/v2.10/bin/xc16-gcc.exe\"",
+            "cStandard": "c99"
+        },
+        {
+            "name": "Win32",
+            "includePath": [
+                "c:/REPOS/Voltworks_Garage/Firmware/**"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "windowsSdkVersion": "10.0.19041.0",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-gcc-x64",
+            "compilerPath": "\"C:\\Program Files\\Microchip\\xc16\\v2.10\\bin\\xc16-gcc.exe\"",
+            "compilerPathInCppPropertiesJson": "\"C:\\Program Files\\Microchip\\xc16\\v2.10\\bin\\xc16-gcc.exe\"",
+            "mergeConfigurations": false,
+            "recursiveIncludes": {},
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true
+            }
+        }
+    ],
+    "version": 4
+}

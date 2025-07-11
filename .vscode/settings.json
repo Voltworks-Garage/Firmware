@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "can_iso_tp_lite.h": "c",
+        "pinsetup.h": "c",
+        "oc.h": "c",
+        "pins.h": "c",
+        "xc.h": "c",
+        "stdint.h": "c",
+        "adc.h": "c",
+        "pps.h": "c"
+    },
+    "C_Cpp.default.compilerPath": "/mnt/c/Program Files/Microchip/xc16/v2.10/bin/xc16-gcc.exe"
+}

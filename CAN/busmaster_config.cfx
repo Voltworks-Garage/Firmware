@@ -31,7 +31,7 @@
     <J1939_Database_Files/>
     <CAN_DIL_Section>
       <DriverName>PEAK USB</DriverName>
-      <ControllerMode>Bus Off</ControllerMode>
+      <ControllerMode>Unknown</ControllerMode>
       <ControllerSettings>
         <Channel>
           <BaudRate>500</BaudRate>
@@ -95,10 +95,10 @@
         <Bottom>300</Bottom>
       </Window_Position>
       <COLUMN_WIDTH>
-        <MESSAGE_COLUMN>87</MESSAGE_COLUMN>
-        <Raw_Val_Column>87</Raw_Val_Column>
-        <Physical_Val_Column>174</Physical_Val_Column>
-        <Signal_Column>87</Signal_Column>
+        <MESSAGE_COLUMN>94</MESSAGE_COLUMN>
+        <Raw_Val_Column>94</Raw_Val_Column>
+        <Physical_Val_Column>189</Physical_Val_Column>
+        <Signal_Column>94</Signal_Column>
       </COLUMN_WIDTH>
     </CAN_Signal_Watch>
     <J1939_Signal_Watch>
@@ -111,10 +111,10 @@
         <Bottom>300</Bottom>
       </Window_Position>
       <COLUMN_WIDTH>
-        <MESSAGE_COLUMN>87</MESSAGE_COLUMN>
-        <Raw_Val_Column>87</Raw_Val_Column>
-        <Physical_Val_Column>174</Physical_Val_Column>
-        <Signal_Column>87</Signal_Column>
+        <MESSAGE_COLUMN>94</MESSAGE_COLUMN>
+        <Raw_Val_Column>94</Raw_Val_Column>
+        <Physical_Val_Column>189</Physical_Val_Column>
+        <Signal_Column>94</Signal_Column>
       </COLUMN_WIDTH>
     </J1939_Signal_Watch>
     <LIN_Signal_Watch>
@@ -127,10 +127,10 @@
         <Bottom>300</Bottom>
       </Window_Position>
       <COLUMN_WIDTH>
-        <MESSAGE_COLUMN>87</MESSAGE_COLUMN>
-        <Raw_Val_Column>87</Raw_Val_Column>
-        <Physical_Val_Column>174</Physical_Val_Column>
-        <Signal_Column>87</Signal_Column>
+        <MESSAGE_COLUMN>94</MESSAGE_COLUMN>
+        <Raw_Val_Column>94</Raw_Val_Column>
+        <Physical_Val_Column>189</Physical_Val_Column>
+        <Signal_Column>94</Signal_Column>
       </COLUMN_WIDTH>
     </LIN_Signal_Watch>
     <CAN_Signal_Graph>
@@ -268,7 +268,7 @@
       <Time_Mode>RELATIVE</Time_Mode>
       <Window_Position>
         <Visibility>SHOWNORMAL</Visibility>
-        <WindowPlacement>RESTORETOMAXIMIZED</WindowPlacement>
+        <WindowPlacement>SETMINPOSITION</WindowPlacement>
         <Top>1</Top>
         <Left>10</Left>
         <Bottom>436</Bottom>
@@ -287,8 +287,8 @@
       <COLUMN>
         <ID/>
         <Order>1</Order>
-        <IsVisible>0</IsVisible>
-        <Width>0</Width>
+        <IsVisible>1</IsVisible>
+        <Width>19</Width>
       </COLUMN>
       <COLUMN>
         <ID>Time</ID>
@@ -360,15 +360,15 @@
         <ID>Data Byte(s)</ID>
         <Order>13</Order>
         <IsVisible>1</IsVisible>
-        <Width>533</Width>
+        <Width>514</Width>
       </COLUMN>
       <IsHex>1</IsHex>
       <IsAppend>0</IsAppend>
-      <IsInterpret>0</IsInterpret>
+      <IsInterpret>1</IsInterpret>
       <Time_Mode>SYSTEM</Time_Mode>
       <Window_Position>
         <Visibility>SHOWNORMAL</Visibility>
-        <WindowPlacement>RESTORETOMAXIMIZED</WindowPlacement>
+        <WindowPlacement>SETMINPOSITION</WindowPlacement>
         <Top>0</Top>
         <Left>0</Left>
         <Bottom>548</Bottom>
@@ -390,8 +390,8 @@
       <COLUMN>
         <ID/>
         <Order>1</Order>
-        <IsVisible>0</IsVisible>
-        <Width>0</Width>
+        <IsVisible>1</IsVisible>
+        <Width>19</Width>
       </COLUMN>
       <COLUMN>
         <ID>Time</ID>
@@ -445,15 +445,15 @@
         <ID>Checksum</ID>
         <Order>10</Order>
         <IsVisible>1</IsVisible>
-        <Width>547</Width>
+        <Width>528</Width>
       </COLUMN>
       <IsHex>1</IsHex>
       <IsAppend>0</IsAppend>
-      <IsInterpret>0</IsInterpret>
+      <IsInterpret>1</IsInterpret>
       <Time_Mode>SYSTEM</Time_Mode>
       <Window_Position>
         <Visibility>SHOWNORMAL</Visibility>
-        <WindowPlacement>RESTORETOMAXIMIZED</WindowPlacement>
+        <WindowPlacement>SETMINPOSITION</WindowPlacement>
         <Top>0</Top>
         <Left>0</Left>
         <Bottom>548</Bottom>
