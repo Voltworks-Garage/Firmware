@@ -80,9 +80,7 @@ class CANMessageManager:
         
         msg.is_expanded = not msg.is_expanded
         
-        if not msg.is_expanded:
-            # Clear signal item IDs when collapsing
-            msg.signal_item_ids = {}
+        # Keep signal_item_ids intact so we can reuse children
         
         return msg.is_expanded
     
@@ -147,27 +145,39 @@ class CANTableView:
                           text=expand_indicator,
                           values=(msg_hex_id, msg.name, msg.dlc, data_str, msg.count, cycle_str))
         
-        # Handle signal children
+        # Handle signal children (only update values if expanded)
         if msg.is_expanded and msg.decoded_signals:
             self._update_signal_children(msg)
-        elif not msg.is_expanded:
-            self._clear_signal_children(msg)
     
-    def _update_signal_children(self, msg: CANMessage):
-        """Create or update signal children for an expanded message"""
+    def _ensure_signal_children(self, msg: CANMessage):
+        """Ensure signal children exist for this message (create only if needed)"""
+        if not msg.decoded_signals:
+            return
+            
         for signal_name, signal_value in msg.decoded_signals.items():
             if signal_name not in msg.signal_item_ids:
-                # Create new signal child
+                # Create new signal child only if it doesn't exist
                 signal_item = self.tree.insert(msg.tree_item_id, tk.END, text="",
                                              values=("", f"  {signal_name}", "", signal_value, "", ""))
                 msg.signal_item_ids[signal_name] = signal_item
             else:
-                # Update existing signal child
+                # Update existing signal child value
+                self.tree.item(msg.signal_item_ids[signal_name],
+                             values=("", f"  {signal_name}", "", signal_value, "", ""))
+    
+    def _update_signal_children(self, msg: CANMessage):
+        """Update signal children values (only if they exist and message is expanded)"""
+        if not msg.is_expanded or not msg.decoded_signals:
+            return
+            
+        for signal_name, signal_value in msg.decoded_signals.items():
+            if signal_name in msg.signal_item_ids:
+                # Update existing signal child value
                 self.tree.item(msg.signal_item_ids[signal_name],
                              values=("", f"  {signal_name}", "", signal_value, "", ""))
     
     def _clear_signal_children(self, msg: CANMessage):
-        """Remove all signal children for a collapsed message"""
+        """Remove all signal children (used only when clearing entire table)"""
         for signal_item_id in msg.signal_item_ids.values():
             self.tree.delete(signal_item_id)
         msg.signal_item_ids.clear()
@@ -193,11 +203,12 @@ class CANTableView:
             if msg.tree_item_id == tree_item_id:
                 is_expanded = self.message_manager.toggle_expansion(msg_id)
                 if is_expanded:
+                    # Ensure children exist, then open
+                    self._ensure_signal_children(msg)
                     self.tree.item(tree_item_id, text="▼", open=True)
-                    self._update_signal_children(msg)
                 else:
+                    # Just close the tree item, don't delete children
                     self.tree.item(tree_item_id, text="▶", open=False)
-                    self._clear_signal_children(msg)
                 break
     
     def clear_all(self):
