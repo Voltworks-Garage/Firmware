@@ -536,7 +536,7 @@ class CANApp:
         self.root.title("PCAN Tool with CAN Decoder")
         self.bus = None
         self.running = False
-        self.tx_tasks = {}
+        self.tx_messages = {}
         self.console_rx_enabled = tk.BooleanVar(value=False)
         self.show_decoded = tk.BooleanVar(value=True)
         self.available_channels = []
@@ -575,25 +575,33 @@ class CANApp:
         ttk.Checkbutton(control_frame, text="Log RX to Console", variable=self.console_rx_enabled).pack(side=tk.LEFT, padx=5)
         ttk.Checkbutton(control_frame, text="Show Decoded", variable=self.show_decoded, command=self.toggle_decoded_view).pack(side=tk.LEFT, padx=5)
 
-        # Main content frame using simple horizontal layout
-        main_frame = ttk.Frame(self.root)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        # Main horizontal paned window (left panel + console)
+        main_paned = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)
+        main_paned.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
-        # Console frame (left side)
-        console_frame = ttk.LabelFrame(main_frame, text="Console Log")
-        console_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
-        self.console = scrolledtext.ScrolledText(console_frame, wrap=tk.WORD, height=10)
-        self.console.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        # Left panel - vertical paned window for RX and TX
+        left_paned = ttk.PanedWindow(main_paned, orient=tk.VERTICAL)
+        main_paned.add(left_paned, weight=2)  # Takes 2/3 of horizontal space
 
-        # Table frame (right side)
-        table_frame = ttk.LabelFrame(main_frame, text="Live RX Messages")
-        table_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(5, 0))
+        # RX Messages frame (top of left panel)
+        rx_frame = ttk.LabelFrame(left_paned, text="Live RX Messages")
+        left_paned.add(rx_frame, weight=2)  # Takes 2/3 of vertical space
         
         # Create the table view component
-        self.table_view = CANTableView(table_frame, self.message_manager)
+        self.table_view = CANTableView(rx_frame, self.message_manager)
         self.table_view.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
+        # TX Messages frame (bottom of left panel)
+        self.tx_main_frame = ttk.LabelFrame(left_paned, text="TX Message Scheduler")
+        left_paned.add(self.tx_main_frame, weight=1)  # Takes 1/3 of vertical space
+        
         self.create_tx_section()
+
+        # Console frame (right side, full height)
+        console_frame = ttk.LabelFrame(main_paned, text="Console Log")
+        main_paned.add(console_frame, weight=1)  # Takes 1/3 of horizontal space
+        self.console = scrolledtext.ScrolledText(console_frame, wrap=tk.WORD)
+        self.console.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
     def scan_devices(self):
         # Disable scan button and show progress
@@ -644,32 +652,66 @@ class CANApp:
             scan_btn.config(text="Scan Devices", state="normal")
 
     def create_tx_section(self):
-        tx_frame = ttk.LabelFrame(self.root, text="TX Message Scheduler")
-        tx_frame.pack(fill=tk.X, padx=10, pady=5)
+        # Use the pre-created TX frame from the layout
+        tx_frame = self.tx_main_frame
 
-        ttk.Label(tx_frame, text="ID (hex):").grid(row=0, column=0, padx=5, pady=2)
+        # Input row
+        input_frame = ttk.Frame(tx_frame)
+        input_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        ttk.Label(input_frame, text="ID (hex):").grid(row=0, column=0, padx=5, pady=2)
         self.tx_id_var = tk.StringVar()
-        ttk.Entry(tx_frame, textvariable=self.tx_id_var, width=10).grid(row=0, column=1, padx=5, pady=2)
+        ttk.Entry(input_frame, textvariable=self.tx_id_var, width=10).grid(row=0, column=1, padx=5, pady=2)
 
-        ttk.Label(tx_frame, text="Data (hex bytes):").grid(row=0, column=2, padx=5, pady=2)
+        ttk.Label(input_frame, text="Data (hex bytes):").grid(row=0, column=2, padx=5, pady=2)
         self.tx_data_var = tk.StringVar()
-        ttk.Entry(tx_frame, textvariable=self.tx_data_var, width=40).grid(row=0, column=3, padx=5, pady=2)
+        ttk.Entry(input_frame, textvariable=self.tx_data_var, width=40).grid(row=0, column=3, padx=5, pady=2)
 
-        ttk.Label(tx_frame, text="Cycle (ms):").grid(row=0, column=4, padx=5, pady=2)
+        ttk.Label(input_frame, text="Cycle (ms):").grid(row=0, column=4, padx=5, pady=2)
         self.tx_cycle_var = tk.StringVar()
-        ttk.Entry(tx_frame, textvariable=self.tx_cycle_var, width=6).grid(row=0, column=5, padx=5, pady=2)
+        ttk.Entry(input_frame, textvariable=self.tx_cycle_var, width=6).grid(row=0, column=5, padx=5, pady=2)
 
-        ttk.Button(tx_frame, text="Add TX", command=self.add_tx_row).grid(row=0, column=6, padx=5, pady=2)
+        ttk.Button(input_frame, text="Add TX", command=self.add_tx_row).grid(row=0, column=6, padx=5, pady=2)
+        ttk.Button(input_frame, text="Add Blank", command=self.add_blank_tx_row).grid(row=0, column=7, padx=5, pady=2)
 
-        self.tx_table = ttk.Treeview(tx_frame, columns=("ID", "Data", "Cycle", "Status", "Control"), show="headings", height=5)
-        for col, w in [("ID", 80), ("Data", 300), ("Cycle", 80), ("Status", 60), ("Control", 70)]:
-            self.tx_table.heading(col, text=col)
-            self.tx_table.column(col, width=w)
-        self.tx_table.grid(row=1, column=0, columnspan=7, sticky="nsew", padx=5, pady=5)
-        self.tx_table.bind("<Button-1>", self.handle_tx_click)
+        # Header row with consistent column configuration
+        header_frame = ttk.Frame(tx_frame)
+        header_frame.pack(fill=tk.X, padx=5, pady=(0, 5))
+        
+        # Configure columns for consistent alignment
+        header_frame.grid_columnconfigure(0, weight=0, minsize=80)   # ID column
+        header_frame.grid_columnconfigure(1, weight=1, minsize=300)  # Data column (expandable)
+        header_frame.grid_columnconfigure(2, weight=0, minsize=70)   # Cycle column
+        header_frame.grid_columnconfigure(3, weight=0, minsize=80)   # Status column
+        header_frame.grid_columnconfigure(4, weight=0, minsize=140)  # Actions column
+        
+        ttk.Label(header_frame, text="ID", anchor="center", relief="ridge").grid(row=0, column=0, sticky="ew", padx=1)
+        ttk.Label(header_frame, text="Data", anchor="center", relief="ridge").grid(row=0, column=1, sticky="ew", padx=1)
+        ttk.Label(header_frame, text="Cycle", anchor="center", relief="ridge").grid(row=0, column=2, sticky="ew", padx=1)
+        ttk.Label(header_frame, text="Status", anchor="center", relief="ridge").grid(row=0, column=3, sticky="ew", padx=1)
+        ttk.Label(header_frame, text="Actions", anchor="center", relief="ridge").grid(row=0, column=4, sticky="ew", padx=1)
 
-        self.delete_tx_btn = ttk.Button(tx_frame, text="Delete Selected", command=self.delete_selected_tx)
-        self.delete_tx_btn.grid(row=2, column=0, columnspan=7, sticky="e", padx=5, pady=(0, 5))
+        # Scrollable frame for TX messages
+        self.tx_canvas = tk.Canvas(tx_frame)
+        self.tx_scrollbar = ttk.Scrollbar(tx_frame, orient="vertical", command=self.tx_canvas.yview)
+        self.tx_scroll_frame = ttk.Frame(self.tx_canvas)
+        
+        self.tx_scroll_frame.bind(
+            "<Configure>",
+            lambda e: self.tx_canvas.configure(scrollregion=self.tx_canvas.bbox("all"))
+        )
+        
+        self.tx_canvas.create_window((0, 0), window=self.tx_scroll_frame, anchor="nw")
+        self.tx_canvas.configure(yscrollcommand=self.tx_scrollbar.set)
+        
+        self.tx_canvas.pack(side="left", fill="both", expand=True, padx=5)
+        self.tx_scrollbar.pack(side="right", fill="y")
+        
+        # Add mouse wheel scrolling
+        def on_mousewheel(event):
+            self.tx_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        self.tx_canvas.bind("<MouseWheel>", on_mousewheel)
+        
 
     def log(self, message):
         self.console.insert(tk.END, message + "\n")
@@ -705,13 +747,9 @@ class CANApp:
             self.gui_update_timer = None
         self.pending_gui_updates.clear()
 
-        for task in self.tx_tasks.values():
-            task["running"] = False
-            if task.get("timer"):
-                task["timer"].cancel()
-        for row_id in self.tx_tasks:
-            self.tx_table.item(row_id, values=(self.tx_tasks[row_id]["id"], self.tx_tasks[row_id]["data"],
-                                               self.tx_tasks[row_id]["cycle"], "Stopped", "Start"))
+        # Stop all TX messages
+        for msg_id in list(self.tx_messages.keys()):
+            self.stop_tx_message(msg_id)
 
     def read_messages(self):
         while self.running and self.bus:
@@ -779,84 +817,274 @@ class CANApp:
         try:
             tx_id = self.tx_id_var.get().strip()
             tx_data = self.tx_data_var.get().strip()
-            tx_cycle = int(self.tx_cycle_var.get().strip())
-            int(tx_id, 16)
-            bytes(int(b, 16) for b in tx_data.split())
+            tx_cycle_str = self.tx_cycle_var.get().strip()
+            
+            # Validate inputs
+            if tx_id:
+                int(tx_id, 16)
+            if tx_data:
+                bytes(int(b, 16) for b in tx_data.split())
+            if tx_cycle_str:
+                int(tx_cycle_str)
         except Exception:
             messagebox.showerror("Invalid Input", "Please check ID, Data, and Cycle format.")
             return
 
-        item_id = self.tx_table.insert("", tk.END, values=(tx_id, tx_data, tx_cycle, "Stopped", "Start"))
-        self.tx_tasks[item_id] = {"id": tx_id, "data": tx_data, "cycle": tx_cycle, "running": False, "timer": None}
+        self._create_tx_message_row(tx_id, tx_data, tx_cycle_str)
+        
+        # Clear input fields
+        self.tx_id_var.set("")
+        self.tx_data_var.set("")
+        self.tx_cycle_var.set("")
 
-    def handle_tx_click(self, event):
-        region = self.tx_table.identify("region", event.x, event.y)
-        column = self.tx_table.identify_column(event.x)
-        row_id = self.tx_table.identify_row(event.y)
+    def add_blank_tx_row(self):
+        """Add a blank TX message row for editing"""
+        self._create_tx_message_row("", "", "")
 
-        if region == "cell" and column == "#5" and row_id:
-            task = self.tx_tasks.get(row_id)
-            if not task:
+    def _create_tx_message_row(self, tx_id="", tx_data="", tx_cycle=""):
+        """Create a new TX message row with editable fields"""
+        # Generate unique ID for this TX message
+        msg_id = f"tx_{len(self.tx_messages)}"
+        
+        # Create message row frame
+        msg_frame = ttk.Frame(self.tx_scroll_frame)
+        msg_frame.pack(fill=tk.X, pady=1)
+        
+        # Configure columns to match header alignment
+        msg_frame.grid_columnconfigure(0, weight=0, minsize=80)   # ID column
+        msg_frame.grid_columnconfigure(1, weight=1, minsize=300)  # Data column (expandable)
+        msg_frame.grid_columnconfigure(2, weight=0, minsize=70)   # Cycle column
+        msg_frame.grid_columnconfigure(3, weight=0, minsize=80)   # Status column
+        msg_frame.grid_columnconfigure(4, weight=0, minsize=140)  # Actions column
+        
+        # Create editable widgets for this message
+        id_var = tk.StringVar(value=tx_id)
+        id_entry = ttk.Entry(msg_frame, textvariable=id_var, justify="center")
+        id_entry.grid(row=0, column=0, sticky="ew", padx=1)
+        if not tx_id:  # Add placeholder for empty fields
+            id_entry.insert(0, "e.g. 123")
+            id_entry.config(foreground="gray")
+            def on_id_focus_in(event):
+                if id_entry.get() == "e.g. 123":
+                    id_entry.delete(0, tk.END)
+                    id_entry.config(foreground="black")
+            def on_id_focus_out(event):
+                if not id_entry.get():
+                    id_entry.insert(0, "e.g. 123")
+                    id_entry.config(foreground="gray")
+            id_entry.bind("<FocusIn>", on_id_focus_in)
+            id_entry.bind("<FocusOut>", on_id_focus_out)
+        
+        data_var = tk.StringVar(value=tx_data)
+        data_entry = ttk.Entry(msg_frame, textvariable=data_var)
+        data_entry.grid(row=0, column=1, sticky="ew", padx=1)
+        if not tx_data:  # Add placeholder for empty fields
+            data_entry.insert(0, "e.g. 01 02 03 04 05 06 07 08")
+            data_entry.config(foreground="gray")
+            def on_data_focus_in(event):
+                if data_entry.get() == "e.g. 01 02 03 04 05 06 07 08":
+                    data_entry.delete(0, tk.END)
+                    data_entry.config(foreground="black")
+            def on_data_focus_out(event):
+                if not data_entry.get():
+                    data_entry.insert(0, "e.g. 01 02 03 04 05 06 07 08")
+                    data_entry.config(foreground="gray")
+            data_entry.bind("<FocusIn>", on_data_focus_in)
+            data_entry.bind("<FocusOut>", on_data_focus_out)
+        
+        cycle_var = tk.StringVar(value=tx_cycle)
+        cycle_entry = ttk.Entry(msg_frame, textvariable=cycle_var, justify="center")
+        cycle_entry.grid(row=0, column=2, sticky="ew", padx=1)
+        if not tx_cycle:  # Add placeholder for empty fields
+            cycle_entry.insert(0, "e.g. 100")
+            cycle_entry.config(foreground="gray")
+            def on_cycle_focus_in(event):
+                if cycle_entry.get() == "e.g. 100":
+                    cycle_entry.delete(0, tk.END)
+                    cycle_entry.config(foreground="black")
+            def on_cycle_focus_out(event):
+                if not cycle_entry.get():
+                    cycle_entry.insert(0, "e.g. 100")
+                    cycle_entry.config(foreground="gray")
+            cycle_entry.bind("<FocusIn>", on_cycle_focus_in)
+            cycle_entry.bind("<FocusOut>", on_cycle_focus_out)
+        
+        status_label = ttk.Label(msg_frame, text="Stopped", anchor="center", relief="sunken")
+        status_label.grid(row=0, column=3, sticky="ew", padx=1)
+        
+        # Create button frame for start/stop/delete
+        button_frame = ttk.Frame(msg_frame)
+        button_frame.grid(row=0, column=4, sticky="ew", padx=1)
+        
+        start_btn = ttk.Button(button_frame, text="Start", width=6, 
+                              command=lambda: self.start_tx_message(msg_id))
+        start_btn.pack(side=tk.LEFT, padx=1)
+        
+        stop_btn = ttk.Button(button_frame, text="Stop", width=6, state="disabled",
+                             command=lambda: self.stop_tx_message(msg_id))
+        stop_btn.pack(side=tk.LEFT, padx=1)
+        
+        delete_btn = ttk.Button(button_frame, text="Del", width=4,
+                               command=lambda: self.delete_tx_message(msg_id))
+        delete_btn.pack(side=tk.LEFT, padx=1)
+        
+        # Store message info and widgets
+        self.tx_messages[msg_id] = {
+            "running": False,
+            "timer": None,
+            "widgets": {
+                "frame": msg_frame,
+                "id_var": id_var,
+                "data_var": data_var,
+                "cycle_var": cycle_var,
+                "status": status_label,
+                "start_btn": start_btn,
+                "stop_btn": stop_btn
+            }
+        }
+        
+        # Update scroll region
+        self.tx_canvas.configure(scrollregion=self.tx_canvas.bbox("all"))
+
+    def start_tx_message(self, msg_id):
+        """Start transmitting a specific message"""
+        if msg_id not in self.tx_messages:
+            return
+            
+        msg_info = self.tx_messages[msg_id]
+        
+        if not self.running or not self.bus:
+            messagebox.showerror("Not Connected", "Please connect to CAN bus first.")
+            return
+            
+        if msg_info["running"]:
+            return  # Already running
+        
+        # Get current values from entry widgets
+        try:
+            tx_id = msg_info["widgets"]["id_var"].get().strip()
+            tx_data = msg_info["widgets"]["data_var"].get().strip()
+            tx_cycle_str = msg_info["widgets"]["cycle_var"].get().strip()
+            
+            # Handle placeholder text
+            if tx_id.startswith("e.g."):
+                tx_id = ""
+            if tx_data.startswith("e.g."):
+                tx_data = ""
+            if tx_cycle_str.startswith("e.g."):
+                tx_cycle_str = ""
+            
+            # Validate inputs
+            if not tx_id:
+                messagebox.showerror("Invalid Input", "ID cannot be empty.")
                 return
-            if task["running"]:
-                self.stop_tx_task(row_id)
-            else:
-                self.start_tx_task(row_id)
-
-    def start_tx_task(self, row_id):
-        task = self.tx_tasks[row_id]
-
-        def send():
-            if not self.running:
+            if not tx_data:
+                messagebox.showerror("Invalid Input", "Data cannot be empty.")
+                return
+            if not tx_cycle_str:
+                messagebox.showerror("Invalid Input", "Cycle cannot be empty.")
+                return
+                
+            tx_id_int = int(tx_id, 16)
+            tx_data_bytes = bytes(int(b, 16) for b in tx_data.split())
+            tx_cycle = int(tx_cycle_str)
+            
+        except ValueError as e:
+            messagebox.showerror("Invalid Input", f"Please check format: {e}")
+            return
+            
+        # Update UI
+        msg_info["widgets"]["status"].config(text="Running", foreground="green")
+        msg_info["widgets"]["start_btn"].config(state="disabled")
+        msg_info["widgets"]["stop_btn"].config(state="normal")
+        msg_info["running"] = True
+        
+        def send_message():
+            if not self.running or not msg_info["running"]:
                 return
             try:
+                # Re-read values each time in case user changed them while running
+                current_id = msg_info["widgets"]["id_var"].get().strip()
+                current_data = msg_info["widgets"]["data_var"].get().strip()
+                
+                # Handle placeholder text
+                if current_id.startswith("e.g."):
+                    current_id = tx_id  # Use validated value from start
+                if current_data.startswith("e.g."):
+                    current_data = tx_data  # Use validated value from start
+                
                 msg = can.Message(
-                    arbitration_id=int(task["id"], 16),
-                    data=bytes(int(b, 16) for b in task["data"].split()),
+                    arbitration_id=int(current_id, 16),
+                    data=bytes(int(b, 16) for b in current_data.split()),
                     is_extended_id=False
                 )
                 self.bus.send(msg)
                 self.log(f"⬆️  [TX] ID: 0x{msg.arbitration_id:X} Data: {' '.join(format(b, '02X') for b in msg.data)}")
             except Exception as e:
                 self.log(f"❌ TX error: {e}")
-                self.stop_tx_task(row_id)
-
-        if task["cycle"] == 0:
-            send()
-            return
-
-        task["running"] = True
-        self.tx_table.item(row_id, values=(task["id"], task["data"], task["cycle"], "Running", "Stop"))
-        send()
-
-        def loop():
-            if not self.running or not task["running"]:
+                self.stop_tx_message(msg_id)
                 return
-            send()
-            task["timer"] = threading.Timer(task["cycle"] / 1000.0, loop)
-            task["timer"].daemon = True
-            task["timer"].start()
 
-        loop()
+        # Send immediately if not a one-shot (cycle = 0)
+        send_message()
+        
+        # Schedule recurring sends
+        if tx_cycle > 0:
+            def schedule_next():
+                if not self.running or not msg_info["running"]:
+                    return
+                send_message()
+                # Re-read cycle time in case user changed it
+                try:
+                    current_cycle = int(msg_info["widgets"]["cycle_var"].get().strip())
+                    msg_info["timer"] = threading.Timer(current_cycle / 1000.0, schedule_next)
+                    msg_info["timer"].daemon = True
+                    msg_info["timer"].start()
+                except ValueError:
+                    # If cycle becomes invalid, stop transmission
+                    self.stop_tx_message(msg_id)
+            
+            msg_info["timer"] = threading.Timer(tx_cycle / 1000.0, schedule_next)
+            msg_info["timer"].daemon = True
+            msg_info["timer"].start()
 
-    def stop_tx_task(self, row_id):
-        task = self.tx_tasks[row_id]
-        task["running"] = False
-        if task.get("timer"):
-            task["timer"].cancel()
-            task["timer"] = None
-        self.tx_table.item(row_id, values=(task["id"], task["data"], task["cycle"], "Stopped", "Start"))
+    def stop_tx_message(self, msg_id):
+        """Stop transmitting a specific message"""
+        if msg_id not in self.tx_messages:
+            return
+            
+        msg_info = self.tx_messages[msg_id]
+        
+        # Update UI
+        msg_info["widgets"]["status"].config(text="Stopped", foreground="black")
+        msg_info["widgets"]["start_btn"].config(state="normal")
+        msg_info["widgets"]["stop_btn"].config(state="disabled")
+        msg_info["running"] = False
+        
+        # Cancel timer
+        if msg_info["timer"]:
+            msg_info["timer"].cancel()
+            msg_info["timer"] = None
 
-    def delete_selected_tx(self):
-        selected = self.tx_table.selection()
-        for row_id in selected:
-            task = self.tx_tasks.get(row_id)
-            if task:
-                task["running"] = False
-                if task.get("timer"):
-                    task["timer"].cancel()
-            self.tx_table.delete(row_id)
-            self.tx_tasks.pop(row_id, None)
+    def delete_tx_message(self, msg_id):
+        """Delete a TX message"""
+        if msg_id not in self.tx_messages:
+            return
+            
+        msg_info = self.tx_messages[msg_id]
+        
+        # Stop transmission if running
+        self.stop_tx_message(msg_id)
+        
+        # Remove widgets
+        msg_info["widgets"]["frame"].destroy()
+        
+        # Remove from storage
+        del self.tx_messages[msg_id]
+        
+        # Update scroll region
+        self.tx_canvas.configure(scrollregion=self.tx_canvas.bbox("all"))
+
 
 if __name__ == "__main__":
     root = tk.Tk()
