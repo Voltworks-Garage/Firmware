@@ -80,7 +80,7 @@ void resume_all_tasks(void);
  * Function Definitions
  *******************************************************************************/
 void StateMachine_Init(void) {
-    DCDC_init();
+    Nop();
 }
 
 
@@ -207,7 +207,7 @@ void diag(STATE_MACHINE_entry_types_E entry_type) {
         case EXIT:
             break;
         case RUN:
-            IO_SET_DEBUG_LED_EN(!IO_GET_DEBUG_LED_EN());
+            // IO_SET_DEBUG_LED_EN(!IO_GET_DEBUG_LED_EN());
             if (isoTP_peekCommand() != ISO_TP_NONE){
                 SysTick_TimerStart(diag_timeout);
             }

@@ -28,5 +28,7 @@ void isoTP_init(void);
 void run_iso_tp_1ms(void);
 isoTP_command_E isoTP_peekCommand(void);
 isoTP_command_S isoTP_getCommand(void);
+uint8_t isoTP_SendSingle(uint8_t* payload, uint8_t length);
+uint8_t isoTP_SendData(uint8_t* payload, uint16_t length);
 #endif	/* CAN_ISO_TP_H */
 

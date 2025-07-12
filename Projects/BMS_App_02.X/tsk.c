@@ -87,6 +87,8 @@ void Tsk_init(void) {
     StateMachine_Init();
     IO_SET_DEBUG_LED_EN(HIGH);
     BMS_Init();
+    isoTP_init();
+    DCDC_init();
     CommandService_Init();
     WATCHDOG_TimerClear();
     //WATCHDOG_TimerSoftwareEnable();
@@ -102,6 +104,7 @@ void Tsk_init(void) {
 void Tsk_1ms(void) {
     run_iso_tp_1ms();
     DCDC_run_1ms();
+    CommandService_Run();
     
     CAN_populate_1ms();
 }
@@ -119,7 +122,7 @@ void Tsk_5ms(void) {
 void Tsk_10ms(void) {
     EV_CHARGER_Run_10ms();
     //BMS_Run_10ms();              // This is the CPU hog!
-    CommandService_Run();
+
     CAN_bms_debug_CPU_USAGE_set(SysTick_GetCPUPercentage());
     CAN_bms_debug_CPU_peak_set(SysTick_GetCPUPeak());
     CAN_populate_10ms();
@@ -132,7 +135,7 @@ void Tsk_10ms(void) {
 void Tsk_100ms(void) {
     WATCHDOG_TimerClear();
     DCDC_run_100ms();
-    IO_SET_DEBUG_LED_EN(TOGGLE); //Toggle Debug LED at 10Hz for scheduler running status
+    // IO_SET_DEBUG_LED_EN(TOGGLE); //Toggle Debug LED at 10Hz for scheduler running status
 }
 
 /**

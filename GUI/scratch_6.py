@@ -591,11 +591,16 @@ class CANApp:
         self.table_view = CANTableView(rx_frame, self.message_manager)
         self.table_view.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        # TX Messages frame (bottom of left panel)
-        self.tx_main_frame = ttk.LabelFrame(left_paned, text="TX Message Scheduler")
-        left_paned.add(self.tx_main_frame, weight=1)  # Takes 1/3 of vertical space
+        # TX Messages frame (bottom of left panel) - now with tabs
+        tx_container = ttk.LabelFrame(left_paned, text="Message Transmission")
+        left_paned.add(tx_container, weight=1)  # Takes 1/3 of vertical space
         
-        self.create_tx_section()
+        # Create tabbed interface for TX section
+        self.tx_notebook = ttk.Notebook(tx_container)
+        self.tx_notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        # Create tabs
+        self.create_tx_tabs()
 
         # Console frame (right side, full height)
         console_frame = ttk.LabelFrame(main_paned, text="Console Log")
@@ -650,6 +655,23 @@ class CANApp:
         self.log(f"❌ Error scanning devices: {error_msg}")
         if scan_btn:
             scan_btn.config(text="Scan Devices", state="normal")
+
+    def create_tx_tabs(self):
+        """Create the tabbed interface for message transmission"""
+        # Tab 1: CAN Messages (existing functionality)
+        self.tx_can_frame = ttk.Frame(self.tx_notebook)
+        self.tx_notebook.add(self.tx_can_frame, text="CAN Messages")
+        
+        # Tab 2: ISO-TP (new functionality)
+        self.tx_isotp_frame = ttk.Frame(self.tx_notebook)
+        self.tx_notebook.add(self.tx_isotp_frame, text="ISO-TP")
+        
+        # Set up the existing TX functionality in the CAN Messages tab
+        self.tx_main_frame = self.tx_can_frame  # Point to CAN tab for compatibility
+        self.create_tx_section()
+        
+        # Set up the new ISO-TP functionality
+        self.create_isotp_section()
 
     def create_tx_section(self):
         # Use the pre-created TX frame from the layout
@@ -738,7 +760,320 @@ class CANApp:
         
         # Store the binding function for use when creating message rows
         self.bind_mousewheel_to_widget = bind_mousewheel_to_widget
+
+    def create_isotp_section(self):
+        """Create the ISO-TP interface for commandService interaction"""
+        isotp_frame = self.tx_isotp_frame
         
+        # Command selection frame
+        cmd_frame = ttk.LabelFrame(isotp_frame, text="Command Selection")
+        cmd_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        # Target device selection
+        target_frame = ttk.Frame(cmd_frame)
+        target_frame.pack(fill=tk.X, padx=5, pady=2)
+        
+        ttk.Label(target_frame, text="Target:").pack(side=tk.LEFT)
+        self.isotp_target_var = tk.StringVar(value="BMS")
+        target_combo = ttk.Combobox(target_frame, textvariable=self.isotp_target_var, 
+                                   values=["BMS", "MCU", "Dash"], state="readonly", width=10)
+        target_combo.pack(side=tk.LEFT, padx=(5, 20))
+        
+        # Command type selection
+        ttk.Label(target_frame, text="Command:").pack(side=tk.LEFT)
+        self.isotp_cmd_var = tk.StringVar()
+        self.isotp_cmd_combo = ttk.Combobox(target_frame, textvariable=self.isotp_cmd_var, 
+                                           state="readonly", width=25)
+        self.isotp_cmd_combo.pack(side=tk.LEFT, padx=(5, 20))
+        self.isotp_cmd_combo.bind("<<ComboboxSelected>>", self.on_isotp_command_change)
+        
+        # Initialize command definitions first (before calling update_isotp_commands)
+        self.isotp_commands = {
+            "BMS": {
+                "Set Debug LED": {"cmd_id": 0x01, "type": "SET_DIGITAL_OUT", "params": ["state"]},
+                "Set SW Enable": {"cmd_id": 0x02, "type": "SET_DIGITAL_OUT", "params": ["state"]},
+                "Set DCDC Enable": {"cmd_id": 0x03, "type": "SET_DIGITAL_OUT", "params": ["state"]},
+                "Set EV Charger Enable": {"cmd_id": 0x04, "type": "SET_DIGITAL_OUT", "params": ["state"]},
+                "Set Pre-charge Enable": {"cmd_id": 0x05, "type": "SET_DIGITAL_OUT", "params": ["state"]},
+                "Set PWM Contactor 1": {"cmd_id": 0x10, "type": "SET_PWM_OUT", "params": ["duty_cycle"]},
+                "Set PWM Contactor 2": {"cmd_id": 0x11, "type": "SET_PWM_OUT", "params": ["duty_cycle"]},
+                "Get HV Bus Voltage": {"cmd_id": 0x20, "type": "GET_VOLTAGE", "params": []},
+                "Get DCDC Current": {"cmd_id": 0x21, "type": "GET_CURRENT", "params": []},
+                "Get Isolation Voltage": {"cmd_id": 0x22, "type": "GET_VOLTAGE", "params": []},
+                "Get Pilot Voltage": {"cmd_id": 0x23, "type": "GET_VOLTAGE", "params": []},
+            },
+            "MCU": {
+                "Set Status LED": {"cmd_id": 0x01, "type": "SET_DIGITAL_OUT", "params": ["state"]},
+                "Get Input Voltage": {"cmd_id": 0x20, "type": "GET_VOLTAGE", "params": []},
+                "Get System Status": {"cmd_id": 0x30, "type": "CUSTOM", "params": []},
+            },
+            "Dash": {
+                "Set Backlight": {"cmd_id": 0x01, "type": "SET_PWM_OUT", "params": ["brightness"]},
+                "Get Button State": {"cmd_id": 0x10, "type": "GET_DIGITAL_IN", "params": ["button_id"]},
+            }
+        }
+        
+        # ISO-TP addressing (based on boot_host_dbc.c)
+        self.isotp_addresses = {
+            "BMS": {"tx_id": 0x7A1, "rx_id": 0x7A2},  # BMS command service
+            "MCU": {"tx_id": 0x7A3, "rx_id": 0x7A4},  # MCU command service
+            "Dash": {"tx_id": 0x7A5, "rx_id": 0x7A6}  # Dash command service
+        }
+
+        # Now set up the UI components and bindings
+        # Update command list when target changes
+        target_combo.bind("<<ComboboxSelected>>", self.update_isotp_commands)
+        self.update_isotp_commands()  # Initialize
+        
+        # Parameters frame
+        self.isotp_params_frame = ttk.LabelFrame(isotp_frame, text="Command Parameters")
+        self.isotp_params_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        # Control buttons
+        control_frame = ttk.Frame(isotp_frame)
+        control_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        ttk.Button(control_frame, text="Send Command", command=self.send_isotp_command).pack(side=tk.LEFT, padx=5)
+        ttk.Button(control_frame, text="Clear Log", command=self.clear_isotp_log).pack(side=tk.LEFT, padx=5)
+        
+        # Response/Log frame
+        log_frame = ttk.LabelFrame(isotp_frame, text="ISO-TP Communication Log")
+        log_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        self.isotp_log = scrolledtext.ScrolledText(log_frame, wrap=tk.WORD, height=10)
+        self.isotp_log.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+    def update_isotp_commands(self, event=None):
+        """Update the command dropdown based on target selection"""
+        target = self.isotp_target_var.get()
+        if target in self.isotp_commands:
+            commands = list(self.isotp_commands[target].keys())
+            self.isotp_cmd_combo.config(values=commands)
+            if commands:
+                self.isotp_cmd_combo.set(commands[0])
+                self.on_isotp_command_change()
+
+    def on_isotp_command_change(self, event=None):
+        """Update parameter inputs when command changes"""
+        # Safety check - return if params frame doesn't exist yet
+        if not hasattr(self, 'isotp_params_frame'):
+            return
+            
+        # Clear existing parameter widgets
+        for widget in self.isotp_params_frame.winfo_children():
+            widget.destroy()
+        
+        target = self.isotp_target_var.get()
+        command = self.isotp_cmd_var.get()
+        
+        if target not in self.isotp_commands or command not in self.isotp_commands[target]:
+            return
+        
+        cmd_info = self.isotp_commands[target][command]
+        params = cmd_info.get("params", [])
+        
+        self.isotp_param_vars = {}
+        
+        if not params:
+            ttk.Label(self.isotp_params_frame, text="No parameters required").pack(pady=5)
+        else:
+            param_frame = ttk.Frame(self.isotp_params_frame)
+            param_frame.pack(fill=tk.X, padx=5, pady=5)
+            
+            for i, param in enumerate(params):
+                ttk.Label(param_frame, text=f"{param.replace('_', ' ').title()}:").grid(row=i, column=0, sticky="w", padx=5, pady=2)
+                
+                var = tk.StringVar()
+                self.isotp_param_vars[param] = var
+                
+                if param == "state":
+                    # Boolean dropdown for state parameters
+                    combo = ttk.Combobox(param_frame, textvariable=var, values=["0 (Off)", "1 (On)"], 
+                                        state="readonly", width=10)
+                    combo.set("0 (Off)")
+                elif param == "duty_cycle" or param == "brightness":
+                    # Scale for PWM values
+                    scale = tk.Scale(param_frame, from_=0, to=100, orient=tk.HORIZONTAL, variable=var)
+                    scale.grid(row=i, column=1, sticky="ew", padx=5, pady=2)
+                    continue
+                elif param == "button_id":
+                    # Dropdown for button selection
+                    combo = ttk.Combobox(param_frame, textvariable=var, values=["0", "1", "2", "3"], 
+                                        state="readonly", width=10)
+                    combo.set("0")
+                else:
+                    # Default entry widget
+                    combo = ttk.Entry(param_frame, textvariable=var, width=15)
+                
+                combo.grid(row=i, column=1, sticky="ew", padx=5, pady=2)
+            
+            param_frame.grid_columnconfigure(1, weight=1)
+
+    def send_isotp_command(self):
+        """Send an ISO-TP command to the target device"""
+        target = self.isotp_target_var.get()
+        command = self.isotp_cmd_var.get()
+        
+        if not target or not command:
+            messagebox.showwarning("Invalid Selection", "Please select a target and command.")
+            return
+        
+        if not self.running or not self.bus:
+            messagebox.showerror("Not Connected", "Please connect to CAN bus first.")
+            return
+        
+        if target not in self.isotp_commands or command not in self.isotp_commands[target]:
+            messagebox.showerror("Invalid Command", "Selected command not found.")
+            return
+        
+        cmd_info = self.isotp_commands[target][command]
+        cmd_id = cmd_info["cmd_id"]
+        params = cmd_info.get("params", [])
+        
+        # Build command payload
+        payload = [cmd_id]  # Command ID is first byte
+        
+        # Add parameters
+        for param in params:
+            if param not in self.isotp_param_vars:
+                continue
+            
+            value_str = self.isotp_param_vars[param].get()
+            try:
+                if param == "state":
+                    # Extract numeric value from "0 (Off)" or "1 (On)"
+                    value = int(value_str.split()[0])
+                elif param in ["duty_cycle", "brightness"]:
+                    # Convert percentage to 0-255 range
+                    value = int(float(value_str) * 255 / 100)
+                else:
+                    value = int(value_str)
+                
+                payload.append(value & 0xFF)  # Ensure single byte
+            except ValueError:
+                messagebox.showerror("Invalid Parameter", f"Invalid value for {param}: {value_str}")
+                return
+        
+        # Get ISO-TP addresses
+        addresses = self.isotp_addresses[target]
+        tx_id = addresses["tx_id"]
+        rx_id = addresses["rx_id"]
+        
+        # Send as single frame ISO-TP (for simplicity, assuming payload <= 7 bytes)
+        if len(payload) <= 7:
+            # Single frame: [PCI | Data...]
+            pci = len(payload)  # Single frame PCI = length
+            can_data = [pci] + payload + [0] * (8 - len(payload) - 1)  # Pad to 8 bytes
+            
+            try:
+                msg = can.Message(
+                    arbitration_id=tx_id,
+                    data=can_data,
+                    is_extended_id=False
+                )
+                self.bus.send(msg)
+                
+                # Log the sent command
+                param_str = ""
+                if hasattr(self, 'isotp_param_vars'):
+                    param_values = [f"{k}={v.get()}" for k, v in self.isotp_param_vars.items()]
+                    param_str = f" ({', '.join(param_values)})" if param_values else ""
+                
+                self.isotp_log.insert(tk.END, f"📤 SENT: {target} - {command}{param_str}\n")
+                self.isotp_log.insert(tk.END, f"    TX ID: 0x{tx_id:03X}, Data: {' '.join(f'{b:02X}' for b in can_data)}\n")
+                self.isotp_log.see(tk.END)
+                
+                # TODO: Listen for response on rx_id
+                
+            except Exception as e:
+                self.isotp_log.insert(tk.END, f"❌ ERROR: Failed to send command: {e}\n")
+                self.isotp_log.see(tk.END)
+        else:
+            messagebox.showerror("Command Too Long", "Multi-frame ISO-TP not yet implemented.")
+
+    def clear_isotp_log(self):
+        """Clear the ISO-TP communication log"""
+        self.isotp_log.delete(1.0, tk.END)
+
+    def check_isotp_response(self, msg):
+        """Check if received message is an ISO-TP response and log it"""
+        msg_id = msg.arbitration_id
+        
+        # Check if this message ID matches any of our expected response IDs
+        for target, addresses in self.isotp_addresses.items():
+            if msg_id == addresses["rx_id"]:
+                # This is an ISO-TP response
+                data = list(msg.data)
+                
+                if len(data) == 0:
+                    return
+                
+                # Parse ISO-TP header
+                pci = data[0] & 0xF0  # Protocol Control Information
+                length = data[0] & 0x0F  # For single frame, this is the data length
+                
+                if pci == 0x00:  # Single frame
+                    if length == 0 or length > 7:
+                        return
+                    
+                    # Extract payload
+                    payload = data[1:1+length]
+                    
+                    if len(payload) == 0:
+                        return
+                    
+                    # First byte should be response code
+                    response_code = payload[0]
+                    response_data = payload[1:] if len(payload) > 1 else []
+                    
+                    # Format response based on response code
+                    if response_code == 0x00:  # CMD_SUCCESS
+                        status = "✅ SUCCESS"
+                        if response_data:
+                            # Try to interpret response data based on length
+                            if len(response_data) == 1:
+                                # Single byte (digital input, etc.)
+                                value = response_data[0]
+                                data_str = f" - Value: {value}"
+                            elif len(response_data) == 2:
+                                # 16-bit value (analog input)
+                                value = (response_data[1] << 8) | response_data[0]
+                                data_str = f" - Value: {value}"
+                            elif len(response_data) == 4:
+                                # 32-bit float (voltage, current)
+                                import struct
+                                value = struct.unpack('<f', bytes(response_data))[0]
+                                data_str = f" - Value: {value:.3f}"
+                            else:
+                                # Raw hex data
+                                data_str = f" - Data: {' '.join(f'{b:02X}' for b in response_data)}"
+                        else:
+                            data_str = ""
+                    else:
+                        # Error response
+                        error_names = {
+                            0x01: "UNKNOWN_COMMAND",
+                            0x02: "INVALID_LENGTH", 
+                            0x03: "INVALID_PARAM",
+                            0x04: "PERMISSION_DENIED",
+                            0x05: "SYSTEM_BUSY"
+                        }
+                        error_name = error_names.get(response_code, f"ERROR_{response_code:02X}")
+                        status = f"❌ {error_name}"
+                        data_str = ""
+                    
+                    # Log the response
+                    self.isotp_log.insert(tk.END, f"📥 RECEIVED: {target} Response - {status}{data_str}\n")
+                    self.isotp_log.insert(tk.END, f"    RX ID: 0x{msg_id:03X}, Data: {' '.join(f'{b:02X}' for b in data)}\n\n")
+                    self.isotp_log.see(tk.END)
+                    
+                elif pci == 0x10:  # First frame (multi-frame)
+                    # TODO: Implement multi-frame support
+                    self.isotp_log.insert(tk.END, f"📥 RECEIVED: {target} - Multi-frame response (not yet supported)\n")
+                    self.isotp_log.insert(tk.END, f"    RX ID: 0x{msg_id:03X}, Data: {' '.join(f'{b:02X}' for b in data)}\n\n")
+                    self.isotp_log.see(tk.END)
+                
+                return  # Found a match, no need to check other targets
 
     def log(self, message):
         self.console.insert(tk.END, message + "\n")
@@ -794,6 +1129,9 @@ class CANApp:
             return
 
         msg_id = msg.arbitration_id
+        
+        # Check if this is an ISO-TP response
+        self.check_isotp_response(msg)
         
         # Update message data immediately (for accurate counting and timing)
         can_msg = self.message_manager.update_message(msg_id, msg.dlc, msg.data)

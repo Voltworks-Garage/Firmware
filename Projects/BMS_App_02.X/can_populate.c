@@ -64,8 +64,8 @@ void CAN_populate_1000ms(void){
     CAN_bms_debug_float1_set(pack_voltage1);
     CAN_bms_debug_float2_set(pack_voltage2);
     
-    CAN_bms_cellTemperaturs_temp_1_set(IO_GET_MUX_1_VOLTAGE()*10);
-    CAN_bms_cellTemperaturs_temp_2_set(IO_GET_MUX_2_VOLTAGE()*10);
-    CAN_bms_cellTemperaturs_temp_3_set(IO_GET_MUX_3_VOLTAGE()*10);
+    CAN_bms_cellTemperaturs_M0_temp_1_set(IO_GET_MUX_1_VOLTAGE()*10);
+    CAN_bms_cellTemperaturs_M0_temp_2_set(IO_GET_MUX_2_VOLTAGE()*10);
+    CAN_bms_cellTemperaturs_M0_temp_3_set(IO_GET_MUX_3_VOLTAGE()*10);
 }
         

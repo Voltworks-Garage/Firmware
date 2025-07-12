@@ -2,6 +2,7 @@
 #include "can_iso_tp_lite_config.h"
 #include "./mcc_generated_files/boot/boot_config.h"
 #include "ringBuffer.h"
+#include <stddef.h>
 
 typedef enum {
     SINGLE,
@@ -16,6 +17,12 @@ typedef enum {
     OVERFLOW_ABORT
 } flowcontrol_E;
 
+typedef enum {
+    TX_IDLE,
+    TX_WAIT_FLOW_CONTROL,
+    TX_SENDING_CONSECUTIVE
+} tx_state_E;
+
 #define BLOCK_SIZE 0
 #define SEPARATION_TIME 1
 
@@ -25,6 +32,16 @@ uint8_t payloadMessage[64];
 uint8_t consecutiveFrame_SN = 0;
 uint16_t timeoutCounter = 0;
 #define ISO_TP_TIMOUT 10
+
+static tx_state_E txState = TX_IDLE;
+static uint8_t* txPayload = NULL;
+static uint16_t txLength = 0;
+static uint16_t txBytesSent = 0;
+static uint8_t txSequenceNumber = 1;
+static uint8_t txBlockSize = 0;
+static uint8_t txSeparationTime = 0;
+static uint8_t txFramesInBlock = 0;
+static uint16_t txSeparationCounter = 0;
 static isoTP_command_S currentCommand={
     .command = ISO_TP_NONE,
     .payload = payloadMessage,
@@ -44,6 +61,9 @@ uint8_t actionBufferPop(void);
 uint8_t isoTP_Reset(void);
 uint8_t isoTP_Sleep(void);
 uint8_t isoTP_TesterPresent(void);
+void handle_flow_control(void);
+uint8_t send_consecutive_frame(void);
+void reset_transmission_state(void);
 
 void isoTP_init(void){
     currentFrameType = SINGLE;
@@ -55,6 +75,8 @@ void isoTP_init(void){
 
     actionBufferIndex = 0;
     actionBufferPointer = 0;
+    
+    reset_transmission_state();
 }
 
 void run_iso_tp_1ms(void) {
@@ -62,6 +84,14 @@ void run_iso_tp_1ms(void) {
     
     if (timeoutCounter++ > ISO_TP_TIMOUT) {
         isoTP_init();
+    }
+    
+    if (txState == TX_SENDING_CONSECUTIVE) {
+        if (txSeparationCounter > 0) {
+            txSeparationCounter--;
+        } else {
+            actionBufferPush(send_consecutive_frame);
+        }
     }
 
     if (CAN_boot_host_checkDataIsFresh()) {
@@ -101,6 +131,11 @@ void run_iso_tp_1ms(void) {
                     consecutiveFrame_SN = 0;
                 }
                 messageComplete = get_frame_payload();
+                break;
+            case FLOW_CONTROL:
+                if (txState == TX_WAIT_FLOW_CONTROL) {
+                    handle_flow_control();
+                }
                 break;
             default:
                 break;
@@ -155,6 +190,11 @@ uint8_t set_app_size_response_1(void) {
     return currentCommand.command;
 }
 
+uint8_t dummy_action(void) {
+    // This function does nothing, used as a placeholder
+    return 0;
+}
+
 uint8_t set_app_size_response_2(void) {
     CAN_boot_response_type_set(1);
     CAN_boot_response_code_set(CONSECUTIVE);
@@ -165,6 +205,7 @@ uint8_t set_app_size_response_2(void) {
     CAN_boot_response_byte5_set(0x00);
     CAN_boot_response_byte6_set(0x01);
     CAN_boot_response_byte7_set(0x00);
+    CAN_boot_response_dlc_set(8);
     CAN_boot_response_send();
     currentCommand.command = ISO_TP_NONE;
     return currentCommand.command;
@@ -177,9 +218,10 @@ uint8_t set_app_size_response_3(void) {
     CAN_boot_response_byte2_set(BOOT_CONFIG_PROGRAMMABLE_ADDRESS_LOW & 0xFF);
     CAN_boot_response_byte3_set(0x00);
     CAN_boot_response_byte4_set(BOOT_CONFIG_PROGRAMMABLE_ADDRESS_HIGH & 0xFF);
-    CAN_boot_response_byte5_set(BOOT_CONFIG_PROGRAMMABLE_ADDRESS_HIGH >> 8 & 0xFF);
-    CAN_boot_response_byte6_set(BOOT_CONFIG_PROGRAMMABLE_ADDRESS_HIGH >> 16 & 0xFF);
-    CAN_boot_response_byte7_set(BOOT_CONFIG_PROGRAMMABLE_ADDRESS_HIGH >> 24 & 0xFF);
+    CAN_boot_response_byte5_set((BOOT_CONFIG_PROGRAMMABLE_ADDRESS_HIGH >> 8) & 0xFF);
+    CAN_boot_response_byte6_set((BOOT_CONFIG_PROGRAMMABLE_ADDRESS_HIGH >> 16) & 0xFF);
+    CAN_boot_response_byte7_set((BOOT_CONFIG_PROGRAMMABLE_ADDRESS_HIGH >> 24) & 0xFF);
+    CAN_boot_response_dlc_set(8);
     CAN_boot_response_send();
     currentCommand.command = ISO_TP_NONE;
     return currentCommand.command;
@@ -206,21 +248,23 @@ uint8_t isoTP_IOControl(void) {
     CAN_boot_response_byte5_set(0x04);
     CAN_boot_response_byte6_set(0x05);
     CAN_boot_response_byte7_set(0x06);
+    CAN_boot_response_dlc_set(8);
     CAN_boot_response_send();
     currentCommand.command = ISO_TP_IO_CONTROL;
     return currentCommand.command;
 }
 
 uint8_t isoTP_TesterPresent(void) {
-    CAN_boot_response_type_set(7);
+    CAN_boot_response_type_set(2);
     CAN_boot_response_code_set(SINGLE);
-    CAN_boot_response_byte1_set(0x0A);
-    CAN_boot_response_byte2_set(0x0B);
-    CAN_boot_response_byte3_set(0x0C);
-    CAN_boot_response_byte4_set(0x0D);
-    CAN_boot_response_byte5_set(0x0E);
-    CAN_boot_response_byte6_set(0x0F);
-    CAN_boot_response_byte7_set(0x0F);
+    CAN_boot_response_byte1_set(0x7E);
+    CAN_boot_response_byte2_set(0x00);
+    CAN_boot_response_byte3_set(0x55);
+    CAN_boot_response_byte4_set(0x55);
+    CAN_boot_response_byte5_set(0x55);
+    CAN_boot_response_byte6_set(0x55);
+    CAN_boot_response_byte7_set(0x55);
+    CAN_boot_response_dlc_set(3);
     CAN_boot_response_send();
     currentCommand.command = ISO_TP_TESTER_PRESENT;
     return currentCommand.command;
@@ -253,6 +297,7 @@ void decode_message(void) {
             break;
         case 0x0B:
             actionBufferPush(set_app_size_response_1);
+            actionBufferPush(dummy_action);
             actionBufferPush(set_app_size_response_2);
             actionBufferPush(set_app_size_response_3);
             actionBufferPush(isoTP_Reset);
@@ -283,4 +328,187 @@ uint8_t actionBufferPop(void) {
     }
 
     return returnVal;
+}
+
+uint8_t isoTP_SendSingle(uint8_t* payload, uint8_t length) {
+    if (length == 0 || length > 7 || payload == NULL) {
+        return 0;
+    }
+    
+    CAN_boot_response_type_set(length);
+    CAN_boot_response_code_set(SINGLE);
+    
+    for (uint8_t i = 0; i < length && i < 7; i++) {
+        switch(i) {
+            case 0: CAN_boot_response_byte1_set(payload[i]); break;
+            case 1: CAN_boot_response_byte2_set(payload[i]); break;
+            case 2: CAN_boot_response_byte3_set(payload[i]); break;
+            case 3: CAN_boot_response_byte4_set(payload[i]); break;
+            case 4: CAN_boot_response_byte5_set(payload[i]); break;
+            case 5: CAN_boot_response_byte6_set(payload[i]); break;
+            case 6: CAN_boot_response_byte7_set(payload[i]); break;
+        }
+    }
+    
+    for (uint8_t i = length; i < 7; i++) {
+        switch(i) {
+            case 0: CAN_boot_response_byte1_set(0x55); break;
+            case 1: CAN_boot_response_byte2_set(0x55); break;
+            case 2: CAN_boot_response_byte3_set(0x55); break;
+            case 3: CAN_boot_response_byte4_set(0x55); break;
+            case 4: CAN_boot_response_byte5_set(0x55); break;
+            case 5: CAN_boot_response_byte6_set(0x55); break;
+            case 6: CAN_boot_response_byte7_set(0x55); break;
+        }
+    }
+    
+    CAN_boot_response_dlc_set(length + 1);
+    CAN_boot_response_send();
+    
+    return 1;
+}
+
+uint8_t isoTP_SendData(uint8_t* payload, uint16_t length) {
+    if (length == 0 || payload == NULL || txState != TX_IDLE) {
+        return 0;
+    }
+    
+    if (length <= 7) {
+        return isoTP_SendSingle(payload, length);
+    }
+    
+    txPayload = payload;
+    txLength = length;
+    txBytesSent = 0;
+    txSequenceNumber = 1;
+    txFramesInBlock = 0;
+    
+    CAN_boot_response_type_set((length >> 8) & 0x0F);
+    CAN_boot_response_code_set(FIRST);
+    CAN_boot_response_byte1_set(length & 0xFF);
+    
+    for (uint8_t i = 0; i < 6 && txBytesSent < length; i++, txBytesSent++) {
+        switch(i) {
+            case 0: CAN_boot_response_byte2_set(payload[txBytesSent]); break;
+            case 1: CAN_boot_response_byte3_set(payload[txBytesSent]); break;
+            case 2: CAN_boot_response_byte4_set(payload[txBytesSent]); break;
+            case 3: CAN_boot_response_byte5_set(payload[txBytesSent]); break;
+            case 4: CAN_boot_response_byte6_set(payload[txBytesSent]); break;
+            case 5: CAN_boot_response_byte7_set(payload[txBytesSent]); break;
+        }
+    }
+    
+    CAN_boot_response_dlc_set(8);
+    CAN_boot_response_send();
+    
+    txState = TX_WAIT_FLOW_CONTROL;
+    
+    return 1;
+}
+
+void reset_transmission_state(void) {
+    txState = TX_IDLE;
+    txPayload = NULL;
+    txLength = 0;
+    txBytesSent = 0;
+    txSequenceNumber = 1;
+    txBlockSize = 0;
+    txSeparationTime = 0;
+    txFramesInBlock = 0;
+    txSeparationCounter = 0;
+}
+
+void handle_flow_control(void) {
+    uint8_t flowStatus = CAN_boot_host_type_get();
+    
+    switch(flowStatus) {
+        case CONTINUE_TO_SEND:
+            txBlockSize = CAN_boot_host_getBytesFp[0]();
+            txSeparationTime = CAN_boot_host_getBytesFp[1]();
+            txFramesInBlock = 0;
+            
+            if (txSeparationTime > 0 && txSeparationTime <= 0x7F) {
+                txSeparationCounter = txSeparationTime;
+            } else {
+                txSeparationCounter = 0;
+            }
+            
+            txState = TX_SENDING_CONSECUTIVE;
+            
+            if (txSeparationCounter == 0) {
+                actionBufferPush(send_consecutive_frame);
+            }
+            break;
+            
+        case WAIT:
+            break;
+            
+        case OVERFLOW_ABORT:
+        default:
+            reset_transmission_state();
+            break;
+    }
+}
+
+uint8_t send_consecutive_frame(void) {
+    if (txState != TX_SENDING_CONSECUTIVE || txBytesSent >= txLength) {
+        reset_transmission_state();
+        return 0;
+    }
+    
+    CAN_boot_response_type_set(txSequenceNumber);
+    CAN_boot_response_code_set(CONSECUTIVE);
+    
+    uint8_t bytesThisFrame = 0;
+    for (uint8_t i = 0; i < 7 && txBytesSent < txLength; i++, txBytesSent++, bytesThisFrame++) {
+        switch(i) {
+            case 0: CAN_boot_response_byte1_set(txPayload[txBytesSent]); break;
+            case 1: CAN_boot_response_byte2_set(txPayload[txBytesSent]); break;
+            case 2: CAN_boot_response_byte3_set(txPayload[txBytesSent]); break;
+            case 3: CAN_boot_response_byte4_set(txPayload[txBytesSent]); break;
+            case 4: CAN_boot_response_byte5_set(txPayload[txBytesSent]); break;
+            case 5: CAN_boot_response_byte6_set(txPayload[txBytesSent]); break;
+            case 6: CAN_boot_response_byte7_set(txPayload[txBytesSent]); break;
+        }
+    }
+    
+    for (uint8_t i = bytesThisFrame; i < 7; i++) {
+        switch(i) {
+            case 0: CAN_boot_response_byte1_set(0x55); break;
+            case 1: CAN_boot_response_byte2_set(0x55); break;
+            case 2: CAN_boot_response_byte3_set(0x55); break;
+            case 3: CAN_boot_response_byte4_set(0x55); break;
+            case 4: CAN_boot_response_byte5_set(0x55); break;
+            case 5: CAN_boot_response_byte6_set(0x55); break;
+            case 6: CAN_boot_response_byte7_set(0x55); break;
+        }
+    }
+    
+    CAN_boot_response_dlc_set(8);
+    CAN_boot_response_send();
+    
+    txSequenceNumber++;
+    if (txSequenceNumber > 15) {
+        txSequenceNumber = 0;
+    }
+    
+    txFramesInBlock++;
+    
+    if (txBytesSent >= txLength) {
+        reset_transmission_state();
+        return 1;
+    }
+    
+    if (txBlockSize > 0 && txFramesInBlock >= txBlockSize) {
+        txState = TX_WAIT_FLOW_CONTROL;
+        return 1;
+    }
+    
+    if (txSeparationTime > 0 && txSeparationTime <= 0x7F) {
+        txSeparationCounter = txSeparationTime;
+    } else {
+        actionBufferPush(send_consecutive_frame);
+    }
+    
+    return 1;
 }

@@ -16,6 +16,7 @@
 
 #include <stdint.h>
 #include "IO.h"
+#include <stddef.h>
 
 // Command definitions for MCU project (different from BMS)
 #define CMD_SET_HEADLIGHT_HI        0x01
