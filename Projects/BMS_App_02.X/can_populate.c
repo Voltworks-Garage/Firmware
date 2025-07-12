@@ -41,10 +41,10 @@ void CAN_populate_100ms(void){
 void CAN_populate_1000ms(void){
     static uint8_t cellVoltageMultiPlex = 0;
     CAN_bms_cellVoltages_MultiPlex_set(cellVoltageMultiPlex++);
-    CAN_bms_cellVoltages_cell_1_voltage_set(LTC6802_get_cell_voltage(4*cellVoltageMultiPlex - 3));
-    CAN_bms_cellVoltages_cell_2_voltage_set(LTC6802_get_cell_voltage(4*cellVoltageMultiPlex - 2));
-    CAN_bms_cellVoltages_cell_3_voltage_set(LTC6802_get_cell_voltage(4*cellVoltageMultiPlex - 1));
-    CAN_bms_cellVoltages_cell_4_voltage_set(LTC6802_get_cell_voltage(4*cellVoltageMultiPlex));
+    CAN_bms_cellVoltages_M0_cell_1_voltage_set(LTC6802_get_cell_voltage(4*cellVoltageMultiPlex - 3));
+    CAN_bms_cellVoltages_M0_cell_2_voltage_set(LTC6802_get_cell_voltage(4*cellVoltageMultiPlex - 2));
+    CAN_bms_cellVoltages_M0_cell_3_voltage_set(LTC6802_get_cell_voltage(4*cellVoltageMultiPlex - 1));
+    CAN_bms_cellVoltages_M0_cell_4_voltage_set(LTC6802_get_cell_voltage(4*cellVoltageMultiPlex));
     if (cellVoltageMultiPlex >= 6){
         cellVoltageMultiPlex = 0;
     }
@@ -64,8 +64,8 @@ void CAN_populate_1000ms(void){
     CAN_bms_debug_float1_set(pack_voltage1);
     CAN_bms_debug_float2_set(pack_voltage2);
     
-    CAN_bms_cellTemperaturs_temp_1_set(IO_GET_MUX_1_VOLTAGE()*10);
-    CAN_bms_cellTemperaturs_temp_2_set(IO_GET_MUX_2_VOLTAGE()*10);
-    CAN_bms_cellTemperaturs_temp_3_set(IO_GET_MUX_3_VOLTAGE()*10);
+    CAN_bms_cellTemperaturs_M0_temp_1_set(IO_GET_MUX_1_VOLTAGE()*10);
+    CAN_bms_cellTemperaturs_M0_temp_2_set(IO_GET_MUX_2_VOLTAGE()*10);
+    CAN_bms_cellTemperaturs_M0_temp_3_set(IO_GET_MUX_3_VOLTAGE()*10);
 }
         

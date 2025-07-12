@@ -101,20 +101,93 @@ for node in range(0,numberOfNodes):
 
             #loop through each signal and parse the data
             numberOfSignals = len(data["NODE"][i]["messages"][j]["signals"])
-            offset = 0
+            multiplex_signal = None
+            
+            # First pass: identify multiplex signal
             for k in range(0,numberOfSignals):
-                this_signal_name = data["NODE"][i]["messages"][j]["signals"][k]["name"]
-                this_signal_length = data["NODE"][i]["messages"][j]["signals"][k]["length"]
-                this_signal_bit_offset = data["NODE"][i]["messages"][j]["signals"][k]["bitOffset"] = offset
-                dot_c.write(
-                    "#define " + ID_name.upper() + "_" + this_signal_name.upper() + "_RANGE " + str(this_signal_length) + "\n")
-                dot_c.write(
-                    "#define " + ID_name.upper() + "_" + this_signal_name.upper() + "_OFFSET " + str(offset) + "\n")
-                offset += this_signal_length
-                print("\t\t" + this_signal_name)
-            if offset > 64:
+                signal = data["NODE"][i]["messages"][j]["signals"][k]
+                signal_name = signal["name"]
+                if signal_name.lower() in ["multiplex", "mux", "multiplexor"]:
+                    multiplex_signal = signal_name
+                    break
+            
+            # For multiplexed messages, we need to calculate offsets differently
+            # Group signals by mux value and calculate shared offsets
+            if multiplex_signal:
+                # Group signals by mux value
+                mux_groups = {}
+                non_mux_signals = []
+                
+                for k in range(0, numberOfSignals):
+                    signal = data["NODE"][i]["messages"][j]["signals"][k]
+                    if signal["name"].lower() in ["multiplex", "mux", "multiplexor"]:
+                        non_mux_signals.append((k, signal))
+                    elif signal.get("multiplex") is not None:
+                        mux_val = signal["multiplex"]
+                        if mux_val not in mux_groups:
+                            mux_groups[mux_val] = []
+                        mux_groups[mux_val].append((k, signal))
+                    else:
+                        non_mux_signals.append((k, signal))
+                
+                # Calculate offsets for non-mux signals first
+                offset = 0
+                for k, signal in non_mux_signals:
+                    signal["bitOffset"] = offset
+                    signal_define_name = signal["name"].upper()
+                    dot_c.write(
+                        "#define " + ID_name.upper() + "_" + signal_define_name + "_RANGE " + str(signal["length"]) + "\n")
+                    dot_c.write(
+                        "#define " + ID_name.upper() + "_" + signal_define_name + "_OFFSET " + str(offset) + "\n")
+                    offset += signal["length"]
+                    print("\t\t" + signal["name"])
+                
+                # Calculate shared offsets for each mux group (they all start after non-mux signals)
+                mux_start_offset = offset
+                for mux_val, signal_list in mux_groups.items():
+                    offset = mux_start_offset  # Reset offset for each mux group
+                    for k, signal in signal_list:
+                        signal["bitOffset"] = offset
+                        signal_define_name = f"M{mux_val}_{signal['name'].upper()}"
+                        dot_c.write(
+                            "#define " + ID_name.upper() + "_" + signal_define_name + "_RANGE " + str(signal["length"]) + "\n")
+                        dot_c.write(
+                            "#define " + ID_name.upper() + "_" + signal_define_name + "_OFFSET " + str(offset) + "\n")
+                        offset += signal["length"]
+                        print("\t\t" + signal["name"])
+                
+                # Set final offset to the maximum used
+                max_offset = mux_start_offset
+                for mux_val, signal_list in mux_groups.items():
+                    mux_offset = mux_start_offset
+                    for k, signal in signal_list:
+                        mux_offset += signal["length"]
+                    max_offset = max(max_offset, mux_offset)
+                offset = max_offset
+            else:
+                # Non-multiplexed message - original logic
+                offset = 0
+                for k in range(0,numberOfSignals):
+                    this_signal_name = data["NODE"][i]["messages"][j]["signals"][k]["name"]
+                    this_signal_length = data["NODE"][i]["messages"][j]["signals"][k]["length"]
+                    this_signal_bit_offset = data["NODE"][i]["messages"][j]["signals"][k]["bitOffset"] = offset
+                    
+                    signal_define_name = this_signal_name.upper()
+                    
+                    dot_c.write(
+                        "#define " + ID_name.upper() + "_" + signal_define_name + "_RANGE " + str(this_signal_length) + "\n")
+                    dot_c.write(
+                        "#define " + ID_name.upper() + "_" + signal_define_name + "_OFFSET " + str(offset) + "\n")
+                    offset += this_signal_length
+                    print("\t\t" + this_signal_name)
+            # For multiplexed messages, check if we have a multiplex signal
+            # If so, different mux values can use the same bit positions
+            is_multiplexed_message = multiplex_signal is not None
+            if offset > 64 and not is_multiplexed_message:
                 s = input("ERROR: too much data in {} {}. Press any key to quit and try again. ERROR.".format(this_message_name, this_signal_name))
                 quit()
+            elif is_multiplexed_message:
+                print(f"  Note: {this_message_name} is multiplexed - signals will share bit positions based on mux value")
             dot_c.write("\n")
 
             if(i == thisNode):
@@ -126,13 +199,24 @@ for node in range(0,numberOfNodes):
                     this_signal_bit_offset = data["NODE"][i]["messages"][j]["signals"][k]["bitOffset"]
                     this_signal_units = data["NODE"][i]["messages"][j]["signals"][k]["units"]
                     this_signal_length = data["NODE"][i]["messages"][j]["signals"][k]["length"]
+                    
+                    # Handle multiplex signals with special naming
+                    signal_func_name = this_signal_name
+                    signal_define_name = this_signal_name.upper()
+                    signal = data["NODE"][i]["messages"][j]["signals"][k]
+                    if signal.get("multiplex") is not None and multiplex_signal:
+                        # This is a multiplexed signal, add mux value to name
+                        mux_value = signal["multiplex"]
+                        signal_func_name = f"M{mux_value}_{this_signal_name}"
+                        signal_define_name = f"M{mux_value}_{this_signal_name.upper()}"
+                    
                     if this_signal_units in ["V", "A", "degC", "%"]:
                         this_signal_datatype = "float"
                     else:
                         this_signal_datatype = "uint16_t"
-                    dot_h.write("void " + ID_name + "_" + this_signal_name
+                    dot_h.write("void " + ID_name + "_" + signal_func_name
                         + "_set(" + this_signal_datatype + " " + this_signal_name + ");\n")
-                    dot_c.write("void " + ID_name + "_" + this_signal_name
+                    dot_c.write("void " + ID_name + "_" + signal_func_name
                         + "_set(" + this_signal_datatype + " " + this_signal_name + "){\n")
                     dot_c.write("\tuint16_t data_scaled = ({} - {}) / {};\n".format(this_signal_name, this_signal_offset, this_signal_scale))
                     # dot_c.write("\tset_bits((size_t*)"+ ID_name + ".payload, "
@@ -175,17 +259,28 @@ for node in range(0,numberOfNodes):
                     this_signal_scale = data["NODE"][i]["messages"][j]["signals"][k]["scale"]
                     this_signal_offset = data["NODE"][i]["messages"][j]["signals"][k]["offset"]
                     this_signal_units = data["NODE"][i]["messages"][j]["signals"][k]["units"]
+                    
+                    # Handle multiplex signals with special naming
+                    signal_func_name = this_signal_name
+                    signal_define_name = this_signal_name.upper()
+                    signal = data["NODE"][i]["messages"][j]["signals"][k]
+                    if signal.get("multiplex") is not None and multiplex_signal:
+                        # This is a multiplexed signal, add mux value to name
+                        mux_value = signal["multiplex"]
+                        signal_func_name = f"M{mux_value}_{this_signal_name}"
+                        signal_define_name = f"M{mux_value}_{this_signal_name.upper()}"
+                    
                     if  this_signal_units in ["V", "A", "degC"]:
                         this_signal_datatype = "float"
                     else:
                         this_signal_datatype = "uint16_t"
-                    dot_h.write(this_signal_datatype + " " + ID_name + "_" + this_signal_name + "_get(void);\n")
-                    dot_c.write(this_signal_datatype + " " + ID_name + "_" + this_signal_name + "_get(void){\n")
+                    dot_h.write(this_signal_datatype + " " + ID_name + "_" + signal_func_name + "_get(void);\n")
+                    dot_c.write(this_signal_datatype + " " + ID_name + "_" + signal_func_name + "_get(void){\n")
 
                     dot_c.write("\tuint16_t data = get_bits((size_t*)CAN_" + this_node_name + "_"
                                 + this_message_name + ".payload, "
-                                + ID_name.upper() + "_" + this_signal_name.upper() + "_OFFSET, "
-                                + ID_name.upper() + "_" + this_signal_name.upper() + "_RANGE);\n")
+                                + ID_name.upper() + "_" + signal_define_name + "_OFFSET, "
+                                + ID_name.upper() + "_" + signal_define_name + "_RANGE);\n")
                     dot_c.write("\treturn (data * {}) + {};\n}}\n".format(this_signal_scale, this_signal_offset))
 
                 dot_h.write("\n")

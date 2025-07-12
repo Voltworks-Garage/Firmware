@@ -133,10 +133,30 @@ void CAN_bms_charger_request_send(void);
 
 #define CAN_bms_cellVoltages_interval() 1000
 void CAN_bms_cellVoltages_MultiPlex_set(uint16_t MultiPlex);
-void CAN_bms_cellVoltages_cell_1_voltage_set(float cell_1_voltage);
-void CAN_bms_cellVoltages_cell_2_voltage_set(float cell_2_voltage);
-void CAN_bms_cellVoltages_cell_3_voltage_set(float cell_3_voltage);
-void CAN_bms_cellVoltages_cell_4_voltage_set(float cell_4_voltage);
+void CAN_bms_cellVoltages_M0_cell_1_voltage_set(float cell_1_voltage);
+void CAN_bms_cellVoltages_M0_cell_2_voltage_set(float cell_2_voltage);
+void CAN_bms_cellVoltages_M0_cell_3_voltage_set(float cell_3_voltage);
+void CAN_bms_cellVoltages_M0_cell_4_voltage_set(float cell_4_voltage);
+void CAN_bms_cellVoltages_M1_cell_5_voltage_set(float cell_5_voltage);
+void CAN_bms_cellVoltages_M1_cell_6_voltage_set(float cell_6_voltage);
+void CAN_bms_cellVoltages_M1_cell_7_voltage_set(float cell_7_voltage);
+void CAN_bms_cellVoltages_M1_cell_8_voltage_set(float cell_8_voltage);
+void CAN_bms_cellVoltages_M2_cell_9_voltage_set(float cell_9_voltage);
+void CAN_bms_cellVoltages_M2_cell_10_voltage_set(float cell_10_voltage);
+void CAN_bms_cellVoltages_M2_cell_11_voltage_set(float cell_11_voltage);
+void CAN_bms_cellVoltages_M2_cell_12_voltage_set(float cell_12_voltage);
+void CAN_bms_cellVoltages_M3_cell_13_voltage_set(float cell_13_voltage);
+void CAN_bms_cellVoltages_M3_cell_14_voltage_set(float cell_14_voltage);
+void CAN_bms_cellVoltages_M3_cell_15_voltage_set(float cell_15_voltage);
+void CAN_bms_cellVoltages_M3_cell_16_voltage_set(float cell_16_voltage);
+void CAN_bms_cellVoltages_M4_cell_17_voltage_set(float cell_17_voltage);
+void CAN_bms_cellVoltages_M4_cell_18_voltage_set(float cell_18_voltage);
+void CAN_bms_cellVoltages_M4_cell_19_voltage_set(float cell_19_voltage);
+void CAN_bms_cellVoltages_M4_cell_20_voltage_set(float cell_20_voltage);
+void CAN_bms_cellVoltages_M5_cell_21_voltage_set(float cell_21_voltage);
+void CAN_bms_cellVoltages_M5_cell_22_voltage_set(float cell_22_voltage);
+void CAN_bms_cellVoltages_M5_cell_23_voltage_set(float cell_23_voltage);
+void CAN_bms_cellVoltages_M5_cell_24_voltage_set(float cell_24_voltage);
 void CAN_bms_cellVoltages_dlc_set(uint8_t dlc);
 
 
@@ -145,10 +165,30 @@ void CAN_bms_cellVoltages_send(void);
 
 #define CAN_bms_cellTemperaturs_interval() 1000
 void CAN_bms_cellTemperaturs_MultiPlex_set(uint16_t MultiPlex);
-void CAN_bms_cellTemperaturs_temp_1_set(float temp_1);
-void CAN_bms_cellTemperaturs_temp_2_set(float temp_2);
-void CAN_bms_cellTemperaturs_temp_3_set(float temp_3);
-void CAN_bms_cellTemperaturs_temp_4_set(float temp_4);
+void CAN_bms_cellTemperaturs_M0_temp_1_set(float temp_1);
+void CAN_bms_cellTemperaturs_M0_temp_2_set(float temp_2);
+void CAN_bms_cellTemperaturs_M0_temp_3_set(float temp_3);
+void CAN_bms_cellTemperaturs_M0_temp_4_set(float temp_4);
+void CAN_bms_cellTemperaturs_M1_temp_5_set(float temp_5);
+void CAN_bms_cellTemperaturs_M1_temp_6_set(float temp_6);
+void CAN_bms_cellTemperaturs_M1_temp_7_set(float temp_7);
+void CAN_bms_cellTemperaturs_M1_temp_8_set(float temp_8);
+void CAN_bms_cellTemperaturs_M2_temp_9_set(float temp_9);
+void CAN_bms_cellTemperaturs_M2_temp_10_set(float temp_10);
+void CAN_bms_cellTemperaturs_M2_temp_11_set(float temp_11);
+void CAN_bms_cellTemperaturs_M2_temp_12_set(float temp_12);
+void CAN_bms_cellTemperaturs_M3_temp_13_set(float temp_13);
+void CAN_bms_cellTemperaturs_M3_temp_14_set(float temp_14);
+void CAN_bms_cellTemperaturs_M3_temp_15_set(float temp_15);
+void CAN_bms_cellTemperaturs_M3_temp_16_set(float temp_16);
+void CAN_bms_cellTemperaturs_M4_temp_17_set(float temp_17);
+void CAN_bms_cellTemperaturs_M4_temp_18_set(float temp_18);
+void CAN_bms_cellTemperaturs_M4_temp_19_set(float temp_19);
+void CAN_bms_cellTemperaturs_M4_temp_20_set(float temp_20);
+void CAN_bms_cellTemperaturs_M5_temp_21_set(float temp_21);
+void CAN_bms_cellTemperaturs_M5_temp_22_set(float temp_22);
+void CAN_bms_cellTemperaturs_M5_temp_23_set(float temp_23);
+void CAN_bms_cellTemperaturs_M5_temp_24_set(float temp_24);
 void CAN_bms_cellTemperaturs_dlc_set(uint8_t dlc);
 
 
