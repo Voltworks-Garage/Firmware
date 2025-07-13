@@ -108,48 +108,46 @@ class ISOTPTab(BaseTab):
         self.target_combo.bind("<<ComboboxSelected>>", self.on_id_selection_changed)
         self.response_combo.bind("<<ComboboxSelected>>", self.on_id_selection_changed)
         
-        # ISO-TP Message Type, Command Type, and Command ID selection (on separate lines for better layout)
-        msg_type_frame = ttk.Frame(cmd_frame)
-        msg_type_frame.pack(fill=tk.X, padx=5, pady=2)
+        # Single row layout for Message Type, Command Type, Command, and Parameters
+        self.command_row_frame = ttk.Frame(cmd_frame)
+        self.command_row_frame.pack(fill=tk.X, padx=5, pady=2)
         
-        ttk.Label(msg_type_frame, text="Message Type:").pack(side=tk.LEFT)
+        # Message Type
+        ttk.Label(self.command_row_frame, text="Msg Type:").pack(side=tk.LEFT)
         self.isotp_msg_type_var = tk.StringVar()
-        self.msg_type_combo = ttk.Combobox(msg_type_frame, textvariable=self.isotp_msg_type_var, 
-                                          state="readonly", width=20)
+        self.msg_type_combo = ttk.Combobox(self.command_row_frame, textvariable=self.isotp_msg_type_var, 
+                                          state="readonly", width=15)
         self.msg_type_combo.config(values=list(self.isotp_message_types.keys()))
         self.msg_type_combo.set("ISO-TP_IO_CONTROL")  # Default selection
-        self.msg_type_combo.pack(side=tk.LEFT, padx=(5, 20))
+        self.msg_type_combo.pack(side=tk.LEFT, padx=(5, 10))
         self.msg_type_combo.bind("<<ComboboxSelected>>", self.on_message_type_change)
         
-        self.cmd_type_frame = ttk.Frame(cmd_frame)
-        self.cmd_type_frame.pack(fill=tk.X, padx=5, pady=2)
-        
-        ttk.Label(self.cmd_type_frame, text="Command Type:").pack(side=tk.LEFT)
+        # Command Type
+        self.cmd_type_label = ttk.Label(self.command_row_frame, text="Cmd Type:")
+        self.cmd_type_label.pack(side=tk.LEFT)
         self.isotp_cmd_type_var = tk.StringVar()
-        self.cmd_type_combo = ttk.Combobox(self.cmd_type_frame, textvariable=self.isotp_cmd_type_var, 
-                                          state="readonly", width=25)
-        self.cmd_type_combo.pack(side=tk.LEFT, padx=(5, 20))
+        self.cmd_type_combo = ttk.Combobox(self.command_row_frame, textvariable=self.isotp_cmd_type_var, 
+                                          state="readonly", width=18)
+        self.cmd_type_combo.pack(side=tk.LEFT, padx=(5, 10))
         self.cmd_type_combo.bind("<<ComboboxSelected>>", self.on_command_type_change)
         
-        self.cmd_frame_inner = ttk.Frame(cmd_frame)
-        self.cmd_frame_inner.pack(fill=tk.X, padx=5, pady=2)
-        
-        ttk.Label(self.cmd_frame_inner, text="Command:").pack(side=tk.LEFT)
+        # Command
+        self.cmd_label = ttk.Label(self.command_row_frame, text="Command:")
+        self.cmd_label.pack(side=tk.LEFT)
         self.isotp_cmd_var = tk.StringVar()
-        self.isotp_cmd_combo = ttk.Combobox(self.cmd_frame_inner, textvariable=self.isotp_cmd_var, 
-                                           state="readonly", width=30)
-        self.isotp_cmd_combo.pack(side=tk.LEFT, padx=(5, 20))
+        self.isotp_cmd_combo = ttk.Combobox(self.command_row_frame, textvariable=self.isotp_cmd_var, 
+                                           state="readonly", width=20)
+        self.isotp_cmd_combo.pack(side=tk.LEFT, padx=(5, 10))
         self.isotp_cmd_combo.bind("<<ComboboxSelected>>", self.on_isotp_command_change)
+        
+        # Parameters container (will be populated dynamically)
+        self.param_widgets = []
 
         # Initialize device configuration based on default selection
         self.on_id_selection_changed()
         
         # Initialize conditional UI visibility
         self.on_message_type_change()  # Set initial state
-        
-        # Parameters frame
-        self.isotp_params_frame = ttk.LabelFrame(isotp_frame, text="Command Parameters")
-        self.isotp_params_frame.pack(fill=tk.X, padx=5, pady=5)
         
         # Control buttons
         control_frame = ttk.Frame(isotp_frame)
@@ -240,42 +238,61 @@ class ISOTPTab(BaseTab):
         return None
     
     def on_message_type_change(self, event=None):
-        """Handle message type selection changes - show/hide command type and command ID based on selection"""
+        """Handle message type selection changes - show/hide command type and command controls"""
         msg_type_name = self.isotp_msg_type_var.get()
         
         if msg_type_name == "ISO-TP_IO_CONTROL":
-            # Show command type and command ID frames for IO_CONTROL
-            self.cmd_type_frame.pack(fill=tk.X, padx=5, pady=2)
-            self.cmd_frame_inner.pack(fill=tk.X, padx=5, pady=2)
+            # Show command type and command controls for IO_CONTROL
+            self.cmd_type_label.pack(side=tk.LEFT)
+            self.cmd_type_combo.pack(side=tk.LEFT, padx=(5, 10))
+            self.cmd_label.pack(side=tk.LEFT)
+            self.isotp_cmd_combo.pack(side=tk.LEFT, padx=(5, 10))
         else:
-            # Hide command type and command ID frames for other message types
-            self.cmd_type_frame.pack_forget()
-            self.cmd_frame_inner.pack_forget()
+            # Hide command type and command controls for other message types
+            self.cmd_type_label.pack_forget()
+            self.cmd_type_combo.pack_forget()
+            self.cmd_label.pack_forget()
+            self.isotp_cmd_combo.pack_forget()
             
-            # Also clear parameters frame since no commands are available
-            if hasattr(self, 'isotp_params_frame'):
-                for widget in self.isotp_params_frame.winfo_children():
-                    widget.destroy()
+            # Also clear any parameter widgets
+            self.clear_parameter_widgets()
+    
+    def clear_parameter_widgets(self):
+        """Remove all parameter widgets from the command row"""
+        for widget in self.param_widgets:
+            widget.destroy()
+        self.param_widgets.clear()
+        if hasattr(self, 'isotp_param_vars'):
+            self.isotp_param_vars.clear()
     
     def on_id_selection_changed(self, event=None):
         """Called when TX or RX ID selection changes - update device config and commands"""
         tx_id = self.get_selected_message_id()
         rx_id = self.get_selected_response_id()
         
+        tx_str = f"0x{tx_id:03X}" if tx_id is not None else "None"
+        rx_str = f"0x{rx_id:03X}" if rx_id is not None else "None" 
+        print(f"🔧 ID selection changed: TX={tx_str}, RX={rx_str}")
+        
         if tx_id is None or rx_id is None:
             return
             
         # Find device config for these IDs
         device_name = self.config_parser.get_device_for_ids(tx_id, rx_id)
+        print(f"🔧 Looking for device with TX=0x{tx_id:03X}, RX=0x{rx_id:03X}, found: {device_name}")
         
         if device_name:
             self.current_device_config = self.config_parser.get_config_for_device(device_name)
             self.available_commands = self.config_parser.get_commands_for_device(device_name)
             
+            print(f"🔧 Available commands for {device_name}: {list(self.available_commands.keys())}")
+            
             # Update command type dropdown with available types for this device
             available_types = set()
             for cmd_def in self.available_commands.values():
                 available_types.add(cmd_def.cmd_type)
+            
+            print(f"🔧 Available command types: {available_types}")
             
             available_type_names = [t.replace('CMD_TYPE_', '') for t in available_types]
             self.cmd_type_combo.config(values=available_type_names)
@@ -286,12 +303,37 @@ class ISOTPTab(BaseTab):
                 
             print(f"🔧 Device config loaded: {device_name} (TX=0x{tx_id:03X}, RX=0x{rx_id:03X})")
         else:
-            # No specific config found - clear dropdowns
-            self.current_device_config = None
-            self.available_commands = {}
-            self.cmd_type_combo.config(values=[])
-            self.isotp_cmd_combo.config(values=[])
-            print(f"⚠️  No device config found for TX=0x{tx_id:03X}, RX=0x{rx_id:03X}")
+            # No specific config found - try fallback approach
+            print(f"🔧 No device config found, checking available devices...")
+            for device_name, config in self.config_parser.device_configs.items():
+                print(f"🔧   Device {device_name}: TX=0x{config.tx_id:03X}, RX=0x{config.rx_id:03X}")
+            
+            # Use fallback - load any available device config
+            if self.config_parser.device_configs:
+                fallback_device = list(self.config_parser.device_configs.keys())[0]
+                print(f"🔧 Using fallback device: {fallback_device}")
+                
+                self.current_device_config = self.config_parser.get_config_for_device(fallback_device)
+                self.available_commands = self.config_parser.get_commands_for_device(fallback_device)
+                
+                # Update command type dropdown
+                available_types = set()
+                for cmd_def in self.available_commands.values():
+                    available_types.add(cmd_def.cmd_type)
+                
+                available_type_names = [t.replace('CMD_TYPE_', '') for t in available_types]
+                self.cmd_type_combo.config(values=available_type_names)
+                
+                if available_type_names:
+                    self.cmd_type_combo.set(available_type_names[0])
+                    self.on_command_type_change()
+            else:
+                # No configs available at all - clear dropdowns
+                self.current_device_config = None
+                self.available_commands = {}
+                self.cmd_type_combo.config(values=[])
+                self.isotp_cmd_combo.config(values=[])
+                print(f"⚠️  No device configs loaded at all!")
     
     def on_command_type_change(self, event=None):
         """Called when command type selection changes - update command dropdown"""
@@ -318,14 +360,9 @@ class ISOTPTab(BaseTab):
             self.on_isotp_command_change()
 
     def on_isotp_command_change(self, event=None):
-        """Update parameter inputs when command changes"""
-        # Safety check - return if params frame doesn't exist yet
-        if not hasattr(self, 'isotp_params_frame'):
-            return
-            
+        """Update parameter inputs when command changes - add them inline to the command row"""
         # Clear existing parameter widgets
-        for widget in self.isotp_params_frame.winfo_children():
-            widget.destroy()
+        self.clear_parameter_widgets()
         
         command = self.isotp_cmd_var.get()
         
@@ -338,46 +375,44 @@ class ISOTPTab(BaseTab):
         
         self.isotp_param_vars = {}
         
-        if not params:
-            ttk.Label(self.isotp_params_frame, text="No parameters required").pack(pady=5)
-        else:
-            param_frame = ttk.Frame(self.isotp_params_frame)
-            param_frame.pack(fill=tk.X, padx=5, pady=5)
-            
-            for i, param in enumerate(params):
+        if params:
+            # Add parameters inline to the command row
+            for param in params:
                 display_name = param.replace('_', ' ').title()
-                ttk.Label(param_frame, text=f"{display_name}:").grid(row=i, column=0, sticky="w", padx=5, pady=2)
+                
+                # Add label
+                label = ttk.Label(self.command_row_frame, text=f"{display_name}:")
+                label.pack(side=tk.LEFT, padx=(10, 2))
+                self.param_widgets.append(label)
                 
                 var = tk.StringVar()
                 self.isotp_param_vars[param] = var
                 
                 if param == "state":
                     # Boolean dropdown for state parameters
-                    combo = ttk.Combobox(param_frame, textvariable=var, values=["0 (Off)", "1 (On)"], 
-                                        state="readonly", width=10)
-                    combo.set("0 (Off)")
+                    combo = ttk.Combobox(self.command_row_frame, textvariable=var, values=["0", "1"], 
+                                        state="readonly", width=8)
+                    combo.set("0")
                 elif param in ["duty_cycle", "brightness"]:
-                    # Scale for PWM values
-                    scale = tk.Scale(param_frame, from_=0, to=100, orient=tk.HORIZONTAL, variable=var)
-                    scale.grid(row=i, column=1, sticky="ew", padx=5, pady=2)
-                    continue
+                    # Entry for PWM values (0-100)
+                    combo = ttk.Entry(self.command_row_frame, textvariable=var, width=8)
+                    var.set("0")
                 elif param == "io_index":
                     # Numeric entry for IO index
-                    combo = ttk.Entry(param_frame, textvariable=var, width=10)
-                    var.set("0")  # Default value
+                    combo = ttk.Entry(self.command_row_frame, textvariable=var, width=8)
+                    var.set("0")
                 elif param.endswith("_id"):
                     # Dropdown for ID selection
-                    combo = ttk.Combobox(param_frame, textvariable=var, values=["0", "1", "2", "3"], 
-                                        state="readonly", width=10)
+                    combo = ttk.Combobox(self.command_row_frame, textvariable=var, values=["0", "1", "2", "3"], 
+                                        state="readonly", width=8)
                     combo.set("0")
                 else:
                     # Default entry widget
-                    combo = ttk.Entry(param_frame, textvariable=var, width=15)
-                    var.set("0")  # Default value
+                    combo = ttk.Entry(self.command_row_frame, textvariable=var, width=10)
+                    var.set("0")
                 
-                combo.grid(row=i, column=1, sticky="ew", padx=5, pady=2)
-            
-            param_frame.grid_columnconfigure(1, weight=1)
+                combo.pack(side=tk.LEFT, padx=(2, 5))
+                self.param_widgets.append(combo)
 
     def send_isotp_command(self):
         """Send an ISO-TP command to the target device"""
@@ -442,8 +477,8 @@ class ISOTPTab(BaseTab):
             value_str = self.isotp_param_vars[param].get()
             try:
                 if param == "state":
-                    # Extract numeric value from "0 (Off)" or "1 (On)"
-                    value = int(value_str.split()[0])
+                    # Direct numeric value (0 or 1)
+                    value = int(value_str)
                 elif param in ["duty_cycle", "brightness"]:
                     # Convert percentage to 0-255 range
                     value = int(float(value_str) * 255 / 100)

@@ -52,6 +52,7 @@
 #include "mcc_generated_files/tmr1.h"
 #include "can_tp.h"
 #include "mcc_generated_files/boot/boot_demo.h"
+#include "mcc_generated_files/boot/com_adaptor.h"
 #include "mcc_generated_files/uart1.h"
 #include "reset_control.h"
 
@@ -105,6 +106,7 @@ int main(void)
     
     CAN_TP_Initialize();
     CAN_TP_RxMessageBufferSet(rxBuffer, sizeof(rxBuffer)); 
+    CAN_TP_EventCallbackSet(BOOT_COM_GetEventHandler());
     
     //This is a phy level type of call.  It does not belong here....
     //Can we call from   BOOT_COM_Initialize();???

@@ -51,9 +51,34 @@ void CommandService_Run(void) {
     if (isoTP_peekCommand() != ISO_TP_NONE) {
         isoTP_command_S command = isoTP_getCommand();
         
-        if (command.command == ISO_TP_IO_CONTROL) {
-            // Process IO control command, send paylaod minus the first byte (command ID)
-            commandService_processIoCommand(&command.payload[1], command.payloadLength - 1);
+        switch (command.command) {
+            case ISO_TP_IO_CONTROL:
+                // Process IO control command, send payload minus the first byte (command ID)
+                commandService_processIoCommand(&command.payload[1], command.payloadLength - 1);
+                break;
+                
+            case ISO_TP_RESET:
+                // Handle reset command - typically resets the system
+                //CommandService_SendResponse(CMD_SUCCESS, NULL, 0);
+                // TODO: Implement system reset functionality
+                asm("reset"); // Uncomment when ready to implement actual reset
+                break;
+                
+            case ISO_TP_SLEEP:
+                // Handle sleep command - puts system into low power mode
+                CommandService_SendResponse(CMD_SUCCESS, NULL, 0);
+                // TODO: Implement sleep/low power mode functionality
+                break;
+                
+            case ISO_TP_TESTER_PRESENT:
+                // Handle tester present - keeps communication alive
+                CommandService_SendResponse(CMD_SUCCESS, NULL, 0);
+                break;
+                
+            case ISO_TP_NONE:
+            default:
+                // Should not reach here, but handle gracefully
+                break;
         }
     }
 }

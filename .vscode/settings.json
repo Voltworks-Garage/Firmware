@@ -1,9 +1,0 @@
-{
-    "files.associations": {
-        "pinsetup.h": "c",
-        "bms_dbc.h": "c",
-        "commandservice.h": "c",
-        "can_iso_tp_lite.h": "c"
-    },
-    "C_Cpp.default.compilerPath": "/mnt/c/Program Files/Microchip/xc16/v2.10/bin/xc16-gcc.exe"
-}

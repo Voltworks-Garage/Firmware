@@ -60,6 +60,8 @@ Copyright (c) [2012-2019] Microchip Technology Inc.
 #include "can_tp.h"
 
 static bool initialized=false;
+static uint32_t messageTimeout = 0;
+#define MESSAGE_TIMEOUT_MS 1000
 
 struct COM_DATA_STRUCT {
     uint8_t pendingCommand[BOOT_CONFIG_MAX_PACKET_SIZE];
@@ -70,9 +72,46 @@ struct COM_DATA_STRUCT {
 
 struct COM_DATA_STRUCT canComData;
 
+static void CAN_TP_EventHandler(
+    enum CAN_TP_EVENT event, 
+    struct CAN_TP_SERVICE_HEADER *header,
+    void *payload
+)
+{
+    switch(event)
+    {
+        case CAN_TP_EVENT_INDICATION:
+            {
+                struct CAN_TP_EVENT_INDICATION_DATA *indicationData = 
+                    (struct CAN_TP_EVENT_INDICATION_DATA *)payload;
+                
+                if (indicationData->result != CAN_TP_RESULT_OK)
+                {
+                    canComData.pendingCommandLength = 0;
+                    messageTimeout = 0;
+                }
+            }
+            break;
+            
+        case CAN_TP_EVENT_OVERFLOW:
+            canComData.pendingCommandLength = 0;
+            messageTimeout = 0;
+            break;
+            
+        case CAN_TP_EVENT_FIRST_FRAME_INDICATION:
+            messageTimeout = MESSAGE_TIMEOUT_MS;
+            break;
+            
+        case CAN_TP_EVENT_DATA_CONFIRM:
+        default:
+            break;
+    }
+}
+
 void BOOT_COM_Initialize()
 {
     (void)memset(&canComData,0, sizeof(struct COM_DATA_STRUCT )/sizeof(uint8_t));
+    messageTimeout = 0;
     initialized = true;
 }
 
@@ -143,6 +182,16 @@ uint16_t BOOT_COM_GetBytesReady()
     {
         BOOT_COM_Initialize();
     }
+    
+    // Check for message timeout - clear stale pending commands
+    if ((canComData.pendingCommandLength > 0) && (messageTimeout > 0))
+    {
+        messageTimeout--;
+        if (messageTimeout == 0)
+        {
+            canComData.pendingCommandLength = 0;
+        }
+    }
       
     // The data received by the ISO-TP CAN layer will be copied to the 
     // pendingCommand buffer which is used by the boot loader.
@@ -150,8 +199,15 @@ uint16_t BOOT_COM_GetBytesReady()
     {
         canComData.pendingCommandLength = CAN_TP_MessageLengthGet();
         (void)CAN_TP_MessageGet(canComData.pendingCommand);
-  
+        
+        // Start timeout for processing this message
+        messageTimeout = MESSAGE_TIMEOUT_MS;
     }
 
     return canComData.pendingCommandLength;
+}
+
+CAN_TP_EventCallback BOOT_COM_GetEventHandler(void)
+{
+    return CAN_TP_EventHandler;
 }
