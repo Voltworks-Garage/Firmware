@@ -57,10 +57,12 @@ Copyright (c) [2012-2022] Microchip Technology Inc.
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "../../Libraries/can_bootloader/can_tp.h"
 
 uint16_t BOOT_COM_Read(uint8_t* readBuffer, uint16_t length);
 uint16_t BOOT_COM_GetBytesReady();
 uint8_t BOOT_COM_Peek(uint16_t location);
 void BOOT_COM_Write(uint8_t* data, uint16_t length);
+CAN_TP_EventCallback BOOT_COM_GetEventHandler(void);
 
 #endif 

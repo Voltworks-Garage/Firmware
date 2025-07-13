@@ -1,17 +1,47 @@
 # Claude Build Commands
 
-## BMS_App_02.X Project Build
+## Quick Build Script (Recommended)
+Use the automated build script for easy project building:
 ```bash
-cd "/mnt/c/REPOS/Voltworks_Garage/Firmware/Projects/BMS_App_02.X"
-"/mnt/c/Program Files/Microchip/MPLABX/v6.20/gnuBins/GnuWin32/bin/make.exe" -f nbproject/Makefile-DEFAULT.mk CONF=default clean
-"/mnt/c/Program Files/Microchip/MPLABX/v6.20/gnuBins/GnuWin32/bin/make.exe" -f nbproject/Makefile-DEFAULT.mk CONF=default
+# Build specific projects
+./build.sh BMS_APP      # Build BMS Application
+./build.sh BMS_BOOT     # Build BMS Bootloader
+./build.sh MCU_APP      # Build MCU Application  
+./build.sh MCU_BOOT     # Build MCU Bootloader
+./build.sh ALL          # Build all main projects
+
+# Show help
+./build.sh help
 ```
 
-## BMS_Bootloader_02.X Project Build
+## Manual Build Commands (Alternative)
+
+### BMS_App_02.X Project Build
+```bash
+cd "/mnt/c/REPOS/Voltworks_Garage/Firmware/Projects/BMS_App_02.X"
+"/mnt/c/Program Files/Microchip/MPLABX/v6.20/gnuBins/GnuWin32/bin/make.exe" -f nbproject/Makefile-DEFAULT.mk CONF=DEFAULT clean
+"/mnt/c/Program Files/Microchip/MPLABX/v6.20/gnuBins/GnuWin32/bin/make.exe" -f nbproject/Makefile-DEFAULT.mk CONF=DEFAULT
+```
+
+### BMS_Bootloader_02.X Project Build
 ```bash
 cd "/mnt/c/REPOS/Voltworks_Garage/Firmware/Projects/BMS_Bootloader_02.X"
-"/mnt/c/Program Files/Microchip/MPLABX/v6.20/gnuBins/GnuWin32/bin/make.exe" -f nbproject/Makefile-DEFAULT.mk CONF=default clean
-"/mnt/c/Program Files/Microchip/MPLABX/v6.20/gnuBins/GnuWin32/bin/make.exe" -f nbproject/Makefile-DEFAULT.mk CONF=default
+"/mnt/c/Program Files/Microchip/MPLABX/v6.20/gnuBins/GnuWin32/bin/make.exe" -f nbproject/Makefile-DEFAULT.mk CONF=DEFAULT clean
+"/mnt/c/Program Files/Microchip/MPLABX/v6.20/gnuBins/GnuWin32/bin/make.exe" -f nbproject/Makefile-DEFAULT.mk CONF=DEFAULT
+```
+
+### MCU_App.X Project Build
+```bash
+cd "/mnt/c/REPOS/Voltworks_Garage/Firmware/Projects/MCU_App.X"
+"/mnt/c/Program Files/Microchip/MPLABX/v6.20/gnuBins/GnuWin32/bin/make.exe" -f nbproject/Makefile-default.mk CONF=default clean
+"/mnt/c/Program Files/Microchip/MPLABX/v6.20/gnuBins/GnuWin32/bin/make.exe" -f nbproject/Makefile-default.mk CONF=default
+```
+
+### MCU_Bootloader.X Project Build
+```bash
+cd "/mnt/c/REPOS/Voltworks_Garage/Firmware/Projects/MCU_Bootloader.X"
+"/mnt/c/Program Files/Microchip/MPLABX/v6.20/gnuBins/GnuWin32/bin/make.exe" -f nbproject/Makefile-default.mk CONF=default clean
+"/mnt/c/Program Files/Microchip/MPLABX/v6.20/gnuBins/GnuWin32/bin/make.exe" -f nbproject/Makefile-default.mk CONF=default
 ```
 
 ## Notes
