@@ -105,6 +105,7 @@ void Tsk_1ms(void) {
     run_iso_tp_1ms();
     DCDC_run_1ms();
     CommandService_Run();
+    BMS_Run_1ms();
     
     CAN_populate_1ms();
 }
@@ -121,7 +122,7 @@ void Tsk_5ms(void) {
  */
 void Tsk_10ms(void) {
     EV_CHARGER_Run_10ms();
-    //BMS_Run_10ms();              // This is the CPU hog!
+    BMS_Run_10ms();               // Non-blocking LTC6802-1 operations
 
     CAN_bms_debug_CPU_USAGE_set(SysTick_GetCPUPercentage());
     CAN_bms_debug_CPU_peak_set(SysTick_GetCPUPeak());
@@ -142,7 +143,6 @@ void Tsk_100ms(void) {
  * Runs every 1000ms
  */
 void Tsk_1000ms(void) {
-    BMS_Run_1000ms();
     CAN_populate_1000ms();
     CAN_send_1000ms();
 }

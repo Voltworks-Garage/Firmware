@@ -4,14 +4,14 @@
 Use the automated build script for easy project building:
 ```bash
 # Build specific projects
-./build.sh BMS_APP      # Build BMS Application
-./build.sh BMS_BOOT     # Build BMS Bootloader
-./build.sh MCU_APP      # Build MCU Application  
-./build.sh MCU_BOOT     # Build MCU Bootloader
-./build.sh ALL          # Build all main projects
+./build_commands.sh BMS_APP      # Build BMS Application
+./build_commands.sh BMS_BOOT     # Build BMS Bootloader
+./build_commands.sh MCU_APP      # Build MCU Application  
+./build_commands.sh MCU_BOOT     # Build MCU Bootloader
+./build_commands.sh ALL          # Build all main projects
 
 # Show help
-./build.sh help
+./build_commands.sh help
 ```
 
 ## Manual Build Commands (Alternative)
