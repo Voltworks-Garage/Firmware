@@ -80,43 +80,43 @@ static void commandService_processIoCommand(uint8_t* payload, uint8_t length) {
         return;
     }
     
-    // Command ID is now 16-bit: [high_byte, low_byte]
-    uint16_t commandId = (payload[0] << 8) | payload[1];
-    uint8_t arrayIndex = GET_ARRAY_INDEX(commandId);
+    // Simple approach: [command_type, array_index, ...params]
+    uint8_t commandType = payload[0];
+    uint8_t arrayIndex = payload[1];
     
-    // Route to appropriate handler based on command type using direct parsing
-    if (IS_SET_DIGITAL_OUT_CMD(commandId)) {
-        if (length >= MIN_PAYLOAD_SET_DIGITAL_OUT + 2) {
+    // Route to appropriate handler based on command type (much simpler!)
+    if (commandType == CMD_TYPE_SET_DIGITAL_OUT) {
+        if (length >= MIN_PAYLOAD_SET_DIGITAL_OUT) {
             commandService_handleSetDigitalOut(arrayIndex, &payload[2], length - 2);
         } else {
             CommandService_SendResponse(CMD_ERROR_INVALID_LENGTH, NULL, 0);
         }
-    } else if (IS_GET_DIGITAL_IN_CMD(commandId)) {
-        if (length >= MIN_PAYLOAD_GET_DIGITAL_IN + 2) {
+    } else if (commandType == CMD_TYPE_GET_DIGITAL_IN) {
+        if (length >= MIN_PAYLOAD_GET_DIGITAL_IN) {
             commandService_handleGetDigitalIn(arrayIndex, &payload[2], length - 2);
         } else {
             CommandService_SendResponse(CMD_ERROR_INVALID_LENGTH, NULL, 0);
         }
-    } else if (IS_SET_PWM_OUT_CMD(commandId)) {
-        if (length >= MIN_PAYLOAD_SET_PWM_OUT + 2) {
+    } else if (commandType == CMD_TYPE_SET_PWM_OUT) {
+        if (length >= MIN_PAYLOAD_SET_PWM_OUT) {
             commandService_handleSetPwmOut(arrayIndex, &payload[2], length - 2);
         } else {
             CommandService_SendResponse(CMD_ERROR_INVALID_LENGTH, NULL, 0);
         }
-    } else if (IS_GET_ANALOG_IN_CMD(commandId)) {
-        if (length >= MIN_PAYLOAD_GET_ANALOG_IN + 2) {
+    } else if (commandType == CMD_TYPE_GET_ANALOG_IN) {
+        if (length >= MIN_PAYLOAD_GET_ANALOG_IN) {
             commandService_handleGetAnalogIn(arrayIndex, &payload[2], length - 2);
         } else {
             CommandService_SendResponse(CMD_ERROR_INVALID_LENGTH, NULL, 0);
         }
-    } else if (IS_GET_VOLTAGE_CMD(commandId)) {
-        if (length >= MIN_PAYLOAD_GET_VOLTAGE + 2) {
+    } else if (commandType == CMD_TYPE_GET_VOLTAGE) {
+        if (length >= MIN_PAYLOAD_GET_VOLTAGE) {
             commandService_handleGetVoltage(arrayIndex, &payload[2], length - 2);
         } else {
             CommandService_SendResponse(CMD_ERROR_INVALID_LENGTH, NULL, 0);
         }
-    } else if (IS_GET_CURRENT_CMD(commandId)) {
-        if (length >= MIN_PAYLOAD_GET_CURRENT + 2) {
+    } else if (commandType == CMD_TYPE_GET_CURRENT) {
+        if (length >= MIN_PAYLOAD_GET_CURRENT) {
             commandService_handleGetCurrent(arrayIndex, &payload[2], length - 2);
         } else {
             CommandService_SendResponse(CMD_ERROR_INVALID_LENGTH, NULL, 0);
@@ -125,8 +125,6 @@ static void commandService_processIoCommand(uint8_t* payload, uint8_t length) {
         CommandService_SendResponse(CMD_ERROR_UNKNOWN_COMMAND, NULL, 0);
     }
 }
-
-// executeCommand function removed - now using direct command parsing
 
 // Private command handler implementations
 static uint8_t commandService_handleSetDigitalOut(uint8_t arrayIndex, uint8_t* payload, uint8_t length) {

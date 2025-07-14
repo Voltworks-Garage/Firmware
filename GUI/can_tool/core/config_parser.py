@@ -15,9 +15,9 @@ from dataclasses import dataclass
 @dataclass
 class CommandDefinition:
     """Represents a single command definition from config file"""
-    cmd_id: int
-    cmd_type: str
-    io_index: int
+    command_type: int      # 8-bit command type (0x01, 0x02, etc.)
+    array_index: int       # 8-bit array index (0, 1, 2, etc.)
+    cmd_type_name: str     # String name like "CMD_TYPE_SET_DIGITAL_OUT"
     min_payload_length: int
     description: str
     params: List[str]
@@ -187,11 +187,12 @@ class ConfigParser:
                 # Create clean display name (without action prefix)
                 display_name = self._function_name_to_description(func_name, config['prefix'])
                 
-                # Calculate 16-bit command ID
-                cmd_id = (config['type_id'] << 8) | index
+                # Use separate command type and array index (much simpler!)
+                command_type = config['type_id']  # Just the 8-bit type value
+                array_index = index               # Just the 8-bit index value
                 
                 # Determine minimum payload length
-                min_length = 2 + len(config['params'])  # 2 bytes for cmd_id + param bytes
+                min_length = 2 + len(config['params'])  # 2 bytes for type+index + param bytes
                 
                 # Generate cleaner command type name for display
                 type_name = array_name.replace('Functions', '')
@@ -211,9 +212,9 @@ class ConfigParser:
                     display_type = type_name.upper()
                 
                 command_def = CommandDefinition(
-                    cmd_id=cmd_id,
-                    cmd_type=f"CMD_TYPE_{display_type}",
-                    io_index=index,
+                    command_type=command_type,
+                    array_index=array_index,
+                    cmd_type_name=f"CMD_TYPE_{display_type}",
                     min_payload_length=min_length,
                     description=display_name,  # Use clean display name
                     params=config['params'].copy()

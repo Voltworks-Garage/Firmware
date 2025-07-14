@@ -276,14 +276,10 @@ class ISOTPTab(BaseTab):
             self.current_device_config = self.config_parser.get_config_for_device(device_name)
             self.available_commands = self.config_parser.get_commands_for_device(device_name)
             
-            print(f"🔧 Available commands for {device_name}: {list(self.available_commands.keys())}")
-            
             # Update command type dropdown with available types for this device
             available_types = set()
             for cmd_def in self.available_commands.values():
-                available_types.add(cmd_def.cmd_type)
-            
-            print(f"🔧 Available command types: {available_types}")
+                available_types.add(cmd_def.cmd_type_name)
             
             available_type_names = [t.replace('CMD_TYPE_', '') for t in available_types]
             self.cmd_type_combo.config(values=available_type_names)
@@ -310,7 +306,7 @@ class ISOTPTab(BaseTab):
                 # Update command type dropdown
                 available_types = set()
                 for cmd_def in self.available_commands.values():
-                    available_types.add(cmd_def.cmd_type)
+                    available_types.add(cmd_def.cmd_type_name)
                 
                 available_type_names = [t.replace('CMD_TYPE_', '') for t in available_types]
                 self.cmd_type_combo.config(values=available_type_names)
@@ -342,7 +338,7 @@ class ISOTPTab(BaseTab):
         matching_commands = []
         self.cmd_key_to_display = {}  # Map display names back to keys
         for cmd_name, cmd_def in self.available_commands.items():
-            if cmd_def.cmd_type == full_type_name:
+            if cmd_def.cmd_type_name == full_type_name:
                 display_name = cmd_def.description
                 matching_commands.append(display_name)
                 self.cmd_key_to_display[display_name] = cmd_name
@@ -457,18 +453,20 @@ class ISOTPTab(BaseTab):
                 return
             
             cmd_def = self.available_commands[command]
-            cmd_id = cmd_def.cmd_id
+            command_type = cmd_def.command_type  # 8-bit command type
+            array_index = cmd_def.array_index    # 8-bit array index
             params = cmd_def.params
             
-            # Build command payload: byte 0 = message type, bytes 1-2 = 16-bit command ID (high, low)
-            payload = [msg_type, (cmd_id >> 8) & 0xFF, cmd_id & 0xFF]
+            # Build command payload: byte 0 = message type, byte 1 = command type, byte 2 = array index
+            payload = [msg_type, command_type, array_index]
         else:
             # Other message types (SLEEP, RESET, TESTER_PRESENT) only need message type
             payload = [msg_type]
             params = []
             command = msg_type_name  # Use message type as command name for logging
             cmd_type_name = ""
-            cmd_id = None
+            command_type = None
+            array_index = None
         
         # Add parameters
         for param in params:
@@ -518,7 +516,7 @@ class ISOTPTab(BaseTab):
                 
                 if msg_type_name == "ISO-TP_IO_CONTROL":
                     self.isotp_log.insert(tk.END, f"📤 SENT: {target_name} - {msg_type_name} - {cmd_type_name} - {display_command}{param_str}\n")
-                    self.isotp_log.insert(tk.END, f"    TX ID: 0x{tx_id:03X}, Payload: MsgType=0x{msg_type:02X}, CmdID=0x{cmd_id:04X}, Data: {' '.join(f'{b:02X}' for b in can_data)}\n")
+                    self.isotp_log.insert(tk.END, f"    TX ID: 0x{tx_id:03X}, Payload: MsgType=0x{msg_type:02X}, CmdType=0x{command_type:02X}, Index={array_index}, Data: {' '.join(f'{b:02X}' for b in can_data)}\n")
                 else:
                     self.isotp_log.insert(tk.END, f"📤 SENT: {target_name} - {command}\n")
                     self.isotp_log.insert(tk.END, f"    TX ID: 0x{tx_id:03X}, Payload: MsgType=0x{msg_type:02X}, Data: {' '.join(f'{b:02X}' for b in can_data)}\n")

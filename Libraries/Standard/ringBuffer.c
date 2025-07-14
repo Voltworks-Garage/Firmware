@@ -1,4 +1,4 @@
-#include "ringbuffer.h"
+#include "ringBuffer.h"
 #include <xc.h> // For INTCON2bits.GIE
 
 // Optional critical section using GIE flag
