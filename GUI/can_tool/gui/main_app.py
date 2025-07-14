@@ -321,13 +321,15 @@ Plugins:
         # Header row with consistent column configuration
         header_frame = ttk.Frame(tx_frame)
         header_frame.pack(fill=tk.X, padx=5, pady=(0,2))
-        header_frame.grid_columnconfigure(1, weight=1)  # Data column should stretch
+        header_frame.grid_columnconfigure(3, weight=1)  # Data column should stretch
 
-        ttk.Label(header_frame, text="ID", anchor="center", relief="solid", borderwidth=1, width=10).grid(row=0, column=0, sticky="ew", padx=1, ipady=2)
-        ttk.Label(header_frame, text="Data", anchor="center", relief="solid", borderwidth=1, width=40).grid(row=0, column=1, sticky="ew", padx=1, ipady=2)
-        ttk.Label(header_frame, text="Cycle", anchor="center", relief="solid", borderwidth=1, width=8).grid(row=0, column=2, sticky="ew", padx=1, ipady=2)
-        ttk.Label(header_frame, text="Status", anchor="center", relief="solid", borderwidth=1, width=10).grid(row=0, column=3, sticky="ew", padx=1, ipady=2)
-        ttk.Label(header_frame, text="Actions", anchor="center", relief="solid", borderwidth=1, width=20).grid(row=0, column=4, sticky="ew", padx=(5, 25), ipady=2)  # Scrollbar compensation
+        ttk.Label(header_frame, text="▼", anchor="center", relief="solid", borderwidth=1, width=5).grid(row=0, column=0, sticky="ew", padx=1, ipady=2)
+        ttk.Label(header_frame, text="ID", anchor="center", relief="solid", borderwidth=1, width=10).grid(row=0, column=1, sticky="ew", padx=1, ipady=2)
+        ttk.Label(header_frame, text="Name", anchor="center", relief="solid", borderwidth=1, width=18).grid(row=0, column=2, sticky="ew", padx=1, ipady=2)
+        ttk.Label(header_frame, text="Data", anchor="center", relief="solid", borderwidth=1, width=35).grid(row=0, column=3, sticky="ew", padx=1, ipady=2)
+        ttk.Label(header_frame, text="Cycle", anchor="center", relief="solid", borderwidth=1, width=10).grid(row=0, column=4, sticky="ew", padx=1, ipady=2)
+        ttk.Label(header_frame, text="Status", anchor="center", relief="solid", borderwidth=1, width=11).grid(row=0, column=5, sticky="ew", padx=1, ipady=2)
+        ttk.Label(header_frame, text="Actions", anchor="center", relief="solid", borderwidth=1, width=20).grid(row=0, column=6, sticky="ew", padx=(5, 25), ipady=2)  # Scrollbar compensation
 
         # TX messages container with scrolling
         self.tx_canvas = tk.Canvas(tx_frame, height=200, bg="white")
@@ -778,6 +780,154 @@ Plugins:
         
         self.log(f"🗑️ Deleted TX message: {msg_id}")
     
+    def _toggle_signal_expansion(self, tx_msg_id, expand_var):
+        """Toggle signal expansion for a DBF message"""
+        if tx_msg_id not in self.tx_messages:
+            return
+            
+        msg_info = self.tx_messages[tx_msg_id]
+        if msg_info["type"] != "dbf":
+            return
+            
+        # Toggle expansion state
+        msg_info["expanded"] = not msg_info["expanded"]
+        expand_var.set(msg_info["expanded"])
+        
+        # Update button text
+        expand_btn = msg_info["widgets"]["expand_btn"]
+        expand_btn.config(text="▲" if msg_info["expanded"] else "▼")
+        
+        if msg_info["expanded"]:
+            self._create_signal_widgets(tx_msg_id)
+        else:
+            self._destroy_signal_widgets(tx_msg_id)
+            
+        # Update scroll region
+        self.tx_canvas.configure(scrollregion=self.tx_canvas.bbox("all"))
+    
+    def _create_signal_widgets(self, tx_msg_id):
+        """Create signal input widgets for a DBF message"""
+        msg_info = self.tx_messages[tx_msg_id]
+        msg_id = msg_info["msg_id"]
+        
+        # Get signal definitions from DBF parser
+        if msg_id not in self.dbf_parser.messages:
+            return
+            
+        signals = self.dbf_parser.messages[msg_id]["signals"]
+        if not signals:
+            return
+            
+        # Create signal expansion frame
+        signal_frame = ttk.Frame(msg_info["widgets"]["frame"])
+        signal_frame.grid(row=1, column=0, columnspan=7, sticky="ew", padx=20, pady=2)
+        signal_frame.grid_columnconfigure(1, weight=1)
+        
+        msg_info["signal_widgets"]["signal_frame"] = signal_frame
+        
+        # Create signal input widgets
+        for i, signal in enumerate(signals):
+            signal_name = signal['name']
+            
+            # Signal name label
+            name_label = ttk.Label(signal_frame, text=f"{signal_name}:", width=20, anchor="w")
+            name_label.grid(row=i, column=0, sticky="w", padx=(5, 10), pady=1)
+            
+            # Signal value input
+            if signal['type'] == 'B':  # Boolean signal
+                var = tk.BooleanVar()
+                widget = ttk.Checkbutton(signal_frame, variable=var)
+                widget.grid(row=i, column=1, sticky="w", padx=5, pady=1)
+            else:  # Numeric signal
+                var = tk.StringVar(value="0")
+                widget = ttk.Entry(signal_frame, textvariable=var, width=12)
+                widget.grid(row=i, column=1, sticky="w", padx=5, pady=1)
+                
+                # Add validation for numeric ranges
+                widget.bind('<KeyRelease>', lambda e, s=signal, v=var: self._validate_signal_value(s, v))
+            
+            # Signal unit label
+            unit_text = signal.get('unit', '')
+            if unit_text:
+                unit_label = ttk.Label(signal_frame, text=unit_text, width=8, anchor="w")
+                unit_label.grid(row=i, column=2, sticky="w", padx=5, pady=1)
+            
+            # Store signal widgets and variables
+            msg_info["signal_widgets"][signal_name] = {
+                "name_label": name_label,
+                "value_widget": widget,
+                "value_var": var,
+                "signal_def": signal
+            }
+            msg_info["signal_values"][signal_name] = var
+            
+            # Bind value changes to update the data field
+            if signal['type'] == 'B':
+                var.trace('w', lambda *args, t=tx_msg_id: self._update_data_from_signals(t))
+            else:
+                var.trace('w', lambda *args, t=tx_msg_id: self._update_data_from_signals(t))
+    
+    def _destroy_signal_widgets(self, tx_msg_id):
+        """Remove signal input widgets for a DBF message"""
+        msg_info = self.tx_messages[tx_msg_id]
+        
+        # Destroy signal frame and all child widgets
+        if "signal_frame" in msg_info["signal_widgets"]:
+            msg_info["signal_widgets"]["signal_frame"].destroy()
+        
+        # Clear signal widget tracking
+        msg_info["signal_widgets"].clear()
+        msg_info["signal_values"].clear()
+    
+    def _validate_signal_value(self, signal, var):
+        """Validate signal value against min/max constraints"""
+        try:
+            value = float(var.get())
+            
+            # Calculate physical min/max from raw min/max
+            min_physical = signal['min_val'] * signal['factor'] + signal['offset']
+            max_physical = signal['max_val'] * signal['factor'] + signal['offset']
+            
+            # Clamp to valid range
+            if value < min_physical:
+                var.set(str(min_physical))
+            elif value > max_physical:
+                var.set(str(max_physical))
+                
+        except ValueError:
+            # Invalid number - reset to 0
+            var.set("0")
+    
+    def _update_data_from_signals(self, tx_msg_id):
+        """Update the data field from signal values"""
+        if tx_msg_id not in self.tx_messages:
+            return
+            
+        msg_info = self.tx_messages[tx_msg_id]
+        if not msg_info["expanded"] or not msg_info["signal_values"]:
+            return
+            
+        msg_id = msg_info["msg_id"]
+        
+        # Collect signal values
+        signal_values = {}
+        for signal_name, var in msg_info["signal_values"].items():
+            try:
+                if isinstance(var, tk.BooleanVar):
+                    signal_values[signal_name] = var.get()
+                else:
+                    signal_values[signal_name] = float(var.get())
+            except (ValueError, tk.TclError):
+                signal_values[signal_name] = 0
+        
+        # Encode message from signals
+        data_bytes = self.dbf_parser.encode_message_from_signals(msg_id, signal_values)
+        
+        if data_bytes:
+            # Update data field
+            data_hex = ' '.join(f'{b:02X}' for b in data_bytes)
+            msg_info["widgets"]["data_var"].set(data_hex)
+    
     def _create_tx_message_row(self, tx_id="", tx_data="", tx_cycle=""):
         """Create a new TX message row with editable fields"""
         # Generate unique ID for this TX message
@@ -788,16 +938,21 @@ Plugins:
         msg_frame.pack(fill=tk.X, pady=1)
         
         # Configure columns to match header alignment
-        msg_frame.grid_columnconfigure(0, weight=0, minsize=75)   # ID column
-        msg_frame.grid_columnconfigure(1, weight=1, minsize=280)  # Data column (expandable)
-        msg_frame.grid_columnconfigure(2, weight=0, minsize=65)   # Cycle column
-        msg_frame.grid_columnconfigure(3, weight=0, minsize=75)   # Status column
-        msg_frame.grid_columnconfigure(4, weight=0, minsize=135)  # Actions column
+        msg_frame.grid_columnconfigure(0, weight=0, minsize=25)   # Expand button column (empty for manual)
+        msg_frame.grid_columnconfigure(1, weight=0, minsize=65)   # ID column
+        msg_frame.grid_columnconfigure(2, weight=0, minsize=120)  # Name column
+        msg_frame.grid_columnconfigure(3, weight=1, minsize=100)  # Data column (expandable)
+        msg_frame.grid_columnconfigure(4, weight=0, minsize=65)   # Cycle column
+        msg_frame.grid_columnconfigure(5, weight=0, minsize=75)   # Status column
+        msg_frame.grid_columnconfigure(6, weight=0, minsize=135)  # Actions column
+        
+        # Empty space for expand button column (manual messages don't expand)
+        ttk.Label(msg_frame, text="", width=3).grid(row=0, column=0, sticky="ew", padx=1)
         
         # Create editable widgets for this message
         id_var = tk.StringVar(value=tx_id)
         id_entry = ttk.Entry(msg_frame, textvariable=id_var, justify="center", width=10)
-        id_entry.grid(row=0, column=0, sticky="ew", padx=1)
+        id_entry.grid(row=0, column=1, sticky="ew", padx=1)
         if not tx_id:  # Add placeholder for empty fields
             id_entry.insert(0, "e.g. 123")
             id_entry.config(foreground="gray")
@@ -812,9 +967,14 @@ Plugins:
             id_entry.bind("<FocusIn>", on_id_focus_in)
             id_entry.bind("<FocusOut>", on_id_focus_out)
         
+        # Name field (empty for manual messages since they're not from DBF)
+        name_var = tk.StringVar(value="")
+        name_label = ttk.Label(msg_frame, text="", anchor="center", relief="sunken")
+        name_label.grid(row=0, column=2, sticky="ew", padx=1)
+        
         data_var = tk.StringVar(value=tx_data)
         data_entry = ttk.Entry(msg_frame, textvariable=data_var)
-        data_entry.grid(row=0, column=1, sticky="ew", padx=1)
+        data_entry.grid(row=0, column=3, sticky="ew", padx=1)
         if not tx_data:  # Add placeholder for empty fields
             data_entry.insert(0, "e.g. 01 02 03 04 05 06 07 08")
             data_entry.config(foreground="gray")
@@ -831,7 +991,7 @@ Plugins:
         
         cycle_var = tk.StringVar(value=tx_cycle)
         cycle_entry = ttk.Entry(msg_frame, textvariable=cycle_var, justify="center", width=8)
-        cycle_entry.grid(row=0, column=2, sticky="ew", padx=1)
+        cycle_entry.grid(row=0, column=4, sticky="ew", padx=1)
         if not tx_cycle:  # Add placeholder for empty fields
             cycle_entry.insert(0, "e.g. 100")
             cycle_entry.config(foreground="gray")
@@ -847,11 +1007,11 @@ Plugins:
             cycle_entry.bind("<FocusOut>", on_cycle_focus_out)
         
         status_label = ttk.Label(msg_frame, text="Stopped", anchor="center", relief="sunken", width=10)
-        status_label.grid(row=0, column=3, sticky="ew", padx=1)
+        status_label.grid(row=0, column=5, sticky="ew", padx=1)
         
         # Create button frame for start/stop/delete
         button_frame = ttk.Frame(msg_frame)
-        button_frame.grid(row=0, column=4, sticky="ew", padx=1)
+        button_frame.grid(row=0, column=6, sticky="ew", padx=1)
         
         start_btn = ttk.Button(button_frame, text="Start", width=6, 
                               command=lambda: self.start_tx_message(msg_id))
@@ -873,6 +1033,7 @@ Plugins:
             "widgets": {
                 "frame": msg_frame,
                 "id_var": id_var,
+                "name_var": name_var,
                 "data_var": data_var,
                 "cycle_var": cycle_var,
                 "status": status_label,
@@ -897,33 +1058,46 @@ Plugins:
         msg_frame.pack(fill=tk.X, pady=1)
         
         # Configure columns to match header alignment
-        msg_frame.grid_columnconfigure(0, weight=0, minsize=75)   # ID column
-        msg_frame.grid_columnconfigure(1, weight=1, minsize=280)  # Data column (expandable)
-        msg_frame.grid_columnconfigure(2, weight=0, minsize=65)   # Cycle column
-        msg_frame.grid_columnconfigure(3, weight=0, minsize=75)   # Status column
-        msg_frame.grid_columnconfigure(4, weight=0, minsize=135)  # Actions column
+        msg_frame.grid_columnconfigure(0, weight=0, minsize=25)   # Expand button column
+        msg_frame.grid_columnconfigure(1, weight=0, minsize=65)   # ID column
+        msg_frame.grid_columnconfigure(2, weight=0, minsize=120)  # Name column
+        msg_frame.grid_columnconfigure(3, weight=1, minsize=100)  # Data column (expandable)
+        msg_frame.grid_columnconfigure(4, weight=0, minsize=65)   # Cycle column
+        msg_frame.grid_columnconfigure(5, weight=0, minsize=75)   # Status column
+        msg_frame.grid_columnconfigure(6, weight=0, minsize=135)  # Actions column
+        
+        # Expand/collapse button for signals (moved to leftmost position)
+        expand_var = tk.BooleanVar(value=False)
+        expand_btn = ttk.Button(msg_frame, text="▼", width=3, 
+                               command=lambda: self._toggle_signal_expansion(tx_msg_id, expand_var))
+        expand_btn.grid(row=0, column=0, sticky="ew", padx=1)
         
         # ID field (read-only for DBF messages)
         id_var = tk.StringVar(value=f"{msg_id:03X}")
         id_label = ttk.Label(msg_frame, text=f"0x{msg_id:03X}", anchor="center", relief="sunken")
-        id_label.grid(row=0, column=0, sticky="ew", padx=1)
+        id_label.grid(row=0, column=1, sticky="ew", padx=1)
+        
+        # Message name field
+        name_var = tk.StringVar(value=msg_info.get('name', ''))
+        name_label = ttk.Label(msg_frame, text=msg_info.get('name', ''), anchor="center", relief="sunken")
+        name_label.grid(row=0, column=2, sticky="ew", padx=1)
         
         # Data field (initially zeros)
         data_var = tk.StringVar(value="00 " * msg_info['dlc'])
         data_entry = ttk.Entry(msg_frame, textvariable=data_var)
-        data_entry.grid(row=0, column=1, sticky="ew", padx=1)
+        data_entry.grid(row=0, column=3, sticky="ew", padx=1)
         
         # Cycle field
         cycle_var = tk.StringVar(value="100")
         cycle_entry = ttk.Entry(msg_frame, textvariable=cycle_var, justify="center", width=8)
-        cycle_entry.grid(row=0, column=2, sticky="ew", padx=1)
+        cycle_entry.grid(row=0, column=4, sticky="ew", padx=1)
         
         status_label = ttk.Label(msg_frame, text="Stopped", anchor="center", relief="sunken", width=10)
-        status_label.grid(row=0, column=3, sticky="ew", padx=1)
+        status_label.grid(row=0, column=5, sticky="ew", padx=1)
         
         # Create button frame for start/stop/delete
         button_frame = ttk.Frame(msg_frame)
-        button_frame.grid(row=0, column=4, sticky="ew", padx=1)
+        button_frame.grid(row=0, column=6, sticky="ew", padx=1)
         
         start_btn = ttk.Button(button_frame, text="Start", width=6, 
                               command=lambda: self.start_tx_message(tx_msg_id))
@@ -947,12 +1121,18 @@ Plugins:
             "widgets": {
                 "frame": msg_frame,
                 "id_var": id_var,
+                "name_var": name_var,
                 "data_var": data_var,
                 "cycle_var": cycle_var,
                 "status": status_label,
                 "start_btn": start_btn,
-                "stop_btn": stop_btn
-            }
+                "stop_btn": stop_btn,
+                "expand_btn": expand_btn,
+                "expand_var": expand_var
+            },
+            "signal_widgets": {},
+            "signal_values": {},
+            "expanded": False
         }
         
         # Bind mouse wheel scrolling to all widgets in this message row

@@ -11,7 +11,7 @@ import os
 
 # Add current directory to Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, current_dir)
+sys.path.insert(0, os.path.dirname(current_dir))
 
 def test_tx_methods_exist():
     """Test that TX methods exist and are callable"""

@@ -53,9 +53,7 @@ void SerialConsole_Run_100ms(void) {
             case GPIO_SET:
                 debuggerService_print("running GPIO_SET\n");
                 if (sscanf(msg, "%*s %1c%2d %1d", &port, &pin, &state) == 4) {
-                    PINS_pin_S thisPin;
-                    thisPin.pin = pin;
-                    thisPin.port = (uint8_t) port - 97;
+                    gpio_pin_t thisPin = (gpio_pin_t)((port - 'a') * 16 + pin);
                     PINS_write(thisPin, state);
                 } else {
                     debuggerService_print("GPIO_SET failed\n");
@@ -65,10 +63,9 @@ void SerialConsole_Run_100ms(void) {
             case GPIO_GET:
                 debuggerService_print("running GPIO_GET\n");
                 if (sscanf(msg, "%*s %1c%2d", &port, &pin) == 3) {
-                    PINS_pin_S thisPin;
-                    thisPin.pin = pin;
-                    thisPin.port = (uint8_t) port - 97;
-                    debuggerService_print("PIN %c%d state: %d\n", port, pin, PINS_read(thisPin));
+                    gpio_pin_t thisPin = (gpio_pin_t)((port - 'a') * 16 + pin);
+                    PINS_State_E state = PINS_read(thisPin);
+                    debuggerService_print("PIN %c%d state: %d\n", port, pin, state);
                 } else {
                     debuggerService_print("GPIO_GET failed\n");
                 }
