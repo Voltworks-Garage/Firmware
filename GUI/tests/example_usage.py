@@ -10,7 +10,7 @@ import sys
 import os
 
 # Add current directory to path for local imports
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def example_core_usage():
     """Example of using just the core components (no GUI)"""

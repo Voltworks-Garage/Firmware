@@ -10,7 +10,7 @@ import sys
 import os
 
 # Add the current directory to Python path so we can import can_tool
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def test_imports():
     """Test that all modules can be imported correctly"""

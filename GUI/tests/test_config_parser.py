@@ -7,7 +7,7 @@ import sys
 import os
 
 # Add the can_tool directory to Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'can_tool'))
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from can_tool.core.config_parser import ConfigParser
 

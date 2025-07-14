@@ -123,6 +123,76 @@ class BusmasterDBFParser:
         scaled_value = value * signal['factor'] + signal['offset']
         return scaled_value
     
+    def encode_signal_value(self, signal, physical_value, data):
+        """Encode a physical signal value into CAN message data bytes"""
+        # Convert physical value to raw value using inverse of decode formula
+        # physical_value = (raw_value * factor) + offset
+        # raw_value = (physical_value - offset) / factor
+        if signal['type'] == 'B':
+            raw_value = 1 if physical_value else 0
+        else:
+            raw_value = (physical_value - signal['offset']) / signal['factor']
+            raw_value = int(round(raw_value))
+        
+        # Clamp to signal's defined range
+        raw_value = max(signal['min_val'], min(signal['max_val'], raw_value))
+        
+        # Ensure data array is large enough
+        required_bytes = signal['byte_pos'] + ((signal['length'] + int(signal['bit_pos']) - 1) // 8)
+        while len(data) < required_bytes:
+            data.append(0)
+        
+        # Extract signal placement parameters
+        byte_idx = signal['byte_pos'] - 1
+        bit_start = int(signal['bit_pos'])
+        bit_length = signal['length']
+        
+        # Clear existing bits for this signal
+        bits_to_clear = bit_length
+        clear_byte_idx = byte_idx
+        clear_bit_start = bit_start
+        
+        while bits_to_clear > 0 and clear_byte_idx < len(data):
+            bits_in_byte = min(8 - clear_bit_start, bits_to_clear)
+            mask = ((1 << bits_in_byte) - 1) << clear_bit_start
+            data[clear_byte_idx] &= ~mask  # Clear the bits
+            
+            bits_to_clear -= bits_in_byte
+            clear_byte_idx += 1
+            clear_bit_start = 0
+        
+        # Insert new signal value
+        bits_inserted = 0
+        value_to_insert = raw_value
+        
+        while bits_inserted < bit_length and byte_idx < len(data):
+            bits_in_byte = min(8 - bit_start, bit_length - bits_inserted)
+            mask = (1 << bits_in_byte) - 1
+            bits_to_insert = (value_to_insert >> bits_inserted) & mask
+            data[byte_idx] |= bits_to_insert << bit_start
+            
+            bits_inserted += bits_in_byte
+            byte_idx += 1
+            bit_start = 0
+        
+        return data
+    
+    def encode_message_from_signals(self, msg_id, signal_values):
+        """Encode a complete CAN message from signal values"""
+        if msg_id not in self.messages:
+            return None
+        
+        msg_def = self.messages[msg_id]
+        data = [0] * msg_def['dlc']  # Initialize with zeros
+        
+        # Encode each signal into the data array
+        for signal in msg_def['signals']:
+            signal_name = signal['name']
+            if signal_name in signal_values:
+                data = self.encode_signal_value(signal, signal_values[signal_name], data)
+        
+        return data
+    
     def decode_message(self, msg_id, data):
         """Decode a CAN message using signal definitions from the DBF file"""
         if msg_id not in self.messages:
