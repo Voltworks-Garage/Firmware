@@ -11,7 +11,6 @@
 // *****************************************************************************
 // *****************************************************************************
 #include "pinSetup.h"
-#include "ADC.h"
 #include "uart.h"
 #include "CAN.h"
 #include "pins.h"
@@ -131,7 +130,7 @@ void PinSetup_Init(void) {
     /*ANALOG*/
     ADC_Init();
     ADC_SetPin(FAN_ISENSE_AI);
-    ADC_SetPin(THOTTLE_SIGNAL_MONITOR_AI);
+    ADC_SetPin(THROTTLE_SIGNAL_MONITOR_AI);
     ADC_SetPin(TAILLIGHT_ISENSE_AI);
     ADC_SetPin(HEADLIGHT_ISENSE_AI);
     ADC_SetPin(HORN_ISENSE_AI);
@@ -161,7 +160,7 @@ void PinSetup_Init(void) {
     CAN_Init(CAN_TX, CAN_RX, CAN_BAUD_500k, CAN_DISABLE, CLOCK_SystemFrequencyGet());
     
     //set wakeup sources
-    PINS_internalRegisters_SetInterrupt(IGNITION_SWITCH_IN, 1);
+    PINS_setInterrupt(IGNITION_SWITCH_IN, 1);
     /*CAN is wake source already in CAN_Init()*/
 
 }

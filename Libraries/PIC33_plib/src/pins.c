@@ -1,4 +1,5 @@
 #include "pins.h"
+#include <stddef.h>
 
 
 #define set(reg,val) (*(reg) |= (val))
@@ -56,7 +57,11 @@ static const PINS_S PINS_portsArray[PINS_NUMBER_OF_PORTS] = {
     [PIN_PORTA].lat = &LATA,
     [PIN_PORTA].pu = &CNPUA,
     [PIN_PORTA].pd = &CNPDA,
+    #ifdef ODCA
     [PIN_PORTA].od = &ODCA,
+    #else
+    [PIN_PORTA].od = NULL,
+    #endif
     [PIN_PORTA].inter = &CNENA,
 #endif
 #ifdef PORTB
@@ -65,7 +70,11 @@ static const PINS_S PINS_portsArray[PINS_NUMBER_OF_PORTS] = {
     [PIN_PORTB].lat = &LATB,
     [PIN_PORTB].pu = &CNPUB,
     [PIN_PORTB].pd = &CNPDB,
+    #ifdef ODCB
     [PIN_PORTB].od = &ODCB,
+    #else
+    [PIN_PORTB].od = NULL,
+    #endif
     [PIN_PORTB].inter = &CNENB,
 #endif
 #ifdef PORTC
@@ -74,7 +83,11 @@ static const PINS_S PINS_portsArray[PINS_NUMBER_OF_PORTS] = {
     [PIN_PORTC].lat = &LATC,
     [PIN_PORTC].pu = &CNPUC,
     [PIN_PORTC].pd = &CNPDC,
+    #ifdef ODCC
     [PIN_PORTC].od = &ODCC,
+    #else
+    [PIN_PORTC].od = NULL,
+    #endif
     [PIN_PORTC].inter = &CNENC,
 #endif
 #ifdef PORTD
@@ -83,7 +96,11 @@ static const PINS_S PINS_portsArray[PINS_NUMBER_OF_PORTS] = {
     [PIN_PORTD].lat = &LATD,
     [PIN_PORTD].pu = &CNPUD,
     [PIN_PORTD].pd = &CNPDD,
+    #ifdef ODCD
     [PIN_PORTD].od = &ODCD,
+    #else
+    [PIN_PORTD].od = NULL,
+    #endif
     [PIN_PORTD].inter = &CNEND,
 #endif
 #ifdef PORTE
@@ -92,7 +109,11 @@ static const PINS_S PINS_portsArray[PINS_NUMBER_OF_PORTS] = {
     [PIN_PORTE].lat = &LATE,
     [PIN_PORTE].pu = &CNPUE,
     [PIN_PORTE].pd = &CNPDE,
+    #ifdef ODCE
     [PIN_PORTE].od = &ODCE,
+    #else
+    [PIN_PORTE].od = NULL,
+    #endif
     [PIN_PORTE].inter = &CNENE,
 #endif
 #ifdef PORTF
@@ -101,7 +122,11 @@ static const PINS_S PINS_portsArray[PINS_NUMBER_OF_PORTS] = {
     [PIN_PORTF].lat = &LATF,
     [PIN_PORTF].pu = &CNPUF,
     [PIN_PORTF].pd = &CNPDF,
+    #ifdef ODCF
     [PIN_PORTF].od = &ODCF,
+    #else
+    [PIN_PORTF].od = NULL,
+    #endif
     [PIN_PORTF].inter = &CNENF,
 #endif
 #ifdef PORTG
@@ -110,7 +135,11 @@ static const PINS_S PINS_portsArray[PINS_NUMBER_OF_PORTS] = {
     [PIN_PORTG].lat = &LATG,
     [PIN_PORTG].pu = &CNPUG,
     [PIN_PORTG].pd = &CNPDG,
+    #ifdef ODCG
     [PIN_PORTG].od = &ODCG,
+    #else
+    [PIN_PORTG].od = NULL,
+    #endif
     [PIN_PORTG].inter = &CNENG,
 #endif
 };
@@ -188,6 +217,10 @@ void PINS_openDrain(gpio_pin_t pin, PINS_State_E state) {
     uint8_t port = PINS_PIN_TO_PORT(pin);
     uint8_t pin_num = PINS_PIN_TO_NUM(pin);
     uint16_t pin_mask = 1 << pin_num;
+
+    if (PINS_portsArray[port].od == NULL) {
+        return; // Open drain not supported on this port
+    }
     
     if (state == LOW) {
         clear(PINS_portsArray[port].od, pin_mask);

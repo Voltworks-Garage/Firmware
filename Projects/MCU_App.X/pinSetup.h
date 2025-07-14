@@ -10,6 +10,9 @@
 
 #include <stdint.h>
 #include "pins.h"
+#include "ADC.h"
+#include "OC.h"
+#include "pps.h"
 
 /*FUNCTIONAL PIN ASSIGNMENTS*/
 
