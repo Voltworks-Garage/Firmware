@@ -69,20 +69,10 @@ typedef enum {
 
 /*ANALOG INPUT DEFINITIONS*/
 
-// Analog channel enumeration
-typedef enum {
-    AN0 = 0, AN1 = 1, AN2 = 2, AN3 = 3,
-    AN4 = 4, AN5 = 5, AN6 = 6, AN7 = 7,
-    AN8 = 8, AN9 = 9, AN10 = 10, AN11 = 11,
-    AN12 = 12, AN13 = 13, AN14 = 14, AN15 = 15,
-    AN16 = 16, AN17 = 17, AN18 = 18, AN19 = 19,
-    AN20 = 20, AN21 = 21, AN22 = 22, AN23 = 23
-} analog_channel_t;
-
 // Functional analog assignments
 typedef enum {
     FAN_ISENSE_AI = AN0,
-    THOTTLE_SIGNAL_MONITOR_AI = AN1,
+    THROTTLE_SIGNAL_MONITOR_AI = AN1,
     TAILLIGHT_ISENSE_AI = AN2,
     HEADLIGHT_ISENSE_AI = AN3,
     HORN_ISENSE_AI = AN4,
@@ -104,38 +94,25 @@ typedef enum {
 
 /*PWM DEFINITIONS*/
 
-// PWM/Output pin enumeration
-typedef enum {
-    RP100_OUT = 100,
-    RP101_OUT = 101,
-    RP118_OUT = 118,
-    RP120_OUT = 120
-} output_pin_t;
-
-// Input pin enumeration
-typedef enum {
-    RPI119_IN = 119,
-    RPI121_IN = 121
-} input_pin_t;
-
 // Functional PWM assignments
 typedef enum {
-    PWM_1_OUT = RP100_OUT,
-    PWM_2_OUT = RP101_OUT
+    PWM_1_OUT = PWM_PIN_RP100,
+    PWM_2_OUT = PWM_PIN_RP101
 } pwm_assignments_t;
 
 /*COMMUNICATION DEFINITIONS*/
 
 // Communication pin assignments
-typedef enum {
-    UART_TX = RP120_OUT,
-    UART_RX = RPI121_IN,
-    CAN_TX = RP118_OUT,
-    CAN_RX = RPI119_IN
-} comm_assignments_t;
+    // UART
+    #define UART_TX _RP120R
+    #define UART_RX RPI121_IN
+    
+    // CAN
+    #define CAN_TX _RP118R
+    #define CAN_RX RPI119_IN
 
 /**
- * @PinSetup_Init will initialize all pins for their intened usage as defined above
+ * @PinSetup_Init will initialize all pins for their intended usage as defined above
  */
 void PinSetup_Init(void);
 
