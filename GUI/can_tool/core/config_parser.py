@@ -56,29 +56,33 @@ class ConfigParser:
         return config_files
     
     def parse_config_file(self, config_path: str) -> Optional[DeviceConfig]:
-        """Parse a single commandService_config.h file"""
+        """Parse project directory for IO.h and generate commands"""
         try:
-            with open(config_path, 'r') as f:
-                content = f.read()
-            
             device_name = self._extract_device_name(config_path)
-            tx_id, rx_id = self._extract_can_ids(content, device_name)
-            command_definitions = self._extract_command_definitions(content)
-            command_map = self._extract_command_map(content)
-            commands = self._build_commands(command_map, command_definitions)
+            tx_id, rx_id = self._extract_can_ids("", device_name)
+            
+            # Find and parse IO.h file in the same directory
+            project_dir = os.path.dirname(config_path)
+            io_h_path = os.path.join(project_dir, "IO.h")
+            
+            if not os.path.exists(io_h_path):
+                print(f"IO.h not found in {project_dir}")
+                return None
+                
+            commands = self._parse_io_h_file(io_h_path)
             
             config = DeviceConfig(
                 device_name=device_name,
                 tx_id=tx_id,
                 rx_id=rx_id,
                 commands=commands,
-                command_definitions=command_definitions
+                command_definitions={}  # No longer needed
             )
             
             return config
             
         except Exception as e:
-            print(f"Error parsing config file {config_path}: {e}")
+            print(f"Error parsing project {config_path}: {e}")
             return None
     
     def _extract_device_name(self, config_path: str) -> str:
@@ -111,107 +115,130 @@ class ConfigParser:
         
         return id_mappings.get(device_name, (0x7A1, 0x7A2))
     
-    def _extract_command_definitions(self, content: str) -> Dict[str, int]:
-        """Extract #define CMD_* definitions"""
-        definitions = {}
-        
-        # Match patterns like: #define CMD_SET_DEBUG_LED 0x01
-        pattern = r'#define\s+(CMD_\w+)\s+(0x[0-9A-Fa-f]+|\d+)'
-        matches = re.findall(pattern, content)
-        
-        for name, value_str in matches:
-            try:
-                value = int(value_str, 0)  # Auto-detect hex/decimal
-                definitions[name] = value
-            except ValueError:
-                continue
-                
-        return definitions
-    
-    def _extract_command_map(self, content: str) -> List[Dict]:
-        """Extract commandMap entries"""
-        commands = []
-        
-        # Find the commandMap array - handle nested braces properly
-        map_pattern = r'const\s+CommandMapEntry_S\s+commandMap\[\]\s*=\s*\{(.*?)\};'
-        map_match = re.search(map_pattern, content, re.DOTALL)
-        
-        if not map_match:
-            return commands
-            
-        map_content = map_match.group(1)
-        
-        # Parse individual entries like: {CMD_SET_DEBUG_LED, CMD_TYPE_SET_DIGITAL_OUT, 0, 2, "Set Debug LED"}
-        entry_pattern = r'\{\s*([^,]+),\s*([^,]+),\s*(\d+),\s*(\d+),\s*"([^"]+)"\s*\}'
-        entries = re.findall(entry_pattern, map_content)
-        
-        for cmd_name, cmd_type, io_index, min_length, description in entries:
-            commands.append({
-                'cmd_name': cmd_name.strip(),
-                'cmd_type': cmd_type.strip(),
-                'io_index': int(io_index),
-                'min_payload_length': int(min_length),
-                'description': description.strip()
-            })
-            
-        return commands
-    
-    def _build_commands(self, command_map: List[Dict], command_definitions: Dict[str, int]) -> Dict[str, CommandDefinition]:
-        """Build CommandDefinition objects from parsed data"""
+    def _parse_io_h_file(self, io_h_path: str) -> Dict[str, CommandDefinition]:
+        """Parse IO.h file to extract function pointer arrays and generate commands"""
         commands = {}
         
-        for entry in command_map:
-            cmd_name = entry['cmd_name']
-            cmd_type = entry['cmd_type']
+        try:
+            with open(io_h_path, 'r') as f:
+                content = f.read()
             
-            # Get command ID from definitions
-            cmd_id = command_definitions.get(cmd_name, 0)
+            # Parse each function pointer array
+            arrays = {
+                'setDigitalOutFunctions': {'type_id': 0x01, 'params': ['state'], 'prefix': 'Set Digital Out'},
+                'getDigitalInFunctions': {'type_id': 0x02, 'params': [], 'prefix': 'Get Digital In'},
+                'setPwmOutFunctions': {'type_id': 0x03, 'params': ['duty_cycle'], 'prefix': 'Set PWM Out'},
+                'getAnalogInFunctions': {'type_id': 0x04, 'params': [], 'prefix': 'Get Analog In'},
+                'getVoltageFunctions': {'type_id': 0x05, 'params': [], 'prefix': 'Get Voltage'},
+                'getCurrentFunctions': {'type_id': 0x06, 'params': [], 'prefix': 'Get Current'}
+            }
             
-            # Determine parameters based on command type
-            params = self._get_params_for_command_type(cmd_type, entry['min_payload_length'])
+            for array_name, config in arrays.items():
+                array_commands = self._parse_function_array(content, array_name, config)
+                commands.update(array_commands)
             
-            # Create friendly name from description
-            friendly_name = entry['description']
+            return commands
             
-            command_def = CommandDefinition(
-                cmd_id=cmd_id,
-                cmd_type=cmd_type,
-                io_index=entry['io_index'],
-                min_payload_length=entry['min_payload_length'],
-                description=entry['description'],
-                params=params
-            )
+        except Exception as e:
+            print(f"Error parsing IO.h file {io_h_path}: {e}")
+            return {}
+    
+    def _parse_function_array(self, content: str, array_name: str, config: Dict) -> Dict[str, CommandDefinition]:
+        """Parse a specific function pointer array from IO.h"""
+        commands = {}
+        
+        # Find the array definition
+        pattern = rf'static\s+const\s+\w+\s+{array_name}\[\]\s*=\s*\{{(.*?)\}};'
+        match = re.search(pattern, content, re.DOTALL)
+        
+        if not match:
+            return commands
+        
+        array_content = match.group(1)
+        
+        # Split array content into individual entries
+        entries = []
+        for line in array_content.split('\n'):
+            line = line.strip()
+            if not line or line.startswith('//'):
+                continue
+            # Remove trailing comma and extract entry
+            entry = line.rstrip(',').strip()
+            if entry:
+                entries.append(entry)
+        
+        # Process each entry with its natural array index
+        for index, entry in enumerate(entries):
+            # Skip NULL entries but continue processing
+            if entry == 'NULL' or entry.startswith('NULL'):
+                continue
+                
+            # Remove any inline comments
+            if '//' in entry:
+                entry = entry.split('//')[0].strip()
             
-            commands[friendly_name] = command_def
+            # Remove trailing comma if it exists
+            func_name = entry.rstrip(',').strip()
             
+            if func_name and func_name != 'NULL':
+                # Create unique key for storage (with action prefix)
+                unique_key = func_name[3:] if func_name.startswith('IO_') else func_name
+                
+                # Create clean display name (without action prefix)
+                display_name = self._function_name_to_description(func_name, config['prefix'])
+                
+                # Calculate 16-bit command ID
+                cmd_id = (config['type_id'] << 8) | index
+                
+                # Determine minimum payload length
+                min_length = 2 + len(config['params'])  # 2 bytes for cmd_id + param bytes
+                
+                # Generate cleaner command type name for display
+                type_name = array_name.replace('Functions', '')
+                if type_name == 'setDigitalOut':
+                    display_type = 'SET_DIGITAL_OUT'
+                elif type_name == 'getDigitalIn':
+                    display_type = 'GET_DIGITAL_IN'
+                elif type_name == 'setPwmOut':
+                    display_type = 'SET_PWM_OUT'
+                elif type_name == 'getAnalogIn':
+                    display_type = 'GET_ANALOG_IN'
+                elif type_name == 'getVoltage':
+                    display_type = 'GET_VOLTAGE'
+                elif type_name == 'getCurrent':
+                    display_type = 'GET_CURRENT'
+                else:
+                    display_type = type_name.upper()
+                
+                command_def = CommandDefinition(
+                    cmd_id=cmd_id,
+                    cmd_type=f"CMD_TYPE_{display_type}",
+                    io_index=index,
+                    min_payload_length=min_length,
+                    description=display_name,  # Use clean display name
+                    params=config['params'].copy()
+                )
+                
+                commands[unique_key] = command_def  # Use unique key for storage
+        
         return commands
     
-    def _get_params_for_command_type(self, cmd_type: str, min_payload_length: int) -> List[str]:
-        """Determine parameter list based on command type"""
-        type_mappings = {
-            'CMD_TYPE_SET_DIGITAL_OUT': ['io_index', 'state'],
-            'CMD_TYPE_GET_DIGITAL_IN': ['io_index'],
-            'CMD_TYPE_SET_PWM_OUT': ['io_index', 'duty_cycle'],
-            'CMD_TYPE_GET_ANALOG_IN': ['io_index'],
-            'CMD_TYPE_GET_VOLTAGE': ['io_index'],
-            'CMD_TYPE_GET_CURRENT': ['io_index'],
-            'CMD_TYPE_CUSTOM': []
-        }
-        
-        base_params = type_mappings.get(cmd_type, [])
-        
-        # Adjust based on minimum payload length
-        # min_payload_length includes the command ID, so subtract 1 for actual params
-        expected_param_count = min_payload_length - 1
-        
-        if len(base_params) > expected_param_count:
-            return base_params[:expected_param_count]
-        elif len(base_params) < expected_param_count:
-            # Add generic parameters if needed
-            for i in range(len(base_params), expected_param_count):
-                base_params.append(f'param_{i}')
+    def _function_name_to_description(self, func_name: str, prefix: str) -> str:
+        """Convert function name like IO_SET_DEBUG_LED_EN to display name"""
+        # Remove IO_ prefix first
+        if func_name.startswith('IO_'):
+            name = func_name[3:]  # Remove "IO_" prefix
+        else:
+            name = func_name
+            
+        # Remove action prefixes (SET_, GET_) for cleaner display
+        for action_prefix in ['SET_', 'GET_']:
+            if name.startswith(action_prefix):
+                name = name[len(action_prefix):]
+                break
                 
-        return base_params
+        return name
+    
     
     def load_all_configs(self):
         """Load all available configuration files"""

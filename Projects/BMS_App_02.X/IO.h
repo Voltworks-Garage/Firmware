@@ -9,6 +9,7 @@
 #define	IO_H
 
 #include "stdint.h"
+#include "stddef.h"  // For NULL
 #include "pins.h"
 
 
@@ -87,6 +88,100 @@ float IO_GET_TRANSDUCER_CURRENT(void);
 
 
 
+
+/******************************************************************************
+ * CommandService Integration - Function Pointer Arrays
+ * 
+ * These arrays provide a bridge between ISO-TP commands and IO functions.
+ * Adding a new IO function requires updating the appropriate array below.
+ *******************************************************************************/
+
+// Function pointer typedefs for CommandService
+typedef void (*SetDigitalOut_FPtr)(uint8_t state);
+typedef uint8_t (*GetDigitalIn_FPtr)(void);  
+typedef void (*SetPwmOut_FPtr)(uint8_t duty);
+typedef uint16_t (*GetAnalogIn_FPtr)(void);
+typedef float (*GetVoltage_FPtr)(void);
+typedef float (*GetCurrent_FPtr)(void);
+
+// Digital output functions (index corresponds to payload[0] in set digital out commands)
+static const SetDigitalOut_FPtr setDigitalOutFunctions[] = {
+    NULL,                       // Index 0 - reserved/unused
+    IO_SET_DEBUG_LED_EN,        // Index 1
+    IO_SET_SW_EN,               // Index 2  
+    IO_SET_DCDC_EN,             // Index 3
+    IO_SET_EV_CHARGER_EN,       // Index 4
+    IO_SET_PRE_CHARGE_EN,       // Index 5
+    IO_SET_MUX_A,               // Index 6
+    IO_SET_MUX_B,               // Index 7
+    IO_SET_MUX_C,               // Index 8
+    IO_SET_SPI_CS,              // Index 9
+    IO_SET_PILOT_EN,            // Index 10
+    NULL
+};
+
+// Digital input functions (index corresponds to payload[0] in get digital in commands)
+static const GetDigitalIn_FPtr getDigitalInFunctions[] = {
+    NULL,                       // Index 0 - reserved/unused
+    IO_GET_DEBUG_LED_EN,        // Index 1
+    IO_GET_SW_EN,               // Index 2
+    IO_GET_DCDC_EN,             // Index 3
+    IO_GET_EV_CHARGER_EN,       // Index 4
+    IO_GET_PRE_CHARGE_EN,       // Index 5
+    IO_GET_MUX_A,               // Index 6
+    IO_GET_MUX_B,               // Index 7
+    IO_GET_MUX_C,               // Index 8
+    IO_GET_V12_POWER_STATUS,    // Index 9
+    NULL
+};
+
+// PWM output functions (index corresponds to payload[0] in set PWM commands)
+static const SetPwmOut_FPtr setPwmOutFunctions[] = {
+    NULL,                       // Index 0 - reserved/unused
+    IO_SET_CONTACTOR_1_PWM,     // Index 1
+    IO_SET_CONTACTOR_2_PWM,     // Index 2
+    NULL
+};
+
+// Analog input functions (not used in BMS, but included for completeness)
+static const GetAnalogIn_FPtr getAnalogInFunctions[] = {
+    NULL
+};
+
+// Voltage measurement functions (index corresponds to payload[0] in get voltage commands)
+static const GetVoltage_FPtr getVoltageFunctions[] = {
+    NULL,                           // Index 0 - reserved/unused
+    IO_GET_HV_BUS_VOLTAGE,          // Index 1
+    IO_GET_ISOLATION_VOLTAGE,       // Index 2
+    IO_GET_PILOT_MONITOR_VOLTAGE,   // Index 3
+    IO_GET_VBUS_VOLTAGE,            // Index 4
+    IO_GET_EV_CHARGER_VOLTAGE,      // Index 5
+    IO_GET_DCDC_OUTPUT_VOLTAGE,     // Index 6
+    IO_GET_MUX_1_VOLTAGE,           // Index 7
+    IO_GET_MUX_2_VOLTAGE,           // Index 8
+    IO_GET_MUX_3_VOLTAGE,           // Index 9
+    IO_GET_PROXIMITY_VOLTAGE,       // Index 10
+    NULL
+};
+
+// Current measurement functions (index corresponds to payload[0] in get current commands)
+static const GetCurrent_FPtr getCurrentFunctions[] = {
+    NULL,                           // Index 0 - reserved/unused
+    IO_GET_DCDC_CURRENT,            // Index 1
+    IO_GET_EV_CHARGER_CURRENT,      // Index 2
+    IO_GET_SHUNT_HIGH_CURRENT,      // Index 3
+    IO_GET_SHUNT_LOW_CURRENT,       // Index 4
+    IO_GET_TRANSDUCER_CURRENT,      // Index 5
+    NULL
+};
+
+// Array sizes
+#define SET_DIGITAL_OUT_FUNCTIONS_SIZE (sizeof(setDigitalOutFunctions)/sizeof(SetDigitalOut_FPtr))
+#define GET_DIGITAL_IN_FUNCTIONS_SIZE (sizeof(getDigitalInFunctions)/sizeof(GetDigitalIn_FPtr))
+#define SET_PWM_OUT_FUNCTIONS_SIZE (sizeof(setPwmOutFunctions)/sizeof(SetPwmOut_FPtr))
+#define GET_ANALOG_IN_FUNCTIONS_SIZE (sizeof(getAnalogInFunctions)/sizeof(GetAnalogIn_FPtr))
+#define GET_VOLTAGE_FUNCTIONS_SIZE (sizeof(getVoltageFunctions)/sizeof(GetVoltage_FPtr))
+#define GET_CURRENT_FUNCTIONS_SIZE (sizeof(getCurrentFunctions)/sizeof(GetCurrent_FPtr))
 
 #endif	/* IO_H */
 
