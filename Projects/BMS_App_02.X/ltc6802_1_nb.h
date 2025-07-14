@@ -1,16 +1,15 @@
 /**
  * @file ltc6802_1_nb.h
- * @brief Non-blocking LTC6802-1 Battery Monitor Driver with Interrupt-Driven SPI
+ * @brief Non-blocking LTC6802-1 Battery Monitor Driver with Stateful API
  * 
  * This module provides non-blocking, interrupt-driven communication with 
- * LTC6802-1 battery monitoring ICs. Uses state machine approach for
- * asynchronous operations to reduce CPU usage.
+ * LTC6802-1 battery monitoring ICs using a stateful request/response API.
  * 
- * Key differences from LTC6802-2:
- * - LTC6802-1 has different register layout and command set
- * - Non-blocking SPI operations using interrupts
- * - State machine for managing async operations
- * - Improved error handling and retry logic
+ * Key features:
+ * - Pure stateful design (state IS the operation)
+ * - Simple start/read pattern with automatic busy rejection
+ * - Built-in data staleness detection
+ * - No callbacks - direct function calls in 1ms loop
  * 
  * @author Generated for Voltworks Garage
  * @date 2025
@@ -35,6 +34,7 @@
 #define LTC6802_1_ADC_CONVERSION_TIME_MS    3   // Max ADC conversion time
 #define LTC6802_1_MAX_RETRIES              3   // Max retry attempts
 #define LTC6802_1_SPI_TIMEOUT_MS           10  // SPI operation timeout
+#define LTC6802_1_DATA_STALE_TIME_MS       1000 // Data considered stale after 1 second
 
 // Voltage scaling for LTC6802-1 (1.5mV per LSB)
 #define LTC6802_1_VOLTAGE_SCALE_FACTOR     0.0015f
@@ -42,37 +42,6 @@
 /******************************************************************************
  * Type Definitions
  *******************************************************************************/
-
-/**
- * @brief Operation states for non-blocking state machine
- */
-typedef enum {
-    LTC6802_1_STATE_IDLE = 0,
-    LTC6802_1_STATE_CONFIG_WRITE,
-    LTC6802_1_STATE_CONFIG_WRITE_WAIT,
-    LTC6802_1_STATE_ADC_START,
-    LTC6802_1_STATE_ADC_START_WAIT,
-    LTC6802_1_STATE_ADC_POLL,
-    LTC6802_1_STATE_ADC_POLL_WAIT,
-    LTC6802_1_STATE_VOLTAGE_READ,
-    LTC6802_1_STATE_VOLTAGE_READ_WAIT,
-    LTC6802_1_STATE_TEMP_READ,
-    LTC6802_1_STATE_TEMP_READ_WAIT,
-    LTC6802_1_STATE_ERROR,
-    LTC6802_1_STATE_COMPLETE
-} LTC6802_1_State_E;
-
-/**
- * @brief Operation types
- */
-typedef enum {
-    LTC6802_1_OP_NONE = 0,
-    LTC6802_1_OP_READ_VOLTAGES,
-    LTC6802_1_OP_READ_TEMPERATURES,
-    LTC6802_1_OP_WRITE_CONFIG,
-    LTC6802_1_OP_START_ADC_VOLTAGES,
-    LTC6802_1_OP_START_ADC_TEMPERATURES
-} LTC6802_1_Operation_E;
 
 /**
  * @brief Error codes
@@ -99,16 +68,6 @@ typedef struct {
     uint16_t undervoltage_threshold; // Undervoltage threshold (12-bit)
 } LTC6802_1_Config_S;
 
-/**
- * @brief Status callback function type
- * @param operation The operation that completed
- * @param error Error code (LTC6802_1_ERROR_NONE if successful)
- * @param stack_id Stack that completed (0xFF for broadcast operations)
- */
-typedef void (*LTC6802_1_Callback_F)(LTC6802_1_Operation_E operation, 
-                                     LTC6802_1_Error_E error, 
-                                     uint8_t stack_id);
-
 /******************************************************************************
  * Public Function Declarations
  *******************************************************************************/
@@ -118,12 +77,6 @@ typedef void (*LTC6802_1_Callback_F)(LTC6802_1_Operation_E operation,
  * @return Error code
  */
 LTC6802_1_Error_E LTC6802_1_Init(void);
-
-/**
- * @brief Register callback for operation completion
- * @param callback Function to call when operations complete
- */
-void LTC6802_1_RegisterCallback(LTC6802_1_Callback_F callback);
 
 /**
  * @brief Run the state machine (call from main loop or timer)
@@ -137,80 +90,57 @@ void LTC6802_1_Run(void);
  */
 bool LTC6802_1_IsBusy(void);
 
-/**
- * @brief Get current state for debugging
- * @return Current state
- */
-LTC6802_1_State_E LTC6802_1_GetState(void);
-
 /******************************************************************************
- * Configuration Functions
+ * Stateful API Functions
  *******************************************************************************/
 
 /**
- * @brief Set configuration for a specific stack (non-blocking)
- * @param stack_id Stack ID (0 to LTC6802_1_NUM_STACKS-1)
- * @param config Configuration structure
- * @return Error code
+ * @brief Start cell voltage ADC conversion and read sequence
+ * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
  */
-LTC6802_1_Error_E LTC6802_1_SetConfig(uint8_t stack_id, const LTC6802_1_Config_S* config);
+LTC6802_1_Error_E LTC6802_1_StartCellVoltageADC(void);
 
 /**
- * @brief Write configuration to hardware (non-blocking)
- * @param stack_id Stack ID (0xFF for broadcast to all stacks)
- * @return Error code
+ * @brief Start temperature ADC conversion and read sequence
+ * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
  */
-LTC6802_1_Error_E LTC6802_1_WriteConfig(uint8_t stack_id);
+LTC6802_1_Error_E LTC6802_1_StartTemperatureADC(void);
+
+/**
+ * @brief Set and write configuration to hardware
+ * @param config Configuration structure (applied to all stacks)
+ * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
+ */
+LTC6802_1_Error_E LTC6802_1_WriteConfig(const LTC6802_1_Config_S* config);
+
+/**
+ * @brief Set cell balancing configuration and write to hardware
+ * @param cell_mask Bitmask of cells to enable balancing (bit 0 = cell 0, etc.)
+ * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
+ */
+LTC6802_1_Error_E LTC6802_1_SetCellBalancing(uint32_t cell_mask);
+
+/**
+ * @brief Clear all cell balancing and write to hardware
+ * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
+ */
+LTC6802_1_Error_E LTC6802_1_ClearAllCellBalancing(void);
 
 /******************************************************************************
- * ADC Control Functions
+ * Data Access Functions
  *******************************************************************************/
 
 /**
- * @brief Start cell voltage ADC conversion (non-blocking)
- * @param stack_id Stack ID (0xFF for broadcast to all stacks)
- * @return Error code
- */
-LTC6802_1_Error_E LTC6802_1_StartCellVoltageADC(uint8_t stack_id);
-
-/**
- * @brief Start temperature ADC conversion (non-blocking)
- * @param stack_id Stack ID (0xFF for broadcast to all stacks)
- * @return Error code
- */
-LTC6802_1_Error_E LTC6802_1_StartTempADC(uint8_t stack_id);
-
-/**
- * @brief Read cell voltages (non-blocking)
- * Data will be available via callback when complete
- * @param stack_id Stack ID (0xFF for all stacks)
- * @return Error code
- */
-LTC6802_1_Error_E LTC6802_1_ReadCellVoltages(uint8_t stack_id);
-
-/**
- * @brief Read temperatures (non-blocking)  
- * Data will be available via callback when complete
- * @param stack_id Stack ID (0xFF for all stacks)
- * @return Error code
- */
-LTC6802_1_Error_E LTC6802_1_ReadTemperatures(uint8_t stack_id);
-
-/******************************************************************************
- * Data Access Functions (Blocking - for immediate data access)
- *******************************************************************************/
-
-/**
- * @brief Get cell voltage from last read operation
+ * @brief Get cell voltage from last successful read operation
  * @param cell_id Cell ID (0 to LTC6802_1_TOTAL_CELLS-1)
- * @return Voltage in volts, or 0.0 if invalid cell_id
+ * @return Voltage in volts, or -1.0 if invalid cell_id or data stale
  */
 float LTC6802_1_GetCellVoltage(uint8_t cell_id);
 
 /**
- * @brief Get temperature from last read operation
+ * @brief Get temperature from last successful read operation
  * @param temp_id Temperature sensor ID (0 to LTC6802_1_TOTAL_TEMPS-1)
- * @return Voltage in volts (needs external conversion), or 0.0 if invalid temp_id
+ * @return Voltage in volts (needs external conversion), or -1.0 if invalid temp_id or data stale
  */
 float LTC6802_1_GetTemperatureVoltage(uint8_t temp_id);
 
@@ -226,24 +156,6 @@ LTC6802_1_Error_E LTC6802_1_GetLastError(uint8_t stack_id);
  * @param stack_id Stack ID (0 to LTC6802_1_NUM_STACKS-1)
  */
 void LTC6802_1_ClearError(uint8_t stack_id);
-
-/******************************************************************************
- * Cell Balancing Functions
- *******************************************************************************/
-
-/**
- * @brief Enable cell balancing for specific cell
- * @param cell_id Cell ID (0 to LTC6802_1_TOTAL_CELLS-1) 
- * @param enable true to enable balancing, false to disable
- * @return Error code
- */
-LTC6802_1_Error_E LTC6802_1_SetCellBalancing(uint8_t cell_id, bool enable);
-
-/**
- * @brief Disable all cell balancing
- * @return Error code
- */
-LTC6802_1_Error_E LTC6802_1_ClearAllCellBalancing(void);
 
 /******************************************************************************
  * Diagnostic Functions
