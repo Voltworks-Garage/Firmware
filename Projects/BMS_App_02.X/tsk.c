@@ -91,7 +91,7 @@ void Tsk_init(void) {
     DCDC_init();
     CommandService_Init();
     WATCHDOG_TimerClear();
-    //WATCHDOG_TimerSoftwareEnable();
+    WATCHDOG_TimerSoftwareEnable();
 
 #if TSK_DEBUG_ENABLE
     Uart1Write("Hello World, Task Init Done.\n"); //hi

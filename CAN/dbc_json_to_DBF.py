@@ -28,6 +28,7 @@ for node in dbc_dict["NODE"]:
             base_address +=1
         f_DBF.write("[START_MSG] {}_{},{},{},{},{},{}\n".format(node['name'], message['name'], id, "8", len(message['signals']), 1, "X" if message.get("x_id") else "S"))
         offset = 0
+        multiplex_offset = 0  # Separate offset for multiplex signals
         for signal in message['signals']:
             if signal["length"] == 1:
                 data_type = "B"
@@ -36,17 +37,26 @@ for node in dbc_dict["NODE"]:
             
             # Handle multiplex signals
             multiplex_info = ""
-            if signal.get("multiplex") is not None:
+            is_multiplexor = signal.get("name") and signal["name"].lower() in ["multiplex", "mux"]
+            is_multiplexed = signal.get("multiplex") is not None
+            
+            if is_multiplexed:
                 multiplex_info = f",M{signal['multiplex']}"
-            elif signal.get("name") and signal["name"].lower() in ["multiplex", "mux"]:
-                # This is the multiplexor signal itself
+                # For multiplexed signals, use multiplex_offset and reset for each new multiplex group
+                if signal['multiplex'] == 0:
+                    multiplex_offset = 4  # Start after the 4-bit multiplexor signal
+                current_offset = multiplex_offset
+            elif is_multiplexor:
                 multiplex_info = ",m"
+                current_offset = offset
+            else:
+                current_offset = offset
             
             f_DBF.write("[START_SIGNALS] {},{},{},{},{},{},{},{},{},{},{}{}\n".format(
                 signal['name'], 
                 signal['length'], 
-                int(offset/8) + 1, 
-                float(offset%8), 
+                int(current_offset/8) + 1, 
+                float(current_offset%8), 
                 data_type, 
                 2**signal['length']-1, 
                 0, 
@@ -56,5 +66,11 @@ for node in dbc_dict["NODE"]:
                 signal["units"],
                 multiplex_info
             ))
-            offset += int(signal['length'])
+            
+            # Only advance offset for non-multiplexed signals or multiplexor
+            if not is_multiplexed:
+                offset += int(signal['length'])
+            elif is_multiplexed and signal['multiplex'] == 0:
+                # Advance multiplex_offset only for M0 signals to establish the pattern
+                multiplex_offset += int(signal['length'])
         f_DBF.write("[END_MSG]\n\n")

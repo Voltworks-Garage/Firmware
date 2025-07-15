@@ -57,15 +57,44 @@ typedef enum {
 } LTC6802_1_Error_E;
 
 /**
- * @brief Configuration structure for LTC6802-1
+ * @brief ADC conversion modes
+ */
+typedef enum {
+    LTC6802_1_ADC_MODE_FAST = 0,    // Fast conversion (27kHz)
+    LTC6802_1_ADC_MODE_NORMAL = 1,  // Normal conversion (7kHz)
+    LTC6802_1_ADC_MODE_SLOW = 2     // Slow conversion (422Hz)
+} LTC6802_1_ADC_Mode_E;
+
+/**
+ * @brief Comprehensive configuration structure for LTC6802-1
+ * Covers all configuration register bitfields
  */
 typedef struct {
-    uint8_t discharge_cells;        // Cell discharge enable bits (bits 0-11)
-    uint8_t forced_cells;          // Forced discharge cells (bits 0-11) 
-    uint8_t adc_mode;              // ADC mode (00=fast, 01=normal, 10=slow)
-    uint8_t temp_enable;           // Temperature measurement enable
-    uint16_t overvoltage_threshold; // Overvoltage threshold (12-bit)
-    uint16_t undervoltage_threshold; // Undervoltage threshold (12-bit)
+    // Cell discharge control (12 bits per stack)
+    uint16_t discharge_cells;           // Cells to discharge (bit 0 = cell 1, etc.)
+    uint16_t forced_discharge_cells;    // Forced discharge override
+    
+    // ADC configuration
+    LTC6802_1_ADC_Mode_E adc_mode;     // ADC conversion speed
+    bool temp_enable;                   // Enable temperature measurement
+    bool compare_enable;                // Enable voltage comparison
+    
+    // Voltage thresholds (12-bit values, 1.5mV per LSB)
+    uint16_t overvoltage_threshold;     // OV threshold (0-4095 = 0-6.14V)
+    uint16_t undervoltage_threshold;    // UV threshold (0-4095 = 0-6.14V)
+    
+    // Timeout configuration  
+    uint8_t wdt_timeout;                // Watchdog timeout setting (0-15)
+    
+    // GPIO configuration (2 pins per LTC6802-1, per stack)
+    uint8_t gpio_pulldown[LTC6802_1_NUM_STACKS];  // GPIO pulldown enables (bits 0-1)
+    uint8_t gpio_direction[LTC6802_1_NUM_STACKS]; // GPIO direction control (bits 0-1)
+    
+    // Advanced settings
+    bool snap_st;                       // Snapshot mode
+    bool refon;                         // Reference always on
+    bool swtrd;                         // Switch redundant measurement
+    bool adcopt;                        // ADC mode option
 } LTC6802_1_Config_S;
 
 /******************************************************************************
@@ -112,6 +141,87 @@ LTC6802_1_Error_E LTC6802_1_StartTemperatureADC(void);
  * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
  */
 LTC6802_1_Error_E LTC6802_1_WriteConfig(const LTC6802_1_Config_S* config);
+
+/******************************************************************************
+ * Configuration Helper Functions
+ *******************************************************************************/
+
+/**
+ * @brief Get current configuration (copy of internal state)
+ * @param config Pointer to structure to fill with current configuration
+ */
+void LTC6802_1_GetConfig(LTC6802_1_Config_S* config);
+
+/**
+ * @brief Set ADC conversion mode
+ * @param mode ADC conversion mode
+ * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
+ */
+LTC6802_1_Error_E LTC6802_1_SetADCMode(LTC6802_1_ADC_Mode_E mode);
+
+/**
+ * @brief Set voltage thresholds
+ * @param overvoltage_mv Overvoltage threshold in millivolts (0-6142mV)
+ * @param undervoltage_mv Undervoltage threshold in millivolts (0-6142mV)
+ * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
+ */
+LTC6802_1_Error_E LTC6802_1_SetVoltageThresholds(uint16_t overvoltage_mv, uint16_t undervoltage_mv);
+
+/**
+ * @brief Enable/disable temperature measurement
+ * @param enable True to enable, false to disable
+ * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
+ */
+LTC6802_1_Error_E LTC6802_1_EnableTemperature(bool enable);
+
+/**
+ * @brief Enable/disable voltage comparison
+ * @param enable True to enable, false to disable  
+ * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
+ */
+LTC6802_1_Error_E LTC6802_1_EnableVoltageComparison(bool enable);
+
+/**
+ * @brief Set individual cell balancing (discharge) state
+ * @param cell_id Cell ID (0-11 for first stack, 12-23 for second stack, etc.)
+ * @param enable True to enable balancing, false to disable
+ * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
+ */
+LTC6802_1_Error_E LTC6802_1_SetCellBalancingState(uint8_t cell_id, bool enable);
+
+/**
+ * @brief Reset configuration to safe defaults
+ * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
+ */
+LTC6802_1_Error_E LTC6802_1_ResetConfigToDefaults(void);
+
+/**
+ * @brief Set GPIO pin direction (input/output) for stack
+ * @param stack_id Stack ID (0 to LTC6802_1_NUM_STACKS-1)
+ * @param gpio_mask Bitmask for GPIO pins (bit 0 = GPIO1, bit 1 = GPIO2)
+ * @param output_mask Bitmask where 1 = output, 0 = input
+ * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
+ */
+LTC6802_1_Error_E LTC6802_1_SetGPIODirection(uint8_t stack_id, uint8_t gpio_mask, uint8_t output_mask);
+
+/**
+ * @brief Set GPIO pulldown enable/disable for stack
+ * @param stack_id Stack ID (0 to LTC6802_1_NUM_STACKS-1)
+ * @param gpio_mask Bitmask for GPIO pins to configure (bit 0 = GPIO1, bit 1 = GPIO2)
+ * @param pulldown_mask Bitmask where 1 = enable pulldown, 0 = disable
+ * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully  
+ */
+LTC6802_1_Error_E LTC6802_1_SetGPIOPulldown(uint8_t stack_id, uint8_t gpio_mask, uint8_t pulldown_mask);
+
+/**
+ * @brief Configure a single GPIO pin on a specific stack
+ * @param stack_id Stack ID (0 to LTC6802_1_NUM_STACKS-1)
+ * @param gpio_pin GPIO pin number (0 = GPIO1, 1 = GPIO2)
+ * @param output True for output, false for input
+ * @param pulldown_enable True to enable pulldown (input mode only)
+ * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
+ */
+LTC6802_1_Error_E LTC6802_1_ConfigureGPIO(uint8_t stack_id, uint8_t gpio_pin, bool output, bool pulldown_enable);
 
 /**
  * @brief Set cell balancing configuration and write to hardware

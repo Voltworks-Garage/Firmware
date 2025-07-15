@@ -876,7 +876,7 @@
                             "name": "cell_1_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 0
                         },
@@ -884,7 +884,7 @@
                             "name": "cell_2_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 0
                         },
@@ -892,7 +892,7 @@
                             "name": "cell_3_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 0
                         },
@@ -900,7 +900,7 @@
                             "name": "cell_4_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 0
                         },
@@ -908,7 +908,7 @@
                             "name": "cell_5_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 1
                         },
@@ -916,7 +916,7 @@
                             "name": "cell_6_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 1
                         },
@@ -924,7 +924,7 @@
                             "name": "cell_7_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 1
                         },
@@ -932,7 +932,7 @@
                             "name": "cell_8_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 1
                         },
@@ -940,7 +940,7 @@
                             "name": "cell_9_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 2
                         },
@@ -948,7 +948,7 @@
                             "name": "cell_10_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 2
                         },
@@ -956,7 +956,7 @@
                             "name": "cell_11_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 2
                         },
@@ -964,7 +964,7 @@
                             "name": "cell_12_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 2
                         },
@@ -972,7 +972,7 @@
                             "name": "cell_13_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 3
                         },
@@ -980,7 +980,7 @@
                             "name": "cell_14_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 3
                         },
@@ -988,7 +988,7 @@
                             "name": "cell_15_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 3
                         },
@@ -996,7 +996,7 @@
                             "name": "cell_16_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 3
                         },
@@ -1004,7 +1004,7 @@
                             "name": "cell_17_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 4
                         },
@@ -1012,7 +1012,7 @@
                             "name": "cell_18_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 4
                         },
@@ -1020,7 +1020,7 @@
                             "name": "cell_19_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 4
                         },
@@ -1028,7 +1028,7 @@
                             "name": "cell_20_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 4
                         },
@@ -1036,7 +1036,7 @@
                             "name": "cell_21_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 5
                         },
@@ -1044,7 +1044,7 @@
                             "name": "cell_22_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 5
                         },
@@ -1052,7 +1052,7 @@
                             "name": "cell_23_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 5
                         },
@@ -1060,7 +1060,7 @@
                             "name": "cell_24_voltage",
                             "length": 15,
                             "scale": 0.001,
-                            "offset": 0,
+                            "offset": -1,
                             "units": "V",
                             "multiplex": 5
                         }

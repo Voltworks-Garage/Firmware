@@ -9,7 +9,7 @@
 #include "can_populate.h"
 #include "bms_dbc.h"
 #include "IO.h"
-#include "ltc_6802.h"
+#include "bms.h"
 #include "ev_charger.h"
 
 
@@ -37,10 +37,10 @@ void CAN_populate_10ms(void){
 void CAN_populate_1000ms(void){
     static uint8_t cellVoltageMultiPlex = 0;
     CAN_bms_cellVoltages_MultiPlex_set(cellVoltageMultiPlex++);
-    CAN_bms_cellVoltages_cell_1_voltage_set(LTC6802_get_cell_voltage(4*cellVoltageMultiPlex - 3));
-    CAN_bms_cellVoltages_cell_2_voltage_set(LTC6802_get_cell_voltage(4*cellVoltageMultiPlex - 2));
-    CAN_bms_cellVoltages_cell_3_voltage_set(LTC6802_get_cell_voltage(4*cellVoltageMultiPlex - 1));
-    CAN_bms_cellVoltages_cell_4_voltage_set(LTC6802_get_cell_voltage(4*cellVoltageMultiPlex));
+    CAN_bms_cellVoltages_cell_1_voltage_set(BMS_GetCellVoltage(4*cellVoltageMultiPlex - 3));
+    CAN_bms_cellVoltages_cell_2_voltage_set(BMS_GetCellVoltage(4*cellVoltageMultiPlex - 2));
+    CAN_bms_cellVoltages_cell_3_voltage_set(BMS_GetCellVoltage(4*cellVoltageMultiPlex - 1));
+    CAN_bms_cellVoltages_cell_4_voltage_set(BMS_GetCellVoltage(4*cellVoltageMultiPlex));
     if (cellVoltageMultiPlex >= 6){
         cellVoltageMultiPlex = 0;
     }

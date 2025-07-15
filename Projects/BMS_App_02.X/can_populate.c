@@ -40,11 +40,59 @@ void CAN_populate_100ms(void){
 
 void CAN_populate_1000ms(void){
     static uint8_t cellVoltageMultiPlex = 0;
-    CAN_bms_cellVoltages_MultiPlex_set(cellVoltageMultiPlex++);
-    CAN_bms_cellVoltages_M0_cell_1_voltage_set(LTC6802_get_cell_voltage(4*cellVoltageMultiPlex - 3));
-    CAN_bms_cellVoltages_M0_cell_2_voltage_set(LTC6802_get_cell_voltage(4*cellVoltageMultiPlex - 2));
-    CAN_bms_cellVoltages_M0_cell_3_voltage_set(LTC6802_get_cell_voltage(4*cellVoltageMultiPlex - 1));
-    CAN_bms_cellVoltages_M0_cell_4_voltage_set(LTC6802_get_cell_voltage(4*cellVoltageMultiPlex));
+    
+    // Force multiplex to 1 for testing M1 cells
+    CAN_bms_cellVoltages_MultiPlex_set(cellVoltageMultiPlex);
+    
+    // Calculate base cell index (1-based indexing for LTC6802_get_cell_voltage)
+    uint8_t baseCellIndex = cellVoltageMultiPlex * 4 + 1;
+    
+    // Force case 1 for testing M1 cells
+    switch(cellVoltageMultiPlex) {
+        case 0: // M0: cells 1-4
+            CAN_bms_cellVoltages_M0_cell_1_voltage_set(LTC6802_get_cell_voltage(baseCellIndex));
+            CAN_bms_cellVoltages_M0_cell_2_voltage_set(LTC6802_get_cell_voltage(baseCellIndex + 1));
+            CAN_bms_cellVoltages_M0_cell_3_voltage_set(LTC6802_get_cell_voltage(baseCellIndex + 2));
+            CAN_bms_cellVoltages_M0_cell_4_voltage_set(LTC6802_get_cell_voltage(baseCellIndex + 3));
+            break;
+        case 1: // M1: cells 5-8
+            // Test hardcoded values for M1 cells
+            CAN_bms_cellVoltages_M1_cell_5_voltage_set(3.0);
+            CAN_bms_cellVoltages_M1_cell_6_voltage_set(3.5);
+            CAN_bms_cellVoltages_M1_cell_7_voltage_set(4.0);
+            CAN_bms_cellVoltages_M1_cell_8_voltage_set(4.2);
+            break;
+        case 2: // M2: cells 9-12
+            CAN_bms_cellVoltages_M2_cell_9_voltage_set(LTC6802_get_cell_voltage(baseCellIndex));
+            CAN_bms_cellVoltages_M2_cell_10_voltage_set(LTC6802_get_cell_voltage(baseCellIndex + 1));
+            CAN_bms_cellVoltages_M2_cell_11_voltage_set(LTC6802_get_cell_voltage(baseCellIndex + 2));
+            CAN_bms_cellVoltages_M2_cell_12_voltage_set(LTC6802_get_cell_voltage(baseCellIndex + 3));
+            break;
+        case 3: // M3: cells 13-16
+            CAN_bms_cellVoltages_M3_cell_13_voltage_set(LTC6802_get_cell_voltage(baseCellIndex));
+            CAN_bms_cellVoltages_M3_cell_14_voltage_set(LTC6802_get_cell_voltage(baseCellIndex + 1));
+            CAN_bms_cellVoltages_M3_cell_15_voltage_set(LTC6802_get_cell_voltage(baseCellIndex + 2));
+            CAN_bms_cellVoltages_M3_cell_16_voltage_set(LTC6802_get_cell_voltage(baseCellIndex + 3));
+            break;
+        case 4: // M4: cells 17-20
+            CAN_bms_cellVoltages_M4_cell_17_voltage_set(LTC6802_get_cell_voltage(baseCellIndex));
+            CAN_bms_cellVoltages_M4_cell_18_voltage_set(LTC6802_get_cell_voltage(baseCellIndex + 1));
+            CAN_bms_cellVoltages_M4_cell_19_voltage_set(LTC6802_get_cell_voltage(baseCellIndex + 2));
+            CAN_bms_cellVoltages_M4_cell_20_voltage_set(LTC6802_get_cell_voltage(baseCellIndex + 3));
+            break;
+        case 5: // M5: cells 21-24
+            CAN_bms_cellVoltages_M5_cell_21_voltage_set(LTC6802_get_cell_voltage(baseCellIndex));
+            CAN_bms_cellVoltages_M5_cell_22_voltage_set(LTC6802_get_cell_voltage(baseCellIndex + 1));
+            CAN_bms_cellVoltages_M5_cell_23_voltage_set(LTC6802_get_cell_voltage(baseCellIndex + 2));
+            CAN_bms_cellVoltages_M5_cell_24_voltage_set(LTC6802_get_cell_voltage(baseCellIndex + 3));
+            break;
+        default:
+            // Invalid multiplex value, do nothing
+            break;
+    }
+    
+    // Increment for next time
+    cellVoltageMultiPlex++;
     if (cellVoltageMultiPlex >= 6){
         cellVoltageMultiPlex = 0;
     }

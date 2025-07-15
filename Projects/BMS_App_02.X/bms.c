@@ -38,12 +38,20 @@ void BMS_Init(void) {
     
     // Configure for BMS operation with safe defaults
     LTC6802_1_Config_S config = {
-        .adc_mode = 1,  // Normal ADC mode for accuracy
-        .temp_enable = 1,  // Enable temperature measurement
+        .adc_mode = LTC6802_1_ADC_MODE_NORMAL,
+        .temp_enable = true,
+        .compare_enable = true,
         .discharge_cells = 0,  // Cell balancing controlled separately
-        .forced_cells = 0,
-        .overvoltage_threshold = (uint16_t)(4.2f / LTC6802_1_VOLTAGE_SCALE_FACTOR),
-        .undervoltage_threshold = (uint16_t)(2.5f / LTC6802_1_VOLTAGE_SCALE_FACTOR)
+        .forced_discharge_cells = 0,
+        .overvoltage_threshold = (uint16_t)(4200 / 1.5f),  // 4.2V in LSBs
+        .undervoltage_threshold = (uint16_t)(2500 / 1.5f), // 2.5V in LSBs
+        .wdt_timeout = 0,
+        .gpio_pulldown = {0, 0},  // No pulldowns by default
+        .gpio_direction = {0, 0}, // All GPIOs as inputs by default
+        .snap_st = false,
+        .refon = false,
+        .swtrd = false,
+        .adcopt = false
     };
     
     // Apply configuration (non-blocking)
