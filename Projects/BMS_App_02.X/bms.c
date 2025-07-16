@@ -83,8 +83,8 @@ void BMS_Run_10ms(void) {
             // }
                 // Configure GPIO pins as inputs initially
                 led_state = !led_state; // Toggle LED state for debug
-            LTC6802_1_SetGPIO1(LTC6802_1_ALL_STACKS, led_state, true);
-            // LTC6802_1_SetGPIO2(LTC6802_1_ALL_STACKS, led_state, true);
+            LTC6802_1_SetGPIO1(0, !led_state, false);
+            LTC6802_1_SetGPIO1(1, led_state, true);
             // If busy, just wait for next 10ms cycle
             break;
             
