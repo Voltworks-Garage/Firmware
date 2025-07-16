@@ -30,6 +30,9 @@
 #define LTC6802_1_TEMPS_PER_STACK   2      // Temperature sensors per stack
 #define LTC6802_1_TOTAL_TEMPS       (LTC6802_1_NUM_STACKS * LTC6802_1_TEMPS_PER_STACK)
 
+// Special stack ID values
+#define LTC6802_1_ALL_STACKS        0xFF   // Apply operation to all stacks
+
 // Timing Constants
 #define LTC6802_1_ADC_CONVERSION_TIME_MS    3   // Max ADC conversion time
 #define LTC6802_1_MAX_RETRIES              3   // Max retry attempts
@@ -42,6 +45,63 @@
 /******************************************************************************
  * Type Definitions
  *******************************************************************************/
+
+// Helper macros for auto-generating stack enum entries
+// We use a simpler approach that's more compatible with different compilers
+
+/**
+ * @brief Auto-generated stack IDs based on LTC6802_1_NUM_STACKS
+ * This enum provides type safety and readability for stack operations
+ * 
+ * @note Stack enum values are auto-generated using macros based on LTC6802_1_NUM_STACKS.
+ *       Currently configured for 2 stacks, so LTC6802_1_STACK_0 and LTC6802_1_STACK_1 are available.
+ *       To add support for more stacks, just increase LTC6802_1_NUM_STACKS and add corresponding
+ *       enum entries below.
+ * 
+ * Usage examples:
+ * @code
+ *   // Set GPIO1 high on stack 0 only
+ *   LTC6802_1_SetGPIO1(LTC6802_1_STACK_0, true, true);
+ * 
+ *   // Set GPIO2 low on all stacks
+ *   LTC6802_1_SetGPIO2(LTC6802_1_ALL_STACKS, false, true);
+ * 
+ *   // Enable monitoring on specific cells for stack 1
+ *   LTC6802_1_SetCellMonitoring(LTC6802_1_STACK_1, 0x0FFF, false);
+ * 
+ *   // Check if stack count is valid at compile time
+ *   if (my_stack_id < LTC6802_1_STACK_COUNT) { ... }
+ * @endcode
+ */
+typedef enum {
+    // Auto-generated stack entries based on LTC6802_1_NUM_STACKS
+#if LTC6802_1_NUM_STACKS > 0
+    LTC6802_1_STACK_0 = 0,
+#endif
+#if LTC6802_1_NUM_STACKS > 1
+    LTC6802_1_STACK_1 = 1,
+#endif
+#if LTC6802_1_NUM_STACKS > 2
+    LTC6802_1_STACK_2 = 2,
+#endif
+#if LTC6802_1_NUM_STACKS > 3
+    LTC6802_1_STACK_3 = 3,
+#endif
+#if LTC6802_1_NUM_STACKS > 4
+    LTC6802_1_STACK_4 = 4,
+#endif
+#if LTC6802_1_NUM_STACKS > 5
+    LTC6802_1_STACK_5 = 5,
+#endif
+#if LTC6802_1_NUM_STACKS > 6
+    LTC6802_1_STACK_6 = 6,
+#endif
+#if LTC6802_1_NUM_STACKS > 7
+    LTC6802_1_STACK_7 = 7,
+#endif
+    // Add more stacks as needed - automatically scales with LTC6802_1_NUM_STACKS
+    LTC6802_1_STACK_COUNT = LTC6802_1_NUM_STACKS
+} LTC6802_1_Stack_E;
 
 /**
  * @brief Error codes
@@ -66,35 +126,36 @@ typedef enum {
 } LTC6802_1_ADC_Mode_E;
 
 /**
- * @brief Comprehensive configuration structure for LTC6802-1
- * Covers all configuration register bitfields
+ * @brief LTC6802-1 configuration structure matching actual hardware registers
+ * Based on CFGR0-CFGR5 register layout from datasheet
+ * 
+ * Structure separates global settings (applied to all stacks) from 
+ * per-stack settings (unique to each LTC6802-1 device)
  */
 typedef struct {
-    // Cell discharge control (12 bits per stack)
-    uint16_t discharge_cells;           // Cells to discharge (bit 0 = cell 1, etc.)
-    uint16_t forced_discharge_cells;    // Forced discharge override
+    // === PER-STACK SETTINGS (unique to each LTC6802-1) ===
     
-    // ADC configuration
-    LTC6802_1_ADC_Mode_E adc_mode;     // ADC conversion speed
-    bool temp_enable;                   // Enable temperature measurement
-    bool compare_enable;                // Enable voltage comparison
+    // Cell discharge control (DCC bits) - 12 cells per LTC6802-1
+    uint16_t discharge_cells[LTC6802_1_NUM_STACKS];  // Cells to discharge per stack (bit 0 = cell 1, etc.)
     
-    // Voltage thresholds (12-bit values, 1.5mV per LSB)
-    uint16_t overvoltage_threshold;     // OV threshold (0-4095 = 0-6.14V)
-    uint16_t undervoltage_threshold;    // UV threshold (0-4095 = 0-6.14V)
+    // Cell monitoring enables (MC bits) - 12 cells per LTC6802-1  
+    uint16_t monitor_cells[LTC6802_1_NUM_STACKS];    // Cells to monitor per stack (bit 0 = cell 1, etc.)
     
-    // Timeout configuration  
-    uint8_t wdt_timeout;                // Watchdog timeout setting (0-15)
+    // GPIO pin states (per stack)
+    bool gpio1_state[LTC6802_1_NUM_STACKS];          // GPIO1 pin state/direction per stack
+    bool gpio2_state[LTC6802_1_NUM_STACKS];          // GPIO2 pin state/direction per stack
     
-    // GPIO configuration (2 pins per LTC6802-1, per stack)
-    uint8_t gpio_pulldown[LTC6802_1_NUM_STACKS];  // GPIO pulldown enables (bits 0-1)
-    uint8_t gpio_direction[LTC6802_1_NUM_STACKS]; // GPIO direction control (bits 0-1)
+    // === GLOBAL SETTINGS (same for all stacks) ===
     
-    // Advanced settings
-    bool snap_st;                       // Snapshot mode
-    bool refon;                         // Reference always on
-    bool swtrd;                         // Switch redundant measurement
-    bool adcopt;                        // ADC mode option
+    // Voltage thresholds (8-bit values each) - should be consistent across all cells
+    uint8_t overvoltage_threshold;      // VOV[7:0] - Over-voltage threshold (global)
+    uint8_t undervoltage_threshold;     // VUV[7:0] - Under-voltage threshold (global)
+    
+    // CFGR0 control bits (global settings)
+    bool wdt_enable;                    // WDT - Watchdog timer enable (global)
+    bool lvlpl_enable;                  // LVLPL - Level polling enable (global)
+    bool cell10_enable;                 // CELL10 - 10th cell enable vs 12-cell mode (global)
+    uint8_t cdc_mode;                   // CDC[2:0] - Cell discharge current/ADC mode (global)
 } LTC6802_1_Config_S;
 
 /******************************************************************************
@@ -136,11 +197,10 @@ LTC6802_1_Error_E LTC6802_1_StartCellVoltageADC(void);
 LTC6802_1_Error_E LTC6802_1_StartTemperatureADC(void);
 
 /**
- * @brief Set and write configuration to hardware
- * @param config Configuration structure (applied to all stacks)
+ * @brief Write configuration to hardware
  * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
  */
-LTC6802_1_Error_E LTC6802_1_WriteConfig(const LTC6802_1_Config_S* config);
+LTC6802_1_Error_E LTC6802_1_WriteConfig(void);
 
 /******************************************************************************
  * Configuration Helper Functions
@@ -155,86 +215,109 @@ void LTC6802_1_GetConfig(LTC6802_1_Config_S* config);
 /**
  * @brief Set ADC conversion mode
  * @param mode ADC conversion mode
+ * @param send_immediately True to send config immediately, false to update internal config only
  * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
  */
-LTC6802_1_Error_E LTC6802_1_SetADCMode(LTC6802_1_ADC_Mode_E mode);
+LTC6802_1_Error_E LTC6802_1_SetADCMode(LTC6802_1_ADC_Mode_E mode, bool send_immediately);
 
 /**
  * @brief Set voltage thresholds
  * @param overvoltage_mv Overvoltage threshold in millivolts (0-6142mV)
  * @param undervoltage_mv Undervoltage threshold in millivolts (0-6142mV)
+ * @param send_immediately True to send config immediately, false to update internal config only
  * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
  */
-LTC6802_1_Error_E LTC6802_1_SetVoltageThresholds(uint16_t overvoltage_mv, uint16_t undervoltage_mv);
+LTC6802_1_Error_E LTC6802_1_SetVoltageThresholds(uint16_t overvoltage_mv, uint16_t undervoltage_mv, bool send_immediately);
 
 /**
  * @brief Enable/disable temperature measurement
  * @param enable True to enable, false to disable
+ * @param send_immediately True to send config immediately, false to update internal config only
  * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
  */
-LTC6802_1_Error_E LTC6802_1_EnableTemperature(bool enable);
+LTC6802_1_Error_E LTC6802_1_EnableTemperature(bool enable, bool send_immediately);
 
 /**
- * @brief Enable/disable voltage comparison
- * @param enable True to enable, false to disable  
- * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
+ * @brief Enable/disable voltage comparison for specific stack(s)
+ * @param stack_id Stack ID (use LTC6802_1_Stack_E enum), or LTC6802_1_ALL_STACKS for all stacks
+ * @param enable True to enable, false to disable
+ * @param send_immediately True to send config immediately, false to update internal config only
+ * @return ERROR_BUSY if not idle, ERROR_INVALID_STACK if stack_id invalid, ERROR_NONE if started successfully
  */
-LTC6802_1_Error_E LTC6802_1_EnableVoltageComparison(bool enable);
+LTC6802_1_Error_E LTC6802_1_EnableVoltageComparison(uint8_t stack_id, bool enable, bool send_immediately);
 
-/**
- * @brief Set individual cell balancing (discharge) state
- * @param cell_id Cell ID (0-11 for first stack, 12-23 for second stack, etc.)
- * @param enable True to enable balancing, false to disable
- * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
- */
-LTC6802_1_Error_E LTC6802_1_SetCellBalancingState(uint8_t cell_id, bool enable);
 
 /**
  * @brief Reset configuration to safe defaults
+ * @param send_immediately True to send config immediately, false to update internal config only
  * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
  */
-LTC6802_1_Error_E LTC6802_1_ResetConfigToDefaults(void);
+LTC6802_1_Error_E LTC6802_1_ResetConfigToDefaults(bool send_immediately);
 
 /**
- * @brief Set GPIO pin direction (input/output) for stack
- * @param stack_id Stack ID (0 to LTC6802_1_NUM_STACKS-1)
- * @param gpio_mask Bitmask for GPIO pins (bit 0 = GPIO1, bit 1 = GPIO2)
- * @param output_mask Bitmask where 1 = output, 0 = input
+ * @brief Set GPIO1 pin state for a specific stack
+ * @param stack_id Stack ID (use LTC6802_1_Stack_E enum), or LTC6802_1_ALL_STACKS for all stacks
+ * @param state True for high/output, false for low/input
+ * @param send_immediately True to send config immediately, false to update internal config only
+ * @return ERROR_BUSY if not idle, ERROR_INVALID_STACK if stack_id invalid, ERROR_NONE if started successfully
+ */
+LTC6802_1_Error_E LTC6802_1_SetGPIO1(uint8_t stack_id, bool state, bool send_immediately);
+
+/**
+ * @brief Set GPIO2 pin state for a specific stack
+ * @param stack_id Stack ID (use LTC6802_1_Stack_E enum), or LTC6802_1_ALL_STACKS for all stacks
+ * @param state True for high/output, false for low/input
+ * @param send_immediately True to send config immediately, false to update internal config only
+ * @return ERROR_BUSY if not idle, ERROR_INVALID_STACK if stack_id invalid, ERROR_NONE if started successfully
+ */
+LTC6802_1_Error_E LTC6802_1_SetGPIO2(uint8_t stack_id, bool state, bool send_immediately);
+
+/**
+ * @brief Set cell monitoring enable mask for a specific stack
+ * @param stack_id Stack ID (use LTC6802_1_Stack_E enum), or LTC6802_1_ALL_STACKS for all stacks
+ * @param monitor_mask Bitmask of cells to monitor (bit 0 = cell 1, etc.)
+ * @param send_immediately True to send config immediately, false to update internal config only
+ * @return ERROR_BUSY if not idle, ERROR_INVALID_STACK if stack_id invalid, ERROR_NONE if started successfully
+ */
+LTC6802_1_Error_E LTC6802_1_SetCellMonitoring(uint8_t stack_id, uint16_t monitor_mask, bool send_immediately);
+
+/**
+ * @brief Set voltage thresholds (8-bit values)
+ * @param overvoltage_threshold 8-bit over-voltage threshold
+ * @param undervoltage_threshold 8-bit under-voltage threshold
+ * @param send_immediately True to send config immediately, false to update internal config only
  * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
  */
-LTC6802_1_Error_E LTC6802_1_SetGPIODirection(uint8_t stack_id, uint8_t gpio_mask, uint8_t output_mask);
+LTC6802_1_Error_E LTC6802_1_SetVoltageThresholds8(uint8_t overvoltage_threshold, uint8_t undervoltage_threshold, bool send_immediately);
 
 /**
- * @brief Set GPIO pulldown enable/disable for stack
- * @param stack_id Stack ID (0 to LTC6802_1_NUM_STACKS-1)
- * @param gpio_mask Bitmask for GPIO pins to configure (bit 0 = GPIO1, bit 1 = GPIO2)
- * @param pulldown_mask Bitmask where 1 = enable pulldown, 0 = disable
- * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully  
- */
-LTC6802_1_Error_E LTC6802_1_SetGPIOPulldown(uint8_t stack_id, uint8_t gpio_mask, uint8_t pulldown_mask);
-
-/**
- * @brief Configure a single GPIO pin on a specific stack
- * @param stack_id Stack ID (0 to LTC6802_1_NUM_STACKS-1)
- * @param gpio_pin GPIO pin number (0 = GPIO1, 1 = GPIO2)
- * @param output True for output, false for input
- * @param pulldown_enable True to enable pulldown (input mode only)
+ * @brief Send current configuration to hardware
+ * Use this after making multiple config changes with send_immediately=false
  * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
  */
-LTC6802_1_Error_E LTC6802_1_ConfigureGPIO(uint8_t stack_id, uint8_t gpio_pin, bool output, bool pulldown_enable);
+LTC6802_1_Error_E LTC6802_1_SendConfig(void);
 
 /**
- * @brief Set cell balancing configuration and write to hardware
- * @param cell_mask Bitmask of cells to enable balancing (bit 0 = cell 0, etc.)
+ * @brief Set cell balancing configuration and optionally write to hardware
+ * @param cell_id Cell ID (0-23 for total cells across all stacks)
+ * @param enable True to enable balancing, false to disable
+ * @param send_immediately True to send config immediately, false to update internal config only
  * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
  */
-LTC6802_1_Error_E LTC6802_1_SetCellBalancing(uint32_t cell_mask);
+LTC6802_1_Error_E LTC6802_1_SetCellBalancing(uint8_t cell_id, bool enable, bool send_immediately);
 
 /**
  * @brief Clear all cell balancing and write to hardware
  * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
  */
 LTC6802_1_Error_E LTC6802_1_ClearAllCellBalancing(void);
+
+/**
+ * @brief Example: Batch configure multiple settings efficiently
+ * Shows how to use send_immediately=false for multiple changes
+ * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
+ */
+LTC6802_1_Error_E LTC6802_1_BatchConfigExample(void);
 
 /******************************************************************************
  * Data Access Functions
@@ -256,14 +339,14 @@ float LTC6802_1_GetTemperatureVoltage(uint8_t temp_id);
 
 /**
  * @brief Get last error for a specific stack
- * @param stack_id Stack ID (0 to LTC6802_1_NUM_STACKS-1)
+ * @param stack_id Stack ID (use LTC6802_1_Stack_E enum)
  * @return Last error code
  */
 LTC6802_1_Error_E LTC6802_1_GetLastError(uint8_t stack_id);
 
 /**
  * @brief Clear error state for a specific stack
- * @param stack_id Stack ID (0 to LTC6802_1_NUM_STACKS-1)
+ * @param stack_id Stack ID (use LTC6802_1_Stack_E enum)
  */
 void LTC6802_1_ClearError(uint8_t stack_id);
 

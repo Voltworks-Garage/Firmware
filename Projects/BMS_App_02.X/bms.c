@@ -27,6 +27,7 @@ typedef enum {
 static BMS_LTC_State_E bms_ltc_state = BMS_LTC_STATE_IDLE;
 static uint32_t cycle_start_time = 0;
 static uint32_t balancing_mask = 0;
+static bool led_state = false;
 
 /******************************************************************************
  * Public Function Implementations
@@ -37,25 +38,32 @@ void BMS_Init(void) {
     LTC6802_1_Init();
     
     // Configure for BMS operation with safe defaults
-    LTC6802_1_Config_S config = {
-        .adc_mode = LTC6802_1_ADC_MODE_NORMAL,
-        .temp_enable = true,
-        .compare_enable = true,
-        .discharge_cells = 0,  // Cell balancing controlled separately
-        .forced_discharge_cells = 0,
-        .overvoltage_threshold = (uint16_t)(4200 / 1.5f),  // 4.2V in LSBs
-        .undervoltage_threshold = (uint16_t)(2500 / 1.5f), // 2.5V in LSBs
-        .wdt_timeout = 0,
-        .gpio_pulldown = {0, 0},  // No pulldowns by default
-        .gpio_direction = {0, 0}, // All GPIOs as inputs by default
-        .snap_st = false,
-        .refon = false,
-        .swtrd = false,
-        .adcopt = false
-    };
     
-    // Apply configuration (non-blocking)
-    LTC6802_1_WriteConfig(&config);
+    // Reset to safe defaults first
+    LTC6802_1_ResetConfigToDefaults(false);
+    
+    // Set voltage thresholds for safe BMS operation
+    // 4.2V overvoltage, 2.5V undervoltage (converted to millivolts)
+    LTC6802_1_SetVoltageThresholds(4200, 2500, false);
+    
+    // Enable monitoring for all 12 cells on both stacks
+    LTC6802_1_SetCellMonitoring(LTC6802_1_ALL_STACKS, 0x0FFF, false);
+    
+    // Set ADC mode to normal for balanced speed/accuracy
+    LTC6802_1_SetADCMode(LTC6802_1_ADC_MODE_NORMAL, false);
+    
+    // Configure GPIO pins as inputs initially
+    LTC6802_1_SetGPIO1(LTC6802_1_ALL_STACKS, true, false);
+    LTC6802_1_SetGPIO2(LTC6802_1_ALL_STACKS, true, false);
+    
+    // Enable temperature measurement
+    LTC6802_1_EnableTemperature(true, false);
+    
+    // Enable voltage comparison for fault detection
+    LTC6802_1_EnableVoltageComparison(LTC6802_1_ALL_STACKS, true, false);
+    
+    // Send all configuration changes to hardware
+    LTC6802_1_SendConfig();
     
     bms_ltc_state = BMS_LTC_STATE_IDLE;
 }
@@ -69,10 +77,14 @@ void BMS_Run_10ms(void) {
     switch (bms_ltc_state) {
         case BMS_LTC_STATE_IDLE:
             // Start new measurement cycle every 10ms if driver is ready
-            if (LTC6802_1_StartCellVoltageADC() == LTC6802_1_ERROR_NONE) {
-                bms_ltc_state = BMS_LTC_STATE_VOLTAGE_REQUESTED;
-                cycle_start_time = SysTick_Get();
-            }
+            // if (LTC6802_1_StartCellVoltageADC() == LTC6802_1_ERROR_NONE) {
+            //     bms_ltc_state = BMS_LTC_STATE_VOLTAGE_REQUESTED;
+            //     cycle_start_time = SysTick_Get();
+            // }
+                // Configure GPIO pins as inputs initially
+                led_state = !led_state; // Toggle LED state for debug
+            LTC6802_1_SetGPIO1(LTC6802_1_ALL_STACKS, led_state, true);
+            // LTC6802_1_SetGPIO2(LTC6802_1_ALL_STACKS, led_state, true);
             // If busy, just wait for next 10ms cycle
             break;
             
@@ -119,7 +131,7 @@ float BMS_GetTemperatureVoltage(uint8_t temp_id) {
     return LTC6802_1_GetTemperatureVoltage(temp_id);
 }
 
-void BMS_SetCellBalancing(uint8_t cell_id, bool enable) {
+void BMS_SetCellBalancing(uint8_t cell_id, bool enable, bool send_immediately) {
     if (cell_id >= LTC6802_1_TOTAL_CELLS) {
         return;
     }
@@ -131,8 +143,8 @@ void BMS_SetCellBalancing(uint8_t cell_id, bool enable) {
         balancing_mask &= ~(1UL << cell_id);
     }
     
-    // Apply to driver (non-blocking)
-    LTC6802_1_SetCellBalancing(balancing_mask);
+    // Apply to driver (non-blocking) using new API
+    LTC6802_1_SetCellBalancing(cell_id, enable, send_immediately);
 }
 
 void BMS_ClearAllCellBalancing(void) {

@@ -53,8 +53,9 @@ float BMS_GetTemperatureVoltage(uint8_t temp_id);
  * @brief Enable cell balancing (replacement for LTC6802_set_cell_discharge)
  * @param cell_id Cell ID (0-23)
  * @param enable true to enable, false to disable
+ * @param send_immediately true to send config immediately, false to update internal config only
  */
-void BMS_SetCellBalancing(uint8_t cell_id, bool enable);
+void BMS_SetCellBalancing(uint8_t cell_id, bool enable, bool send_immediately);
 
 /**
  * @brief Disable all cell balancing

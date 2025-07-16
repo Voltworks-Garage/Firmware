@@ -141,6 +141,13 @@ uint8_t spi1IsBufferedTransactionComplete(void);
  */
 uint8_t spi1GetBufferedTransactionResult(void);
 
+/**
+ * @function: spi1ResetBufferedTransaction - Reset the buffered transaction state machine
+ * @note: Use this to recover from stuck transactions or timeouts
+ *        This will abort any active transaction and reset all state variables
+ */
+void spi1ResetBufferedTransaction(void);
+
 #endif	/* SPI_H */
 
 

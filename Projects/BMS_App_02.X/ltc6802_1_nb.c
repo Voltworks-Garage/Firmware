@@ -145,28 +145,27 @@ LTC6802_1_Error_E LTC6802_1_Init(void) {
     memset(&ltc_module, 0, sizeof(ltc_module));
     
     // Initialize SPI
+    IO_SET_SPI_CS(HIGH);
     spi1Init();
     
     // Set initial state
     ltc_module.state = LTC6802_1_STATE_IDLE;
     
     // Initialize default configuration
-    ltc_module.config.adc_mode = LTC6802_1_ADC_MODE_NORMAL;
-    ltc_module.config.temp_enable = true;
-    ltc_module.config.compare_enable = true;
-    ltc_module.config.overvoltage_threshold = (uint16_t)(4200 / 1.5f);  // 4.2V in LSBs
-    ltc_module.config.undervoltage_threshold = (uint16_t)(2500 / 1.5f); // 2.5V in LSBs
-    ltc_module.config.discharge_cells = 0;
-    ltc_module.config.forced_discharge_cells = 0;
-    ltc_module.config.wdt_timeout = 0;
-    for (uint8_t stack = 0; stack < LTC6802_1_NUM_STACKS; stack++) {
-        ltc_module.config.gpio_pulldown[stack] = 0;
-        ltc_module.config.gpio_direction[stack] = 0;
+    for (uint8_t i = 0; i < LTC6802_1_NUM_STACKS; i++) {
+        ltc_module.config.discharge_cells[i] = 0;                       // No cell balancing initially
+        ltc_module.config.monitor_cells[i] = 0x0FFF;                    // Monitor all 12 cells per stack
+        ltc_module.config.gpio1_state[i] = false;                       // GPIO1 low/input per stack
+        ltc_module.config.gpio2_state[i] = false;                       // GPIO2 low/input per stack
     }
-    ltc_module.config.snap_st = false;
-    ltc_module.config.refon = false;
-    ltc_module.config.swtrd = false;
-    ltc_module.config.adcopt = false;
+    
+    // Global settings (same for all stacks)
+    ltc_module.config.overvoltage_threshold = 0xFF;                    // Max threshold initially
+    ltc_module.config.undervoltage_threshold = 0x00;                   // Min threshold initially
+    ltc_module.config.wdt_enable = false;                              // Watchdog disabled
+    ltc_module.config.lvlpl_enable = false;                            // Level polling disabled
+    ltc_module.config.cell10_enable = false;                           // 10th cell disabled
+    ltc_module.config.cdc_mode = 0;                                     // Default CDC mode
     
     // Build initial config data
     BuildConfigData();
@@ -202,6 +201,9 @@ void LTC6802_1_Run(void) {
             TransitionToFaulted(LTC6802_1_ERROR_SPI_TIMEOUT);
             ltc_module.spi_transaction_active = false;
             IO_SET_SPI_CS(HIGH);
+            
+            // Reset the SPI buffered transaction state machine to recover from stuck state
+            spi1ResetBufferedTransaction();
         }
         
         return; // Wait for SPI transaction to complete
@@ -381,6 +383,7 @@ void LTC6802_1_Run(void) {
             
         case LTC6802_1_STATE_FAULTED:
             // Stay in faulted state until explicit reset
+            TransitionToIdle();
             break;
             
         default:
@@ -423,17 +426,12 @@ LTC6802_1_Error_E LTC6802_1_StartTemperatureADC(void) {
     return LTC6802_1_ERROR_NONE;
 }
 
-LTC6802_1_Error_E LTC6802_1_WriteConfig(const LTC6802_1_Config_S* config) {
+LTC6802_1_Error_E LTC6802_1_WriteConfig(void) {
     if (LTC6802_1_IsBusy()) {
         return LTC6802_1_ERROR_BUSY;
     }
     
-    if (config == NULL) {
-        return LTC6802_1_ERROR_INVALID_STACK;
-    }
-    
-    // Update configuration and build config data
-    ltc_module.config = *config;
+    // Build config data
     BuildConfigData();
     
     // Start configuration write sequence
@@ -445,13 +443,51 @@ LTC6802_1_Error_E LTC6802_1_WriteConfig(const LTC6802_1_Config_S* config) {
     return LTC6802_1_ERROR_NONE;
 }
 
-LTC6802_1_Error_E LTC6802_1_SetCellBalancing(uint32_t cell_mask) {
+LTC6802_1_Error_E LTC6802_1_SetCellBalancing(uint8_t cell_id, bool enable, bool send_immediately) {
+    if (send_immediately && LTC6802_1_IsBusy()) {
+        return LTC6802_1_ERROR_BUSY;
+    }
+    
+    if (cell_id >= LTC6802_1_TOTAL_CELLS) {
+        return LTC6802_1_ERROR_INVALID_STACK; // Reuse for invalid parameter
+    }
+    
+    // Convert global cell ID to stack and local cell ID
+    // Each stack handles 12 cells (0-11), so we need to map:
+    // Global cells 0-11 → Stack 0, local cells 0-11
+    // Global cells 12-23 → Stack 1, local cells 0-11
+    uint8_t stack_id = cell_id / LTC6802_1_CELLS_PER_STACK;       // Which stack (0 or 1)
+    uint8_t local_cell_id = cell_id % LTC6802_1_CELLS_PER_STACK;  // Cell within stack (0-11)
+    
+    // Set or clear the bit for this cell in the appropriate stack
+    if (enable) {
+        ltc_module.config.discharge_cells[stack_id] |= (1U << local_cell_id);
+    } else {
+        ltc_module.config.discharge_cells[stack_id] &= ~(1U << local_cell_id);
+    }
+    
+    if (send_immediately) {
+        BuildConfigData();
+        
+        // Start discharge configuration write sequence
+        ltc_module.state = LTC6802_1_STATE_DISCHARGE_WRITE;
+        ltc_module.current_stack_index = 0;
+        ltc_module.retry_count = 0;
+        ltc_module.state_timestamp = SysTick_Get();
+    }
+    
+    return LTC6802_1_ERROR_NONE;
+}
+
+LTC6802_1_Error_E LTC6802_1_ClearAllCellBalancing(void) {
     if (LTC6802_1_IsBusy()) {
         return LTC6802_1_ERROR_BUSY;
     }
     
-    // Update discharge cells configuration (use only 16 bits for compatibility)
-    ltc_module.config.discharge_cells = (uint16_t)(cell_mask & 0xFFFF);
+    // Clear all cell balancing for all stacks
+    for (uint8_t i = 0; i < LTC6802_1_NUM_STACKS; i++) {
+        ltc_module.config.discharge_cells[i] = 0;
+    }
     BuildConfigData();
     
     // Start discharge configuration write sequence
@@ -461,10 +497,6 @@ LTC6802_1_Error_E LTC6802_1_SetCellBalancing(uint32_t cell_mask) {
     ltc_module.state_timestamp = SysTick_Get();
     
     return LTC6802_1_ERROR_NONE;
-}
-
-LTC6802_1_Error_E LTC6802_1_ClearAllCellBalancing(void) {
-    return LTC6802_1_SetCellBalancing(0);
 }
 
 float LTC6802_1_GetCellVoltage(uint8_t cell_id) {
@@ -554,10 +586,7 @@ static LTC6802_1_Error_E StartSPITransaction(uint8_t stack_id, uint8_t command,
         ltc_module.spi_tx_length += data_len;
     }
     
-    // Add CRC
-    uint8_t crc = CalculateCRC(ltc_module.spi_tx_buffer, ltc_module.spi_tx_length);
-    ltc_module.spi_tx_buffer[ltc_module.spi_tx_length] = crc;
-    ltc_module.spi_tx_length++;
+    // No CRC needed for outgoing data - LTC6802-1 only sends PEC on responses
     
     // Set up receive buffer if expecting response
     ltc_module.spi_rx_length = response_len;
@@ -641,41 +670,37 @@ static void ProcessTemperatureData(void) {
 
 static void BuildConfigData(void) {
     // Build configuration data for all stacks based on current config
-    // LTC6802-1 config register layout: 6 bytes per stack
+    // LTC6802-1 config register layout: CFGR0-CFGR5 (6 bytes per stack)
     
     for (uint8_t stack = 0; stack < LTC6802_1_NUM_STACKS; stack++) {
         uint8_t* cfg = &ltc_module.config_data[stack * LTC6802_1_CONFIG_REG_SIZE];
         
-        // Byte 0: Control register 
+        // CFGR0: WDT | GPIO2 | GPIO1 | LVLPL | CELL10 | CDC[2] | CDC[1] | CDC[0]
         cfg[0] = 0;
-        cfg[0] |= (ltc_module.config.adc_mode & 0x03);                  // Bits 0-1: ADC mode
-        cfg[0] |= (ltc_module.config.temp_enable ? 1 : 0) << 2;         // Bit 2: TEMP enable  
-        cfg[0] |= (ltc_module.config.compare_enable ? 1 : 0) << 3;      // Bit 3: Compare enable
-        cfg[0] |= (ltc_module.config.refon ? 1 : 0) << 4;               // Bit 4: Reference on
-        cfg[0] |= (ltc_module.config.swtrd ? 1 : 0) << 5;               // Bit 5: SW redundant
-        cfg[0] |= (ltc_module.config.snap_st ? 1 : 0) << 6;             // Bit 6: Snapshot
-        cfg[0] |= (ltc_module.config.adcopt ? 1 : 0) << 7;              // Bit 7: ADC option
+        cfg[0] |= (ltc_module.config.cdc_mode & 0x07);                  // Bits 0-2: CDC[2:0] (global)
+        cfg[0] |= (ltc_module.config.cell10_enable ? 1 : 0) << 3;       // Bit 3: CELL10 (global)
+        cfg[0] |= (ltc_module.config.lvlpl_enable ? 1 : 0) << 4;        // Bit 4: LVLPL (global)
+        cfg[0] |= (ltc_module.config.gpio1_state[stack] ? 1 : 0) << 5;  // Bit 5: GPIO1 (per-stack)
+        cfg[0] |= (ltc_module.config.gpio2_state[stack] ? 1 : 0) << 6;  // Bit 6: GPIO2 (per-stack)
+        cfg[0] |= (ltc_module.config.wdt_enable ? 1 : 0) << 7;          // Bit 7: WDT (global)
         
-        // Bytes 1-2: Cell discharge control (12 bits)
-        // Extract 12 bits for this specific stack
-        uint16_t stack_discharge_mask = ltc_module.config.discharge_cells;
-        cfg[1] = stack_discharge_mask & 0xFF;                           // Bits 0-7: Cells 1-8
-        cfg[2] = (stack_discharge_mask >> 8) & 0x0F;                    // Bits 0-3: Cells 9-12
-        cfg[2] |= (ltc_module.config.wdt_timeout & 0x0F) << 4;          // Bits 4-7: WDT timeout
+        // CFGR1: DCC8 | DCC7 | DCC6 | DCC5 | DCC4 | DCC3 | DCC2 | DCC1
+        uint16_t discharge_mask = ltc_module.config.discharge_cells[stack];
+        cfg[1] = discharge_mask & 0xFF;                                 // DCC1-DCC8 (cells 1-8)
         
-        // Bytes 3-4: Undervoltage threshold (12 bits)
-        uint16_t uv_thresh = ltc_module.config.undervoltage_threshold & 0x0FFF;
-        cfg[3] = uv_thresh & 0xFF;                                      // UV threshold low byte
-        cfg[4] = (uv_thresh >> 8) & 0x0F;                               // UV threshold high nibble
+        // CFGR2: MC4I | MC3I | MC2I | MC1I | DCC12 | DCC11 | DCC10 | DCC9
+        cfg[2] = (discharge_mask >> 8) & 0x0F;                          // DCC9-DCC12 (cells 9-12)
+        uint16_t monitor_mask = ltc_module.config.monitor_cells[stack];  // Per-stack monitoring
+        cfg[2] |= (monitor_mask & 0x0F) << 4;                           // MC1I-MC4I (cells 1-4)
         
-        // Bytes 4-5: Overvoltage threshold (12 bits) 
-        uint16_t ov_thresh = ltc_module.config.overvoltage_threshold & 0x0FFF;
-        cfg[4] |= (ov_thresh & 0x0F) << 4;                              // OV threshold low nibble
-        cfg[5] = (ov_thresh >> 4) & 0xFF;                               // OV threshold high byte
+        // CFGR3: MC12I | MC11I | MC10I | MC9I | MC8I | MC7I | MC6I | MC5I
+        cfg[3] = (monitor_mask >> 4) & 0xFF;                            // MC5I-MC12I (cells 5-12)
         
-        // Note: GPIO configuration may be in separate registers that need
-        // to be written using different commands (e.g., COMM register)
-        // For now, GPIO settings are stored in config but may need special handling
+        // CFGR4: VUV[7:0] - Under-voltage threshold (8-bit)
+        cfg[4] = ltc_module.config.undervoltage_threshold;
+        
+        // CFGR5: VOV[7:0] - Over-voltage threshold (8-bit)
+        cfg[5] = ltc_module.config.overvoltage_threshold;
     }
 }
 
@@ -700,16 +725,13 @@ void LTC6802_1_GetConfig(LTC6802_1_Config_S* config) {
     }
 }
 
-LTC6802_1_Error_E LTC6802_1_SetADCMode(LTC6802_1_ADC_Mode_E mode) {
+LTC6802_1_Error_E LTC6802_1_SetCDCMode(uint8_t cdc_mode) {
     if (LTC6802_1_IsBusy()) {
         return LTC6802_1_ERROR_BUSY;
     }
     
-    if (mode > LTC6802_1_ADC_MODE_SLOW) {
-        return LTC6802_1_ERROR_INVALID_STACK; // Reuse for invalid parameter
-    }
-    
-    ltc_module.config.adc_mode = mode;
+    // CDC mode is 3 bits (0-7)
+    ltc_module.config.cdc_mode = cdc_mode & 0x07;
     BuildConfigData();
     
     // Start config write sequence
@@ -721,142 +743,173 @@ LTC6802_1_Error_E LTC6802_1_SetADCMode(LTC6802_1_ADC_Mode_E mode) {
     return LTC6802_1_ERROR_NONE;
 }
 
-LTC6802_1_Error_E LTC6802_1_SetVoltageThresholds(uint16_t overvoltage_mv, uint16_t undervoltage_mv) {
-    if (LTC6802_1_IsBusy()) {
+LTC6802_1_Error_E LTC6802_1_SetVoltageThresholds8(uint8_t overvoltage_threshold, uint8_t undervoltage_threshold, bool send_immediately) {
+    if (send_immediately && LTC6802_1_IsBusy()) {
         return LTC6802_1_ERROR_BUSY;
     }
     
-    // Validate voltage ranges (0-6142mV for 12-bit with 1.5mV/LSB)
-    if (overvoltage_mv > 6142 || undervoltage_mv > 6142) {
-        return LTC6802_1_ERROR_INVALID_STACK; // Reuse for invalid parameter
+    // Set 8-bit thresholds directly (no conversion needed)
+    ltc_module.config.overvoltage_threshold = overvoltage_threshold;
+    ltc_module.config.undervoltage_threshold = undervoltage_threshold;
+    
+    if (send_immediately) {
+        BuildConfigData();
+        
+        // Start config write sequence
+        ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
+        ltc_module.current_stack_index = 0;
+        ltc_module.retry_count = 0;
+        ltc_module.state_timestamp = SysTick_Get();
     }
-    
-    // Convert millivolts to LSBs (1.5mV per LSB)
-    ltc_module.config.overvoltage_threshold = (uint16_t)(overvoltage_mv / 1.5f);
-    ltc_module.config.undervoltage_threshold = (uint16_t)(undervoltage_mv / 1.5f);
-    
-    BuildConfigData();
-    
-    // Start config write sequence
-    ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
-    ltc_module.current_stack_index = 0;
-    ltc_module.retry_count = 0;
-    ltc_module.state_timestamp = SysTick_Get();
     
     return LTC6802_1_ERROR_NONE;
 }
 
-LTC6802_1_Error_E LTC6802_1_EnableTemperature(bool enable) {
-    if (LTC6802_1_IsBusy()) {
+
+
+LTC6802_1_Error_E LTC6802_1_ResetConfigToDefaults(bool send_immediately) {
+    if (send_immediately && LTC6802_1_IsBusy()) {
         return LTC6802_1_ERROR_BUSY;
     }
     
-    ltc_module.config.temp_enable = enable;
-    BuildConfigData();
+    // Reset to safe defaults using hardware-accurate structure
+    for (uint8_t i = 0; i < LTC6802_1_NUM_STACKS; i++) {
+        ltc_module.config.discharge_cells[i] = 0;              // No cell balancing initially
+        ltc_module.config.monitor_cells[i] = 0x0FFF;           // Monitor all 12 cells per stack (bits 0-11)
+        ltc_module.config.gpio1_state[i] = false;              // GPIO1 as input/low per stack
+        ltc_module.config.gpio2_state[i] = false;              // GPIO2 as input/low per stack
+    }
     
-    // Start config write sequence
-    ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
-    ltc_module.current_stack_index = 0;
-    ltc_module.retry_count = 0;
-    ltc_module.state_timestamp = SysTick_Get();
+    // Global settings (same for all stacks)
+    ltc_module.config.overvoltage_threshold = 200;            // Example: 8-bit threshold value
+    ltc_module.config.undervoltage_threshold = 150;           // Example: 8-bit threshold value
+    ltc_module.config.wdt_enable = false;                     // Watchdog disabled for safety
+    ltc_module.config.lvlpl_enable = true;                    // Enable level polling for normal operation
+    ltc_module.config.cell10_enable = false;                  // Disable 10th cell (using 12-cell config)
+    ltc_module.config.cdc_mode = 1;                          // Normal CDC mode (typically 1 for normal discharge)
+    
+    if (send_immediately) {
+        BuildConfigData();
+        
+        // Start config write sequence
+        ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
+        ltc_module.current_stack_index = 0;
+        ltc_module.retry_count = 0;
+        ltc_module.state_timestamp = SysTick_Get();
+    }
     
     return LTC6802_1_ERROR_NONE;
 }
 
-LTC6802_1_Error_E LTC6802_1_EnableVoltageComparison(bool enable) {
-    if (LTC6802_1_IsBusy()) {
+LTC6802_1_Error_E LTC6802_1_SetGPIO1(uint8_t stack_id, bool state, bool send_immediately) {
+    if (send_immediately && LTC6802_1_IsBusy()) {
         return LTC6802_1_ERROR_BUSY;
     }
     
-    ltc_module.config.compare_enable = enable;
-    BuildConfigData();
-    
-    // Start config write sequence
-    ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
-    ltc_module.current_stack_index = 0;
-    ltc_module.retry_count = 0;
-    ltc_module.state_timestamp = SysTick_Get();
-    
-    return LTC6802_1_ERROR_NONE;
-}
-
-LTC6802_1_Error_E LTC6802_1_SetCellBalancingState(uint8_t cell_id, bool enable) {
-    if (LTC6802_1_IsBusy()) {
-        return LTC6802_1_ERROR_BUSY;
-    }
-    
-    if (cell_id >= LTC6802_1_TOTAL_CELLS) {
-        return LTC6802_1_ERROR_INVALID_STACK; // Reuse for invalid parameter
-    }
-    
-    // Set or clear the bit for this cell
-    if (enable) {
-        ltc_module.config.discharge_cells |= (1U << cell_id);
-    } else {
-        ltc_module.config.discharge_cells &= ~(1U << cell_id);
-    }
-    
-    BuildConfigData();
-    
-    // Start discharge config write sequence
-    ltc_module.state = LTC6802_1_STATE_DISCHARGE_WRITE;
-    ltc_module.current_stack_index = 0;
-    ltc_module.retry_count = 0;
-    ltc_module.state_timestamp = SysTick_Get();
-    
-    return LTC6802_1_ERROR_NONE;
-}
-
-LTC6802_1_Error_E LTC6802_1_ResetConfigToDefaults(void) {
-    if (LTC6802_1_IsBusy()) {
-        return LTC6802_1_ERROR_BUSY;
-    }
-    
-    // Reset to safe defaults
-    ltc_module.config.adc_mode = LTC6802_1_ADC_MODE_NORMAL;
-    ltc_module.config.temp_enable = true;
-    ltc_module.config.compare_enable = true;
-    ltc_module.config.overvoltage_threshold = (uint16_t)(4200 / 1.5f);  // 4.2V
-    ltc_module.config.undervoltage_threshold = (uint16_t)(2500 / 1.5f); // 2.5V
-    ltc_module.config.discharge_cells = 0;  // Disable all balancing
-    ltc_module.config.forced_discharge_cells = 0;
-    ltc_module.config.wdt_timeout = 0;
-    for (uint8_t stack = 0; stack < LTC6802_1_NUM_STACKS; stack++) {
-        ltc_module.config.gpio_pulldown[stack] = 0;
-        ltc_module.config.gpio_direction[stack] = 0;
-    }
-    ltc_module.config.snap_st = false;
-    ltc_module.config.refon = false;
-    ltc_module.config.swtrd = false;
-    ltc_module.config.adcopt = false;
-    
-    BuildConfigData();
-    
-    // Start config write sequence
-    ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
-    ltc_module.current_stack_index = 0;
-    ltc_module.retry_count = 0;
-    ltc_module.state_timestamp = SysTick_Get();
-    
-    return LTC6802_1_ERROR_NONE;
-}
-
-LTC6802_1_Error_E LTC6802_1_SetGPIODirection(uint8_t stack_id, uint8_t gpio_mask, uint8_t output_mask) {
-    if (LTC6802_1_IsBusy()) {
-        return LTC6802_1_ERROR_BUSY;
-    }
-    
-    if (stack_id >= LTC6802_1_NUM_STACKS) {
+    // Validate stack_id (LTC6802_1_ALL_STACKS means all stacks)
+    if (stack_id != LTC6802_1_ALL_STACKS && stack_id >= LTC6802_1_NUM_STACKS) {
         return LTC6802_1_ERROR_INVALID_STACK;
     }
     
-    // Only allow GPIO pins 0-1 (2 pins per LTC6802-1)
-    gpio_mask &= 0x03;
-    output_mask &= 0x03;
+    // Set GPIO1 state for specified stack(s)
+    if (stack_id == LTC6802_1_ALL_STACKS) {
+        // Set for all stacks
+        for (uint8_t i = 0; i < LTC6802_1_NUM_STACKS; i++) {
+            ltc_module.config.gpio1_state[i] = state;
+        }
+    } else {
+        // Set for specific stack
+        ltc_module.config.gpio1_state[stack_id] = state;
+    }
     
-    // Update only the specified GPIO pins for this stack
-    ltc_module.config.gpio_direction[stack_id] = (ltc_module.config.gpio_direction[stack_id] & ~gpio_mask) | 
-                                                 (output_mask & gpio_mask);
+    if (send_immediately) {
+        BuildConfigData();
+        
+        // Start config write sequence
+        ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
+        ltc_module.current_stack_index = 0;
+        ltc_module.retry_count = 0;
+        ltc_module.state_timestamp = SysTick_Get();
+    }
+    
+    return LTC6802_1_ERROR_NONE;
+}
+
+LTC6802_1_Error_E LTC6802_1_SetGPIO2(uint8_t stack_id, bool state, bool send_immediately) {
+    if (send_immediately && LTC6802_1_IsBusy()) {
+        return LTC6802_1_ERROR_BUSY;
+    }
+    
+    // Validate stack_id (LTC6802_1_ALL_STACKS means all stacks)
+    if (stack_id != LTC6802_1_ALL_STACKS && stack_id >= LTC6802_1_NUM_STACKS) {
+        return LTC6802_1_ERROR_INVALID_STACK;
+    }
+    
+    // Set GPIO2 state for specified stack(s)
+    if (stack_id == LTC6802_1_ALL_STACKS) {
+        // Set for all stacks
+        for (uint8_t i = 0; i < LTC6802_1_NUM_STACKS; i++) {
+            ltc_module.config.gpio2_state[i] = state;
+        }
+    } else {
+        // Set for specific stack
+        ltc_module.config.gpio2_state[stack_id] = state;
+    }
+    
+    if (send_immediately) {
+        BuildConfigData();
+        
+        // Start config write sequence
+        ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
+        ltc_module.current_stack_index = 0;
+        ltc_module.retry_count = 0;
+        ltc_module.state_timestamp = SysTick_Get();
+    }
+    
+    return LTC6802_1_ERROR_NONE;
+}
+
+LTC6802_1_Error_E LTC6802_1_SetCellMonitoring(uint8_t stack_id, uint16_t monitor_mask, bool send_immediately) {
+    if (send_immediately && LTC6802_1_IsBusy()) {
+        return LTC6802_1_ERROR_BUSY;
+    }
+    
+    // Validate stack_id (LTC6802_1_ALL_STACKS means all stacks)
+    if (stack_id != LTC6802_1_ALL_STACKS && stack_id >= LTC6802_1_NUM_STACKS) {
+        return LTC6802_1_ERROR_INVALID_STACK;
+    }
+    
+    // Only allow 12 cells (bits 0-11)
+    uint16_t masked_monitor = monitor_mask & 0x0FFF;
+    
+    // Set cell monitoring for specified stack(s)
+    if (stack_id == LTC6802_1_ALL_STACKS) {
+        // Set for all stacks
+        for (uint8_t i = 0; i < LTC6802_1_NUM_STACKS; i++) {
+            ltc_module.config.monitor_cells[i] = masked_monitor;
+        }
+    } else {
+        // Set for specific stack
+        ltc_module.config.monitor_cells[stack_id] = masked_monitor;
+    }
+    
+    if (send_immediately) {
+        BuildConfigData();
+        
+        // Start config write sequence
+        ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
+        ltc_module.current_stack_index = 0;
+        ltc_module.retry_count = 0;
+        ltc_module.state_timestamp = SysTick_Get();
+    }
+    
+    return LTC6802_1_ERROR_NONE;
+}
+
+LTC6802_1_Error_E LTC6802_1_SendConfig(void) {
+    if (LTC6802_1_IsBusy()) {
+        return LTC6802_1_ERROR_BUSY;
+    }
     
     BuildConfigData();
     
@@ -869,70 +922,139 @@ LTC6802_1_Error_E LTC6802_1_SetGPIODirection(uint8_t stack_id, uint8_t gpio_mask
     return LTC6802_1_ERROR_NONE;
 }
 
-LTC6802_1_Error_E LTC6802_1_SetGPIOPulldown(uint8_t stack_id, uint8_t gpio_mask, uint8_t pulldown_mask) {
-    if (LTC6802_1_IsBusy()) {
+LTC6802_1_Error_E LTC6802_1_SetADCMode(LTC6802_1_ADC_Mode_E mode, bool send_immediately) {
+    if (send_immediately && LTC6802_1_IsBusy()) {
         return LTC6802_1_ERROR_BUSY;
     }
     
-    if (stack_id >= LTC6802_1_NUM_STACKS) {
-        return LTC6802_1_ERROR_INVALID_STACK;
+    // Set CDC mode based on ADC mode (maps to CDC[2:0] bits)
+    ltc_module.config.cdc_mode = (uint8_t)mode;
+    
+    if (send_immediately) {
+        BuildConfigData();
+        
+        // Start config write sequence
+        ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
+        ltc_module.current_stack_index = 0;
+        ltc_module.retry_count = 0;
+        ltc_module.state_timestamp = SysTick_Get();
     }
-    
-    // Only allow GPIO pins 0-1 (2 pins per LTC6802-1)
-    gpio_mask &= 0x03;
-    pulldown_mask &= 0x03;
-    
-    // Update only the specified GPIO pins for this stack
-    ltc_module.config.gpio_pulldown[stack_id] = (ltc_module.config.gpio_pulldown[stack_id] & ~gpio_mask) | 
-                                                (pulldown_mask & gpio_mask);
-    
-    BuildConfigData();
-    
-    // Start config write sequence
-    ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
-    ltc_module.current_stack_index = 0;
-    ltc_module.retry_count = 0;
-    ltc_module.state_timestamp = SysTick_Get();
     
     return LTC6802_1_ERROR_NONE;
 }
 
-LTC6802_1_Error_E LTC6802_1_ConfigureGPIO(uint8_t stack_id, uint8_t gpio_pin, bool output, bool pulldown_enable) {
+LTC6802_1_Error_E LTC6802_1_SetVoltageThresholds(uint16_t overvoltage_mv, uint16_t undervoltage_mv, bool send_immediately) {
+    if (send_immediately && LTC6802_1_IsBusy()) {
+        return LTC6802_1_ERROR_BUSY;
+    }
+    
+    // Convert millivolts to 8-bit threshold values
+    // LTC6802-1 uses different scaling than stated 1.5mV per LSB
+    // These are 8-bit values, so scale appropriately
+    ltc_module.config.overvoltage_threshold = (uint8_t)((overvoltage_mv * 255) / 6000);   // Scale to 8-bit for ~6V max
+    ltc_module.config.undervoltage_threshold = (uint8_t)((undervoltage_mv * 255) / 6000); // Scale to 8-bit for ~6V max
+    
+    if (send_immediately) {
+        BuildConfigData();
+        
+        // Start config write sequence
+        ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
+        ltc_module.current_stack_index = 0;
+        ltc_module.retry_count = 0;
+        ltc_module.state_timestamp = SysTick_Get();
+    }
+    
+    return LTC6802_1_ERROR_NONE;
+}
+
+LTC6802_1_Error_E LTC6802_1_EnableTemperature(bool enable, bool send_immediately) {
+    if (send_immediately && LTC6802_1_IsBusy()) {
+        return LTC6802_1_ERROR_BUSY;
+    }
+    
+    // Temperature measurement is controlled by LVLPL bit in CFGR0
+    // When LVLPL=1, level polling is enabled (includes temperature)
+    ltc_module.config.lvlpl_enable = enable;
+    
+    if (send_immediately) {
+        BuildConfigData();
+        
+        // Start config write sequence
+        ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
+        ltc_module.current_stack_index = 0;
+        ltc_module.retry_count = 0;
+        ltc_module.state_timestamp = SysTick_Get();
+    }
+    
+    return LTC6802_1_ERROR_NONE;
+}
+
+LTC6802_1_Error_E LTC6802_1_EnableVoltageComparison(uint8_t stack_id, bool enable, bool send_immediately) {
+    if (send_immediately && LTC6802_1_IsBusy()) {
+        return LTC6802_1_ERROR_BUSY;
+    }
+    
+    // Validate stack_id (LTC6802_1_ALL_STACKS means all stacks)
+    if (stack_id != LTC6802_1_ALL_STACKS && stack_id >= LTC6802_1_NUM_STACKS) {
+        return LTC6802_1_ERROR_INVALID_STACK;
+    }
+    
+    // Voltage comparison is controlled by monitoring configuration
+    // When enabled, monitor all cells; when disabled, monitor none
+    uint16_t monitor_value = enable ? 0x0FFF : 0x0000;
+    
+    // Set voltage comparison for specified stack(s)
+    if (stack_id == LTC6802_1_ALL_STACKS) {
+        // Set for all stacks
+        for (uint8_t i = 0; i < LTC6802_1_NUM_STACKS; i++) {
+            ltc_module.config.monitor_cells[i] = monitor_value;
+        }
+    } else {
+        // Set for specific stack
+        ltc_module.config.monitor_cells[stack_id] = monitor_value;
+    }
+    
+    if (send_immediately) {
+        BuildConfigData();
+        
+        // Start config write sequence
+        ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
+        ltc_module.current_stack_index = 0;
+        ltc_module.retry_count = 0;
+        ltc_module.state_timestamp = SysTick_Get();
+    }
+    
+    return LTC6802_1_ERROR_NONE;
+}
+
+LTC6802_1_Error_E LTC6802_1_BatchConfigExample(void) {
     if (LTC6802_1_IsBusy()) {
         return LTC6802_1_ERROR_BUSY;
     }
     
-    if (stack_id >= LTC6802_1_NUM_STACKS) {
-        return LTC6802_1_ERROR_INVALID_STACK;
-    }
+    // Example: Configure multiple settings efficiently
+    // All these calls update internal config but don't send to hardware yet
     
-    if (gpio_pin >= 2) {  // Only 2 GPIO pins per LTC6802-1
-        return LTC6802_1_ERROR_INVALID_STACK; // Reuse for invalid parameter
-    }
+    // Configure voltage thresholds
+    LTC6802_1_SetVoltageThresholds8(200, 150, false);  // send_immediately = false
     
-    uint8_t pin_mask = (1U << gpio_pin);
+    // Configure GPIO pins for all stacks
+    LTC6802_1_SetGPIO1(LTC6802_1_ALL_STACKS, true, false);   // GPIO1 high on all stacks, don't send yet
+    LTC6802_1_SetGPIO2(LTC6802_1_ALL_STACKS, false, false);  // GPIO2 low on all stacks, don't send yet
     
-    // Set direction for this stack
-    if (output) {
-        ltc_module.config.gpio_direction[stack_id] |= pin_mask;
-    } else {
-        ltc_module.config.gpio_direction[stack_id] &= ~pin_mask;
-    }
+    // Configure cell monitoring (monitor all 12 cells on all stacks)
+    LTC6802_1_SetCellMonitoring(LTC6802_1_ALL_STACKS, 0x0FFF, false);  // don't send yet
     
-    // Set pulldown (only relevant for inputs)
-    if (pulldown_enable && !output) {
-        ltc_module.config.gpio_pulldown[stack_id] |= pin_mask;
-    } else {
-        ltc_module.config.gpio_pulldown[stack_id] &= ~pin_mask;
-    }
+    // Configure ADC mode
+    LTC6802_1_SetADCMode(LTC6802_1_ADC_MODE_NORMAL, false);  // don't send yet
     
-    BuildConfigData();
+    // Enable temperature measurement
+    LTC6802_1_EnableTemperature(true, false);  // don't send yet
     
-    // Start config write sequence
-    ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
-    ltc_module.current_stack_index = 0;
-    ltc_module.retry_count = 0;
-    ltc_module.state_timestamp = SysTick_Get();
+    // Configure cell balancing for cells 0 and 1 (example)
+    LTC6802_1_SetCellBalancing(0, true, false);   // Enable cell 0 balancing, don't send yet
+    LTC6802_1_SetCellBalancing(1, true, false);   // Enable cell 1 balancing, don't send yet
     
-    return LTC6802_1_ERROR_NONE;
+    // NOW send all the configuration changes in one transaction
+    return LTC6802_1_SendConfig();
 }
