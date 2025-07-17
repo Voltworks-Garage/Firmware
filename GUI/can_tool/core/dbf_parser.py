@@ -243,10 +243,20 @@ class BusmasterDBFParser:
                 
                 # Format the value
                 formatted_value = self._format_signal_value(signal, value)
-                decoded['signals'][signal_name] = formatted_value
+                decoded['signals'][signal_name] = {
+                    'value': formatted_value,
+                    'byte_pos': signal['byte_pos'],
+                    'bit_pos': signal['bit_pos'],
+                    'multiplex_value': signal.get('multiplex_value')
+                }
                 
             except Exception:
-                decoded['signals'][signal.get('name', 'unknown')] = 'Error'
+                decoded['signals'][signal.get('name', 'unknown')] = {
+                    'value': 'Error',
+                    'byte_pos': signal.get('byte_pos', 999),
+                    'bit_pos': signal.get('bit_pos', 999),
+                    'multiplex_value': signal.get('multiplex_value')
+                }
         
         return decoded
     

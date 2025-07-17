@@ -76,16 +76,16 @@ void BMS_Run_1ms(void) {
 void BMS_Run_10ms(void) {
     switch (bms_ltc_state) {
         case BMS_LTC_STATE_IDLE:
+            LTC6802_1_SendConfig();
             // Start new measurement cycle every 10ms if driver is ready
             // if (LTC6802_1_StartCellVoltageADC() == LTC6802_1_ERROR_NONE) {
             //     bms_ltc_state = BMS_LTC_STATE_VOLTAGE_REQUESTED;
             //     cycle_start_time = SysTick_Get();
             // }
-                // Configure GPIO pins as inputs initially
-                led_state = !led_state; // Toggle LED state for debug
-            LTC6802_1_SetGPIO1(0, !led_state, false);
-            LTC6802_1_SetGPIO1(1, led_state, true);
             // If busy, just wait for next 10ms cycle
+//                        led_state = !led_state; // Toggle LED state for debug
+//            LTC6802_1_SetGPIO1(0, !led_state, false);
+//            LTC6802_1_SetGPIO1(1, led_state, true);
             break;
             
         case BMS_LTC_STATE_VOLTAGE_REQUESTED:
@@ -112,6 +112,10 @@ void BMS_Run_10ms(void) {
         case BMS_LTC_STATE_DATA_COMPLETE:
             // Data is ready for BMS processing
             // Reset for next cycle
+            // Configure GPIO pins as inputs initially
+            led_state = !led_state; // Toggle LED state for debug
+            LTC6802_1_SetGPIO1(0, !led_state, false);
+            LTC6802_1_SetGPIO1(1, led_state, true);
             bms_ltc_state = BMS_LTC_STATE_IDLE;
             break;
     }

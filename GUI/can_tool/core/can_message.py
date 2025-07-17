@@ -106,22 +106,24 @@ class CANMessageManager:
         
         return msg
     
-    def _accumulate_mux_signals(self, msg: CANMessage, decoded_signals: Dict[str, str], multiplex_value: Optional[int]):
+    def _accumulate_mux_signals(self, msg: CANMessage, decoded_signals: Dict[str, dict], multiplex_value: Optional[int]):
         """Accumulate signals from multiplexed messages for complete view"""
         if not decoded_signals:
             return
             
         # Update accumulated signals with new values
-        for signal_name, signal_value in decoded_signals.items():
+        for signal_name, signal_data in decoded_signals.items():
             # Skip the multiplex signal itself (it's just "Mode X")
             if 'MultiPlex' in signal_name:
                 continue
                 
-            # Store the signal with current timestamp for freshness tracking
+            # Store the signal with current timestamp and sorting info for freshness tracking
             msg.accumulated_mux_signals[signal_name] = {
-                'value': signal_value,
+                'value': signal_data['value'],
                 'timestamp': time.time(),
-                'mux_value': multiplex_value
+                'mux_value': signal_data['multiplex_value'],
+                'byte_pos': signal_data['byte_pos'],
+                'bit_pos': signal_data['bit_pos']
             }
     
     def get_display_signals(self, msg: CANMessage) -> Dict[str, str]:
@@ -153,23 +155,28 @@ class CANMessageManager:
             
             return display_signals
         else:
-            # Non-multiplexed message - return current signals
-            return msg.decoded_signals
+            # Non-multiplexed message - extract values from signal dict structure
+            display_signals = {}
+            for signal_name, signal_data in msg.decoded_signals.items():
+                if isinstance(signal_data, dict):
+                    display_signals[signal_name] = signal_data['value']
+                else:
+                    display_signals[signal_name] = signal_data
+            return display_signals
     
     def _sort_mux_signals(self, accumulated_signals: Dict[str, Dict]) -> Dict[str, Dict]:
-        """Sort multiplexed signals for better organization (Cell_01, Cell_02, etc.)"""
+        """Sort multiplexed signals by mux order first, then byte order"""
         def signal_sort_key(item):
             signal_name = item[0]
-            # Extract number for sorting (Cell_01_voltage -> 1, Temp_05 -> 5)
-            try:
-                if 'Cell_' in signal_name:
-                    return (0, int(signal_name.split('_')[1]))  # Cells first
-                elif 'Temp_' in signal_name:
-                    return (1, int(signal_name.split('_')[1]))  # Temps second
-                else:
-                    return (2, signal_name)  # Other signals last
-            except (ValueError, IndexError):
-                return (3, signal_name)  # Fallback for unparseable names
+            signal_info = item[1]
+            
+            # Get sorting parameters from signal definition
+            byte_pos = signal_info.get('byte_pos', 999)  # Default to high number if no byte pos
+            bit_pos = signal_info.get('bit_pos', 999)    # Default to high number if no bit pos
+            mux_value = signal_info.get('mux_value', 999)  # Default to high number if no mux value
+            
+            # Sort by: mux_value first, then byte_pos, then bit_pos, then signal name
+            return (mux_value if mux_value is not None else 999, byte_pos, bit_pos, signal_name)
         
         sorted_items = sorted(accumulated_signals.items(), key=signal_sort_key)
         return dict(sorted_items)

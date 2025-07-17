@@ -36,7 +36,7 @@
 // Timing Constants
 #define LTC6802_1_ADC_CONVERSION_TIME_MS    3   // Max ADC conversion time
 #define LTC6802_1_MAX_RETRIES              3   // Max retry attempts
-#define LTC6802_1_SPI_TIMEOUT_MS           10  // SPI operation timeout
+#define LTC6802_1_SPI_TIMEOUT_MS           150  // SPI operation timeout
 #define LTC6802_1_DATA_STALE_TIME_MS       1000 // Data considered stale after 1 second
 
 // Voltage scaling for LTC6802-1 (1.5mV per LSB)

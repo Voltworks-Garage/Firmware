@@ -45,7 +45,7 @@ static volatile uint8_t spi1Status = 1;
 static volatile uint8_t spi2Status = 0;
 
 // Buffered transaction support for SPI1
-#define SPI1_BUFFER_SIZE 32
+#define SPI1_BUFFER_SIZE 64
 static uint8_t spi1_tx_buffer[SPI1_BUFFER_SIZE];
 static uint8_t* spi1_rx_buffer_ptr = NULL;
 static volatile uint8_t spi1_tx_index = 0;
@@ -54,8 +54,6 @@ static volatile uint8_t spi1_tx_length = 0;
 static volatile uint8_t spi1_rx_length = 0;
 static volatile uint8_t spi1_transaction_active = 0;
 static volatile uint8_t spi1_transaction_complete = 1;
-static volatile uint8_t spi1_bytes_transferred = 0;
-static volatile uint8_t spi1_dummy_bytes_sent = 0;
 
 void spi1Init(void) {
 
@@ -72,7 +70,7 @@ void spi1Init(void) {
     SPI1CON1bits.CKP = 0; // Idle state for clock is a low level;
 
     SPI1CON2bits.SPIBEN = 1; /*Enable FIFO transmit buffer*/
-    SPI1STATbits.SISEL = 0b101; /*interrupt on last byte out*/
+    SPI1STATbits.SISEL = 0b001; /*interrupt on last bit out of shift register and FIFO empty*/
 
     /*11 = Primary prescale 1:1
       10 = Primary prescale 4:1
@@ -91,7 +89,7 @@ void spi1Init(void) {
     SPI1CON1bits.SPRE = 0b100;
 
 
-    IPC2bits.SPI1EIP = 3; //priority 5
+    IPC2bits.SPI1EIP = 1; //priority 5
 
     SPI1STATbits.SPIEN = 1; // Enable SPI module
     IEC0bits.SPI1IE = 1; // Enable the interrupt
@@ -206,42 +204,33 @@ void __attribute__((__interrupt__, auto_psv)) _SPI1Interrupt(void) {
     // Handle buffered transactions
     if (spi1_transaction_active) {
         // Read all available bytes from RX FIFO
-        while (SPI1STATbits.SPIRBF && spi1_rx_buffer_ptr != 0 && spi1_rx_index < spi1_rx_length) {
-            spi1_rx_buffer_ptr[spi1_rx_index] = (uint8_t)SPI1BUF;
-            spi1_rx_index++;
-            spi1_bytes_transferred++;
-        }
-        
-        // Clear any remaining RX data if buffer is full or not needed
-        while (SPI1STATbits.SPIRBF) {
-            volatile uint8_t dummy = (uint8_t)SPI1BUF;
-            (void)dummy; // Suppress warning
-            if (spi1_rx_buffer_ptr == 0) {
-                spi1_bytes_transferred++;
+        while (!SPI1STATbits.SRXMPT && spi1_rx_index < spi1_rx_length) {
+            if (spi1_rx_buffer_ptr == NULL ){
+                volatile uint8_t dummy = (uint8_t)SPI1BUF;
+                (void)dummy; // Suppress warning
+            } else {
+                spi1_rx_buffer_ptr[spi1_rx_index] = (uint8_t)SPI1BUF;
             }
+            spi1_rx_index++;
         }
         
         // Fill TX FIFO with up to 4 bytes at once
-        while (!SPI1STATbits.SPITBF && 
-               (spi1_tx_index < spi1_tx_length || 
-                (spi1_rx_index < spi1_rx_length && spi1_dummy_bytes_sent < spi1_rx_length))) {
-            
-            if (spi1_tx_index < spi1_tx_length) {
-                // Send actual data
-                SPI1BUF = spi1_tx_buffer[spi1_tx_index];
-                spi1_tx_index++;
-            } else if (spi1_rx_index < spi1_rx_length && spi1_dummy_bytes_sent < spi1_rx_length) {
-                // Send dummy byte to clock in RX data
-                SPI1BUF = 0xFF;
-                spi1_dummy_bytes_sent++;
-            } else {
-                break;
-            }
+        uint8_t max_tx_buf_index = 0;
+
+        // while (!SPI1STATbits.SPITBF && (spi1_tx_index < spi1_tx_length)) {
+        while (!SPI1STATbits.SPITBF && (max_tx_buf_index++ < 3) && (spi1_tx_index < spi1_tx_length)) {
+            // Send actual data
+            SPI1BUF = spi1_tx_buffer[spi1_tx_index];
+            spi1_tx_index++;
         }
         
         // Check if transaction is complete
-        if (spi1_tx_index >= spi1_tx_length && spi1_rx_index >= spi1_rx_length && 
-            !SPI1STATbits.SPIRBF && !SPI1STATbits.SPITBF) {
+        if (spi1_tx_index >= spi1_tx_length && spi1_rx_index >= spi1_rx_length) {
+            // Clear any remaining RX data if buffer is full or not needed
+            while (!SPI1STATbits.SRXMPT) {
+                volatile uint8_t dummy = (uint8_t)SPI1BUF;
+                (void)dummy; // Suppress warning
+            }
             spi1_transaction_active = 0;
             spi1_transaction_complete = 1;
         }
@@ -249,7 +238,7 @@ void __attribute__((__interrupt__, auto_psv)) _SPI1Interrupt(void) {
         // Legacy mode for simple transfers
         spi1Status = 1;
         // Clear RX buffer
-        while (SPI1STATbits.SPIRBF) {
+        while (!SPI1STATbits.SRXMPT) {
             volatile uint8_t dummy = (uint8_t)SPI1BUF;
             (void)dummy; // Suppress warning
         }
@@ -272,10 +261,12 @@ uint8_t spi1StartBufferedTransaction(const uint8_t* tx_buffer, uint8_t tx_length
     // Check if SPI is busy
     if (spi1_transaction_active) {
         return 0; // Busy
+    } else {
+        spi1ResetBufferedTransaction(); // Reset state before starting new transaction
     }
     
     // Validate parameters
-    if (tx_buffer == 0 && tx_length > 0) {
+    if (tx_buffer == NULL && tx_length > 0) {
         return 0; // Invalid parameters
     }
     
@@ -284,37 +275,43 @@ uint8_t spi1StartBufferedTransaction(const uint8_t* tx_buffer, uint8_t tx_length
     }
     
     // Copy transmit data to internal buffer
-    if (tx_buffer != 0 && tx_length > 0) {
+    if (tx_buffer != NULL && tx_length > 0) {
         for (uint8_t i = 0; i < tx_length; i++) {
             spi1_tx_buffer[i] = tx_buffer[i];
         }
     }
+
+    if (tx_length < rx_length){
+        for (uint8_t i = tx_length; i < rx_length; i++) {
+            spi1_tx_buffer[i] = 0xFF; // Fill remaining with dummy bytes
+        }
+        tx_length = rx_length;
+    } else {
+        rx_length = tx_length; // Ensure RX length matches TX length to avoid overflow
+    }
+    
     
     // Set up transaction parameters
+    SPI1STATbits.SPIROV = 0; // Clear overflow flag
     spi1_tx_length = tx_length;
     spi1_rx_length = rx_length;
     spi1_rx_buffer_ptr = rx_buffer;
     spi1_tx_index = 0;
     spi1_rx_index = 0;
-    spi1_bytes_transferred = 0;
-    spi1_dummy_bytes_sent = 0;
     spi1_transaction_complete = 0;
     
     // Start transaction
     spi1_transaction_active = 1;
     
     // Fill TX FIFO with up to 4 bytes to start transaction
-    while (!SPI1STATbits.SPITBF && 
-           (spi1_tx_index < spi1_tx_length || (spi1_tx_index == 0 && spi1_rx_length > 0))) {
-        
+    // While there are still bytes to send or if we need to send dummy bytes
+    uint8_t max_tx_buf_index = 0;
+    // while (!SPI1STATbits.SPITBF && (spi1_tx_index < spi1_tx_length)){
+    while (!SPI1STATbits.SPITBF && (max_tx_buf_index++ < 3) && (spi1_tx_index < spi1_tx_length)){
         if (spi1_tx_index < spi1_tx_length) {
             // Send actual data
             SPI1BUF = spi1_tx_buffer[spi1_tx_index];
             spi1_tx_index++;
-        } else if (spi1_rx_length > 0) {
-            // Send dummy byte to clock in RX data
-            SPI1BUF = 0xFF;
-            break; // Only send one dummy to start
         }
     }
     
@@ -328,7 +325,7 @@ uint8_t spi1IsBufferedTransactionComplete(void) {
 uint8_t spi1GetBufferedTransactionResult(void) {
     if (spi1_transaction_complete) {
         spi1_transaction_complete = 0; // Clear flag
-        return spi1_bytes_transferred;
+        return spi1_tx_index;
     }
     return 0;
 }
@@ -337,6 +334,8 @@ void spi1ResetBufferedTransaction(void) {
     // Disable interrupts during reset to prevent race conditions
     uint8_t old_ie = IEC0bits.SPI1IE;
     IEC0bits.SPI1IE = 0;
+
+    SPI1STATbits.SPIROV = 0; // Clear overflow flag
     
     // Reset all state variables
     spi1_transaction_active = 0;
@@ -345,12 +344,10 @@ void spi1ResetBufferedTransaction(void) {
     spi1_rx_index = 0;
     spi1_tx_length = 0;
     spi1_rx_length = 0;
-    spi1_bytes_transferred = 0;
-    spi1_dummy_bytes_sent = 0;
     spi1_rx_buffer_ptr = NULL;
     
     // Clear SPI FIFOs
-    while (SPI1STATbits.SPIRBF) {
+    while (!SPI1STATbits.SRXMPT) {
         volatile uint8_t dummy = (uint8_t)SPI1BUF;
         (void)dummy; // Suppress warning
     }
@@ -363,5 +360,12 @@ void spi1ResetBufferedTransaction(void) {
     
     // Restore interrupt enable
     IEC0bits.SPI1IE = old_ie;
+}
+
+void spi1GetDebugState(uint8_t* tx_idx, uint8_t* rx_idx, uint8_t* tx_len, uint8_t* rx_len) {
+    if (tx_idx) *tx_idx = spi1_tx_index;
+    if (rx_idx) *rx_idx = spi1_rx_index;
+    if (tx_len) *tx_len = spi1_tx_length;
+    if (rx_len) *rx_len = spi1_rx_length;
 }
 

@@ -148,6 +148,15 @@ uint8_t spi1GetBufferedTransactionResult(void);
  */
 void spi1ResetBufferedTransaction(void);
 
+/**
+ * @function: spi1GetDebugState - Get SPI debug state for troubleshooting
+ * @param tx_idx: Pointer to store TX index
+ * @param rx_idx: Pointer to store RX index  
+ * @param tx_len: Pointer to store TX length
+ * @param rx_len: Pointer to store RX length
+ */
+void spi1GetDebugState(uint8_t* tx_idx, uint8_t* rx_idx, uint8_t* tx_len, uint8_t* rx_len);
+
 #endif	/* SPI_H */
 
 

@@ -218,7 +218,15 @@ for node in range(0,numberOfNodes):
                         + "_set(" + this_signal_datatype + " " + this_signal_name + ");\n")
                     dot_c.write("void " + ID_name + "_" + signal_func_name
                         + "_set(" + this_signal_datatype + " " + this_signal_name + "){\n")
-                    dot_c.write("\tuint16_t data_scaled = ({} - {}) / {};\n".format(this_signal_name, this_signal_offset, this_signal_scale))
+                    
+                    # Add proper rounding for float types to avoid precision loss
+                    if this_signal_datatype == "float":
+                        # Use fast integer rounding instead of roundf() for better performance
+                        # Formula: (int)((value * 1000 + 500) / 1000) for 0.001 scale
+                        # Generalized: (int)((value / scale + 0.5))
+                        dot_c.write("\tuint16_t data_scaled = (uint16_t)(({} - {}) / {} + 0.5f);\n".format(this_signal_name, this_signal_offset, this_signal_scale))
+                    else:
+                        dot_c.write("\tuint16_t data_scaled = ({} - {}) / {};\n".format(this_signal_name, this_signal_offset, this_signal_scale))
                     # dot_c.write("\tset_bits((size_t*)"+ ID_name + ".payload, "
                     #             + ID_name.upper() + "_" + this_signal_name.upper() + "_OFFSET, "
                     #             + ID_name.upper() + "_" + this_signal_name.upper() + "_RANGE, "

@@ -343,19 +343,19 @@ void CAN_mcu_status_hornSwitch_set(uint16_t hornSwitch){
 	CAN_mcu_status.payload->word1 |= (data_scaled << 5) & 0x0020;
 }
 void CAN_mcu_status_batt_voltage_set(float batt_voltage){
-	uint16_t data_scaled = (batt_voltage - 0) / 0.1;
+	uint16_t data_scaled = (uint16_t)((batt_voltage - 0) / 0.1 + 0.5f);
 	CAN_mcu_status.payload->word1 &= ~0x3FC0;
 	CAN_mcu_status.payload->word1 |= (data_scaled << 6) & 0x3FC0;
 }
 void CAN_mcu_status_batt_current_set(float batt_current){
-	uint16_t data_scaled = (batt_current - -33) / 0.001;
+	uint16_t data_scaled = (uint16_t)((batt_current - -33) / 0.001 + 0.5f);
 	CAN_mcu_status.payload->word1 &= ~0xC000;
 	CAN_mcu_status.payload->word1 |= (data_scaled << 14) & 0xC000;
 	CAN_mcu_status.payload->word2 &= ~0x3FFF;
 	CAN_mcu_status.payload->word2 |= (data_scaled >> 2) & 0x3FFF;
 }
 void CAN_mcu_status_dcdc_current_set(float dcdc_current){
-	uint16_t data_scaled = (dcdc_current - -33) / 0.001;
+	uint16_t data_scaled = (uint16_t)((dcdc_current - -33) / 0.001 + 0.5f);
 	CAN_mcu_status.payload->word2 &= ~0xC000;
 	CAN_mcu_status.payload->word2 |= (data_scaled << 14) & 0xC000;
 	CAN_mcu_status.payload->word3 &= ~0x3FFF;
@@ -411,7 +411,7 @@ void CAN_mcu_command_ev_charger_enable_set(uint16_t ev_charger_enable){
 	CAN_mcu_command.payload->word0 |= (data_scaled << 1) & 0x0002;
 }
 void CAN_mcu_command_ev_charger_current_set(float ev_charger_current){
-	uint16_t data_scaled = (ev_charger_current - 0) / 0.1;
+	uint16_t data_scaled = (uint16_t)((ev_charger_current - 0) / 0.1 + 0.5f);
 	CAN_mcu_command.payload->word0 &= ~0x7FFC;
 	CAN_mcu_command.payload->word0 |= (data_scaled << 2) & 0x7FFC;
 }

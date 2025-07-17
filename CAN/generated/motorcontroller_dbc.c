@@ -170,7 +170,7 @@ void CAN_motorcontroller_motorStatus_motorSpeed_set(uint16_t motorSpeed){
 	CAN_motorcontroller_motorStatus.payload->word0 |= (data_scaled << 0) & 0x00FF;
 }
 void CAN_motorcontroller_motorStatus_motorCurrent_set(float motorCurrent){
-	uint16_t data_scaled = (motorCurrent - 0) / 0.01;
+	uint16_t data_scaled = (uint16_t)((motorCurrent - 0) / 0.01 + 0.5f);
 	CAN_motorcontroller_motorStatus.payload->word0 &= ~0xFF00;
 	CAN_motorcontroller_motorStatus.payload->word0 |= (data_scaled << 8) & 0xFF00;
 }
