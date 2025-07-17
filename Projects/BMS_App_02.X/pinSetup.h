@@ -36,7 +36,8 @@ typedef enum {
     V5_SW_nFAULT = PA8,
     V12_POWER_STATUS = PD8,
     DCDC_nFAULT = PD6,
-    EV_CHARGER_nFAULT = PD5
+    EV_CHARGER_nFAULT = PD5,
+    SPI_SDI = PA9
 } pin_assignments_t;
 
 /*ANALOG INPUT DEFINITIONS*/

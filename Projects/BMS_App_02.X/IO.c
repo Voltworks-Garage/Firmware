@@ -136,6 +136,13 @@ uint8_t IO_GET_EV_CHARGER_FAULT(void) {
     return !PINS_read(EV_CHARGER_nFAULT);
 }
 
+uint8_t IO_GET_SPI_SDI(void) {
+    return PINS_read(SPI_SDI);
+}
+
+uint8_t IO_GET_PILOT_EN(void) {
+    return PINS_read(PILOT_EN);
+}
 
 /* Analog */
 

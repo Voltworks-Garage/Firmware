@@ -264,13 +264,13 @@ LTC6802_1_Error_E LTC6802_1_ResetConfigToDefaults(bool send_immediately);
 LTC6802_1_Error_E LTC6802_1_SetGPIO1(uint8_t stack_id, bool state, bool send_immediately);
 
 /**
- * @brief Set GPIO2 pin state for a specific stack
+ * @brief Set GPIO2 pin state for a specific stack UNUSED ON THIS HARDWARE!
  * @param stack_id Stack ID (use LTC6802_1_Stack_E enum), or LTC6802_1_ALL_STACKS for all stacks
  * @param state True for high/output, false for low/input
  * @param send_immediately True to send config immediately, false to update internal config only
  * @return ERROR_BUSY if not idle, ERROR_INVALID_STACK if stack_id invalid, ERROR_NONE if started successfully
  */
-LTC6802_1_Error_E LTC6802_1_SetGPIO2(uint8_t stack_id, bool state, bool send_immediately);
+//LTC6802_1_Error_E LTC6802_1_SetGPIO2(uint8_t stack_id, bool state, bool send_immediately);
 
 /**
  * @brief Set cell monitoring enable mask for a specific stack
@@ -368,5 +368,13 @@ void LTC6802_1_GetStats(uint32_t* total_transactions,
  * @brief Reset communication statistics
  */
 void LTC6802_1_ResetStats(void);
+
+/**
+ * @brief Get debug information about voltage extraction
+ * @param raw_data Pointer to store raw SPI data (must be at least 40 bytes)
+ * @param raw_length Pointer to store length of raw data
+ * @param extracted_voltages Pointer to store extracted voltage values (must be at least 24 uint16_t)
+ */
+void LTC6802_1_GetVoltageDebugData(uint8_t* raw_data, uint8_t* raw_length, uint16_t* extracted_voltages);
 
 #endif // LTC6802_1_NB_H

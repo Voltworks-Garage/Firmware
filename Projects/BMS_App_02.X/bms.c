@@ -18,6 +18,7 @@
  *******************************************************************************/
 typedef enum {
     BMS_LTC_STATE_IDLE = 0,
+    BMS_LTC_STATE_START,
     BMS_LTC_STATE_VOLTAGE_REQUESTED,
     BMS_LTC_STATE_VOLTAGE_READY,
     BMS_LTC_STATE_TEMP_REQUESTED,
@@ -54,7 +55,6 @@ void BMS_Init(void) {
     
     // Configure GPIO pins as inputs initially
     LTC6802_1_SetGPIO1(LTC6802_1_ALL_STACKS, true, false);
-    LTC6802_1_SetGPIO2(LTC6802_1_ALL_STACKS, true, false);
     
     // Enable temperature measurement
     LTC6802_1_EnableTemperature(true, false);
@@ -76,18 +76,23 @@ void BMS_Run_1ms(void) {
 void BMS_Run_10ms(void) {
     switch (bms_ltc_state) {
         case BMS_LTC_STATE_IDLE:
-            LTC6802_1_SendConfig();
-            // Start new measurement cycle every 10ms if driver is ready
-            // if (LTC6802_1_StartCellVoltageADC() == LTC6802_1_ERROR_NONE) {
-            //     bms_ltc_state = BMS_LTC_STATE_VOLTAGE_REQUESTED;
-            //     cycle_start_time = SysTick_Get();
-            // }
-            // If busy, just wait for next 10ms cycle
-//                        led_state = !led_state; // Toggle LED state for debug
-//            LTC6802_1_SetGPIO1(0, !led_state, false);
-//            LTC6802_1_SetGPIO1(1, led_state, true);
+
+            led_state = !led_state; // Toggle LED state for debug
+            LTC6802_1_SetGPIO1(0, !led_state, false);
+            LTC6802_1_SetGPIO1(1, led_state, true);
+            bms_ltc_state = BMS_LTC_STATE_START;
             break;
-            
+
+        case BMS_LTC_STATE_START:
+            // Start new measurement cycle every 10ms if driver is ready
+            if (LTC6802_1_StartCellVoltageADC() == LTC6802_1_ERROR_NONE) {
+                bms_ltc_state = BMS_LTC_STATE_IDLE;
+                cycle_start_time = SysTick_Get();
+            }
+            // If busy, just wait for next 10ms cycle
+
+            break;
+
         case BMS_LTC_STATE_VOLTAGE_REQUESTED:
             // Check if voltage data is ready
             if (!LTC6802_1_IsBusy()) {

@@ -27,6 +27,7 @@ typedef enum {
     LTC6802_1_STATE_ADC_CELL_START_READ,
     LTC6802_1_STATE_ADC_CELL_WAITING,
     LTC6802_1_STATE_ADC_CELL_READ,
+    LTC6802_1_STATE_ADC_CELL_READ_WAITING,
     LTC6802_1_STATE_TEMP_START_READ,
     LTC6802_1_STATE_TEMP_WAITING,
     LTC6802_1_STATE_TEMP_READ,
@@ -66,6 +67,7 @@ typedef enum {
 #define LTC6802_1_VOLTAGE_REG_SIZE  18      // 18 bytes per stack (12 cells * 1.5 bytes)
 #define LTC6802_1_TEMP_REG_SIZE     4       // 4 bytes per stack (2 temps * 2 bytes)
 #define LTC6802_1_FLAG_REG_SIZE     3       // 3 bytes per stack
+#define LTC6802_1_PEC_SIZE          1       // 1 byte PEC for each register read/write
 
 // Address modifier for addressed commands
 #define LTC6802_1_ADDR_MASK         0x80
@@ -161,8 +163,8 @@ LTC6802_1_Error_E LTC6802_1_Init(void) {
     for (uint8_t i = 0; i < LTC6802_1_NUM_STACKS; i++) {
         ltc_module.config.discharge_cells[i] = 0;                       // No cell balancing initially
         ltc_module.config.monitor_cells[i] = 0x0FFF;                    // Monitor all 12 cells per stack
-        ltc_module.config.gpio1_state[i] = false;                       // GPIO1 low/input per stack
-        ltc_module.config.gpio2_state[i] = false;                       // GPIO2 low/input per stack
+        ltc_module.config.gpio1_state[i] = true;              // GPIO1 as open drain input/high per stack
+        ltc_module.config.gpio2_state[i] = false;              // GPIO2 unused and is input/low per stack
     }
     
     // Global settings (same for all stacks)
@@ -187,34 +189,12 @@ void LTC6802_1_Run(void) {
             (void)spi1GetBufferedTransactionResult();  // Consume result to clear status
             ltc_module.spi_transaction_active = false;
             
-            // Validate CRC if we received data
-//            if (ltc_module.spi_rx_length > 1) {
-//                uint8_t received_crc = ltc_module.spi_rx_buffer[ltc_module.spi_rx_length - 1];
-//                if (!ValidateCRC(ltc_module.spi_rx_buffer, ltc_module.spi_rx_length - 1, received_crc)) {
-//                    SetError(ltc_module.current_stack_index, LTC6802_1_ERROR_CRC_FAIL);
-//                    TransitionToFaulted(LTC6802_1_ERROR_CRC_FAIL);
-//                    return;
-//                }
-//            }
-            
             // Reset CS line
             IO_SET_SPI_CS(HIGH);
         }
         
         // Check for SPI timeout
         else if (IsTimeout(ltc_module.state_timestamp, LTC6802_1_SPI_TIMEOUT_MS)) {
-            // // Debug: Output SPI state when timeout occurs (3-bit encoding)
-            // uint8_t tx_idx, rx_idx, tx_len, rx_len;
-            // spi1GetDebugState(&tx_idx, &rx_idx, &tx_len, &rx_len);
-            // uint8_t debug_state = 0;
-            // if (tx_idx == 0) debug_state = 1;           // No bytes sent
-            // else if (tx_idx >= tx_len && rx_idx == (rx_len-3)) debug_state = 2; // Less than half sent
-            // else if (tx_idx >= tx_len && rx_idx == (rx_len-2)) debug_state = 3;   // Most sent, not complete
-            // else if (tx_idx >= tx_len && rx_idx == (rx_len-1)) debug_state = 4; // TX done, no RX
-            // else if (tx_idx >= tx_len && rx_idx == rx_len ) debug_state = 5; // TX done, some RX
-            // else if (tx_idx >= tx_len && rx_idx > rx_len) debug_state = 6;   // TX done, most RX
-            // else debug_state = 7; // Should be complete but stuck
-            // CAN_bms_status_state_set(debug_state);
             
             SetError(0, LTC6802_1_ERROR_SPI_TIMEOUT);  // Set error for stack 0 as representative error
             TransitionToFaulted(LTC6802_1_ERROR_SPI_TIMEOUT);
@@ -232,7 +212,6 @@ void LTC6802_1_Run(void) {
     switch (ltc_module.state) {
         case LTC6802_1_STATE_IDLE:
             // Nothing to do in idle state
-            CAN_bms_status_state_set(0);
             break;
             
         case LTC6802_1_STATE_ADC_CELL_START_READ:
@@ -248,7 +227,8 @@ void LTC6802_1_Run(void) {
             
         case LTC6802_1_STATE_ADC_CELL_WAITING:
             // Wait for ADC conversion to complete
-            if (IsTimeout(ltc_module.state_timestamp, LTC6802_1_ADC_CONVERSION_TIME_MS)) {
+            //if (IsTimeout(ltc_module.state_timestamp, LTC6802_1_ADC_CONVERSION_TIME_MS)) {
+            if (IO_GET_SPI_SDI() == HIGH) { // Check if conversion is complete
                 ltc_module.state = LTC6802_1_STATE_ADC_CELL_READ;
                 ltc_module.state_timestamp = SysTick_Get();
             }
@@ -256,20 +236,30 @@ void LTC6802_1_Run(void) {
             
         case LTC6802_1_STATE_ADC_CELL_READ:
             // Read cell voltage data from entire daisy chain in single transaction
-            if (StartSPITransaction(LTC6802_1_CMD_RDCV, 
-                                   NULL, 0, true, 
-                                   LTC6802_1_NUM_STACKS * (LTC6802_1_VOLTAGE_REG_SIZE + 1) + 1) == LTC6802_1_ERROR_NONE) {
+            if (StartSPITransaction(LTC6802_1_CMD_RDCV, // Read Cell Voltages
+                                   NULL, // No TX data, just read
+                                   0, // No TX data length
+                                   true, // Expect response
+                                   LTC6802_1_NUM_STACKS * (LTC6802_1_VOLTAGE_REG_SIZE + LTC6802_1_PEC_SIZE) // Length of response data
+                                ) == LTC6802_1_ERROR_NONE) {
                 ltc_module.state_timestamp = SysTick_Get();
-                
-                // Process data from entire daisy chain and complete
-                ProcessVoltageData();
-                ltc_module.voltage_data_valid = true;
-                ltc_module.voltage_data_timestamp = SysTick_Get();
-                TransitionToIdle();
+                ltc_module.state = LTC6802_1_STATE_ADC_CELL_READ_WAITING;
+
             } else {
                 TransitionToFaulted(LTC6802_1_ERROR_SPI_TIMEOUT);
             }
             break;
+
+        case LTC6802_1_STATE_ADC_CELL_READ_WAITING:
+            // Process data from entire daisy chain and complete
+            if (IsTimeout(ltc_module.state_timestamp, LTC6802_1_ADC_CONVERSION_TIME_MS)) {
+                ProcessVoltageData();
+                ltc_module.voltage_data_valid = true;
+                ltc_module.voltage_data_timestamp = SysTick_Get();
+                TransitionToIdle();
+            }
+            break;
+
             
         case LTC6802_1_STATE_TEMP_START_READ:
             // Start temperature ADC for entire daisy chain
@@ -292,9 +282,12 @@ void LTC6802_1_Run(void) {
             
         case LTC6802_1_STATE_TEMP_READ:
             // Read temperature data from entire daisy chain in single transaction
-            if (StartSPITransaction(LTC6802_1_CMD_RDTMP, 
-                                   NULL, 0, true, 
-                                   LTC6802_1_NUM_STACKS * (LTC6802_1_TEMP_REG_SIZE + 1) + 1) == LTC6802_1_ERROR_NONE) {
+            if (StartSPITransaction(LTC6802_1_CMD_RDTMP, // Read Temperature
+                                   NULL, // No TX data, just read
+                                   0, // No TX data length
+                                   true, // Expect response
+                                   LTC6802_1_NUM_STACKS * (LTC6802_1_TEMP_REG_SIZE + LTC6802_1_PEC_SIZE)// Length of response data
+                                ) == LTC6802_1_ERROR_NONE) {
                 ltc_module.state_timestamp = SysTick_Get();
                 
                 // Process data from entire daisy chain and complete
@@ -309,10 +302,12 @@ void LTC6802_1_Run(void) {
             
         case LTC6802_1_STATE_CONFIG_WRITE:
             // Write configuration to entire daisy chain in single transaction
-            if (StartSPITransaction(LTC6802_1_CMD_WRCFG, 
-                                   ltc_module.config_data, 
-                                   LTC6802_1_NUM_STACKS * LTC6802_1_CONFIG_REG_SIZE, 
-                                   false, 0) == LTC6802_1_ERROR_NONE) {
+            if (StartSPITransaction(LTC6802_1_CMD_WRCFG, // Write Configuration
+                                   ltc_module.config_data, // Pointer to config data
+                                   LTC6802_1_NUM_STACKS * LTC6802_1_CONFIG_REG_SIZE, // Length of config data
+                                   false, // No response expected
+                                   0 // No response length
+                                ) == LTC6802_1_ERROR_NONE) {
                 ltc_module.state = LTC6802_1_STATE_CONFIG_WAIT;
                 ltc_module.state_timestamp = SysTick_Get();
                 ltc_module.debug_failure_point = 1; // Config write started
@@ -328,17 +323,17 @@ void LTC6802_1_Run(void) {
             break;
             
         case LTC6802_1_STATE_CONFIG_READBACK:
-            // CAN_bms_status_state_set(3);
             // Read back configuration from entire daisy chain in single transaction
-            if (StartSPITransaction(LTC6802_1_CMD_RDCFG, 
-                                   NULL, 0, true, 
-                                   LTC6802_1_NUM_STACKS * (LTC6802_1_CONFIG_REG_SIZE + 1)) == LTC6802_1_ERROR_NONE) {
-                // CAN_bms_status_state_set(4);
+            if (StartSPITransaction(LTC6802_1_CMD_RDCFG, // Read Configuration
+                                   NULL, // No TX data, just read
+                                   0, // No TX data length
+                                   true, // Expect response
+                                   LTC6802_1_NUM_STACKS * (LTC6802_1_CONFIG_REG_SIZE + LTC6802_1_PEC_SIZE) // Length of response data
+                                ) == LTC6802_1_ERROR_NONE) {
                 ltc_module.state = LTC6802_1_STATE_CONFIG_READBACK_WAIT;
                 ltc_module.state_timestamp = SysTick_Get();
                 ltc_module.debug_failure_point = 2; // Config write started
             } else {
-                // CAN_bms_status_state_set(5);
                 TransitionToFaulted(LTC6802_1_ERROR_SPI_TIMEOUT);
             }
             break;
@@ -346,8 +341,8 @@ void LTC6802_1_Run(void) {
         case LTC6802_1_STATE_CONFIG_READBACK_WAIT:
             // Configuration readback completed for entire daisy chain
             // Validate that readback matches what we wrote
-            //ProcessConfigData();
-            // CAN_bms_status_state_set(6);
+            ProcessConfigData();
+
             TransitionToIdle();
             break;
             
@@ -601,7 +596,7 @@ static LTC6802_1_Error_E StartSPITransaction(uint8_t command,
     // No CRC needed for outgoing data - LTC6802-1 only sends PEC on responses
     
     // Set up receive buffer if expecting response
-    ltc_module.spi_rx_length = response_len;
+    ltc_module.spi_rx_length = response_len + 1; // Include CMD byte
     uint8_t* rx_buffer = expect_response ? ltc_module.spi_rx_buffer : NULL;
     
     // Start transaction
@@ -662,7 +657,7 @@ static void ProcessVoltageData(void) {
     
     for (stack = 0; stack < LTC6802_1_NUM_STACKS; stack++) {
         // Calculate start of this stack's data block
-        stack_data_start = stack * (LTC6802_1_VOLTAGE_REG_SIZE + 1);
+        stack_data_start = stack * (LTC6802_1_VOLTAGE_REG_SIZE + LTC6802_1_PEC_SIZE) + 1; // +1 for CMD byte
         
         // Extract PEC byte for this stack (comes after the 18 data bytes)
         pec_byte = ltc_module.spi_rx_buffer[stack_data_start + LTC6802_1_VOLTAGE_REG_SIZE];
@@ -672,18 +667,30 @@ static void ProcessVoltageData(void) {
                                LTC6802_1_VOLTAGE_REG_SIZE, pec_byte);
         
         if (pec_valid) {
+            CAN_bms_status_state_set(0);
             // PEC valid - process cell data for this stack
-            for (cell = 0; cell < LTC6802_1_CELLS_PER_STACK; cell++) {
-                cell_index = stack * LTC6802_1_CELLS_PER_STACK + cell;
-                data_index = stack_data_start + (cell * 2);
+            // LTC6802-1 packs 12-bit voltages into 1.5 bytes each (18 bytes total for 12 cells)
+            // Extract voltage pairs (every 3 bytes contains 2 cell voltages)
+            for (uint8_t cell_pair = 0; cell_pair < LTC6802_1_CELLS_PER_STACK / 2; cell_pair++) {
+                uint8_t base_offset = cell_pair * 3;
                 
-                // Combine high and low bytes (LTC6802-1 specific format)
-                ltc_module.voltage_data[cell_index] = 
-                    (ltc_module.spi_rx_buffer[data_index + 1] << 8) | 
-                    ltc_module.spi_rx_buffer[data_index];
+                // First cell of pair (even cells: 0,2,4,6,8,10)
+                uint8_t even_cell = cell_pair * 2;
+                cell_index = stack * LTC6802_1_CELLS_PER_STACK + even_cell;
+                uint8_t c1_low = ltc_module.spi_rx_buffer[stack_data_start + base_offset];
+                uint8_t c1_high = ltc_module.spi_rx_buffer[stack_data_start + base_offset + 1] >> 4;
+                ltc_module.voltage_data[cell_index] = (c1_high << 8) | c1_low;
+                
+                // Second cell of pair (odd cells: 1,3,5,7,9,11)
+                uint8_t odd_cell = cell_pair * 2 + 1;
+                cell_index = stack * LTC6802_1_CELLS_PER_STACK + odd_cell;
+                uint8_t c2_low = ltc_module.spi_rx_buffer[stack_data_start + base_offset + 1] & 0x0F;
+                uint8_t c2_high = ltc_module.spi_rx_buffer[stack_data_start + base_offset + 2];
+                ltc_module.voltage_data[cell_index] = (c2_high << 4) | c2_low;
             }
         } else {
             // PEC failed - mark cells for this stack as invalid
+            CAN_bms_status_state_set(1);
             for (cell = 0; cell < LTC6802_1_CELLS_PER_STACK; cell++) {
                 cell_index = stack * LTC6802_1_CELLS_PER_STACK + cell;
                 ltc_module.voltage_data[cell_index] = 0xFFFF; // Invalid marker
@@ -756,8 +763,8 @@ static void ProcessConfigData(void) {
     
     for (stack = 0; stack < LTC6802_1_NUM_STACKS; stack++) {
         // Calculate data positions (accounting for PEC bytes)
-        readback_start = stack * (LTC6802_1_CONFIG_REG_SIZE + 1);
-        written_start = stack * LTC6802_1_CONFIG_REG_SIZE;
+        readback_start = stack * (LTC6802_1_CONFIG_REG_SIZE + LTC6802_1_PEC_SIZE) + 1; // +1 for CMD byte
+        written_start = (LTC6802_1_NUM_STACKS - 1 - stack) * LTC6802_1_CONFIG_REG_SIZE; //config is stored top stack-down
         
         // Extract and validate PEC byte for this stack
         pec_byte = ltc_module.spi_rx_buffer[readback_start + LTC6802_1_CONFIG_REG_SIZE];
@@ -773,19 +780,19 @@ static void ProcessConfigData(void) {
         }
         
         // PEC valid - now compare readback data with what we wrote
-        config_valid = (memcmp(&ltc_module.spi_rx_buffer[readback_start], 
-                              &ltc_module.config_data[written_start], 
-                              LTC6802_1_CONFIG_REG_SIZE) == 0);
+        config_valid = (memcmp(&ltc_module.spi_rx_buffer[readback_start+1], 
+                              &ltc_module.config_data[written_start+1], 
+                              LTC6802_1_CONFIG_REG_SIZE -1) == 0);
         
         if (!config_valid) {
             // Configuration mismatch - hardware didn't accept our config
             ltc_module.debug_failure_point = 2; // Config data mismatch
             SetError(stack, LTC6802_1_ERROR_CRC_FAIL);
-            
             // For safety, transition to faulted state if any config mismatch
             TransitionToFaulted(LTC6802_1_ERROR_CRC_FAIL);
             return;
         }
+
     }
     
     // All PEC and config validation passed - hardware config is correct
@@ -843,8 +850,22 @@ static void BuildConfigData(void) {
 
 static uint8_t CalculateCRC(const uint8_t* data, uint8_t length) {
     // LTC6802-1 PEC calculation using polynomial x^8 + x^2 + x + 1 (0x07)
-    // Use the standard CRC-8 CCITT implementation from utils.h
-    return crc8ccitt(data, length);
+    // Standard CRC-8 implementation with zero initialization
+    uint8_t pec = 0x00; // Standard initialization for CRC-8
+    uint8_t i, j;
+    
+    for (i = 0; i < length; i++) {
+        pec ^= data[i];
+        for (j = 0; j < 8; j++) {
+            if (pec & 0x80) {
+                pec = (pec << 1) ^ 0x07; // Polynomial x^8 + x^2 + x + 1
+            } else {
+                pec <<= 1;
+            }
+        }
+    }
+    
+    return pec;
 }
 
 static bool ValidateCRC(const uint8_t* data, uint8_t length, uint8_t received_crc) {
@@ -912,8 +933,8 @@ LTC6802_1_Error_E LTC6802_1_ResetConfigToDefaults(bool send_immediately) {
     for (uint8_t i = 0; i < LTC6802_1_NUM_STACKS; i++) {
         ltc_module.config.discharge_cells[i] = 0;              // No cell balancing initially
         ltc_module.config.monitor_cells[i] = 0x0FFF;           // Monitor all 12 cells per stack (bits 0-11)
-        ltc_module.config.gpio1_state[i] = false;              // GPIO1 as input/low per stack
-        ltc_module.config.gpio2_state[i] = false;              // GPIO2 as input/low per stack
+        ltc_module.config.gpio1_state[i] = true;              // GPIO1 as open drain input/high per stack
+        ltc_module.config.gpio2_state[i] = false;              // GPIO2 unused and is input/low per stack
     }
     
     // Global settings (same for all stacks)
@@ -971,39 +992,39 @@ LTC6802_1_Error_E LTC6802_1_SetGPIO1(uint8_t stack_id, bool state, bool send_imm
     return LTC6802_1_ERROR_NONE;
 }
 
-LTC6802_1_Error_E LTC6802_1_SetGPIO2(uint8_t stack_id, bool state, bool send_immediately) {
-    if (send_immediately && LTC6802_1_IsBusy()) {
-        return LTC6802_1_ERROR_BUSY;
-    }
-    
-    // Validate stack_id (LTC6802_1_ALL_STACKS means all stacks)
-    if (stack_id != LTC6802_1_ALL_STACKS && stack_id >= LTC6802_1_NUM_STACKS) {
-        return LTC6802_1_ERROR_INVALID_STACK;
-    }
-    
-    // Set GPIO2 state for specified stack(s)
-    if (stack_id == LTC6802_1_ALL_STACKS) {
-        // Set for all stacks
-        for (uint8_t i = 0; i < LTC6802_1_NUM_STACKS; i++) {
-            ltc_module.config.gpio2_state[i] = state;
-        }
-    } else {
-        // Set for specific stack
-        ltc_module.config.gpio2_state[stack_id] = state;
-    }
-    
-    if (send_immediately) {
-        BuildConfigData();
-        
-        // Start config write sequence
-        ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
-        ltc_module.current_stack_index = 0;
-        ltc_module.retry_count = 0;
-        ltc_module.state_timestamp = SysTick_Get();
-    }
-    
-    return LTC6802_1_ERROR_NONE;
-}
+//LTC6802_1_Error_E LTC6802_1_SetGPIO2(uint8_t stack_id, bool state, bool send_immediately) {
+//    if (send_immediately && LTC6802_1_IsBusy()) {
+//        return LTC6802_1_ERROR_BUSY;
+//    }
+//    
+//    // Validate stack_id (LTC6802_1_ALL_STACKS means all stacks)
+//    if (stack_id != LTC6802_1_ALL_STACKS && stack_id >= LTC6802_1_NUM_STACKS) {
+//        return LTC6802_1_ERROR_INVALID_STACK;
+//    }
+//    
+//    // Set GPIO2 state for specified stack(s)
+//    if (stack_id == LTC6802_1_ALL_STACKS) {
+//        // Set for all stacks
+//        for (uint8_t i = 0; i < LTC6802_1_NUM_STACKS; i++) {
+//            ltc_module.config.gpio2_state[i] = state;
+//        }
+//    } else {
+//        // Set for specific stack
+//        ltc_module.config.gpio2_state[stack_id] = state;
+//    }
+//    
+//    if (send_immediately) {
+//        BuildConfigData();
+//        
+//        // Start config write sequence
+//        ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
+//        ltc_module.current_stack_index = 0;
+//        ltc_module.retry_count = 0;
+//        ltc_module.state_timestamp = SysTick_Get();
+//    }
+//    
+//    return LTC6802_1_ERROR_NONE;
+//}
 
 LTC6802_1_Error_E LTC6802_1_SetCellMonitoring(uint8_t stack_id, uint16_t monitor_mask, bool send_immediately) {
     if (send_immediately && LTC6802_1_IsBusy()) {
@@ -1175,7 +1196,6 @@ LTC6802_1_Error_E LTC6802_1_BatchConfigExample(void) {
     
     // Configure GPIO pins for all stacks
     LTC6802_1_SetGPIO1(LTC6802_1_ALL_STACKS, true, false);   // GPIO1 high on all stacks, don't send yet
-    LTC6802_1_SetGPIO2(LTC6802_1_ALL_STACKS, false, false);  // GPIO2 low on all stacks, don't send yet
     
     // Configure cell monitoring (monitor all 12 cells on all stacks)
     LTC6802_1_SetCellMonitoring(LTC6802_1_ALL_STACKS, 0x0FFF, false);  // don't send yet
@@ -1192,4 +1212,40 @@ LTC6802_1_Error_E LTC6802_1_BatchConfigExample(void) {
     
     // NOW send all the configuration changes in one transaction
     return LTC6802_1_SendConfig();
+}
+
+void LTC6802_1_GetVoltageDebugData(uint8_t* raw_data, uint8_t* raw_length, uint16_t* extracted_voltages) {
+    if (!raw_data || !raw_length || !extracted_voltages) {
+        return;
+    }
+    
+    // Copy raw SPI buffer data
+    *raw_length = ltc_module.spi_rx_length < 40 ? ltc_module.spi_rx_length : 40;
+    for (uint8_t i = 0; i < *raw_length; i++) {
+        raw_data[i] = ltc_module.spi_rx_buffer[i];
+    }
+    
+    // Extract voltages using the same logic as ProcessVoltageData
+    for (uint8_t stack = 0; stack < LTC6802_1_NUM_STACKS; stack++) {
+        uint8_t stack_data_start = stack * (LTC6802_1_VOLTAGE_REG_SIZE + LTC6802_1_PEC_SIZE) + 1; // +1 for CMD byte
+        
+        // Extract voltage pairs (every 3 bytes contains 2 cell voltages)
+        for (uint8_t cell_pair = 0; cell_pair < LTC6802_1_CELLS_PER_STACK / 2; cell_pair++) {
+            uint8_t base_offset = cell_pair * 3;
+            
+            // First cell of pair (even cells: 0,2,4,6,8,10)
+            uint8_t even_cell = cell_pair * 2;
+            uint8_t cell_index = stack * LTC6802_1_CELLS_PER_STACK + even_cell;
+            uint8_t c1_low = ltc_module.spi_rx_buffer[stack_data_start + base_offset];
+            uint8_t c1_high = ltc_module.spi_rx_buffer[stack_data_start + base_offset + 1] >> 4;
+            extracted_voltages[cell_index] = (c1_high << 8) | c1_low;
+            
+            // Second cell of pair (odd cells: 1,3,5,7,9,11)
+            uint8_t odd_cell = cell_pair * 2 + 1;
+            cell_index = stack * LTC6802_1_CELLS_PER_STACK + odd_cell;
+            uint8_t c2_low = ltc_module.spi_rx_buffer[stack_data_start + base_offset + 1] & 0x0F;
+            uint8_t c2_high = ltc_module.spi_rx_buffer[stack_data_start + base_offset + 2];
+            extracted_voltages[cell_index] = (c2_high << 4) | c2_low;
+        }
+    }
 }

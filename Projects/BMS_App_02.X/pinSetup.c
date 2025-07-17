@@ -97,7 +97,7 @@ void PinSetup_Init(void) {
     PINS_direction(MUX_B, OUTPUT);
     PINS_direction(MUX_C, OUTPUT);
     PINS_direction(SPI_CS, OUTPUT);
-    PINS_direction(PA9, INPUT); // SPI SDI RX
+    PINS_direction(SPI_SDI, INPUT); // SPI SDI RX
     
     PINS_direction(EV_CHARGER_nFAULT, INPUT);
     PINS_direction(DCDC_nFAULT, INPUT);
