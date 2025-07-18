@@ -27,7 +27,7 @@
 #define LTC6802_1_NUM_STACKS        2      // Number of LTC6802-1 devices
 #define LTC6802_1_CELLS_PER_STACK   12     // Cells per LTC6802-1
 #define LTC6802_1_TOTAL_CELLS       (LTC6802_1_NUM_STACKS * LTC6802_1_CELLS_PER_STACK)
-#define LTC6802_1_TEMPS_PER_STACK   2      // Temperature sensors per stack
+#define LTC6802_1_TEMPS_PER_STACK   3      // Temperature sensors per stack (ETMP1, ETMP2, ITMP)
 #define LTC6802_1_TOTAL_TEMPS       (LTC6802_1_NUM_STACKS * LTC6802_1_TEMPS_PER_STACK)
 
 // Special stack ID values

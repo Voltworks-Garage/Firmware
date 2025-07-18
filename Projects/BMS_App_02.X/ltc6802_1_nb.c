@@ -31,6 +31,7 @@ typedef enum {
     LTC6802_1_STATE_TEMP_START_READ,
     LTC6802_1_STATE_TEMP_WAITING,
     LTC6802_1_STATE_TEMP_READ,
+    LTC6802_1_STATE_TEMP_READ_WAITING,
     LTC6802_1_STATE_CONFIG_WRITE,
     LTC6802_1_STATE_CONFIG_WAIT,
     LTC6802_1_STATE_CONFIG_READBACK,
@@ -65,7 +66,7 @@ typedef enum {
 // Register Sizes for LTC6802-1
 #define LTC6802_1_CONFIG_REG_SIZE   6       // 6 bytes per stack
 #define LTC6802_1_VOLTAGE_REG_SIZE  18      // 18 bytes per stack (12 cells * 1.5 bytes)
-#define LTC6802_1_TEMP_REG_SIZE     4       // 4 bytes per stack (2 temps * 2 bytes)
+#define LTC6802_1_TEMP_REG_SIZE     5       // 5 bytes per stack (TMPR0-TMPR4)
 #define LTC6802_1_FLAG_REG_SIZE     3       // 3 bytes per stack
 #define LTC6802_1_PEC_SIZE          1       // 1 byte PEC for each register read/write
 
@@ -110,6 +111,10 @@ typedef struct {
     uint32_t temp_data_timestamp;
     bool voltage_data_valid;
     bool temp_data_valid;
+    
+    // Additional temperature register data
+    uint8_t rev_number[LTC6802_1_NUM_STACKS];
+    bool thsd_flag[LTC6802_1_NUM_STACKS];
     
     // Error tracking
     LTC6802_1_Error_E last_error[LTC6802_1_NUM_STACKS];
@@ -227,7 +232,6 @@ void LTC6802_1_Run(void) {
             
         case LTC6802_1_STATE_ADC_CELL_WAITING:
             // Wait for ADC conversion to complete
-            //if (IsTimeout(ltc_module.state_timestamp, LTC6802_1_ADC_CONVERSION_TIME_MS)) {
             if (IO_GET_SPI_SDI() == HIGH) { // Check if conversion is complete
                 ltc_module.state = LTC6802_1_STATE_ADC_CELL_READ;
                 ltc_module.state_timestamp = SysTick_Get();
@@ -263,6 +267,7 @@ void LTC6802_1_Run(void) {
             
         case LTC6802_1_STATE_TEMP_START_READ:
             // Start temperature ADC for entire daisy chain
+            CAN_bms_status_state_set(0);
             if (StartSPITransaction(LTC6802_1_CMD_STTMPAD, 
                                    NULL, 0, false, 0) == LTC6802_1_ERROR_NONE) {
                 ltc_module.state = LTC6802_1_STATE_TEMP_WAITING;
@@ -273,14 +278,16 @@ void LTC6802_1_Run(void) {
             break;
             
         case LTC6802_1_STATE_TEMP_WAITING:
+        CAN_bms_status_state_set(1);
             // Wait for ADC conversion to complete
-            if (IsTimeout(ltc_module.state_timestamp, LTC6802_1_ADC_CONVERSION_TIME_MS)) {
+            if (IO_GET_SPI_SDI() == HIGH) { // Check if conversion is complete
                 ltc_module.state = LTC6802_1_STATE_TEMP_READ;
                 ltc_module.state_timestamp = SysTick_Get();
             }
             break;
             
         case LTC6802_1_STATE_TEMP_READ:
+        CAN_bms_status_state_set(2);
             // Read temperature data from entire daisy chain in single transaction
             if (StartSPITransaction(LTC6802_1_CMD_RDTMP, // Read Temperature
                                    NULL, // No TX data, just read
@@ -289,17 +296,23 @@ void LTC6802_1_Run(void) {
                                    LTC6802_1_NUM_STACKS * (LTC6802_1_TEMP_REG_SIZE + LTC6802_1_PEC_SIZE)// Length of response data
                                 ) == LTC6802_1_ERROR_NONE) {
                 ltc_module.state_timestamp = SysTick_Get();
-                
-                // Process data from entire daisy chain and complete
-                ProcessTemperatureData();
-                ltc_module.temp_data_valid = true;
-                ltc_module.temp_data_timestamp = SysTick_Get();
-                TransitionToIdle();
+                ltc_module.state = LTC6802_1_STATE_TEMP_READ_WAITING;
             } else {
                 TransitionToFaulted(LTC6802_1_ERROR_SPI_TIMEOUT);
             }
             break;
-            
+
+        case LTC6802_1_STATE_TEMP_READ_WAITING:
+        CAN_bms_status_state_set(3);
+            // Process data from entire daisy chain and complete
+            if (IsTimeout(ltc_module.state_timestamp, LTC6802_1_ADC_CONVERSION_TIME_MS)) {
+                ProcessTemperatureData();
+                ltc_module.temp_data_valid = true;
+                ltc_module.temp_data_timestamp = SysTick_Get();
+                TransitionToIdle();
+            }
+            break;
+
         case LTC6802_1_STATE_CONFIG_WRITE:
             // Write configuration to entire daisy chain in single transaction
             if (StartSPITransaction(LTC6802_1_CMD_WRCFG, // Write Configuration
@@ -651,13 +664,14 @@ static void ProcessVoltageData(void) {
     // 
     // Received data: [Stack0_18bytes][Stack0_PEC][Stack1_18bytes][Stack1_PEC] (38 bytes total)
     
-    uint8_t stack, cell, cell_index, data_index;
+    uint8_t stack, cell_index = 0, data_index = 0;
     uint8_t stack_data_start, pec_byte;
     bool pec_valid;
     
     for (stack = 0; stack < LTC6802_1_NUM_STACKS; stack++) {
         // Calculate start of this stack's data block
         stack_data_start = stack * (LTC6802_1_VOLTAGE_REG_SIZE + LTC6802_1_PEC_SIZE) + 1; // +1 for CMD byte
+        data_index = 0;
         
         // Extract PEC byte for this stack (comes after the 18 data bytes)
         pec_byte = ltc_module.spi_rx_buffer[stack_data_start + LTC6802_1_VOLTAGE_REG_SIZE];
@@ -667,32 +681,35 @@ static void ProcessVoltageData(void) {
                                LTC6802_1_VOLTAGE_REG_SIZE, pec_byte);
         
         if (pec_valid) {
-            CAN_bms_status_state_set(0);
             // PEC valid - process cell data for this stack
             // LTC6802-1 packs 12-bit voltages into 1.5 bytes each (18 bytes total for 12 cells)
-            // Extract voltage pairs (every 3 bytes contains 2 cell voltages)
-            for (uint8_t cell_pair = 0; cell_pair < LTC6802_1_CELLS_PER_STACK / 2; cell_pair++) {
-                uint8_t base_offset = cell_pair * 3;
+            
+            //cell_index does not reset here, it continues from last stack
+            while (cell_index < LTC6802_1_CELLS_PER_STACK * (stack + 1)) {
+                uint16_t c0_low = 0, c0_high = 0, c1_low = 0, c1_high = 0;
+
+                // full byte is data LSB
+                c0_low = ltc_module.spi_rx_buffer[stack_data_start + data_index] & 0x00FF;
+                data_index++;
                 
-                // First cell of pair (even cells: 0,2,4,6,8,10)
-                uint8_t even_cell = cell_pair * 2;
-                cell_index = stack * LTC6802_1_CELLS_PER_STACK + even_cell;
-                uint8_t c1_low = ltc_module.spi_rx_buffer[stack_data_start + base_offset];
-                uint8_t c1_high = ltc_module.spi_rx_buffer[stack_data_start + base_offset + 1] >> 4;
-                ltc_module.voltage_data[cell_index] = (c1_high << 8) | c1_low;
+                // first 4 bits are data MSB
+                c0_high = ltc_module.spi_rx_buffer[stack_data_start + data_index] & 0x000F;
+                ltc_module.voltage_data[cell_index] = (c0_high << 8) | c0_low;
+                cell_index++;
                 
-                // Second cell of pair (odd cells: 1,3,5,7,9,11)
-                uint8_t odd_cell = cell_pair * 2 + 1;
-                cell_index = stack * LTC6802_1_CELLS_PER_STACK + odd_cell;
-                uint8_t c2_low = ltc_module.spi_rx_buffer[stack_data_start + base_offset + 1] & 0x0F;
-                uint8_t c2_high = ltc_module.spi_rx_buffer[stack_data_start + base_offset + 2];
-                ltc_module.voltage_data[cell_index] = (c2_high << 4) | c2_low;
+                // second 4 bits are data LSB
+                c1_low = ltc_module.spi_rx_buffer[stack_data_start + data_index] & 0x00F0;
+                data_index++;
+                
+                // full byte is data MSF
+                c1_high = ltc_module.spi_rx_buffer[stack_data_start + data_index] & 0x00FF;
+                ltc_module.voltage_data[cell_index] = (c1_high << 4) | (c1_low >> 4);
+                data_index++;
+                cell_index++;
             }
         } else {
             // PEC failed - mark cells for this stack as invalid
-            CAN_bms_status_state_set(1);
-            for (cell = 0; cell < LTC6802_1_CELLS_PER_STACK; cell++) {
-                cell_index = stack * LTC6802_1_CELLS_PER_STACK + cell;
+            for (cell_index; cell_index < LTC6802_1_CELLS_PER_STACK * (stack + 1); cell_index++) {
                 ltc_module.voltage_data[cell_index] = 0xFFFF; // Invalid marker
             }
             // Set error for this stack
@@ -705,20 +722,20 @@ static void ProcessTemperatureData(void) {
     // Parse temperature data from SPI buffer into temp array
     // 
     // CRITICAL: For daisy chain reads, data comes out in reverse order:
-    // - First 4 bytes received are from Stack 0 (bottom of chain), then PEC byte
-    // - Next 4 bytes received are from Stack 1 (top of chain), then PEC byte
+    // - First 5 bytes received are from Stack 0 (bottom of chain), then PEC byte
+    // - Next 5 bytes received are from Stack 1 (top of chain), then PEC byte
     // 
-    // Received data: [Stack0_4bytes][Stack0_PEC][Stack1_4bytes][Stack1_PEC] (10 bytes total)
+    // Received data: [Stack0_5bytes][Stack0_PEC][Stack1_5bytes][Stack1_PEC] (12 bytes total)
     
-    uint8_t stack, temp, temp_index, data_index;
+    uint8_t stack, temp_index = 0;
     uint8_t stack_data_start, pec_byte;
     bool pec_valid;
     
     for (stack = 0; stack < LTC6802_1_NUM_STACKS; stack++) {
         // Calculate start of this stack's data block
-        stack_data_start = stack * (LTC6802_1_TEMP_REG_SIZE + 1);
+        stack_data_start = stack * (LTC6802_1_TEMP_REG_SIZE + LTC6802_1_PEC_SIZE) + 1; // +1 for CMD byte
         
-        // Extract PEC byte for this stack (comes after the 4 data bytes)
+        // Extract PEC byte for this stack (comes after the 5 data bytes)
         pec_byte = ltc_module.spi_rx_buffer[stack_data_start + LTC6802_1_TEMP_REG_SIZE];
         
         // Validate PEC for this stack's data
@@ -726,22 +743,52 @@ static void ProcessTemperatureData(void) {
                                LTC6802_1_TEMP_REG_SIZE, pec_byte);
         
         if (pec_valid) {
+            CAN_bms_status_state_set(4);
             // PEC valid - process temperature data for this stack
-            for (temp = 0; temp < LTC6802_1_TEMPS_PER_STACK; temp++) {
-                temp_index = stack * LTC6802_1_TEMPS_PER_STACK + temp;
-                data_index = stack_data_start + (temp * 2);
-                
-                // Combine high and low bytes (LTC6802-1 specific format)
-                ltc_module.temp_data[temp_index] = 
-                    (ltc_module.spi_rx_buffer[data_index + 1] << 8) | 
-                    ltc_module.spi_rx_buffer[data_index];
-            }
+            // Extract temperature data according to register layout:
+            // TMPR0: ETMP1[7:0]
+            // TMPR1: ETMP1[11:8] | ETMP2[3:0]
+            // TMPR2: ETMP2[11:4]
+            // TMPR3: ITMP[7:0]
+            // TMPR4: ITMP[11:8] | THSD | REV[2:0]
+            
+            uint16_t tmpr0 = ltc_module.spi_rx_buffer[stack_data_start + 0];
+            uint16_t tmpr1 = ltc_module.spi_rx_buffer[stack_data_start + 1];
+            uint16_t tmpr2 = ltc_module.spi_rx_buffer[stack_data_start + 2];
+            uint16_t tmpr3 = ltc_module.spi_rx_buffer[stack_data_start + 3];
+            uint16_t tmpr4 = ltc_module.spi_rx_buffer[stack_data_start + 4];
+            
+            // Extract ETMP1 (12-bit)
+            uint16_t etmp1 = tmpr0 | ((tmpr1 & 0x000F) << 8);
+            temp_index = stack * LTC6802_1_TEMPS_PER_STACK + 0;
+            ltc_module.temp_data[temp_index] = etmp1;
+            
+            // Extract ETMP2 (12-bit)
+            uint16_t etmp2 = ((tmpr1 & 0x00F0) >> 4) | (tmpr2 << 4);
+            temp_index = stack * LTC6802_1_TEMPS_PER_STACK + 1;
+            ltc_module.temp_data[temp_index] = etmp2;
+            
+            // Extract ITMP (12-bit)
+            uint16_t itmp = tmpr3 | ((tmpr4 & 0x000F) << 8);
+            temp_index = stack * LTC6802_1_TEMPS_PER_STACK + 2;
+            ltc_module.temp_data[temp_index] = itmp;
+            
+            // Extract REV number (3-bit)
+            ltc_module.rev_number[stack] = tmpr4 & 0x0007;
+            
+            // Extract THSD flag (1-bit)
+            ltc_module.thsd_flag[stack] = (tmpr4 & 0x0008) != 0;
+            
         } else {
+            CAN_bms_status_state_set(5);
             // PEC failed - mark temperature sensors for this stack as invalid
-            for (temp = 0; temp < LTC6802_1_TEMPS_PER_STACK; temp++) {
+            for (uint8_t temp = 0; temp < LTC6802_1_TEMPS_PER_STACK; temp++) {
                 temp_index = stack * LTC6802_1_TEMPS_PER_STACK + temp;
                 ltc_module.temp_data[temp_index] = 0xFFFF; // Invalid marker
             }
+            // Mark REV and THSD as invalid
+            ltc_module.rev_number[stack] = 0xFF;
+            ltc_module.thsd_flag[stack] = false;
             // Set error for this stack
             SetError(stack, LTC6802_1_ERROR_CRC_FAIL);
         }
