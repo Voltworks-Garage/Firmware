@@ -89,8 +89,22 @@ for node in range(0,numberOfNodes):
             print("\t" + this_message_name)
             payload_init = ".payload = 0"
             if i == thisNode:
-                dot_c.write("static CAN_payload_S " + ID_name + "_payload __attribute__((aligned(sizeof(CAN_payload_S))));\n")
-                payload_init = ".payload = &" + ID_name + "_payload"
+                # Check if this message will be multiplexed
+                has_multiplex = any(signal.get("multiplex") is not None for signal in data["NODE"][i]["messages"][j]["signals"])
+                multiplex_signal_found = any(signal["name"].lower() == "multiplex" for signal in data["NODE"][i]["messages"][j]["signals"])
+                
+                if has_multiplex and multiplex_signal_found:
+                    # Get the maximum multiplex value to determine array size
+                    max_mux_value = max((signal.get("multiplex", -1) for signal in data["NODE"][i]["messages"][j]["signals"] if signal.get("multiplex") is not None), default=0)
+                    num_mux_groups = max_mux_value + 1
+                    
+                    # Generate array of payloads instead of single payload
+                    dot_c.write("static CAN_payload_S " + ID_name + "_payloads[{}] __attribute__((aligned(sizeof(CAN_payload_S))));\n".format(num_mux_groups))
+                    payload_init = ".payload = 0"
+                else:
+                    # Non-multiplexed message uses single payload as before
+                    dot_c.write("static CAN_payload_S " + ID_name + "_payload __attribute__((aligned(sizeof(CAN_payload_S))));\n")
+                    payload_init = ".payload = &" + ID_name + "_payload"
 
             dot_c.write("static CAN_message_S " + ID_name + "={\n")
             dot_c.write("\t.canID = " + ID_name + "_ID" + ",\n\t.canXID = " + str(canXID) + ",\n\t.dlc = 8,\n\t" + payload_init
@@ -200,10 +214,14 @@ for node in range(0,numberOfNodes):
                     this_signal_units = data["NODE"][i]["messages"][j]["signals"][k]["units"]
                     this_signal_length = data["NODE"][i]["messages"][j]["signals"][k]["length"]
                     
+                    # Skip the multiplex signal in multiplexed messages - we'll generate a custom one
+                    signal = data["NODE"][i]["messages"][j]["signals"][k]
+                    if multiplex_signal and this_signal_name.lower() == "multiplex":
+                        continue
+                    
                     # Handle multiplex signals with special naming
                     signal_func_name = this_signal_name
                     signal_define_name = this_signal_name.upper()
-                    signal = data["NODE"][i]["messages"][j]["signals"][k]
                     if signal.get("multiplex") is not None and multiplex_signal:
                         # This is a multiplexed signal, add mux value to name
                         mux_value = signal["multiplex"]
@@ -247,24 +265,88 @@ for node in range(0,numberOfNodes):
                     word = bit_offset // 16
                     shift = bit_offset % 16
 
+                    # Determine which payload to write to based on multiplex value
+                    if signal.get("multiplex") is not None and multiplex_signal:
+                        # This is a multiplexed signal - write to specific payload array element
+                        mux_value = signal["multiplex"]
+                        payload_target = "{}_payloads[{}]".format(ID_name, mux_value)
+                        accessor = "."  # Array access uses . (struct access)
+                    else:
+                        # Non-multiplexed signal - write to regular payload or current payload pointer
+                        if multiplex_signal:
+                            # This message has multiplex but this signal isn't multiplexed (like the multiplex field itself)
+                            payload_target = "{}.payload".format(ID_name)
+                        else:
+                            # Normal non-multiplexed message
+                            payload_target = "{}.payload".format(ID_name)
+                        accessor = "->"  # Pointer access uses ->
+                    
                     if shift + bit_length <= 16:
                         mask = ((1 << bit_length) - 1) << shift
-                        dot_c.write("\t{}.payload->word{} &= ~0x{:04X};\n".format(ID_name, word, mask))
+                        dot_c.write("\t{}{}word{} &= ~0x{:04X};\n".format(payload_target, accessor, word, mask))
                         dot_c.write(
-                            "\t{}.payload->word{} |= (data_scaled << {}) & 0x{:04X};\n}}\n".format(ID_name, word, shift, mask))
+                            "\t{}{}word{} |= (data_scaled << {}) & 0x{:04X};\n}}\n".format(payload_target, accessor, word, shift, mask))
                     else:
                         bits_first = 16 - shift
                         bits_second = bit_length - bits_first
                         low_mask = ((1 << bits_first) - 1) << shift
                         high_mask = (1 << bits_second) - 1
-                        dot_c.write("\t{}.payload->word{} &= ~0x{:04X};\n".format(ID_name, word, low_mask))
+                        dot_c.write("\t{}{}word{} &= ~0x{:04X};\n".format(payload_target, accessor, word, low_mask))
                         dot_c.write(
-                            "\t{}.payload->word{} |= (data_scaled << {}) & 0x{:04X};\n".format(ID_name, word, shift,
+                            "\t{}{}word{} |= (data_scaled << {}) & 0x{:04X};\n".format(payload_target, accessor, word, shift,
                                                                                             low_mask))
-                        dot_c.write("\t{}.payload->word{} &= ~0x{:04X};\n".format(ID_name, word + 1, high_mask))
-                        dot_c.write("\t{}.payload->word{} |= (data_scaled >> {}) & 0x{:04X};\n}}\n".format(ID_name, word + 1,
+                        dot_c.write("\t{}{}word{} &= ~0x{:04X};\n".format(payload_target, accessor, word + 1, high_mask))
+                        dot_c.write("\t{}{}word{} |= (data_scaled >> {}) & 0x{:04X};\n}}\n".format(payload_target, accessor, word + 1,
                                                                                                     bits_first,
                                                                                                     high_mask))
+
+                # Add special multiplex switching function for multiplexed messages
+                if has_multiplex and multiplex_signal_found:
+                    # First find the multiplex signal details
+                    for k in range(0, numberOfSignals):
+                        signal = data["NODE"][i]["messages"][j]["signals"][k]
+                        if signal["name"].lower() == "multiplex":
+                            multiplex_func_name = signal["name"]
+                            multiplex_define_name = signal["name"].upper()
+                            break
+                    
+                    # Add header declaration
+                    dot_h.write("void " + ID_name + "_" + multiplex_func_name + "_set(uint16_t " + multiplex_func_name + ");\n")
+                    
+                    dot_c.write("// Multiplex switching function updates payload pointer and multiplex field\n")
+                    
+                    # Override the generated multiplex setter to switch payload pointer
+                    dot_c.write("void " + ID_name + "_" + multiplex_func_name + "_set(uint16_t " + multiplex_func_name + "){\n")
+                    dot_c.write("\t// Switch to the correct payload array element\n")
+                    dot_c.write("\tif (" + multiplex_func_name + " < {}) {{\n".format(num_mux_groups))
+                    dot_c.write("\t\t" + ID_name + ".payload = &" + ID_name + "_payloads[" + multiplex_func_name + "];\n")
+                    dot_c.write("\t\t// Set the multiplex field in the current payload\n")
+                    
+                    # Find the multiplex signal details for bit manipulation
+                    for k in range(0, numberOfSignals):
+                        signal = data["NODE"][i]["messages"][j]["signals"][k]
+                        if signal["name"].lower() == "multiplex":
+                            bit_offset = signal["bitOffset"]
+                            bit_length = signal["length"]
+                            word = bit_offset // 16
+                            shift = bit_offset % 16
+                            
+                            if shift + bit_length <= 16:
+                                mask = ((1 << bit_length) - 1) << shift
+                                dot_c.write("\t\t" + ID_name + ".payload->word{} &= ~0x{:04X};\n".format(word, mask))
+                                dot_c.write("\t\t" + ID_name + ".payload->word{} |= ({} << {}) & 0x{:04X};\n".format(word, multiplex_func_name, shift, mask))
+                            else:
+                                bits_first = 16 - shift
+                                bits_second = bit_length - bits_first
+                                low_mask = ((1 << bits_first) - 1) << shift
+                                high_mask = (1 << bits_second) - 1
+                                dot_c.write("\t\t" + ID_name + ".payload->word{} &= ~0x{:04X};\n".format(word, low_mask))
+                                dot_c.write("\t\t" + ID_name + ".payload->word{} |= ({} << {}) & 0x{:04X};\n".format(word, multiplex_func_name, shift, low_mask))
+                                dot_c.write("\t\t" + ID_name + ".payload->word{} &= ~0x{:04X};\n".format(word + 1, high_mask))
+                                dot_c.write("\t\t" + ID_name + ".payload->word{} |= ({} >> {}) & 0x{:04X};\n".format(word + 1, multiplex_func_name, bits_first, high_mask))
+                            break
+                    
+                    dot_c.write("\t}\n}\n")
 
                 if this_message_freq:
                     if not send_message_dict.get(str(this_message_freq)):
@@ -321,8 +403,22 @@ for node in range(0,numberOfNodes):
     dot_h.write("void CAN_DBC_init();\n\n")
 
     dot_c.write("void CAN_DBC_init(void) {\n")
+    
+    # Initialize multiplexed message payloads for this node
     for i in range(0, numberOfNodes):
         if i == thisNode:
+            numberOfMessages = len(data["NODE"][i]["messages"])
+            for j in range(0, numberOfMessages):
+                this_message_name = data["NODE"][i]["messages"][j]["name"]
+                
+                # Check if this message is multiplexed
+                has_multiplex = any(signal.get("multiplex") is not None for signal in data["NODE"][i]["messages"][j]["signals"])
+                multiplex_signal_found = any(signal["name"].lower() == "multiplex" for signal in data["NODE"][i]["messages"][j]["signals"])
+                
+                if has_multiplex and multiplex_signal_found:
+                    ID_name = "CAN_" + data["NODE"][i]["name"] + "_" + this_message_name
+                    dot_c.write("\t// Initialize multiplexed message: {}\n".format(this_message_name))
+                    dot_c.write("\t" + ID_name + ".payload = &" + ID_name + "_payloads[0];\n")
             continue
         else:
             numberOfMessages = len(data["NODE"][i]["messages"])

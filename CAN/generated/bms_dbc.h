@@ -56,7 +56,6 @@ uint16_t CAN_mcu_command_motor_controller_enable_get(void);
  * bms NODE MESSAGES
  */
 #define CAN_bms_status_interval() 10
-void CAN_bms_status_Multiplex_set(uint16_t Multiplex);
 void CAN_bms_status_M0_state_set(uint16_t state);
 void CAN_bms_status_M0_SOC_set(float SOC);
 void CAN_bms_status_M0_packVoltage_set(float packVoltage);
@@ -75,6 +74,7 @@ void CAN_bms_status_M3_mux3_signal1_set(uint16_t mux3_signal1);
 void CAN_bms_status_M3_mux3_signal2_set(uint16_t mux3_signal2);
 void CAN_bms_status_M3_mux3_signal3_set(uint16_t mux3_signal3);
 void CAN_bms_status_M3_mux3_signal4_set(uint16_t mux3_signal4);
+void CAN_bms_status_Multiplex_set(uint16_t Multiplex);
 void CAN_bms_status_dlc_set(uint8_t dlc);
 
 
@@ -145,7 +145,6 @@ void CAN_bms_charger_request_send(void);
 
 
 #define CAN_bms_cellVoltages_interval() 1000
-void CAN_bms_cellVoltages_MultiPlex_set(uint16_t MultiPlex);
 void CAN_bms_cellVoltages_M0_cell_1_voltage_set(float cell_1_voltage);
 void CAN_bms_cellVoltages_M0_cell_2_voltage_set(float cell_2_voltage);
 void CAN_bms_cellVoltages_M0_cell_3_voltage_set(float cell_3_voltage);
@@ -170,6 +169,7 @@ void CAN_bms_cellVoltages_M5_cell_21_voltage_set(float cell_21_voltage);
 void CAN_bms_cellVoltages_M5_cell_22_voltage_set(float cell_22_voltage);
 void CAN_bms_cellVoltages_M5_cell_23_voltage_set(float cell_23_voltage);
 void CAN_bms_cellVoltages_M5_cell_24_voltage_set(float cell_24_voltage);
+void CAN_bms_cellVoltages_MultiPlex_set(uint16_t MultiPlex);
 void CAN_bms_cellVoltages_dlc_set(uint8_t dlc);
 
 
@@ -177,7 +177,6 @@ void CAN_bms_cellVoltages_send(void);
 
 
 #define CAN_bms_cellTemperaturs_interval() 1000
-void CAN_bms_cellTemperaturs_MultiPlex_set(uint16_t MultiPlex);
 void CAN_bms_cellTemperaturs_M0_temp_1_set(float temp_1);
 void CAN_bms_cellTemperaturs_M0_temp_2_set(float temp_2);
 void CAN_bms_cellTemperaturs_M0_temp_3_set(float temp_3);
@@ -202,6 +201,7 @@ void CAN_bms_cellTemperaturs_M5_temp_21_set(float temp_21);
 void CAN_bms_cellTemperaturs_M5_temp_22_set(float temp_22);
 void CAN_bms_cellTemperaturs_M5_temp_23_set(float temp_23);
 void CAN_bms_cellTemperaturs_M5_temp_24_set(float temp_24);
+void CAN_bms_cellTemperaturs_MultiPlex_set(uint16_t MultiPlex);
 void CAN_bms_cellTemperaturs_dlc_set(uint8_t dlc);
 
 
