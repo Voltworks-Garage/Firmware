@@ -214,9 +214,19 @@ class BusmasterDBFParser:
                     try:
                         multiplex_value = int(self.extract_signal_value(signal, data))
                         decoded['multiplex_value'] = multiplex_value
-                        decoded['signals'][signal['name']] = f"Mode {multiplex_value}"
+                        decoded['signals'][signal['name']] = {
+                            'value': f"Mode {multiplex_value}",
+                            'byte_pos': signal['byte_pos'],
+                            'bit_pos': signal['bit_pos'],
+                            'multiplex_value': None
+                        }
                     except Exception:
-                        decoded['signals'][signal['name']] = 'Error'
+                        decoded['signals'][signal['name']] = {
+                            'value': 'Error',
+                            'byte_pos': signal.get('byte_pos', 999),
+                            'bit_pos': signal.get('bit_pos', 999),
+                            'multiplex_value': None
+                        }
                     break
         
         # Second pass: decode signals that match the current multiplex value

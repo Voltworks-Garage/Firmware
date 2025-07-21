@@ -122,7 +122,7 @@ void Tsk_5ms(void) {
  */
 void Tsk_10ms(void) {
     EV_CHARGER_Run_10ms();
-    // BMS_Run_10ms();               // Non-blocking LTC6802-1 operations
+    BMS_Run_10ms();               // Non-blocking LTC6802-1 operations
 
     CAN_bms_debug_CPU_USAGE_set(SysTick_GetCPUPercentage());
     CAN_bms_debug_CPU_peak_set(SysTick_GetCPUPeak());
@@ -136,7 +136,6 @@ void Tsk_10ms(void) {
 void Tsk_100ms(void) {
     WATCHDOG_TimerClear();
     DCDC_run_100ms();
-    BMS_Run_10ms();
     IO_SET_DEBUG_LED_EN(TOGGLE); //Toggle Debug LED at 10Hz for scheduler running status
 }
 

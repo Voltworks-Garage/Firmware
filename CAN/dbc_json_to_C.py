@@ -107,7 +107,7 @@ for node in range(0,numberOfNodes):
             for k in range(0,numberOfSignals):
                 signal = data["NODE"][i]["messages"][j]["signals"][k]
                 signal_name = signal["name"]
-                if signal_name.lower() in ["multiplex", "mux", "multiplexor"]:
+                if signal_name.lower() == "multiplex":
                     multiplex_signal = signal_name
                     break
             
@@ -120,7 +120,7 @@ for node in range(0,numberOfNodes):
                 
                 for k in range(0, numberOfSignals):
                     signal = data["NODE"][i]["messages"][j]["signals"][k]
-                    if signal["name"].lower() in ["multiplex", "mux", "multiplexor"]:
+                    if signal["name"].lower() == "multiplex":
                         non_mux_signals.append((k, signal))
                     elif signal.get("multiplex") is not None:
                         mux_val = signal["multiplex"]

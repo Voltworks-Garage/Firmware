@@ -121,12 +121,25 @@ void CAN_mcu_boot_response_send(void);
  */
 #define CAN_bms_status_interval() 10
 uint8_t CAN_bms_status_checkDataIsFresh(void);
-uint16_t CAN_bms_status_state_get(void);
-uint16_t CAN_bms_status_SOC_get(void);
-float CAN_bms_status_packVoltage_get(void);
-float CAN_bms_status_packCurrent_get(void);
-float CAN_bms_status_minTemp_get(void);
-float CAN_bms_status_maxTemp_get(void);
+uint16_t CAN_bms_status_Multiplex_get(void);
+uint16_t CAN_bms_status_M0_state_get(void);
+uint16_t CAN_bms_status_M0_SOC_get(void);
+float CAN_bms_status_M0_packVoltage_get(void);
+float CAN_bms_status_M0_packCurrent_get(void);
+float CAN_bms_status_M0_minTemp_get(void);
+float CAN_bms_status_M0_maxTemp_get(void);
+float CAN_bms_status_M1_stackVoltage1_get(void);
+float CAN_bms_status_M1_stackVoltage2_get(void);
+float CAN_bms_status_M1_packVoltageSumOfStacks_get(void);
+uint16_t CAN_bms_status_M1_mux1_signal4_get(void);
+uint16_t CAN_bms_status_M2_mux2_signal1_get(void);
+uint16_t CAN_bms_status_M2_mux2_signal2_get(void);
+uint16_t CAN_bms_status_M2_mux2_signal3_get(void);
+uint16_t CAN_bms_status_M2_mux2_signal4_get(void);
+uint16_t CAN_bms_status_M3_mux3_signal1_get(void);
+uint16_t CAN_bms_status_M3_mux3_signal2_get(void);
+uint16_t CAN_bms_status_M3_mux3_signal3_get(void);
+uint16_t CAN_bms_status_M3_mux3_signal4_get(void);
 
 #define CAN_bms_status_2_interval() 10
 uint8_t CAN_bms_status_2_checkDataIsFresh(void);

@@ -10,7 +10,9 @@
 #include "bms_dbc.h"
 #include "IO.h"
 #include "bms.h"
+#include "ltc6802_1_nb.h"
 #include "ev_charger.h"
+#include "NTC.h"
 
 
 void CAN_populate_1ms(void){
@@ -27,11 +29,11 @@ void CAN_populate_1ms(void){
     //CAN_bms_status_2_HV_contactor_state_set(IO_GET_)
     CAN_bms_status_2_HV_isolation_voltage_set(IO_GET_ISOLATION_VOLTAGE());
     CAN_bms_debug_VBUS_Voltage_set(IO_GET_VBUS_VOLTAGE());
-    
+
 }
 
 void CAN_populate_10ms(void){
-    Nop();
+    
 }
 
 void CAN_populate_100ms(void){
@@ -39,13 +41,43 @@ void CAN_populate_100ms(void){
 }
 
 void CAN_populate_1000ms(void){
+    static uint8_t can_bms_status_mux_value = 0;
+
+    CAN_bms_status_Multiplex_set(can_bms_status_mux_value);
+
+    switch (can_bms_status_mux_value)
+    {
+    case 0:
+        /* code for mux 0 */
+        CAN_bms_status_M0_state_set(1);
+        CAN_bms_status_M0_packVoltage_set(100.2);
+        CAN_bms_status_M0_SOC_set(50);
+        CAN_bms_status_M0_minTemp_set(14);
+        CAN_bms_status_M0_maxTemp_set(65);
+        CAN_bms_status_M0_packCurrent_set(10.5);
+        break;
+    case 1:
+        CAN_bms_status_M1_stackVoltage1_set(LTC6802_1_GetStackVoltage(0));
+        CAN_bms_status_M1_stackVoltage2_set(LTC6802_1_GetStackVoltage(1));
+        CAN_bms_status_M1_packVoltageSumOfStacks_set(LTC6802_1_GetPackVoltage());
+        CAN_bms_status_M1_mux1_signal4_set(0);
+        break;
+        
+    default:
+        break;
+    }
+
+    can_bms_status_mux_value++;
+    if (can_bms_status_mux_value > 1) {
+        can_bms_status_mux_value = 0;
+    }
     static uint8_t cellVoltageMultiPlex = 0;
     
     // Force multiplex to 1 for testing M1 cells
     CAN_bms_cellVoltages_MultiPlex_set(cellVoltageMultiPlex);
     
     // Calculate base cell index (1-based indexing for LTC6802_get_cell_voltage)
-    uint8_t baseCellIndex = cellVoltageMultiPlex * 4 + 1;
+    uint8_t baseCellIndex = cellVoltageMultiPlex * 4;
     
     // Force case 1 for testing M1 cells
     switch(cellVoltageMultiPlex) {
@@ -105,14 +137,8 @@ void CAN_populate_1000ms(void){
     CAN_bms_charger_request_charge_mode_set(0); //always set to charing mode, not heating
     CAN_bms_charger_request_start_charge_not_request_set(EV_CHARGER_get_bms_request_charge()); //inverted logic. 1 means stop charging
     
-    float pack_voltage1  = LTC6802_get_temp_voltage(2);
-    float pack_voltage2 = LTC6802_get_temp_voltage(5);
-    CAN_bms_status_packVoltage_set((pack_voltage1 + pack_voltage2)*20.119);
-    CAN_bms_debug_float1_set(pack_voltage1);
-    CAN_bms_debug_float2_set(pack_voltage2);
-    
-    CAN_bms_cellTemperaturs_M0_temp_1_set(IO_GET_MUX_1_VOLTAGE()*10);
-    CAN_bms_cellTemperaturs_M0_temp_2_set(IO_GET_MUX_2_VOLTAGE()*10);
-    CAN_bms_cellTemperaturs_M0_temp_3_set(IO_GET_MUX_3_VOLTAGE()*10);
+    CAN_bms_cellTemperaturs_M0_temp_1_set(BMS_GetTemperatureVoltage(0));
+    CAN_bms_cellTemperaturs_M0_temp_2_set(BMS_GetTemperatureVoltage(1)*19.007); // Convert to Stack Voltage
+    CAN_bms_cellTemperaturs_M0_temp_3_set(BMS_GetTemperatureVoltage(2)*125 - 273.15); // Convert to Celsius
 }
         

@@ -338,6 +338,19 @@ float LTC6802_1_GetCellVoltage(uint8_t cell_id);
 float LTC6802_1_GetTemperatureVoltage(uint8_t temp_id);
 
 /**
+ * @brief Get stack voltage (sum of all cells in a stack)
+ * @param stack_id Stack ID (0 to LTC6802_1_NUM_STACKS-1)
+ * @return Stack voltage in volts, or -1.0 if invalid stack_id or data stale
+ */
+float LTC6802_1_GetStackVoltage(uint8_t stack_id);
+
+/**
+ * @brief Get total pack voltage (sum of all stacks)
+ * @return Pack voltage in volts, or -1.0 if no valid voltage data
+ */
+float LTC6802_1_GetPackVoltage(void);
+
+/**
  * @brief Get last error for a specific stack
  * @param stack_id Stack ID (use LTC6802_1_Stack_E enum)
  * @return Last error code

@@ -15,7 +15,7 @@
  * Macros
  *******************************************************************************/
 #define ADC_BIT_DEPTH 1023.0
-#define ADC_REF_VOLTAGE 3.0 //TODO: change this to 3.3 when new regulator arrives
+#define ADC_REF_VOLTAGE 3.3
 #define ADC_FACTOR (ADC_REF_VOLTAGE/ADC_BIT_DEPTH)
 
 /******************************************************************************

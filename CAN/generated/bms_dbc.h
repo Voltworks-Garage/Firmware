@@ -56,12 +56,25 @@ uint16_t CAN_mcu_command_motor_controller_enable_get(void);
  * bms NODE MESSAGES
  */
 #define CAN_bms_status_interval() 10
-void CAN_bms_status_state_set(uint16_t state);
-void CAN_bms_status_SOC_set(float SOC);
-void CAN_bms_status_packVoltage_set(float packVoltage);
-void CAN_bms_status_packCurrent_set(float packCurrent);
-void CAN_bms_status_minTemp_set(float minTemp);
-void CAN_bms_status_maxTemp_set(float maxTemp);
+void CAN_bms_status_Multiplex_set(uint16_t Multiplex);
+void CAN_bms_status_M0_state_set(uint16_t state);
+void CAN_bms_status_M0_SOC_set(float SOC);
+void CAN_bms_status_M0_packVoltage_set(float packVoltage);
+void CAN_bms_status_M0_packCurrent_set(float packCurrent);
+void CAN_bms_status_M0_minTemp_set(float minTemp);
+void CAN_bms_status_M0_maxTemp_set(float maxTemp);
+void CAN_bms_status_M1_stackVoltage1_set(float stackVoltage1);
+void CAN_bms_status_M1_stackVoltage2_set(float stackVoltage2);
+void CAN_bms_status_M1_packVoltageSumOfStacks_set(float packVoltageSumOfStacks);
+void CAN_bms_status_M1_mux1_signal4_set(uint16_t mux1_signal4);
+void CAN_bms_status_M2_mux2_signal1_set(uint16_t mux2_signal1);
+void CAN_bms_status_M2_mux2_signal2_set(uint16_t mux2_signal2);
+void CAN_bms_status_M2_mux2_signal3_set(uint16_t mux2_signal3);
+void CAN_bms_status_M2_mux2_signal4_set(uint16_t mux2_signal4);
+void CAN_bms_status_M3_mux3_signal1_set(uint16_t mux3_signal1);
+void CAN_bms_status_M3_mux3_signal2_set(uint16_t mux3_signal2);
+void CAN_bms_status_M3_mux3_signal3_set(uint16_t mux3_signal3);
+void CAN_bms_status_M3_mux3_signal4_set(uint16_t mux3_signal4);
 void CAN_bms_status_dlc_set(uint8_t dlc);
 
 

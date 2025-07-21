@@ -445,42 +445,120 @@ static CAN_message_S CAN_bms_status={
 uint8_t CAN_bms_status_checkDataIsFresh(void){
 	return CAN_checkDataIsFresh(&CAN_bms_status);
 }
-#define CAN_BMS_STATUS_STATE_RANGE 3
-#define CAN_BMS_STATUS_STATE_OFFSET 0
-#define CAN_BMS_STATUS_SOC_RANGE 9
-#define CAN_BMS_STATUS_SOC_OFFSET 3
-#define CAN_BMS_STATUS_PACKVOLTAGE_RANGE 16
-#define CAN_BMS_STATUS_PACKVOLTAGE_OFFSET 12
-#define CAN_BMS_STATUS_PACKCURRENT_RANGE 16
-#define CAN_BMS_STATUS_PACKCURRENT_OFFSET 28
-#define CAN_BMS_STATUS_MINTEMP_RANGE 10
-#define CAN_BMS_STATUS_MINTEMP_OFFSET 44
-#define CAN_BMS_STATUS_MAXTEMP_RANGE 10
-#define CAN_BMS_STATUS_MAXTEMP_OFFSET 54
+#define CAN_BMS_STATUS_MULTIPLEX_RANGE 2
+#define CAN_BMS_STATUS_MULTIPLEX_OFFSET 0
+#define CAN_BMS_STATUS_M0_STATE_RANGE 3
+#define CAN_BMS_STATUS_M0_STATE_OFFSET 2
+#define CAN_BMS_STATUS_M0_SOC_RANGE 8
+#define CAN_BMS_STATUS_M0_SOC_OFFSET 5
+#define CAN_BMS_STATUS_M0_PACKVOLTAGE_RANGE 16
+#define CAN_BMS_STATUS_M0_PACKVOLTAGE_OFFSET 13
+#define CAN_BMS_STATUS_M0_PACKCURRENT_RANGE 16
+#define CAN_BMS_STATUS_M0_PACKCURRENT_OFFSET 29
+#define CAN_BMS_STATUS_M0_MINTEMP_RANGE 9
+#define CAN_BMS_STATUS_M0_MINTEMP_OFFSET 45
+#define CAN_BMS_STATUS_M0_MAXTEMP_RANGE 10
+#define CAN_BMS_STATUS_M0_MAXTEMP_OFFSET 54
+#define CAN_BMS_STATUS_M1_STACKVOLTAGE1_RANGE 16
+#define CAN_BMS_STATUS_M1_STACKVOLTAGE1_OFFSET 2
+#define CAN_BMS_STATUS_M1_STACKVOLTAGE2_RANGE 16
+#define CAN_BMS_STATUS_M1_STACKVOLTAGE2_OFFSET 18
+#define CAN_BMS_STATUS_M1_PACKVOLTAGESUMOFSTACKS_RANGE 16
+#define CAN_BMS_STATUS_M1_PACKVOLTAGESUMOFSTACKS_OFFSET 34
+#define CAN_BMS_STATUS_M1_MUX1_SIGNAL4_RANGE 14
+#define CAN_BMS_STATUS_M1_MUX1_SIGNAL4_OFFSET 50
+#define CAN_BMS_STATUS_M2_MUX2_SIGNAL1_RANGE 16
+#define CAN_BMS_STATUS_M2_MUX2_SIGNAL1_OFFSET 2
+#define CAN_BMS_STATUS_M2_MUX2_SIGNAL2_RANGE 16
+#define CAN_BMS_STATUS_M2_MUX2_SIGNAL2_OFFSET 18
+#define CAN_BMS_STATUS_M2_MUX2_SIGNAL3_RANGE 16
+#define CAN_BMS_STATUS_M2_MUX2_SIGNAL3_OFFSET 34
+#define CAN_BMS_STATUS_M2_MUX2_SIGNAL4_RANGE 14
+#define CAN_BMS_STATUS_M2_MUX2_SIGNAL4_OFFSET 50
+#define CAN_BMS_STATUS_M3_MUX3_SIGNAL1_RANGE 16
+#define CAN_BMS_STATUS_M3_MUX3_SIGNAL1_OFFSET 2
+#define CAN_BMS_STATUS_M3_MUX3_SIGNAL2_RANGE 16
+#define CAN_BMS_STATUS_M3_MUX3_SIGNAL2_OFFSET 18
+#define CAN_BMS_STATUS_M3_MUX3_SIGNAL3_RANGE 16
+#define CAN_BMS_STATUS_M3_MUX3_SIGNAL3_OFFSET 34
+#define CAN_BMS_STATUS_M3_MUX3_SIGNAL4_RANGE 14
+#define CAN_BMS_STATUS_M3_MUX3_SIGNAL4_OFFSET 50
 
-uint16_t CAN_bms_status_state_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_STATE_OFFSET, CAN_BMS_STATUS_STATE_RANGE);
+uint16_t CAN_bms_status_Multiplex_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_bms_status_SOC_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_SOC_OFFSET, CAN_BMS_STATUS_SOC_RANGE);
-	return (data * 0.1) + 0;
+uint16_t CAN_bms_status_M0_state_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_M0_STATE_OFFSET, CAN_BMS_STATUS_M0_STATE_RANGE);
+	return (data * 1.0) + 0;
 }
-float CAN_bms_status_packVoltage_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_PACKVOLTAGE_OFFSET, CAN_BMS_STATUS_PACKVOLTAGE_RANGE);
+uint16_t CAN_bms_status_M0_SOC_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_M0_SOC_OFFSET, CAN_BMS_STATUS_M0_SOC_RANGE);
+	return (data * 0.5) + 0;
+}
+float CAN_bms_status_M0_packVoltage_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_M0_PACKVOLTAGE_OFFSET, CAN_BMS_STATUS_M0_PACKVOLTAGE_RANGE);
 	return (data * 0.01) + 0;
 }
-float CAN_bms_status_packCurrent_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_PACKCURRENT_OFFSET, CAN_BMS_STATUS_PACKCURRENT_RANGE);
+float CAN_bms_status_M0_packCurrent_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_M0_PACKCURRENT_OFFSET, CAN_BMS_STATUS_M0_PACKCURRENT_RANGE);
 	return (data * 0.01) + 0;
 }
-float CAN_bms_status_minTemp_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MINTEMP_OFFSET, CAN_BMS_STATUS_MINTEMP_RANGE);
-	return (data * 0.1) + -40;
+float CAN_bms_status_M0_minTemp_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_M0_MINTEMP_OFFSET, CAN_BMS_STATUS_M0_MINTEMP_RANGE);
+	return (data * 0.2) + -40;
 }
-float CAN_bms_status_maxTemp_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MAXTEMP_OFFSET, CAN_BMS_STATUS_MAXTEMP_RANGE);
-	return (data * 0.1) + -40;
+float CAN_bms_status_M0_maxTemp_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_M0_MAXTEMP_OFFSET, CAN_BMS_STATUS_M0_MAXTEMP_RANGE);
+	return (data * 0.2) + -40;
+}
+float CAN_bms_status_M1_stackVoltage1_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_M1_STACKVOLTAGE1_OFFSET, CAN_BMS_STATUS_M1_STACKVOLTAGE1_RANGE);
+	return (data * 0.001) + 0;
+}
+float CAN_bms_status_M1_stackVoltage2_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_M1_STACKVOLTAGE2_OFFSET, CAN_BMS_STATUS_M1_STACKVOLTAGE2_RANGE);
+	return (data * 0.001) + 0;
+}
+float CAN_bms_status_M1_packVoltageSumOfStacks_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_M1_PACKVOLTAGESUMOFSTACKS_OFFSET, CAN_BMS_STATUS_M1_PACKVOLTAGESUMOFSTACKS_RANGE);
+	return (data * 0.001) + 0;
+}
+uint16_t CAN_bms_status_M1_mux1_signal4_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_M1_MUX1_SIGNAL4_OFFSET, CAN_BMS_STATUS_M1_MUX1_SIGNAL4_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_status_M2_mux2_signal1_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_M2_MUX2_SIGNAL1_OFFSET, CAN_BMS_STATUS_M2_MUX2_SIGNAL1_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_status_M2_mux2_signal2_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_M2_MUX2_SIGNAL2_OFFSET, CAN_BMS_STATUS_M2_MUX2_SIGNAL2_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_status_M2_mux2_signal3_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_M2_MUX2_SIGNAL3_OFFSET, CAN_BMS_STATUS_M2_MUX2_SIGNAL3_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_status_M2_mux2_signal4_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_M2_MUX2_SIGNAL4_OFFSET, CAN_BMS_STATUS_M2_MUX2_SIGNAL4_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_status_M3_mux3_signal1_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_M3_MUX3_SIGNAL1_OFFSET, CAN_BMS_STATUS_M3_MUX3_SIGNAL1_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_status_M3_mux3_signal2_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_M3_MUX3_SIGNAL2_OFFSET, CAN_BMS_STATUS_M3_MUX3_SIGNAL2_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_status_M3_mux3_signal3_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_M3_MUX3_SIGNAL3_OFFSET, CAN_BMS_STATUS_M3_MUX3_SIGNAL3_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_status_M3_mux3_signal4_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_M3_MUX3_SIGNAL4_OFFSET, CAN_BMS_STATUS_M3_MUX3_SIGNAL4_RANGE);
+	return (data * 1.0) + 0;
 }
 
 #define CAN_bms_status_2_ID 0x722

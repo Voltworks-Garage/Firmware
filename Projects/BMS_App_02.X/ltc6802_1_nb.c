@@ -116,6 +116,10 @@ typedef struct {
     uint8_t rev_number[LTC6802_1_NUM_STACKS];
     bool thsd_flag[LTC6802_1_NUM_STACKS];
     
+    // Calculated voltage values
+    float stack_voltage[LTC6802_1_NUM_STACKS];
+    float pack_voltage;
+    
     // Error tracking
     LTC6802_1_Error_E last_error[LTC6802_1_NUM_STACKS];
     
@@ -146,6 +150,7 @@ static void ProcessVoltageData(void);
 static void ProcessTemperatureData(void);
 static void ProcessConfigData(void);
 static void BuildConfigData(void);
+static void CalculateStackVoltages(void);
 static uint8_t CalculateCRC(const uint8_t* data, uint8_t length);
 static bool ValidateCRC(const uint8_t* data, uint8_t length, uint8_t received_crc);
 
@@ -256,18 +261,14 @@ void LTC6802_1_Run(void) {
 
         case LTC6802_1_STATE_ADC_CELL_READ_WAITING:
             // Process data from entire daisy chain and complete
-            if (IsTimeout(ltc_module.state_timestamp, LTC6802_1_ADC_CONVERSION_TIME_MS)) {
-                ProcessVoltageData();
-                ltc_module.voltage_data_valid = true;
-                ltc_module.voltage_data_timestamp = SysTick_Get();
-                TransitionToIdle();
-            }
+            ProcessVoltageData();
+            ltc_module.voltage_data_timestamp = SysTick_Get();
+            TransitionToIdle();
             break;
 
             
         case LTC6802_1_STATE_TEMP_START_READ:
             // Start temperature ADC for entire daisy chain
-            CAN_bms_status_state_set(0);
             if (StartSPITransaction(LTC6802_1_CMD_STTMPAD, 
                                    NULL, 0, false, 0) == LTC6802_1_ERROR_NONE) {
                 ltc_module.state = LTC6802_1_STATE_TEMP_WAITING;
@@ -278,7 +279,6 @@ void LTC6802_1_Run(void) {
             break;
             
         case LTC6802_1_STATE_TEMP_WAITING:
-        CAN_bms_status_state_set(1);
             // Wait for ADC conversion to complete
             if (IO_GET_SPI_SDI() == HIGH) { // Check if conversion is complete
                 ltc_module.state = LTC6802_1_STATE_TEMP_READ;
@@ -287,7 +287,6 @@ void LTC6802_1_Run(void) {
             break;
             
         case LTC6802_1_STATE_TEMP_READ:
-        CAN_bms_status_state_set(2);
             // Read temperature data from entire daisy chain in single transaction
             if (StartSPITransaction(LTC6802_1_CMD_RDTMP, // Read Temperature
                                    NULL, // No TX data, just read
@@ -303,11 +302,9 @@ void LTC6802_1_Run(void) {
             break;
 
         case LTC6802_1_STATE_TEMP_READ_WAITING:
-        CAN_bms_status_state_set(3);
             // Process data from entire daisy chain and complete
             if (IsTimeout(ltc_module.state_timestamp, LTC6802_1_ADC_CONVERSION_TIME_MS)) {
                 ProcessTemperatureData();
-                ltc_module.temp_data_valid = true;
                 ltc_module.temp_data_timestamp = SysTick_Get();
                 TransitionToIdle();
             }
@@ -418,7 +415,6 @@ LTC6802_1_Error_E LTC6802_1_StartCellVoltageADC(void) {
     // Start cell voltage ADC and read sequence
     ltc_module.state = LTC6802_1_STATE_ADC_CELL_START_READ;
     ltc_module.retry_count = 0;
-    ltc_module.voltage_data_valid = false;
     ltc_module.state_timestamp = SysTick_Get();
     
     return LTC6802_1_ERROR_NONE;
@@ -432,7 +428,6 @@ LTC6802_1_Error_E LTC6802_1_StartTemperatureADC(void) {
     // Start temperature ADC and read sequence
     ltc_module.state = LTC6802_1_STATE_TEMP_START_READ;
     ltc_module.retry_count = 0;
-    ltc_module.temp_data_valid = false;
     ltc_module.state_timestamp = SysTick_Get();
     
     return LTC6802_1_ERROR_NONE;
@@ -667,7 +662,9 @@ static void ProcessVoltageData(void) {
     uint8_t stack, cell_index = 0, data_index = 0;
     uint8_t stack_data_start, pec_byte;
     bool pec_valid;
-    
+
+    ltc_module.voltage_data_valid = true; // Mark voltage data as valid, gets set to false if any stack fails PEC
+
     for (stack = 0; stack < LTC6802_1_NUM_STACKS; stack++) {
         // Calculate start of this stack's data block
         stack_data_start = stack * (LTC6802_1_VOLTAGE_REG_SIZE + LTC6802_1_PEC_SIZE) + 1; // +1 for CMD byte
@@ -711,11 +708,55 @@ static void ProcessVoltageData(void) {
             // PEC failed - mark cells for this stack as invalid
             for (cell_index; cell_index < LTC6802_1_CELLS_PER_STACK * (stack + 1); cell_index++) {
                 ltc_module.voltage_data[cell_index] = 0xFFFF; // Invalid marker
+                ltc_module.voltage_data_valid = false; // Mark voltage data as invalid
             }
             // Set error for this stack
             SetError(stack, LTC6802_1_ERROR_CRC_FAIL);
+
+            static uint8_t ticker = 0;
+            CAN_bms_debug_float1_set(ticker++);
+
         }
     }
+    
+    // Calculate stack and pack voltages
+    CalculateStackVoltages();
+}
+
+static void CalculateStackVoltages(void) {
+    // Calculate stack voltages and pack voltage using integer arithmetic
+
+    // if (ltc_module.voltage_data_valid == false) {
+    //     CAN_bms_debug_bool0_set(1);
+    //     // If voltage data is invalid, set all voltages to 0
+    //     for (uint8_t stack = 0; stack < LTC6802_1_NUM_STACKS; stack++) {
+    //         ltc_module.stack_voltage[stack] = 0.0f;
+    //     }
+    //     ltc_module.pack_voltage = 0.0f;
+    //     return;
+    // }
+
+    uint32_t pack_voltage_raw = 0;
+    
+    for (uint8_t stack = 0; stack < LTC6802_1_NUM_STACKS; stack++) {
+        uint32_t stack_voltage_raw = 0;
+        
+        // Sum all valid cell voltages for this stack (raw ADC counts)
+        for (uint8_t cell = 0; cell < LTC6802_1_CELLS_PER_STACK; cell++) {
+            uint8_t cell_index = stack * LTC6802_1_CELLS_PER_STACK + cell;
+            stack_voltage_raw += ltc_module.voltage_data[cell_index];
+        }
+        
+        // Apply scaling factor at the end and store result
+        ltc_module.stack_voltage[stack] = (float)stack_voltage_raw * LTC6802_1_VOLTAGE_SCALE_FACTOR;
+        
+        // Add this stack's raw voltage to total pack voltage
+        pack_voltage_raw += stack_voltage_raw;
+    }
+    
+    // Apply scaling factor to pack voltage at the end
+    ltc_module.pack_voltage = (float)pack_voltage_raw * LTC6802_1_VOLTAGE_SCALE_FACTOR;
+    
 }
 
 static void ProcessTemperatureData(void) {
@@ -730,6 +771,8 @@ static void ProcessTemperatureData(void) {
     uint8_t stack, temp_index = 0;
     uint8_t stack_data_start, pec_byte;
     bool pec_valid;
+
+    ltc_module.temp_data_valid = true; // Mark temperature data as valid, gets set to false if any stack fails PEC
     
     for (stack = 0; stack < LTC6802_1_NUM_STACKS; stack++) {
         // Calculate start of this stack's data block
@@ -743,7 +786,6 @@ static void ProcessTemperatureData(void) {
                                LTC6802_1_TEMP_REG_SIZE, pec_byte);
         
         if (pec_valid) {
-            CAN_bms_status_state_set(4);
             // PEC valid - process temperature data for this stack
             // Extract temperature data according to register layout:
             // TMPR0: ETMP1[7:0]
@@ -780,7 +822,6 @@ static void ProcessTemperatureData(void) {
             ltc_module.thsd_flag[stack] = (tmpr4 & 0x0008) != 0;
             
         } else {
-            CAN_bms_status_state_set(5);
             // PEC failed - mark temperature sensors for this stack as invalid
             for (uint8_t temp = 0; temp < LTC6802_1_TEMPS_PER_STACK; temp++) {
                 temp_index = stack * LTC6802_1_TEMPS_PER_STACK + temp;
@@ -789,6 +830,8 @@ static void ProcessTemperatureData(void) {
             // Mark REV and THSD as invalid
             ltc_module.rev_number[stack] = 0xFF;
             ltc_module.thsd_flag[stack] = false;
+            // Mark temperature data as invalid
+            ltc_module.temp_data_valid = false;
             // Set error for this stack
             SetError(stack, LTC6802_1_ERROR_CRC_FAIL);
         }
@@ -1295,4 +1338,34 @@ void LTC6802_1_GetVoltageDebugData(uint8_t* raw_data, uint8_t* raw_length, uint1
             extracted_voltages[cell_index] = (c2_high << 4) | c2_low;
         }
     }
+}
+
+/******************************************************************************
+ * Data Access Function Implementations
+ *******************************************************************************/
+
+float LTC6802_1_GetStackVoltage(uint8_t stack_id) {
+    if (stack_id >= LTC6802_1_NUM_STACKS) {
+        return LTC6802_1_INVALID_DATA;
+    }
+
+        if (!ltc_module.voltage_data_valid){
+            return LTC6802_1_INVALID_DATA;
+        }
+        if(IsDataStale(ltc_module.voltage_data_timestamp)) {
+            return LTC6802_1_INVALID_DATA;
+        }
+
+        return ltc_module.stack_voltage[stack_id];
+
+}
+
+float LTC6802_1_GetPackVoltage(void) {
+    if (!ltc_module.voltage_data_valid){
+        return LTC6802_1_INVALID_DATA;
+    }
+    if(IsDataStale(ltc_module.voltage_data_timestamp)) {
+        return LTC6802_1_INVALID_DATA;
+    }
+    return ltc_module.pack_voltage;// return ltc_module.pack_voltage;
 }

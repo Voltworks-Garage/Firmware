@@ -523,46 +523,155 @@
                     ],
                     "signals": [
                         {
-                            "name": "state",
-                            "length": 3,
+                            "name": "Multiplex",
+                            "length": 2,
                             "scale": 1.0,
                             "offset": 0,
                             "units": ""
                         },
                         {
-                            "name": "SOC",
-                            "length": 9,
-                            "scale": 0.1,
+                            "name": "state",
+                            "length": 3,
+                            "scale": 1.0,
                             "offset": 0,
-                            "units": "%"
+                            "units": "",
+                            "multiplex": 0
+                        },
+                        {
+                            "name": "SOC",
+                            "length": 8,
+                            "scale": 0.5,
+                            "offset": 0,
+                            "units": "%",
+                            "multiplex": 0
                         },
                         {
                             "name": "packVoltage",
                             "length": 16,
                             "scale": 0.01,
                             "offset": 0,
-                            "units": "V"
+                            "units": "V",
+                            "multiplex": 0
                         },
                         {
                             "name": "packCurrent",
                             "length": 16,
                             "scale": 0.01,
                             "offset": 0,
-                            "units": "A"
+                            "units": "A",
+                            "multiplex": 0
                         },
                         {
                             "name": "minTemp",
-                            "length": 10,
-                            "scale": 0.1,
+                            "length": 9,
+                            "scale": 0.2,
                             "offset": -40,
-                            "units": "degC"
+                            "units": "degC",
+                            "multiplex": 0
                         },
                         {
                             "name": "maxTemp",
                             "length": 10,
-                            "scale": 0.1,
+                            "scale": 0.2,
                             "offset": -40,
-                            "units": "degC"
+                            "units": "degC",
+                            "multiplex": 0
+                        },
+                        {
+                            "name": "stackVoltage1",
+                            "length": 16,
+                            "scale": 0.001,
+                            "offset": 0,
+                            "units": "V",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "stackVoltage2",
+                            "length": 16,
+                            "scale": 0.001,
+                            "offset": 0,
+                            "units": "V",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "packVoltageSumOfStacks",
+                            "length": 16,
+                            "scale": 0.001,
+                            "offset": 0,
+                            "units": "V",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "mux1_signal4",
+                            "length": 14,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "mux2_signal1",
+                            "length": 16,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 2
+                        },
+                        {
+                            "name": "mux2_signal2",
+                            "length": 16,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 2
+                        },
+                        {
+                            "name": "mux2_signal3",
+                            "length": 16,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 2
+                        },
+                        {
+                            "name": "mux2_signal4",
+                            "length": 14,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 2
+                        },
+                        {
+                            "name": "mux3_signal1",
+                            "length": 16,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 3
+                        },
+                        {
+                            "name": "mux3_signal2",
+                            "length": 16,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 3
+                        },
+                        {
+                            "name": "mux3_signal3",
+                            "length": 16,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 3
+                        },
+                        {
+                            "name": "mux3_signal4",
+                            "length": 14,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 3
                         }
                     ]
                 },

@@ -70,7 +70,7 @@ void spi1Init(void) {
     SPI1CON1bits.CKP = 0; // Idle state for clock is a low level;
 
     SPI1CON2bits.SPIBEN = 1; /*Enable FIFO transmit buffer*/
-    SPI1STATbits.SISEL = 0b001; /*interrupt on last bit out of shift register and FIFO empty*/
+    SPI1STATbits.SISEL = 0b001; /*Interrupt when the data bit is received in the receive buffer (the SRMPT bit is set)*/
 
     /*11 = Primary prescale 1:1
       10 = Primary prescale 4:1

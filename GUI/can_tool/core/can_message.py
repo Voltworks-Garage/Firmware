@@ -114,7 +114,7 @@ class CANMessageManager:
         # Update accumulated signals with new values
         for signal_name, signal_data in decoded_signals.items():
             # Skip the multiplex signal itself (it's just "Mode X")
-            if 'MultiPlex' in signal_name:
+            if 'Multiplex' in signal_name:
                 continue
                 
             # Store the signal with current timestamp and sorting info for freshness tracking
