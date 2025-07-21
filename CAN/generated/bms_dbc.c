@@ -243,10 +243,10 @@ static CAN_message_S CAN_bms_status={
 #define CAN_BMS_STATUS_M1_STACKVOLTAGE1_OFFSET 2
 #define CAN_BMS_STATUS_M1_STACKVOLTAGE2_RANGE 16
 #define CAN_BMS_STATUS_M1_STACKVOLTAGE2_OFFSET 18
-#define CAN_BMS_STATUS_M1_PACKVOLTAGESUMOFSTACKS_RANGE 16
+#define CAN_BMS_STATUS_M1_PACKVOLTAGESUMOFSTACKS_RANGE 18
 #define CAN_BMS_STATUS_M1_PACKVOLTAGESUMOFSTACKS_OFFSET 34
-#define CAN_BMS_STATUS_M1_MUX1_SIGNAL4_RANGE 14
-#define CAN_BMS_STATUS_M1_MUX1_SIGNAL4_OFFSET 50
+#define CAN_BMS_STATUS_M1_MUX1_SIGNAL4_RANGE 12
+#define CAN_BMS_STATUS_M1_MUX1_SIGNAL4_OFFSET 52
 #define CAN_BMS_STATUS_M2_MUX2_SIGNAL1_RANGE 16
 #define CAN_BMS_STATUS_M2_MUX2_SIGNAL1_OFFSET 2
 #define CAN_BMS_STATUS_M2_MUX2_SIGNAL2_RANGE 16
@@ -320,16 +320,16 @@ void CAN_bms_status_M1_stackVoltage2_set(float stackVoltage2){
 	CAN_bms_status.payload->word2 |= (data_scaled >> 14) & 0x0003;
 }
 void CAN_bms_status_M1_packVoltageSumOfStacks_set(float packVoltageSumOfStacks){
-	uint16_t data_scaled = (uint16_t)((packVoltageSumOfStacks - 0) / 0.001 + 0.5f);
+	uint32_t data_scaled = (uint32_t)((packVoltageSumOfStacks - 0) / 0.001 + 0.5f);
 	CAN_bms_status.payload->word2 &= ~0xFFFC;
 	CAN_bms_status.payload->word2 |= (data_scaled << 2) & 0xFFFC;
-	CAN_bms_status.payload->word3 &= ~0x0003;
-	CAN_bms_status.payload->word3 |= (data_scaled >> 14) & 0x0003;
+	CAN_bms_status.payload->word3 &= ~0x000F;
+	CAN_bms_status.payload->word3 |= (data_scaled >> 14) & 0x000F;
 }
 void CAN_bms_status_M1_mux1_signal4_set(uint16_t mux1_signal4){
 	uint16_t data_scaled = (mux1_signal4 - 0) / 1.0;
-	CAN_bms_status.payload->word3 &= ~0xFFFC;
-	CAN_bms_status.payload->word3 |= (data_scaled << 2) & 0xFFFC;
+	CAN_bms_status.payload->word3 &= ~0xFFF0;
+	CAN_bms_status.payload->word3 |= (data_scaled << 4) & 0xFFF0;
 }
 void CAN_bms_status_M2_mux2_signal1_set(uint16_t mux2_signal1){
 	uint16_t data_scaled = (mux2_signal1 - 0) / 1.0;
