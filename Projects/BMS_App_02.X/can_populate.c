@@ -13,6 +13,7 @@
 #include "ltc6802_1_nb.h"
 #include "ev_charger.h"
 #include "NTC.h"
+#include "ADC.h"
 
 
 void CAN_populate_1ms(void){
@@ -52,7 +53,7 @@ void CAN_populate_1000ms(void){
         CAN_bms_status_M1_stackVoltage1_set(LTC6802_1_GetStackVoltage(0));
         CAN_bms_status_M1_stackVoltage2_set(LTC6802_1_GetStackVoltage(1));
         CAN_bms_status_M1_packVoltageSumOfStacks_set(LTC6802_1_GetPackVoltage());
-        CAN_bms_status_M1_mux1_signal4_set(0);
+        CAN_bms_status_M1_mux1_signal4_set(ADC_GetValue(AN2));
 
         CAN_bms_cellVoltages_M0_cell_1_voltage_set(BMS_GetCellVoltage(0));
         CAN_bms_cellVoltages_M0_cell_2_voltage_set(BMS_GetCellVoltage(1));

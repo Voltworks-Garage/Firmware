@@ -83,7 +83,6 @@ uint8_t checkChargerErrors(void);
  *******************************************************************************/
 void EV_Charger_Init(void) {
 
-
 }
 
 void EV_CHARGER_Run_10ms(void) {
@@ -110,6 +109,9 @@ void idle(EV_CHARGER_entry_types_E entry_type) {
             IO_SET_EV_CHARGER_EN(LOW);
             break;
         case RUN:
+            if (!IO_GET_EV_CHARGER_EN()) {
+                IO_SET_EV_CHARGER_CALIBRATION();
+            }
             if (chargeRequestFromMCU) {
                 nextState = negotiating_state;
             }

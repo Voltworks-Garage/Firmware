@@ -627,7 +627,7 @@ float CAN_bms_status_2_EV_charger_voltage_get(void){
 }
 float CAN_bms_status_2_EV_charger_current_get(void){
 	uint16_t data = get_bits((size_t*)CAN_bms_status_2.payload, CAN_BMS_STATUS_2_EV_CHARGER_CURRENT_OFFSET, CAN_BMS_STATUS_2_EV_CHARGER_CURRENT_RANGE);
-	return (data * 0.1) + 0;
+	return (data * 0.1) + -50;
 }
 uint16_t CAN_bms_status_2_HV_precharge_state_get(void){
 	uint16_t data = get_bits((size_t*)CAN_bms_status_2.payload, CAN_BMS_STATUS_2_HV_PRECHARGE_STATE_OFFSET, CAN_BMS_STATUS_2_HV_PRECHARGE_STATE_RANGE);

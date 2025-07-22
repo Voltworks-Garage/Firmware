@@ -468,7 +468,7 @@ void CAN_bms_status_2_EV_charger_voltage_set(float EV_charger_voltage){
 	CAN_bms_status_2.payload->word2 |= (data_scaled >> 8) & 0x0003;
 }
 void CAN_bms_status_2_EV_charger_current_set(float EV_charger_current){
-	uint16_t data_scaled = (uint16_t)((EV_charger_current - 0) / 0.1 + 0.5f);
+	uint16_t data_scaled = (uint16_t)((EV_charger_current - -50) / 0.1 + 0.5f);
 	CAN_bms_status_2.payload->word2 &= ~0x0FFC;
 	CAN_bms_status_2.payload->word2 |= (data_scaled << 2) & 0x0FFC;
 }

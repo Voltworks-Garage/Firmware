@@ -738,7 +738,7 @@
                             "name": "EV_charger_current",
                             "length": 10,
                             "scale": 0.1,
-                            "offset": 0,
+                            "offset": -50,
                             "units": "A"
                         },
                         {
