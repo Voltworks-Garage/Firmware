@@ -230,12 +230,12 @@ LTC6802_1_Error_E LTC6802_1_SetADCMode(LTC6802_1_ADC_Mode_E mode, bool send_imme
 LTC6802_1_Error_E LTC6802_1_SetVoltageThresholds(uint16_t overvoltage_mv, uint16_t undervoltage_mv, bool send_immediately);
 
 /**
- * @brief Enable/disable temperature measurement
+ * @brief Enable/disable LVLPL (level polling) or TGLPL (toggle polling)
  * @param enable True to enable, false to disable
  * @param send_immediately True to send config immediately, false to update internal config only
  * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
  */
-LTC6802_1_Error_E LTC6802_1_EnableTemperature(bool enable, bool send_immediately);
+LTC6802_1_Error_E LTC6802_1_SetPolling(bool enable, bool send_immediately);
 
 /**
  * @brief Enable/disable voltage comparison for specific stack(s)
