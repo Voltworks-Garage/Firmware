@@ -38,9 +38,9 @@ bool BMS_IsDataReady(void);
 /**
  * @brief Get cell voltage (replacement for LTC6802_get_cell_voltage)
  * @param cell_id Cell ID (0-23)
- * @return Voltage in volts
+ * @return Voltage in millivolts
  */
-float BMS_GetCellVoltage(uint8_t cell_id);
+uint16_t BMS_GetCellVoltage(uint8_t cell_id);
 
 /**
  * @brief Get temperature voltage (replacement for LTC6802_get_temp_voltage)

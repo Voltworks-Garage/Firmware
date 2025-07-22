@@ -126,7 +126,7 @@ bool BMS_IsDataReady(void) {
     return (bms_ltc_state == BMS_LTC_STATE_DATA_COMPLETE);
 }
 
-float BMS_GetCellVoltage(uint8_t cell_id) {
+uint16_t BMS_GetCellVoltage(uint8_t cell_id) {
     // Direct pass-through to driver with staleness detection
     return LTC6802_1_GetCellVoltage(cell_id);
 }

@@ -77,7 +77,7 @@ typedef enum {
 #define LTC6802_1_MAX_SPI_BUFFER    64      // Maximum SPI transaction size
 
 // Invalid data return value
-#define LTC6802_1_INVALID_DATA      -1.0f
+#define LTC6802_1_INVALID_DATA      0
 
 /******************************************************************************
  * Internal State Structure
@@ -504,7 +504,7 @@ LTC6802_1_Error_E LTC6802_1_ClearAllCellBalancing(void) {
     return LTC6802_1_ERROR_NONE;
 }
 
-float LTC6802_1_GetCellVoltage(uint8_t cell_id) {
+uint16_t LTC6802_1_GetCellVoltage(uint8_t cell_id) {
     if (cell_id >= LTC6802_1_TOTAL_CELLS) {
         return LTC6802_1_INVALID_DATA;
     }
@@ -518,7 +518,10 @@ float LTC6802_1_GetCellVoltage(uint8_t cell_id) {
         return LTC6802_1_INVALID_DATA;
     }
     
-    return (float)ltc_module.voltage_data[cell_id] * LTC6802_1_VOLTAGE_SCALE_FACTOR;
+    // Convert ADC reading to mV using integer math: ADC * 1.5 = ADC * 3 / 2
+    // Use bit shifting for division by 2 (faster than regular division)
+    uint16_t adc_x3 = ltc_module.voltage_data[cell_id] + (ltc_module.voltage_data[cell_id] << 1);
+    return adc_x3 >> 1;  // Divide by 2
 }
 
 float LTC6802_1_GetTemperatureVoltage(uint8_t temp_id) {
@@ -1273,72 +1276,6 @@ LTC6802_1_Error_E LTC6802_1_EnableVoltageComparison(uint8_t stack_id, bool enabl
     return LTC6802_1_ERROR_NONE;
 }
 
-LTC6802_1_Error_E LTC6802_1_BatchConfigExample(void) {
-    if (LTC6802_1_IsBusy()) {
-        return LTC6802_1_ERROR_BUSY;
-    }
-    
-    // Example: Configure multiple settings efficiently
-    // All these calls update internal config but don't send to hardware yet
-    
-    // Configure voltage thresholds
-    LTC6802_1_SetVoltageThresholds8(200, 150, false);  // send_immediately = false
-    
-    // Configure GPIO pins for all stacks
-    LTC6802_1_SetGPIO1(LTC6802_1_ALL_STACKS, true, false);   // GPIO1 high on all stacks, don't send yet
-    
-    // Configure cell monitoring (monitor all 12 cells on all stacks)
-    LTC6802_1_SetCellMonitoring(LTC6802_1_ALL_STACKS, 0x0FFF, false);  // don't send yet
-    
-    // Configure ADC mode
-    LTC6802_1_SetADCMode(LTC6802_1_ADC_MODE_NORMAL, false);  // don't send yet
-    
-    // Enable temperature measurement
-    LTC6802_1_EnableTemperature(true, false);  // don't send yet
-    
-    // Configure cell balancing for cells 0 and 1 (example)
-    LTC6802_1_SetCellBalancing(0, true, false);   // Enable cell 0 balancing, don't send yet
-    LTC6802_1_SetCellBalancing(1, true, false);   // Enable cell 1 balancing, don't send yet
-    
-    // NOW send all the configuration changes in one transaction
-    return LTC6802_1_SendConfig();
-}
-
-void LTC6802_1_GetVoltageDebugData(uint8_t* raw_data, uint8_t* raw_length, uint16_t* extracted_voltages) {
-    if (!raw_data || !raw_length || !extracted_voltages) {
-        return;
-    }
-    
-    // Copy raw SPI buffer data
-    *raw_length = ltc_module.spi_rx_length < 40 ? ltc_module.spi_rx_length : 40;
-    for (uint8_t i = 0; i < *raw_length; i++) {
-        raw_data[i] = ltc_module.spi_rx_buffer[i];
-    }
-    
-    // Extract voltages using the same logic as ProcessVoltageData
-    for (uint8_t stack = 0; stack < LTC6802_1_NUM_STACKS; stack++) {
-        uint8_t stack_data_start = stack * (LTC6802_1_VOLTAGE_REG_SIZE + LTC6802_1_PEC_SIZE) + 1; // +1 for CMD byte
-        
-        // Extract voltage pairs (every 3 bytes contains 2 cell voltages)
-        for (uint8_t cell_pair = 0; cell_pair < LTC6802_1_CELLS_PER_STACK / 2; cell_pair++) {
-            uint8_t base_offset = cell_pair * 3;
-            
-            // First cell of pair (even cells: 0,2,4,6,8,10)
-            uint8_t even_cell = cell_pair * 2;
-            uint8_t cell_index = stack * LTC6802_1_CELLS_PER_STACK + even_cell;
-            uint8_t c1_low = ltc_module.spi_rx_buffer[stack_data_start + base_offset];
-            uint8_t c1_high = ltc_module.spi_rx_buffer[stack_data_start + base_offset + 1] >> 4;
-            extracted_voltages[cell_index] = (c1_high << 8) | c1_low;
-            
-            // Second cell of pair (odd cells: 1,3,5,7,9,11)
-            uint8_t odd_cell = cell_pair * 2 + 1;
-            cell_index = stack * LTC6802_1_CELLS_PER_STACK + odd_cell;
-            uint8_t c2_low = ltc_module.spi_rx_buffer[stack_data_start + base_offset + 1] & 0x0F;
-            uint8_t c2_high = ltc_module.spi_rx_buffer[stack_data_start + base_offset + 2];
-            extracted_voltages[cell_index] = (c2_high << 4) | c2_low;
-        }
-    }
-}
 
 /******************************************************************************
  * Data Access Function Implementations

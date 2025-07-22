@@ -326,9 +326,9 @@ LTC6802_1_Error_E LTC6802_1_BatchConfigExample(void);
 /**
  * @brief Get cell voltage from last successful read operation
  * @param cell_id Cell ID (0 to LTC6802_1_TOTAL_CELLS-1)
- * @return Voltage in volts, or -1.0 if invalid cell_id or data stale
+ * @return Voltage in millivolts, or 0 if invalid cell_id or data stale
  */
-float LTC6802_1_GetCellVoltage(uint8_t cell_id);
+uint16_t LTC6802_1_GetCellVoltage(uint8_t cell_id);
 
 /**
  * @brief Get temperature from last successful read operation
