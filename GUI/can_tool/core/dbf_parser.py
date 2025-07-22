@@ -214,9 +214,19 @@ class BusmasterDBFParser:
                     try:
                         multiplex_value = int(self.extract_signal_value(signal, data))
                         decoded['multiplex_value'] = multiplex_value
-                        decoded['signals'][signal['name']] = f"Mode {multiplex_value}"
+                        decoded['signals'][signal['name']] = {
+                            'value': f"Mode {multiplex_value}",
+                            'byte_pos': signal['byte_pos'],
+                            'bit_pos': signal['bit_pos'],
+                            'multiplex_value': None
+                        }
                     except Exception:
-                        decoded['signals'][signal['name']] = 'Error'
+                        decoded['signals'][signal['name']] = {
+                            'value': 'Error',
+                            'byte_pos': signal.get('byte_pos', 999),
+                            'bit_pos': signal.get('bit_pos', 999),
+                            'multiplex_value': None
+                        }
                     break
         
         # Second pass: decode signals that match the current multiplex value
@@ -243,10 +253,20 @@ class BusmasterDBFParser:
                 
                 # Format the value
                 formatted_value = self._format_signal_value(signal, value)
-                decoded['signals'][signal_name] = formatted_value
+                decoded['signals'][signal_name] = {
+                    'value': formatted_value,
+                    'byte_pos': signal['byte_pos'],
+                    'bit_pos': signal['bit_pos'],
+                    'multiplex_value': signal.get('multiplex_value')
+                }
                 
             except Exception:
-                decoded['signals'][signal.get('name', 'unknown')] = 'Error'
+                decoded['signals'][signal.get('name', 'unknown')] = {
+                    'value': 'Error',
+                    'byte_pos': signal.get('byte_pos', 999),
+                    'bit_pos': signal.get('bit_pos', 999),
+                    'multiplex_value': signal.get('multiplex_value')
+                }
         
         return decoded
     

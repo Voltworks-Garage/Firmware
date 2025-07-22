@@ -15,7 +15,7 @@
  * Macros
  *******************************************************************************/
 #define ADC_BIT_DEPTH 1023.0
-#define ADC_REF_VOLTAGE 3.0 //TODO: change this to 3.3 when new regulator arrives
+#define ADC_REF_VOLTAGE 3.3
 #define ADC_FACTOR (ADC_REF_VOLTAGE/ADC_BIT_DEPTH)
 
 /******************************************************************************
@@ -136,6 +136,13 @@ uint8_t IO_GET_EV_CHARGER_FAULT(void) {
     return !PINS_read(EV_CHARGER_nFAULT);
 }
 
+uint8_t IO_GET_SPI_SDI(void) {
+    return PINS_read(SPI_SDI);
+}
+
+uint8_t IO_GET_PILOT_EN(void) {
+    return PINS_read(PILOT_EN);
+}
 
 /* Analog */
 

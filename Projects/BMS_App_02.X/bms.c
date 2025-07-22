@@ -18,6 +18,7 @@
  *******************************************************************************/
 typedef enum {
     BMS_LTC_STATE_IDLE = 0,
+    BMS_LTC_STATE_START,
     BMS_LTC_STATE_VOLTAGE_REQUESTED,
     BMS_LTC_STATE_VOLTAGE_READY,
     BMS_LTC_STATE_TEMP_REQUESTED,
@@ -37,17 +38,31 @@ void BMS_Init(void) {
     LTC6802_1_Init();
     
     // Configure for BMS operation with safe defaults
-    LTC6802_1_Config_S config = {
-        .adc_mode = 1,  // Normal ADC mode for accuracy
-        .temp_enable = 1,  // Enable temperature measurement
-        .discharge_cells = 0,  // Cell balancing controlled separately
-        .forced_cells = 0,
-        .overvoltage_threshold = (uint16_t)(4.2f / LTC6802_1_VOLTAGE_SCALE_FACTOR),
-        .undervoltage_threshold = (uint16_t)(2.5f / LTC6802_1_VOLTAGE_SCALE_FACTOR)
-    };
     
-    // Apply configuration (non-blocking)
-    LTC6802_1_WriteConfig(&config);
+    // Reset to safe defaults first
+    LTC6802_1_ResetConfigToDefaults(false);
+    
+    // Set voltage thresholds for safe BMS operation
+    // 4.2V overvoltage, 2.5V undervoltage (converted to millivolts)
+    LTC6802_1_SetVoltageThresholds(4200, 2500, false);
+    
+    // Enable monitoring for all 12 cells on both stacks
+    LTC6802_1_SetCellMonitoring(LTC6802_1_ALL_STACKS, 0x0FFF, false);
+    
+    // Set ADC mode to normal for balanced speed/accuracy
+    LTC6802_1_SetADCMode(LTC6802_1_ADC_MODE_NORMAL, false);
+    
+    // Configure GPIO pins as inputs initially
+    LTC6802_1_SetGPIO1(LTC6802_1_ALL_STACKS, true, false);
+    
+    // Enable temperature measurement
+    LTC6802_1_EnableTemperature(true, false);
+    
+    // Enable voltage comparison for fault detection
+    LTC6802_1_EnableVoltageComparison(LTC6802_1_ALL_STACKS, true, false);
+    
+    // Send all configuration changes to hardware
+    LTC6802_1_SendConfig();
     
     bms_ltc_state = BMS_LTC_STATE_IDLE;
 }
@@ -60,14 +75,22 @@ void BMS_Run_1ms(void) {
 void BMS_Run_10ms(void) {
     switch (bms_ltc_state) {
         case BMS_LTC_STATE_IDLE:
+
+            LTC6802_1_SetGPIO1(0, true, false);
+            LTC6802_1_SetGPIO1(1, true, true);
+            bms_ltc_state = BMS_LTC_STATE_START;
+            break;
+
+        case BMS_LTC_STATE_START:
             // Start new measurement cycle every 10ms if driver is ready
             if (LTC6802_1_StartCellVoltageADC() == LTC6802_1_ERROR_NONE) {
                 bms_ltc_state = BMS_LTC_STATE_VOLTAGE_REQUESTED;
                 cycle_start_time = SysTick_Get();
             }
             // If busy, just wait for next 10ms cycle
+
             break;
-            
+
         case BMS_LTC_STATE_VOLTAGE_REQUESTED:
             // Check if voltage data is ready
             if (!LTC6802_1_IsBusy()) {
@@ -92,6 +115,8 @@ void BMS_Run_10ms(void) {
         case BMS_LTC_STATE_DATA_COMPLETE:
             // Data is ready for BMS processing
             // Reset for next cycle
+            LTC6802_1_SetGPIO1(0, false, false);
+            LTC6802_1_SetGPIO1(1, false, true);
             bms_ltc_state = BMS_LTC_STATE_IDLE;
             break;
     }
@@ -101,7 +126,7 @@ bool BMS_IsDataReady(void) {
     return (bms_ltc_state == BMS_LTC_STATE_DATA_COMPLETE);
 }
 
-float BMS_GetCellVoltage(uint8_t cell_id) {
+uint16_t BMS_GetCellVoltage(uint8_t cell_id) {
     // Direct pass-through to driver with staleness detection
     return LTC6802_1_GetCellVoltage(cell_id);
 }
@@ -111,7 +136,7 @@ float BMS_GetTemperatureVoltage(uint8_t temp_id) {
     return LTC6802_1_GetTemperatureVoltage(temp_id);
 }
 
-void BMS_SetCellBalancing(uint8_t cell_id, bool enable) {
+void BMS_SetCellBalancing(uint8_t cell_id, bool enable, bool send_immediately) {
     if (cell_id >= LTC6802_1_TOTAL_CELLS) {
         return;
     }
@@ -123,8 +148,8 @@ void BMS_SetCellBalancing(uint8_t cell_id, bool enable) {
         balancing_mask &= ~(1UL << cell_id);
     }
     
-    // Apply to driver (non-blocking)
-    LTC6802_1_SetCellBalancing(balancing_mask);
+    // Apply to driver (non-blocking) using new API
+    LTC6802_1_SetCellBalancing(cell_id, enable, send_immediately);
 }
 
 void BMS_ClearAllCellBalancing(void) {

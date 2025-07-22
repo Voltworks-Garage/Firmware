@@ -48,6 +48,8 @@ uint8_t IO_GET_MUX_A(void);
 uint8_t IO_GET_MUX_B(void);
 uint8_t IO_GET_MUX_C(void);
 uint8_t IO_GET_V12_POWER_STATUS(void);
+uint8_t IO_GET_SPI_SDI(void);
+uint8_t IO_GET_PILOT_EN(void);
 
 /**
  * IO_IO_GET_xxx_FAULT returns the Fault Status of a given output. If the fault

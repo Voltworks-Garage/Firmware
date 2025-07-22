@@ -91,7 +91,7 @@ void Tsk_init(void) {
     DCDC_init();
     CommandService_Init();
     WATCHDOG_TimerClear();
-    //WATCHDOG_TimerSoftwareEnable();
+    WATCHDOG_TimerSoftwareEnable();
 
 #if TSK_DEBUG_ENABLE
     Uart1Write("Hello World, Task Init Done.\n"); //hi
@@ -136,7 +136,7 @@ void Tsk_10ms(void) {
 void Tsk_100ms(void) {
     WATCHDOG_TimerClear();
     DCDC_run_100ms();
-    // IO_SET_DEBUG_LED_EN(TOGGLE); //Toggle Debug LED at 10Hz for scheduler running status
+    IO_SET_DEBUG_LED_EN(TOGGLE); //Toggle Debug LED at 10Hz for scheduler running status
 }
 
 /**

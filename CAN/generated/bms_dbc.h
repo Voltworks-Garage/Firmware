@@ -56,12 +56,25 @@ uint16_t CAN_mcu_command_motor_controller_enable_get(void);
  * bms NODE MESSAGES
  */
 #define CAN_bms_status_interval() 10
-void CAN_bms_status_state_set(uint16_t state);
-void CAN_bms_status_SOC_set(float SOC);
-void CAN_bms_status_packVoltage_set(float packVoltage);
-void CAN_bms_status_packCurrent_set(float packCurrent);
-void CAN_bms_status_minTemp_set(float minTemp);
-void CAN_bms_status_maxTemp_set(float maxTemp);
+#define CAN_BMS_STATUS_NUM_MUX_VALUES 4
+void CAN_bms_status_M0_state_set(uint16_t state);
+void CAN_bms_status_M0_SOC_set(float SOC);
+void CAN_bms_status_M0_packVoltage_set(float packVoltage);
+void CAN_bms_status_M0_packCurrent_set(float packCurrent);
+void CAN_bms_status_M0_minTemp_set(float minTemp);
+void CAN_bms_status_M0_maxTemp_set(float maxTemp);
+void CAN_bms_status_M1_stackVoltage1_set(float stackVoltage1);
+void CAN_bms_status_M1_stackVoltage2_set(float stackVoltage2);
+void CAN_bms_status_M1_packVoltageSumOfStacks_set(float packVoltageSumOfStacks);
+void CAN_bms_status_M1_mux1_signal4_set(uint16_t mux1_signal4);
+void CAN_bms_status_M2_mux2_signal1_set(uint16_t mux2_signal1);
+void CAN_bms_status_M2_mux2_signal2_set(uint16_t mux2_signal2);
+void CAN_bms_status_M2_mux2_signal3_set(uint16_t mux2_signal3);
+void CAN_bms_status_M2_mux2_signal4_set(uint16_t mux2_signal4);
+void CAN_bms_status_M3_mux3_signal1_set(uint16_t mux3_signal1);
+void CAN_bms_status_M3_mux3_signal2_set(uint16_t mux3_signal2);
+void CAN_bms_status_M3_mux3_signal3_set(uint16_t mux3_signal3);
+void CAN_bms_status_M3_mux3_signal4_set(uint16_t mux3_signal4);
 void CAN_bms_status_dlc_set(uint8_t dlc);
 
 
@@ -132,31 +145,31 @@ void CAN_bms_charger_request_send(void);
 
 
 #define CAN_bms_cellVoltages_interval() 1000
-void CAN_bms_cellVoltages_MultiPlex_set(uint16_t MultiPlex);
-void CAN_bms_cellVoltages_M0_cell_1_voltage_set(float cell_1_voltage);
-void CAN_bms_cellVoltages_M0_cell_2_voltage_set(float cell_2_voltage);
-void CAN_bms_cellVoltages_M0_cell_3_voltage_set(float cell_3_voltage);
-void CAN_bms_cellVoltages_M0_cell_4_voltage_set(float cell_4_voltage);
-void CAN_bms_cellVoltages_M1_cell_5_voltage_set(float cell_5_voltage);
-void CAN_bms_cellVoltages_M1_cell_6_voltage_set(float cell_6_voltage);
-void CAN_bms_cellVoltages_M1_cell_7_voltage_set(float cell_7_voltage);
-void CAN_bms_cellVoltages_M1_cell_8_voltage_set(float cell_8_voltage);
-void CAN_bms_cellVoltages_M2_cell_9_voltage_set(float cell_9_voltage);
-void CAN_bms_cellVoltages_M2_cell_10_voltage_set(float cell_10_voltage);
-void CAN_bms_cellVoltages_M2_cell_11_voltage_set(float cell_11_voltage);
-void CAN_bms_cellVoltages_M2_cell_12_voltage_set(float cell_12_voltage);
-void CAN_bms_cellVoltages_M3_cell_13_voltage_set(float cell_13_voltage);
-void CAN_bms_cellVoltages_M3_cell_14_voltage_set(float cell_14_voltage);
-void CAN_bms_cellVoltages_M3_cell_15_voltage_set(float cell_15_voltage);
-void CAN_bms_cellVoltages_M3_cell_16_voltage_set(float cell_16_voltage);
-void CAN_bms_cellVoltages_M4_cell_17_voltage_set(float cell_17_voltage);
-void CAN_bms_cellVoltages_M4_cell_18_voltage_set(float cell_18_voltage);
-void CAN_bms_cellVoltages_M4_cell_19_voltage_set(float cell_19_voltage);
-void CAN_bms_cellVoltages_M4_cell_20_voltage_set(float cell_20_voltage);
-void CAN_bms_cellVoltages_M5_cell_21_voltage_set(float cell_21_voltage);
-void CAN_bms_cellVoltages_M5_cell_22_voltage_set(float cell_22_voltage);
-void CAN_bms_cellVoltages_M5_cell_23_voltage_set(float cell_23_voltage);
-void CAN_bms_cellVoltages_M5_cell_24_voltage_set(float cell_24_voltage);
+#define CAN_BMS_CELLVOLTAGES_NUM_MUX_VALUES 6
+void CAN_bms_cellVoltages_M0_cell_1_voltage_set(uint16_t cell_1_voltage);
+void CAN_bms_cellVoltages_M0_cell_2_voltage_set(uint16_t cell_2_voltage);
+void CAN_bms_cellVoltages_M0_cell_3_voltage_set(uint16_t cell_3_voltage);
+void CAN_bms_cellVoltages_M0_cell_4_voltage_set(uint16_t cell_4_voltage);
+void CAN_bms_cellVoltages_M1_cell_5_voltage_set(uint16_t cell_5_voltage);
+void CAN_bms_cellVoltages_M1_cell_6_voltage_set(uint16_t cell_6_voltage);
+void CAN_bms_cellVoltages_M1_cell_7_voltage_set(uint16_t cell_7_voltage);
+void CAN_bms_cellVoltages_M1_cell_8_voltage_set(uint16_t cell_8_voltage);
+void CAN_bms_cellVoltages_M2_cell_9_voltage_set(uint16_t cell_9_voltage);
+void CAN_bms_cellVoltages_M2_cell_10_voltage_set(uint16_t cell_10_voltage);
+void CAN_bms_cellVoltages_M2_cell_11_voltage_set(uint16_t cell_11_voltage);
+void CAN_bms_cellVoltages_M2_cell_12_voltage_set(uint16_t cell_12_voltage);
+void CAN_bms_cellVoltages_M3_cell_13_voltage_set(uint16_t cell_13_voltage);
+void CAN_bms_cellVoltages_M3_cell_14_voltage_set(uint16_t cell_14_voltage);
+void CAN_bms_cellVoltages_M3_cell_15_voltage_set(uint16_t cell_15_voltage);
+void CAN_bms_cellVoltages_M3_cell_16_voltage_set(uint16_t cell_16_voltage);
+void CAN_bms_cellVoltages_M4_cell_17_voltage_set(uint16_t cell_17_voltage);
+void CAN_bms_cellVoltages_M4_cell_18_voltage_set(uint16_t cell_18_voltage);
+void CAN_bms_cellVoltages_M4_cell_19_voltage_set(uint16_t cell_19_voltage);
+void CAN_bms_cellVoltages_M4_cell_20_voltage_set(uint16_t cell_20_voltage);
+void CAN_bms_cellVoltages_M5_cell_21_voltage_set(uint16_t cell_21_voltage);
+void CAN_bms_cellVoltages_M5_cell_22_voltage_set(uint16_t cell_22_voltage);
+void CAN_bms_cellVoltages_M5_cell_23_voltage_set(uint16_t cell_23_voltage);
+void CAN_bms_cellVoltages_M5_cell_24_voltage_set(uint16_t cell_24_voltage);
 void CAN_bms_cellVoltages_dlc_set(uint8_t dlc);
 
 
@@ -164,7 +177,7 @@ void CAN_bms_cellVoltages_send(void);
 
 
 #define CAN_bms_cellTemperaturs_interval() 1000
-void CAN_bms_cellTemperaturs_MultiPlex_set(uint16_t MultiPlex);
+#define CAN_BMS_CELLTEMPERATURS_NUM_MUX_VALUES 6
 void CAN_bms_cellTemperaturs_M0_temp_1_set(float temp_1);
 void CAN_bms_cellTemperaturs_M0_temp_2_set(float temp_2);
 void CAN_bms_cellTemperaturs_M0_temp_3_set(float temp_3);

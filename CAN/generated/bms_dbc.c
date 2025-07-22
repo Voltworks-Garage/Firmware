@@ -216,69 +216,182 @@ uint16_t CAN_mcu_command_motor_controller_enable_get(void){
  */
 #define CAN_bms_status_ID 0x721
 
-static CAN_payload_S CAN_bms_status_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static CAN_payload_S CAN_bms_status_payloads[4] __attribute__((aligned(sizeof(CAN_payload_S))));
+static uint8_t CAN_bms_status_mux = 0;
 static CAN_message_S CAN_bms_status={
 	.canID = CAN_bms_status_ID,
 	.canXID = 0,
 	.dlc = 8,
-	.payload = &CAN_bms_status_payload,
+	.payload = 0,
 	.canMessageStatus = 0
 };
 
-#define CAN_BMS_STATUS_STATE_RANGE 3
-#define CAN_BMS_STATUS_STATE_OFFSET 0
-#define CAN_BMS_STATUS_SOC_RANGE 9
-#define CAN_BMS_STATUS_SOC_OFFSET 3
-#define CAN_BMS_STATUS_PACKVOLTAGE_RANGE 16
-#define CAN_BMS_STATUS_PACKVOLTAGE_OFFSET 12
-#define CAN_BMS_STATUS_PACKCURRENT_RANGE 16
-#define CAN_BMS_STATUS_PACKCURRENT_OFFSET 28
-#define CAN_BMS_STATUS_MINTEMP_RANGE 10
-#define CAN_BMS_STATUS_MINTEMP_OFFSET 44
-#define CAN_BMS_STATUS_MAXTEMP_RANGE 10
-#define CAN_BMS_STATUS_MAXTEMP_OFFSET 54
+#define CAN_BMS_STATUS_MULTIPLEX_RANGE 2
+#define CAN_BMS_STATUS_MULTIPLEX_OFFSET 0
+#define CAN_BMS_STATUS_M0_STATE_RANGE 3
+#define CAN_BMS_STATUS_M0_STATE_OFFSET 2
+#define CAN_BMS_STATUS_M0_SOC_RANGE 8
+#define CAN_BMS_STATUS_M0_SOC_OFFSET 5
+#define CAN_BMS_STATUS_M0_PACKVOLTAGE_RANGE 16
+#define CAN_BMS_STATUS_M0_PACKVOLTAGE_OFFSET 13
+#define CAN_BMS_STATUS_M0_PACKCURRENT_RANGE 16
+#define CAN_BMS_STATUS_M0_PACKCURRENT_OFFSET 29
+#define CAN_BMS_STATUS_M0_MINTEMP_RANGE 9
+#define CAN_BMS_STATUS_M0_MINTEMP_OFFSET 45
+#define CAN_BMS_STATUS_M0_MAXTEMP_RANGE 10
+#define CAN_BMS_STATUS_M0_MAXTEMP_OFFSET 54
+#define CAN_BMS_STATUS_M1_STACKVOLTAGE1_RANGE 16
+#define CAN_BMS_STATUS_M1_STACKVOLTAGE1_OFFSET 2
+#define CAN_BMS_STATUS_M1_STACKVOLTAGE2_RANGE 16
+#define CAN_BMS_STATUS_M1_STACKVOLTAGE2_OFFSET 18
+#define CAN_BMS_STATUS_M1_PACKVOLTAGESUMOFSTACKS_RANGE 18
+#define CAN_BMS_STATUS_M1_PACKVOLTAGESUMOFSTACKS_OFFSET 34
+#define CAN_BMS_STATUS_M1_MUX1_SIGNAL4_RANGE 12
+#define CAN_BMS_STATUS_M1_MUX1_SIGNAL4_OFFSET 52
+#define CAN_BMS_STATUS_M2_MUX2_SIGNAL1_RANGE 16
+#define CAN_BMS_STATUS_M2_MUX2_SIGNAL1_OFFSET 2
+#define CAN_BMS_STATUS_M2_MUX2_SIGNAL2_RANGE 16
+#define CAN_BMS_STATUS_M2_MUX2_SIGNAL2_OFFSET 18
+#define CAN_BMS_STATUS_M2_MUX2_SIGNAL3_RANGE 16
+#define CAN_BMS_STATUS_M2_MUX2_SIGNAL3_OFFSET 34
+#define CAN_BMS_STATUS_M2_MUX2_SIGNAL4_RANGE 14
+#define CAN_BMS_STATUS_M2_MUX2_SIGNAL4_OFFSET 50
+#define CAN_BMS_STATUS_M3_MUX3_SIGNAL1_RANGE 16
+#define CAN_BMS_STATUS_M3_MUX3_SIGNAL1_OFFSET 2
+#define CAN_BMS_STATUS_M3_MUX3_SIGNAL2_RANGE 16
+#define CAN_BMS_STATUS_M3_MUX3_SIGNAL2_OFFSET 18
+#define CAN_BMS_STATUS_M3_MUX3_SIGNAL3_RANGE 16
+#define CAN_BMS_STATUS_M3_MUX3_SIGNAL3_OFFSET 34
+#define CAN_BMS_STATUS_M3_MUX3_SIGNAL4_RANGE 14
+#define CAN_BMS_STATUS_M3_MUX3_SIGNAL4_OFFSET 50
 
-void CAN_bms_status_state_set(uint16_t state){
+void CAN_bms_status_M0_state_set(uint16_t state){
 	uint16_t data_scaled = (state - 0) / 1.0;
-	CAN_bms_status.payload->word0 &= ~0x0007;
-	CAN_bms_status.payload->word0 |= (data_scaled << 0) & 0x0007;
+	CAN_bms_status_payloads[0].word0 &= ~0x001C;
+	CAN_bms_status_payloads[0].word0 |= (data_scaled << 2) & 0x001C;
 }
-void CAN_bms_status_SOC_set(float SOC){
-	uint16_t data_scaled = (SOC - 0) / 0.1;
-	CAN_bms_status.payload->word0 &= ~0x0FF8;
-	CAN_bms_status.payload->word0 |= (data_scaled << 3) & 0x0FF8;
+void CAN_bms_status_M0_SOC_set(float SOC){
+	uint16_t data_scaled = (uint16_t)((SOC - 0) / 0.5 + 0.5f);
+	CAN_bms_status_payloads[0].word0 &= ~0x1FE0;
+	CAN_bms_status_payloads[0].word0 |= (data_scaled << 5) & 0x1FE0;
 }
-void CAN_bms_status_packVoltage_set(float packVoltage){
-	uint16_t data_scaled = (packVoltage - 0) / 0.01;
-	CAN_bms_status.payload->word0 &= ~0xF000;
-	CAN_bms_status.payload->word0 |= (data_scaled << 12) & 0xF000;
-	CAN_bms_status.payload->word1 &= ~0x0FFF;
-	CAN_bms_status.payload->word1 |= (data_scaled >> 4) & 0x0FFF;
+void CAN_bms_status_M0_packVoltage_set(float packVoltage){
+	uint16_t data_scaled = (uint16_t)((packVoltage - 0) / 0.01 + 0.5f);
+	CAN_bms_status_payloads[0].word0 &= ~0xE000;
+	CAN_bms_status_payloads[0].word0 |= (data_scaled << 13) & 0xE000;
+	CAN_bms_status_payloads[0].word1 &= ~0x1FFF;
+	CAN_bms_status_payloads[0].word1 |= (data_scaled >> 3) & 0x1FFF;
 }
-void CAN_bms_status_packCurrent_set(float packCurrent){
-	uint16_t data_scaled = (packCurrent - 0) / 0.01;
-	CAN_bms_status.payload->word1 &= ~0xF000;
-	CAN_bms_status.payload->word1 |= (data_scaled << 12) & 0xF000;
-	CAN_bms_status.payload->word2 &= ~0x0FFF;
-	CAN_bms_status.payload->word2 |= (data_scaled >> 4) & 0x0FFF;
+void CAN_bms_status_M0_packCurrent_set(float packCurrent){
+	uint16_t data_scaled = (uint16_t)((packCurrent - 0) / 0.01 + 0.5f);
+	CAN_bms_status_payloads[0].word1 &= ~0xE000;
+	CAN_bms_status_payloads[0].word1 |= (data_scaled << 13) & 0xE000;
+	CAN_bms_status_payloads[0].word2 &= ~0x1FFF;
+	CAN_bms_status_payloads[0].word2 |= (data_scaled >> 3) & 0x1FFF;
 }
-void CAN_bms_status_minTemp_set(float minTemp){
-	uint16_t data_scaled = (minTemp - -40) / 0.1;
-	CAN_bms_status.payload->word2 &= ~0xF000;
-	CAN_bms_status.payload->word2 |= (data_scaled << 12) & 0xF000;
-	CAN_bms_status.payload->word3 &= ~0x003F;
-	CAN_bms_status.payload->word3 |= (data_scaled >> 4) & 0x003F;
+void CAN_bms_status_M0_minTemp_set(float minTemp){
+	uint16_t data_scaled = (uint16_t)((minTemp - -40) / 0.2 + 0.5f);
+	CAN_bms_status_payloads[0].word2 &= ~0xE000;
+	CAN_bms_status_payloads[0].word2 |= (data_scaled << 13) & 0xE000;
+	CAN_bms_status_payloads[0].word3 &= ~0x003F;
+	CAN_bms_status_payloads[0].word3 |= (data_scaled >> 3) & 0x003F;
 }
-void CAN_bms_status_maxTemp_set(float maxTemp){
-	uint16_t data_scaled = (maxTemp - -40) / 0.1;
-	CAN_bms_status.payload->word3 &= ~0xFFC0;
-	CAN_bms_status.payload->word3 |= (data_scaled << 6) & 0xFFC0;
+void CAN_bms_status_M0_maxTemp_set(float maxTemp){
+	uint16_t data_scaled = (uint16_t)((maxTemp - -40) / 0.2 + 0.5f);
+	CAN_bms_status_payloads[0].word3 &= ~0xFFC0;
+	CAN_bms_status_payloads[0].word3 |= (data_scaled << 6) & 0xFFC0;
+}
+void CAN_bms_status_M1_stackVoltage1_set(float stackVoltage1){
+	uint16_t data_scaled = (uint16_t)((stackVoltage1 - 0) / 0.001 + 0.5f);
+	CAN_bms_status_payloads[1].word0 &= ~0xFFFC;
+	CAN_bms_status_payloads[1].word0 |= (data_scaled << 2) & 0xFFFC;
+	CAN_bms_status_payloads[1].word1 &= ~0x0003;
+	CAN_bms_status_payloads[1].word1 |= (data_scaled >> 14) & 0x0003;
+}
+void CAN_bms_status_M1_stackVoltage2_set(float stackVoltage2){
+	uint16_t data_scaled = (uint16_t)((stackVoltage2 - 0) / 0.001 + 0.5f);
+	CAN_bms_status_payloads[1].word1 &= ~0xFFFC;
+	CAN_bms_status_payloads[1].word1 |= (data_scaled << 2) & 0xFFFC;
+	CAN_bms_status_payloads[1].word2 &= ~0x0003;
+	CAN_bms_status_payloads[1].word2 |= (data_scaled >> 14) & 0x0003;
+}
+void CAN_bms_status_M1_packVoltageSumOfStacks_set(float packVoltageSumOfStacks){
+	uint32_t data_scaled = (uint32_t)((packVoltageSumOfStacks - 0) / 0.001 + 0.5f);
+	CAN_bms_status_payloads[1].word2 &= ~0xFFFC;
+	CAN_bms_status_payloads[1].word2 |= (data_scaled << 2) & 0xFFFC;
+	CAN_bms_status_payloads[1].word3 &= ~0x000F;
+	CAN_bms_status_payloads[1].word3 |= (data_scaled >> 14) & 0x000F;
+}
+void CAN_bms_status_M1_mux1_signal4_set(uint16_t mux1_signal4){
+	uint16_t data_scaled = (mux1_signal4 - 0) / 1.0;
+	CAN_bms_status_payloads[1].word3 &= ~0xFFF0;
+	CAN_bms_status_payloads[1].word3 |= (data_scaled << 4) & 0xFFF0;
+}
+void CAN_bms_status_M2_mux2_signal1_set(uint16_t mux2_signal1){
+	uint16_t data_scaled = (mux2_signal1 - 0) / 1.0;
+	CAN_bms_status_payloads[2].word0 &= ~0xFFFC;
+	CAN_bms_status_payloads[2].word0 |= (data_scaled << 2) & 0xFFFC;
+	CAN_bms_status_payloads[2].word1 &= ~0x0003;
+	CAN_bms_status_payloads[2].word1 |= (data_scaled >> 14) & 0x0003;
+}
+void CAN_bms_status_M2_mux2_signal2_set(uint16_t mux2_signal2){
+	uint16_t data_scaled = (mux2_signal2 - 0) / 1.0;
+	CAN_bms_status_payloads[2].word1 &= ~0xFFFC;
+	CAN_bms_status_payloads[2].word1 |= (data_scaled << 2) & 0xFFFC;
+	CAN_bms_status_payloads[2].word2 &= ~0x0003;
+	CAN_bms_status_payloads[2].word2 |= (data_scaled >> 14) & 0x0003;
+}
+void CAN_bms_status_M2_mux2_signal3_set(uint16_t mux2_signal3){
+	uint16_t data_scaled = (mux2_signal3 - 0) / 1.0;
+	CAN_bms_status_payloads[2].word2 &= ~0xFFFC;
+	CAN_bms_status_payloads[2].word2 |= (data_scaled << 2) & 0xFFFC;
+	CAN_bms_status_payloads[2].word3 &= ~0x0003;
+	CAN_bms_status_payloads[2].word3 |= (data_scaled >> 14) & 0x0003;
+}
+void CAN_bms_status_M2_mux2_signal4_set(uint16_t mux2_signal4){
+	uint16_t data_scaled = (mux2_signal4 - 0) / 1.0;
+	CAN_bms_status_payloads[2].word3 &= ~0xFFFC;
+	CAN_bms_status_payloads[2].word3 |= (data_scaled << 2) & 0xFFFC;
+}
+void CAN_bms_status_M3_mux3_signal1_set(uint16_t mux3_signal1){
+	uint16_t data_scaled = (mux3_signal1 - 0) / 1.0;
+	CAN_bms_status_payloads[3].word0 &= ~0xFFFC;
+	CAN_bms_status_payloads[3].word0 |= (data_scaled << 2) & 0xFFFC;
+	CAN_bms_status_payloads[3].word1 &= ~0x0003;
+	CAN_bms_status_payloads[3].word1 |= (data_scaled >> 14) & 0x0003;
+}
+void CAN_bms_status_M3_mux3_signal2_set(uint16_t mux3_signal2){
+	uint16_t data_scaled = (mux3_signal2 - 0) / 1.0;
+	CAN_bms_status_payloads[3].word1 &= ~0xFFFC;
+	CAN_bms_status_payloads[3].word1 |= (data_scaled << 2) & 0xFFFC;
+	CAN_bms_status_payloads[3].word2 &= ~0x0003;
+	CAN_bms_status_payloads[3].word2 |= (data_scaled >> 14) & 0x0003;
+}
+void CAN_bms_status_M3_mux3_signal3_set(uint16_t mux3_signal3){
+	uint16_t data_scaled = (mux3_signal3 - 0) / 1.0;
+	CAN_bms_status_payloads[3].word2 &= ~0xFFFC;
+	CAN_bms_status_payloads[3].word2 |= (data_scaled << 2) & 0xFFFC;
+	CAN_bms_status_payloads[3].word3 &= ~0x0003;
+	CAN_bms_status_payloads[3].word3 |= (data_scaled >> 14) & 0x0003;
+}
+void CAN_bms_status_M3_mux3_signal4_set(uint16_t mux3_signal4){
+	uint16_t data_scaled = (mux3_signal4 - 0) / 1.0;
+	CAN_bms_status_payloads[3].word3 &= ~0xFFFC;
+	CAN_bms_status_payloads[3].word3 |= (data_scaled << 2) & 0xFFFC;
 }
 void CAN_bms_status_dlc_set(uint8_t dlc){
 	CAN_bms_status.dlc = dlc;
 }
 void CAN_bms_status_send(void){
+	// Auto-select current mux payload
+	CAN_bms_status.payload = &CAN_bms_status_payloads[CAN_bms_status_mux];
+	// Send the message
 	CAN_write(CAN_bms_status);
+	// Increment mux counter for next time
+	CAN_bms_status_mux++;
+	if (CAN_bms_status_mux >= CAN_BMS_STATUS_NUM_MUX_VALUES) {
+		CAN_bms_status_mux = 0;
+	}
 }
 
 #define CAN_bms_status_2_ID 0x722
@@ -326,12 +439,12 @@ void CAN_bms_status_2_DCDC_fault_set(uint16_t DCDC_fault){
 	CAN_bms_status_2.payload->word0 |= (data_scaled << 1) & 0x0002;
 }
 void CAN_bms_status_2_DCDC_voltage_set(float DCDC_voltage){
-	uint16_t data_scaled = (DCDC_voltage - 0) / 0.1;
+	uint16_t data_scaled = (uint16_t)((DCDC_voltage - 0) / 0.1 + 0.5f);
 	CAN_bms_status_2.payload->word0 &= ~0x0FFC;
 	CAN_bms_status_2.payload->word0 |= (data_scaled << 2) & 0x0FFC;
 }
 void CAN_bms_status_2_DCDC_current_set(float DCDC_current){
-	uint16_t data_scaled = (DCDC_current - 0) / 0.1;
+	uint16_t data_scaled = (uint16_t)((DCDC_current - 0) / 0.1 + 0.5f);
 	CAN_bms_status_2.payload->word0 &= ~0xF000;
 	CAN_bms_status_2.payload->word0 |= (data_scaled << 12) & 0xF000;
 	CAN_bms_status_2.payload->word1 &= ~0x003F;
@@ -348,14 +461,14 @@ void CAN_bms_status_2_EV_charger_fault_set(uint16_t EV_charger_fault){
 	CAN_bms_status_2.payload->word1 |= (data_scaled << 7) & 0x0080;
 }
 void CAN_bms_status_2_EV_charger_voltage_set(float EV_charger_voltage){
-	uint16_t data_scaled = (EV_charger_voltage - 0) / 0.1;
+	uint16_t data_scaled = (uint16_t)((EV_charger_voltage - 0) / 0.1 + 0.5f);
 	CAN_bms_status_2.payload->word1 &= ~0xFF00;
 	CAN_bms_status_2.payload->word1 |= (data_scaled << 8) & 0xFF00;
 	CAN_bms_status_2.payload->word2 &= ~0x0003;
 	CAN_bms_status_2.payload->word2 |= (data_scaled >> 8) & 0x0003;
 }
 void CAN_bms_status_2_EV_charger_current_set(float EV_charger_current){
-	uint16_t data_scaled = (EV_charger_current - 0) / 0.1;
+	uint16_t data_scaled = (uint16_t)((EV_charger_current - 0) / 0.1 + 0.5f);
 	CAN_bms_status_2.payload->word2 &= ~0x0FFC;
 	CAN_bms_status_2.payload->word2 |= (data_scaled << 2) & 0x0FFC;
 }
@@ -365,7 +478,7 @@ void CAN_bms_status_2_HV_precharge_state_set(uint16_t HV_precharge_state){
 	CAN_bms_status_2.payload->word2 |= (data_scaled << 12) & 0x1000;
 }
 void CAN_bms_status_2_HV_isolation_voltage_set(float HV_isolation_voltage){
-	uint16_t data_scaled = (HV_isolation_voltage - 0) / 0.1;
+	uint16_t data_scaled = (uint16_t)((HV_isolation_voltage - 0) / 0.1 + 0.5f);
 	CAN_bms_status_2.payload->word2 &= ~0xE000;
 	CAN_bms_status_2.payload->word2 |= (data_scaled << 13) & 0xE000;
 	CAN_bms_status_2.payload->word3 &= ~0x007F;
@@ -420,33 +533,33 @@ void CAN_bms_debug_bool1_set(uint16_t bool1){
 	CAN_bms_debug.payload->word0 |= (data_scaled << 1) & 0x0002;
 }
 void CAN_bms_debug_float1_set(float float1){
-	uint16_t data_scaled = (float1 - 0) / 0.01;
+	uint16_t data_scaled = (uint16_t)((float1 - 0) / 0.01 + 0.5f);
 	CAN_bms_debug.payload->word0 &= ~0xFFFC;
 	CAN_bms_debug.payload->word0 |= (data_scaled << 2) & 0xFFFC;
 	CAN_bms_debug.payload->word1 &= ~0x0003;
 	CAN_bms_debug.payload->word1 |= (data_scaled >> 14) & 0x0003;
 }
 void CAN_bms_debug_float2_set(float float2){
-	uint16_t data_scaled = (float2 - 0) / 0.01;
+	uint16_t data_scaled = (uint16_t)((float2 - 0) / 0.01 + 0.5f);
 	CAN_bms_debug.payload->word1 &= ~0xFFFC;
 	CAN_bms_debug.payload->word1 |= (data_scaled << 2) & 0xFFFC;
 	CAN_bms_debug.payload->word2 &= ~0x0003;
 	CAN_bms_debug.payload->word2 |= (data_scaled >> 14) & 0x0003;
 }
 void CAN_bms_debug_VBUS_Voltage_set(float VBUS_Voltage){
-	uint16_t data_scaled = (VBUS_Voltage - 0) / 0.1;
+	uint16_t data_scaled = (uint16_t)((VBUS_Voltage - 0) / 0.1 + 0.5f);
 	CAN_bms_debug.payload->word2 &= ~0x0FFC;
 	CAN_bms_debug.payload->word2 |= (data_scaled << 2) & 0x0FFC;
 }
 void CAN_bms_debug_CPU_USAGE_set(float CPU_USAGE){
-	uint16_t data_scaled = (CPU_USAGE - 0) / 0.1;
+	uint16_t data_scaled = (uint16_t)((CPU_USAGE - 0) / 0.1 + 0.5f);
 	CAN_bms_debug.payload->word2 &= ~0xF000;
 	CAN_bms_debug.payload->word2 |= (data_scaled << 12) & 0xF000;
 	CAN_bms_debug.payload->word3 &= ~0x003F;
 	CAN_bms_debug.payload->word3 |= (data_scaled >> 4) & 0x003F;
 }
 void CAN_bms_debug_CPU_peak_set(float CPU_peak){
-	uint16_t data_scaled = (CPU_peak - 0) / 0.1;
+	uint16_t data_scaled = (uint16_t)((CPU_peak - 0) / 0.1 + 0.5f);
 	CAN_bms_debug.payload->word3 &= ~0xFFC0;
 	CAN_bms_debug.payload->word3 |= (data_scaled << 6) & 0xFFC0;
 }
@@ -616,12 +729,13 @@ void CAN_bms_charger_request_send(void){
 
 #define CAN_bms_cellVoltages_ID 0x725
 
-static CAN_payload_S CAN_bms_cellVoltages_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static CAN_payload_S CAN_bms_cellVoltages_payloads[6] __attribute__((aligned(sizeof(CAN_payload_S))));
+static uint8_t CAN_bms_cellVoltages_mux = 0;
 static CAN_message_S CAN_bms_cellVoltages={
 	.canID = CAN_bms_cellVoltages_ID,
 	.canXID = 0,
 	.dlc = 8,
-	.payload = &CAN_bms_cellVoltages_payload,
+	.payload = 0,
 	.canMessageStatus = 0
 };
 
@@ -676,182 +790,186 @@ static CAN_message_S CAN_bms_cellVoltages={
 #define CAN_BMS_CELLVOLTAGES_M5_CELL_24_VOLTAGE_RANGE 15
 #define CAN_BMS_CELLVOLTAGES_M5_CELL_24_VOLTAGE_OFFSET 49
 
-void CAN_bms_cellVoltages_MultiPlex_set(uint16_t MultiPlex){
-	uint16_t data_scaled = (MultiPlex - 0) / 1.0;
-	CAN_bms_cellVoltages.payload->word0 &= ~0x000F;
-	CAN_bms_cellVoltages.payload->word0 |= (data_scaled << 0) & 0x000F;
+void CAN_bms_cellVoltages_M0_cell_1_voltage_set(uint16_t cell_1_voltage){
+	uint16_t data_scaled = (cell_1_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[0].word0 &= ~0xFFF0;
+	CAN_bms_cellVoltages_payloads[0].word0 |= (data_scaled << 4) & 0xFFF0;
+	CAN_bms_cellVoltages_payloads[0].word1 &= ~0x0007;
+	CAN_bms_cellVoltages_payloads[0].word1 |= (data_scaled >> 12) & 0x0007;
 }
-void CAN_bms_cellVoltages_M0_cell_1_voltage_set(float cell_1_voltage){
-	uint16_t data_scaled = (cell_1_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word0 &= ~0xFFF0;
-	CAN_bms_cellVoltages.payload->word0 |= (data_scaled << 4) & 0xFFF0;
-	CAN_bms_cellVoltages.payload->word1 &= ~0x0007;
-	CAN_bms_cellVoltages.payload->word1 |= (data_scaled >> 12) & 0x0007;
+void CAN_bms_cellVoltages_M0_cell_2_voltage_set(uint16_t cell_2_voltage){
+	uint16_t data_scaled = (cell_2_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[0].word1 &= ~0xFFF8;
+	CAN_bms_cellVoltages_payloads[0].word1 |= (data_scaled << 3) & 0xFFF8;
+	CAN_bms_cellVoltages_payloads[0].word2 &= ~0x0003;
+	CAN_bms_cellVoltages_payloads[0].word2 |= (data_scaled >> 13) & 0x0003;
 }
-void CAN_bms_cellVoltages_M0_cell_2_voltage_set(float cell_2_voltage){
-	uint16_t data_scaled = (cell_2_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word1 &= ~0xFFF8;
-	CAN_bms_cellVoltages.payload->word1 |= (data_scaled << 3) & 0xFFF8;
-	CAN_bms_cellVoltages.payload->word2 &= ~0x0003;
-	CAN_bms_cellVoltages.payload->word2 |= (data_scaled >> 13) & 0x0003;
+void CAN_bms_cellVoltages_M0_cell_3_voltage_set(uint16_t cell_3_voltage){
+	uint16_t data_scaled = (cell_3_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[0].word2 &= ~0xFFFC;
+	CAN_bms_cellVoltages_payloads[0].word2 |= (data_scaled << 2) & 0xFFFC;
+	CAN_bms_cellVoltages_payloads[0].word3 &= ~0x0001;
+	CAN_bms_cellVoltages_payloads[0].word3 |= (data_scaled >> 14) & 0x0001;
 }
-void CAN_bms_cellVoltages_M0_cell_3_voltage_set(float cell_3_voltage){
-	uint16_t data_scaled = (cell_3_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word2 &= ~0xFFFC;
-	CAN_bms_cellVoltages.payload->word2 |= (data_scaled << 2) & 0xFFFC;
-	CAN_bms_cellVoltages.payload->word3 &= ~0x0001;
-	CAN_bms_cellVoltages.payload->word3 |= (data_scaled >> 14) & 0x0001;
+void CAN_bms_cellVoltages_M0_cell_4_voltage_set(uint16_t cell_4_voltage){
+	uint16_t data_scaled = (cell_4_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[0].word3 &= ~0xFFFE;
+	CAN_bms_cellVoltages_payloads[0].word3 |= (data_scaled << 1) & 0xFFFE;
 }
-void CAN_bms_cellVoltages_M0_cell_4_voltage_set(float cell_4_voltage){
-	uint16_t data_scaled = (cell_4_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word3 &= ~0xFFFE;
-	CAN_bms_cellVoltages.payload->word3 |= (data_scaled << 1) & 0xFFFE;
+void CAN_bms_cellVoltages_M1_cell_5_voltage_set(uint16_t cell_5_voltage){
+	uint16_t data_scaled = (cell_5_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[1].word0 &= ~0xFFF0;
+	CAN_bms_cellVoltages_payloads[1].word0 |= (data_scaled << 4) & 0xFFF0;
+	CAN_bms_cellVoltages_payloads[1].word1 &= ~0x0007;
+	CAN_bms_cellVoltages_payloads[1].word1 |= (data_scaled >> 12) & 0x0007;
 }
-void CAN_bms_cellVoltages_M1_cell_5_voltage_set(float cell_5_voltage){
-	uint16_t data_scaled = (cell_5_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word0 &= ~0xFFF0;
-	CAN_bms_cellVoltages.payload->word0 |= (data_scaled << 4) & 0xFFF0;
-	CAN_bms_cellVoltages.payload->word1 &= ~0x0007;
-	CAN_bms_cellVoltages.payload->word1 |= (data_scaled >> 12) & 0x0007;
+void CAN_bms_cellVoltages_M1_cell_6_voltage_set(uint16_t cell_6_voltage){
+	uint16_t data_scaled = (cell_6_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[1].word1 &= ~0xFFF8;
+	CAN_bms_cellVoltages_payloads[1].word1 |= (data_scaled << 3) & 0xFFF8;
+	CAN_bms_cellVoltages_payloads[1].word2 &= ~0x0003;
+	CAN_bms_cellVoltages_payloads[1].word2 |= (data_scaled >> 13) & 0x0003;
 }
-void CAN_bms_cellVoltages_M1_cell_6_voltage_set(float cell_6_voltage){
-	uint16_t data_scaled = (cell_6_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word1 &= ~0xFFF8;
-	CAN_bms_cellVoltages.payload->word1 |= (data_scaled << 3) & 0xFFF8;
-	CAN_bms_cellVoltages.payload->word2 &= ~0x0003;
-	CAN_bms_cellVoltages.payload->word2 |= (data_scaled >> 13) & 0x0003;
+void CAN_bms_cellVoltages_M1_cell_7_voltage_set(uint16_t cell_7_voltage){
+	uint16_t data_scaled = (cell_7_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[1].word2 &= ~0xFFFC;
+	CAN_bms_cellVoltages_payloads[1].word2 |= (data_scaled << 2) & 0xFFFC;
+	CAN_bms_cellVoltages_payloads[1].word3 &= ~0x0001;
+	CAN_bms_cellVoltages_payloads[1].word3 |= (data_scaled >> 14) & 0x0001;
 }
-void CAN_bms_cellVoltages_M1_cell_7_voltage_set(float cell_7_voltage){
-	uint16_t data_scaled = (cell_7_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word2 &= ~0xFFFC;
-	CAN_bms_cellVoltages.payload->word2 |= (data_scaled << 2) & 0xFFFC;
-	CAN_bms_cellVoltages.payload->word3 &= ~0x0001;
-	CAN_bms_cellVoltages.payload->word3 |= (data_scaled >> 14) & 0x0001;
+void CAN_bms_cellVoltages_M1_cell_8_voltage_set(uint16_t cell_8_voltage){
+	uint16_t data_scaled = (cell_8_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[1].word3 &= ~0xFFFE;
+	CAN_bms_cellVoltages_payloads[1].word3 |= (data_scaled << 1) & 0xFFFE;
 }
-void CAN_bms_cellVoltages_M1_cell_8_voltage_set(float cell_8_voltage){
-	uint16_t data_scaled = (cell_8_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word3 &= ~0xFFFE;
-	CAN_bms_cellVoltages.payload->word3 |= (data_scaled << 1) & 0xFFFE;
+void CAN_bms_cellVoltages_M2_cell_9_voltage_set(uint16_t cell_9_voltage){
+	uint16_t data_scaled = (cell_9_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[2].word0 &= ~0xFFF0;
+	CAN_bms_cellVoltages_payloads[2].word0 |= (data_scaled << 4) & 0xFFF0;
+	CAN_bms_cellVoltages_payloads[2].word1 &= ~0x0007;
+	CAN_bms_cellVoltages_payloads[2].word1 |= (data_scaled >> 12) & 0x0007;
 }
-void CAN_bms_cellVoltages_M2_cell_9_voltage_set(float cell_9_voltage){
-	uint16_t data_scaled = (cell_9_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word0 &= ~0xFFF0;
-	CAN_bms_cellVoltages.payload->word0 |= (data_scaled << 4) & 0xFFF0;
-	CAN_bms_cellVoltages.payload->word1 &= ~0x0007;
-	CAN_bms_cellVoltages.payload->word1 |= (data_scaled >> 12) & 0x0007;
+void CAN_bms_cellVoltages_M2_cell_10_voltage_set(uint16_t cell_10_voltage){
+	uint16_t data_scaled = (cell_10_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[2].word1 &= ~0xFFF8;
+	CAN_bms_cellVoltages_payloads[2].word1 |= (data_scaled << 3) & 0xFFF8;
+	CAN_bms_cellVoltages_payloads[2].word2 &= ~0x0003;
+	CAN_bms_cellVoltages_payloads[2].word2 |= (data_scaled >> 13) & 0x0003;
 }
-void CAN_bms_cellVoltages_M2_cell_10_voltage_set(float cell_10_voltage){
-	uint16_t data_scaled = (cell_10_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word1 &= ~0xFFF8;
-	CAN_bms_cellVoltages.payload->word1 |= (data_scaled << 3) & 0xFFF8;
-	CAN_bms_cellVoltages.payload->word2 &= ~0x0003;
-	CAN_bms_cellVoltages.payload->word2 |= (data_scaled >> 13) & 0x0003;
+void CAN_bms_cellVoltages_M2_cell_11_voltage_set(uint16_t cell_11_voltage){
+	uint16_t data_scaled = (cell_11_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[2].word2 &= ~0xFFFC;
+	CAN_bms_cellVoltages_payloads[2].word2 |= (data_scaled << 2) & 0xFFFC;
+	CAN_bms_cellVoltages_payloads[2].word3 &= ~0x0001;
+	CAN_bms_cellVoltages_payloads[2].word3 |= (data_scaled >> 14) & 0x0001;
 }
-void CAN_bms_cellVoltages_M2_cell_11_voltage_set(float cell_11_voltage){
-	uint16_t data_scaled = (cell_11_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word2 &= ~0xFFFC;
-	CAN_bms_cellVoltages.payload->word2 |= (data_scaled << 2) & 0xFFFC;
-	CAN_bms_cellVoltages.payload->word3 &= ~0x0001;
-	CAN_bms_cellVoltages.payload->word3 |= (data_scaled >> 14) & 0x0001;
+void CAN_bms_cellVoltages_M2_cell_12_voltage_set(uint16_t cell_12_voltage){
+	uint16_t data_scaled = (cell_12_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[2].word3 &= ~0xFFFE;
+	CAN_bms_cellVoltages_payloads[2].word3 |= (data_scaled << 1) & 0xFFFE;
 }
-void CAN_bms_cellVoltages_M2_cell_12_voltage_set(float cell_12_voltage){
-	uint16_t data_scaled = (cell_12_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word3 &= ~0xFFFE;
-	CAN_bms_cellVoltages.payload->word3 |= (data_scaled << 1) & 0xFFFE;
+void CAN_bms_cellVoltages_M3_cell_13_voltage_set(uint16_t cell_13_voltage){
+	uint16_t data_scaled = (cell_13_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[3].word0 &= ~0xFFF0;
+	CAN_bms_cellVoltages_payloads[3].word0 |= (data_scaled << 4) & 0xFFF0;
+	CAN_bms_cellVoltages_payloads[3].word1 &= ~0x0007;
+	CAN_bms_cellVoltages_payloads[3].word1 |= (data_scaled >> 12) & 0x0007;
 }
-void CAN_bms_cellVoltages_M3_cell_13_voltage_set(float cell_13_voltage){
-	uint16_t data_scaled = (cell_13_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word0 &= ~0xFFF0;
-	CAN_bms_cellVoltages.payload->word0 |= (data_scaled << 4) & 0xFFF0;
-	CAN_bms_cellVoltages.payload->word1 &= ~0x0007;
-	CAN_bms_cellVoltages.payload->word1 |= (data_scaled >> 12) & 0x0007;
+void CAN_bms_cellVoltages_M3_cell_14_voltage_set(uint16_t cell_14_voltage){
+	uint16_t data_scaled = (cell_14_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[3].word1 &= ~0xFFF8;
+	CAN_bms_cellVoltages_payloads[3].word1 |= (data_scaled << 3) & 0xFFF8;
+	CAN_bms_cellVoltages_payloads[3].word2 &= ~0x0003;
+	CAN_bms_cellVoltages_payloads[3].word2 |= (data_scaled >> 13) & 0x0003;
 }
-void CAN_bms_cellVoltages_M3_cell_14_voltage_set(float cell_14_voltage){
-	uint16_t data_scaled = (cell_14_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word1 &= ~0xFFF8;
-	CAN_bms_cellVoltages.payload->word1 |= (data_scaled << 3) & 0xFFF8;
-	CAN_bms_cellVoltages.payload->word2 &= ~0x0003;
-	CAN_bms_cellVoltages.payload->word2 |= (data_scaled >> 13) & 0x0003;
+void CAN_bms_cellVoltages_M3_cell_15_voltage_set(uint16_t cell_15_voltage){
+	uint16_t data_scaled = (cell_15_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[3].word2 &= ~0xFFFC;
+	CAN_bms_cellVoltages_payloads[3].word2 |= (data_scaled << 2) & 0xFFFC;
+	CAN_bms_cellVoltages_payloads[3].word3 &= ~0x0001;
+	CAN_bms_cellVoltages_payloads[3].word3 |= (data_scaled >> 14) & 0x0001;
 }
-void CAN_bms_cellVoltages_M3_cell_15_voltage_set(float cell_15_voltage){
-	uint16_t data_scaled = (cell_15_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word2 &= ~0xFFFC;
-	CAN_bms_cellVoltages.payload->word2 |= (data_scaled << 2) & 0xFFFC;
-	CAN_bms_cellVoltages.payload->word3 &= ~0x0001;
-	CAN_bms_cellVoltages.payload->word3 |= (data_scaled >> 14) & 0x0001;
+void CAN_bms_cellVoltages_M3_cell_16_voltage_set(uint16_t cell_16_voltage){
+	uint16_t data_scaled = (cell_16_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[3].word3 &= ~0xFFFE;
+	CAN_bms_cellVoltages_payloads[3].word3 |= (data_scaled << 1) & 0xFFFE;
 }
-void CAN_bms_cellVoltages_M3_cell_16_voltage_set(float cell_16_voltage){
-	uint16_t data_scaled = (cell_16_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word3 &= ~0xFFFE;
-	CAN_bms_cellVoltages.payload->word3 |= (data_scaled << 1) & 0xFFFE;
+void CAN_bms_cellVoltages_M4_cell_17_voltage_set(uint16_t cell_17_voltage){
+	uint16_t data_scaled = (cell_17_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[4].word0 &= ~0xFFF0;
+	CAN_bms_cellVoltages_payloads[4].word0 |= (data_scaled << 4) & 0xFFF0;
+	CAN_bms_cellVoltages_payloads[4].word1 &= ~0x0007;
+	CAN_bms_cellVoltages_payloads[4].word1 |= (data_scaled >> 12) & 0x0007;
 }
-void CAN_bms_cellVoltages_M4_cell_17_voltage_set(float cell_17_voltage){
-	uint16_t data_scaled = (cell_17_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word0 &= ~0xFFF0;
-	CAN_bms_cellVoltages.payload->word0 |= (data_scaled << 4) & 0xFFF0;
-	CAN_bms_cellVoltages.payload->word1 &= ~0x0007;
-	CAN_bms_cellVoltages.payload->word1 |= (data_scaled >> 12) & 0x0007;
+void CAN_bms_cellVoltages_M4_cell_18_voltage_set(uint16_t cell_18_voltage){
+	uint16_t data_scaled = (cell_18_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[4].word1 &= ~0xFFF8;
+	CAN_bms_cellVoltages_payloads[4].word1 |= (data_scaled << 3) & 0xFFF8;
+	CAN_bms_cellVoltages_payloads[4].word2 &= ~0x0003;
+	CAN_bms_cellVoltages_payloads[4].word2 |= (data_scaled >> 13) & 0x0003;
 }
-void CAN_bms_cellVoltages_M4_cell_18_voltage_set(float cell_18_voltage){
-	uint16_t data_scaled = (cell_18_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word1 &= ~0xFFF8;
-	CAN_bms_cellVoltages.payload->word1 |= (data_scaled << 3) & 0xFFF8;
-	CAN_bms_cellVoltages.payload->word2 &= ~0x0003;
-	CAN_bms_cellVoltages.payload->word2 |= (data_scaled >> 13) & 0x0003;
+void CAN_bms_cellVoltages_M4_cell_19_voltage_set(uint16_t cell_19_voltage){
+	uint16_t data_scaled = (cell_19_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[4].word2 &= ~0xFFFC;
+	CAN_bms_cellVoltages_payloads[4].word2 |= (data_scaled << 2) & 0xFFFC;
+	CAN_bms_cellVoltages_payloads[4].word3 &= ~0x0001;
+	CAN_bms_cellVoltages_payloads[4].word3 |= (data_scaled >> 14) & 0x0001;
 }
-void CAN_bms_cellVoltages_M4_cell_19_voltage_set(float cell_19_voltage){
-	uint16_t data_scaled = (cell_19_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word2 &= ~0xFFFC;
-	CAN_bms_cellVoltages.payload->word2 |= (data_scaled << 2) & 0xFFFC;
-	CAN_bms_cellVoltages.payload->word3 &= ~0x0001;
-	CAN_bms_cellVoltages.payload->word3 |= (data_scaled >> 14) & 0x0001;
+void CAN_bms_cellVoltages_M4_cell_20_voltage_set(uint16_t cell_20_voltage){
+	uint16_t data_scaled = (cell_20_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[4].word3 &= ~0xFFFE;
+	CAN_bms_cellVoltages_payloads[4].word3 |= (data_scaled << 1) & 0xFFFE;
 }
-void CAN_bms_cellVoltages_M4_cell_20_voltage_set(float cell_20_voltage){
-	uint16_t data_scaled = (cell_20_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word3 &= ~0xFFFE;
-	CAN_bms_cellVoltages.payload->word3 |= (data_scaled << 1) & 0xFFFE;
+void CAN_bms_cellVoltages_M5_cell_21_voltage_set(uint16_t cell_21_voltage){
+	uint16_t data_scaled = (cell_21_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[5].word0 &= ~0xFFF0;
+	CAN_bms_cellVoltages_payloads[5].word0 |= (data_scaled << 4) & 0xFFF0;
+	CAN_bms_cellVoltages_payloads[5].word1 &= ~0x0007;
+	CAN_bms_cellVoltages_payloads[5].word1 |= (data_scaled >> 12) & 0x0007;
 }
-void CAN_bms_cellVoltages_M5_cell_21_voltage_set(float cell_21_voltage){
-	uint16_t data_scaled = (cell_21_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word0 &= ~0xFFF0;
-	CAN_bms_cellVoltages.payload->word0 |= (data_scaled << 4) & 0xFFF0;
-	CAN_bms_cellVoltages.payload->word1 &= ~0x0007;
-	CAN_bms_cellVoltages.payload->word1 |= (data_scaled >> 12) & 0x0007;
+void CAN_bms_cellVoltages_M5_cell_22_voltage_set(uint16_t cell_22_voltage){
+	uint16_t data_scaled = (cell_22_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[5].word1 &= ~0xFFF8;
+	CAN_bms_cellVoltages_payloads[5].word1 |= (data_scaled << 3) & 0xFFF8;
+	CAN_bms_cellVoltages_payloads[5].word2 &= ~0x0003;
+	CAN_bms_cellVoltages_payloads[5].word2 |= (data_scaled >> 13) & 0x0003;
 }
-void CAN_bms_cellVoltages_M5_cell_22_voltage_set(float cell_22_voltage){
-	uint16_t data_scaled = (cell_22_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word1 &= ~0xFFF8;
-	CAN_bms_cellVoltages.payload->word1 |= (data_scaled << 3) & 0xFFF8;
-	CAN_bms_cellVoltages.payload->word2 &= ~0x0003;
-	CAN_bms_cellVoltages.payload->word2 |= (data_scaled >> 13) & 0x0003;
+void CAN_bms_cellVoltages_M5_cell_23_voltage_set(uint16_t cell_23_voltage){
+	uint16_t data_scaled = (cell_23_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[5].word2 &= ~0xFFFC;
+	CAN_bms_cellVoltages_payloads[5].word2 |= (data_scaled << 2) & 0xFFFC;
+	CAN_bms_cellVoltages_payloads[5].word3 &= ~0x0001;
+	CAN_bms_cellVoltages_payloads[5].word3 |= (data_scaled >> 14) & 0x0001;
 }
-void CAN_bms_cellVoltages_M5_cell_23_voltage_set(float cell_23_voltage){
-	uint16_t data_scaled = (cell_23_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word2 &= ~0xFFFC;
-	CAN_bms_cellVoltages.payload->word2 |= (data_scaled << 2) & 0xFFFC;
-	CAN_bms_cellVoltages.payload->word3 &= ~0x0001;
-	CAN_bms_cellVoltages.payload->word3 |= (data_scaled >> 14) & 0x0001;
-}
-void CAN_bms_cellVoltages_M5_cell_24_voltage_set(float cell_24_voltage){
-	uint16_t data_scaled = (cell_24_voltage - 0) / 0.001;
-	CAN_bms_cellVoltages.payload->word3 &= ~0xFFFE;
-	CAN_bms_cellVoltages.payload->word3 |= (data_scaled << 1) & 0xFFFE;
+void CAN_bms_cellVoltages_M5_cell_24_voltage_set(uint16_t cell_24_voltage){
+	uint16_t data_scaled = (cell_24_voltage - 0) / 1;
+	CAN_bms_cellVoltages_payloads[5].word3 &= ~0xFFFE;
+	CAN_bms_cellVoltages_payloads[5].word3 |= (data_scaled << 1) & 0xFFFE;
 }
 void CAN_bms_cellVoltages_dlc_set(uint8_t dlc){
 	CAN_bms_cellVoltages.dlc = dlc;
 }
 void CAN_bms_cellVoltages_send(void){
+	// Auto-select current mux payload
+	CAN_bms_cellVoltages.payload = &CAN_bms_cellVoltages_payloads[CAN_bms_cellVoltages_mux];
+	// Send the message
 	CAN_write(CAN_bms_cellVoltages);
+	// Increment mux counter for next time
+	CAN_bms_cellVoltages_mux++;
+	if (CAN_bms_cellVoltages_mux >= CAN_BMS_CELLVOLTAGES_NUM_MUX_VALUES) {
+		CAN_bms_cellVoltages_mux = 0;
+	}
 }
 
 #define CAN_bms_cellTemperaturs_ID 0x726
 
-static CAN_payload_S CAN_bms_cellTemperaturs_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static CAN_payload_S CAN_bms_cellTemperaturs_payloads[6] __attribute__((aligned(sizeof(CAN_payload_S))));
+static uint8_t CAN_bms_cellTemperaturs_mux = 0;
 static CAN_message_S CAN_bms_cellTemperaturs={
 	.canID = CAN_bms_cellTemperaturs_ID,
 	.canXID = 0,
 	.dlc = 8,
-	.payload = &CAN_bms_cellTemperaturs_payload,
+	.payload = 0,
 	.canMessageStatus = 0
 };
 
@@ -906,160 +1024,163 @@ static CAN_message_S CAN_bms_cellTemperaturs={
 #define CAN_BMS_CELLTEMPERATURS_M5_TEMP_24_RANGE 12
 #define CAN_BMS_CELLTEMPERATURS_M5_TEMP_24_OFFSET 40
 
-void CAN_bms_cellTemperaturs_MultiPlex_set(uint16_t MultiPlex){
-	uint16_t data_scaled = (MultiPlex - 0) / 1.0;
-	CAN_bms_cellTemperaturs.payload->word0 &= ~0x000F;
-	CAN_bms_cellTemperaturs.payload->word0 |= (data_scaled << 0) & 0x000F;
-}
 void CAN_bms_cellTemperaturs_M0_temp_1_set(float temp_1){
-	uint16_t data_scaled = (temp_1 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word0 &= ~0xFFF0;
-	CAN_bms_cellTemperaturs.payload->word0 |= (data_scaled << 4) & 0xFFF0;
+	uint16_t data_scaled = (uint16_t)((temp_1 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[0].word0 &= ~0xFFF0;
+	CAN_bms_cellTemperaturs_payloads[0].word0 |= (data_scaled << 4) & 0xFFF0;
 }
 void CAN_bms_cellTemperaturs_M0_temp_2_set(float temp_2){
-	uint16_t data_scaled = (temp_2 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word1 &= ~0x0FFF;
-	CAN_bms_cellTemperaturs.payload->word1 |= (data_scaled << 0) & 0x0FFF;
+	uint16_t data_scaled = (uint16_t)((temp_2 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[0].word1 &= ~0x0FFF;
+	CAN_bms_cellTemperaturs_payloads[0].word1 |= (data_scaled << 0) & 0x0FFF;
 }
 void CAN_bms_cellTemperaturs_M0_temp_3_set(float temp_3){
-	uint16_t data_scaled = (temp_3 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word1 &= ~0xF000;
-	CAN_bms_cellTemperaturs.payload->word1 |= (data_scaled << 12) & 0xF000;
-	CAN_bms_cellTemperaturs.payload->word2 &= ~0x00FF;
-	CAN_bms_cellTemperaturs.payload->word2 |= (data_scaled >> 4) & 0x00FF;
+	uint16_t data_scaled = (uint16_t)((temp_3 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[0].word1 &= ~0xF000;
+	CAN_bms_cellTemperaturs_payloads[0].word1 |= (data_scaled << 12) & 0xF000;
+	CAN_bms_cellTemperaturs_payloads[0].word2 &= ~0x00FF;
+	CAN_bms_cellTemperaturs_payloads[0].word2 |= (data_scaled >> 4) & 0x00FF;
 }
 void CAN_bms_cellTemperaturs_M0_temp_4_set(float temp_4){
-	uint16_t data_scaled = (temp_4 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word2 &= ~0xFF00;
-	CAN_bms_cellTemperaturs.payload->word2 |= (data_scaled << 8) & 0xFF00;
-	CAN_bms_cellTemperaturs.payload->word3 &= ~0x000F;
-	CAN_bms_cellTemperaturs.payload->word3 |= (data_scaled >> 8) & 0x000F;
+	uint16_t data_scaled = (uint16_t)((temp_4 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[0].word2 &= ~0xFF00;
+	CAN_bms_cellTemperaturs_payloads[0].word2 |= (data_scaled << 8) & 0xFF00;
+	CAN_bms_cellTemperaturs_payloads[0].word3 &= ~0x000F;
+	CAN_bms_cellTemperaturs_payloads[0].word3 |= (data_scaled >> 8) & 0x000F;
 }
 void CAN_bms_cellTemperaturs_M1_temp_5_set(float temp_5){
-	uint16_t data_scaled = (temp_5 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word0 &= ~0xFFF0;
-	CAN_bms_cellTemperaturs.payload->word0 |= (data_scaled << 4) & 0xFFF0;
+	uint16_t data_scaled = (uint16_t)((temp_5 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[1].word0 &= ~0xFFF0;
+	CAN_bms_cellTemperaturs_payloads[1].word0 |= (data_scaled << 4) & 0xFFF0;
 }
 void CAN_bms_cellTemperaturs_M1_temp_6_set(float temp_6){
-	uint16_t data_scaled = (temp_6 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word1 &= ~0x0FFF;
-	CAN_bms_cellTemperaturs.payload->word1 |= (data_scaled << 0) & 0x0FFF;
+	uint16_t data_scaled = (uint16_t)((temp_6 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[1].word1 &= ~0x0FFF;
+	CAN_bms_cellTemperaturs_payloads[1].word1 |= (data_scaled << 0) & 0x0FFF;
 }
 void CAN_bms_cellTemperaturs_M1_temp_7_set(float temp_7){
-	uint16_t data_scaled = (temp_7 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word1 &= ~0xF000;
-	CAN_bms_cellTemperaturs.payload->word1 |= (data_scaled << 12) & 0xF000;
-	CAN_bms_cellTemperaturs.payload->word2 &= ~0x00FF;
-	CAN_bms_cellTemperaturs.payload->word2 |= (data_scaled >> 4) & 0x00FF;
+	uint16_t data_scaled = (uint16_t)((temp_7 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[1].word1 &= ~0xF000;
+	CAN_bms_cellTemperaturs_payloads[1].word1 |= (data_scaled << 12) & 0xF000;
+	CAN_bms_cellTemperaturs_payloads[1].word2 &= ~0x00FF;
+	CAN_bms_cellTemperaturs_payloads[1].word2 |= (data_scaled >> 4) & 0x00FF;
 }
 void CAN_bms_cellTemperaturs_M1_temp_8_set(float temp_8){
-	uint16_t data_scaled = (temp_8 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word2 &= ~0xFF00;
-	CAN_bms_cellTemperaturs.payload->word2 |= (data_scaled << 8) & 0xFF00;
-	CAN_bms_cellTemperaturs.payload->word3 &= ~0x000F;
-	CAN_bms_cellTemperaturs.payload->word3 |= (data_scaled >> 8) & 0x000F;
+	uint16_t data_scaled = (uint16_t)((temp_8 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[1].word2 &= ~0xFF00;
+	CAN_bms_cellTemperaturs_payloads[1].word2 |= (data_scaled << 8) & 0xFF00;
+	CAN_bms_cellTemperaturs_payloads[1].word3 &= ~0x000F;
+	CAN_bms_cellTemperaturs_payloads[1].word3 |= (data_scaled >> 8) & 0x000F;
 }
 void CAN_bms_cellTemperaturs_M2_temp_9_set(float temp_9){
-	uint16_t data_scaled = (temp_9 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word0 &= ~0xFFF0;
-	CAN_bms_cellTemperaturs.payload->word0 |= (data_scaled << 4) & 0xFFF0;
+	uint16_t data_scaled = (uint16_t)((temp_9 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[2].word0 &= ~0xFFF0;
+	CAN_bms_cellTemperaturs_payloads[2].word0 |= (data_scaled << 4) & 0xFFF0;
 }
 void CAN_bms_cellTemperaturs_M2_temp_10_set(float temp_10){
-	uint16_t data_scaled = (temp_10 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word1 &= ~0x0FFF;
-	CAN_bms_cellTemperaturs.payload->word1 |= (data_scaled << 0) & 0x0FFF;
+	uint16_t data_scaled = (uint16_t)((temp_10 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[2].word1 &= ~0x0FFF;
+	CAN_bms_cellTemperaturs_payloads[2].word1 |= (data_scaled << 0) & 0x0FFF;
 }
 void CAN_bms_cellTemperaturs_M2_temp_11_set(float temp_11){
-	uint16_t data_scaled = (temp_11 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word1 &= ~0xF000;
-	CAN_bms_cellTemperaturs.payload->word1 |= (data_scaled << 12) & 0xF000;
-	CAN_bms_cellTemperaturs.payload->word2 &= ~0x00FF;
-	CAN_bms_cellTemperaturs.payload->word2 |= (data_scaled >> 4) & 0x00FF;
+	uint16_t data_scaled = (uint16_t)((temp_11 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[2].word1 &= ~0xF000;
+	CAN_bms_cellTemperaturs_payloads[2].word1 |= (data_scaled << 12) & 0xF000;
+	CAN_bms_cellTemperaturs_payloads[2].word2 &= ~0x00FF;
+	CAN_bms_cellTemperaturs_payloads[2].word2 |= (data_scaled >> 4) & 0x00FF;
 }
 void CAN_bms_cellTemperaturs_M2_temp_12_set(float temp_12){
-	uint16_t data_scaled = (temp_12 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word2 &= ~0xFF00;
-	CAN_bms_cellTemperaturs.payload->word2 |= (data_scaled << 8) & 0xFF00;
-	CAN_bms_cellTemperaturs.payload->word3 &= ~0x000F;
-	CAN_bms_cellTemperaturs.payload->word3 |= (data_scaled >> 8) & 0x000F;
+	uint16_t data_scaled = (uint16_t)((temp_12 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[2].word2 &= ~0xFF00;
+	CAN_bms_cellTemperaturs_payloads[2].word2 |= (data_scaled << 8) & 0xFF00;
+	CAN_bms_cellTemperaturs_payloads[2].word3 &= ~0x000F;
+	CAN_bms_cellTemperaturs_payloads[2].word3 |= (data_scaled >> 8) & 0x000F;
 }
 void CAN_bms_cellTemperaturs_M3_temp_13_set(float temp_13){
-	uint16_t data_scaled = (temp_13 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word0 &= ~0xFFF0;
-	CAN_bms_cellTemperaturs.payload->word0 |= (data_scaled << 4) & 0xFFF0;
+	uint16_t data_scaled = (uint16_t)((temp_13 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[3].word0 &= ~0xFFF0;
+	CAN_bms_cellTemperaturs_payloads[3].word0 |= (data_scaled << 4) & 0xFFF0;
 }
 void CAN_bms_cellTemperaturs_M3_temp_14_set(float temp_14){
-	uint16_t data_scaled = (temp_14 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word1 &= ~0x0FFF;
-	CAN_bms_cellTemperaturs.payload->word1 |= (data_scaled << 0) & 0x0FFF;
+	uint16_t data_scaled = (uint16_t)((temp_14 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[3].word1 &= ~0x0FFF;
+	CAN_bms_cellTemperaturs_payloads[3].word1 |= (data_scaled << 0) & 0x0FFF;
 }
 void CAN_bms_cellTemperaturs_M3_temp_15_set(float temp_15){
-	uint16_t data_scaled = (temp_15 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word1 &= ~0xF000;
-	CAN_bms_cellTemperaturs.payload->word1 |= (data_scaled << 12) & 0xF000;
-	CAN_bms_cellTemperaturs.payload->word2 &= ~0x00FF;
-	CAN_bms_cellTemperaturs.payload->word2 |= (data_scaled >> 4) & 0x00FF;
+	uint16_t data_scaled = (uint16_t)((temp_15 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[3].word1 &= ~0xF000;
+	CAN_bms_cellTemperaturs_payloads[3].word1 |= (data_scaled << 12) & 0xF000;
+	CAN_bms_cellTemperaturs_payloads[3].word2 &= ~0x00FF;
+	CAN_bms_cellTemperaturs_payloads[3].word2 |= (data_scaled >> 4) & 0x00FF;
 }
 void CAN_bms_cellTemperaturs_M3_temp_16_set(float temp_16){
-	uint16_t data_scaled = (temp_16 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word2 &= ~0xFF00;
-	CAN_bms_cellTemperaturs.payload->word2 |= (data_scaled << 8) & 0xFF00;
-	CAN_bms_cellTemperaturs.payload->word3 &= ~0x000F;
-	CAN_bms_cellTemperaturs.payload->word3 |= (data_scaled >> 8) & 0x000F;
+	uint16_t data_scaled = (uint16_t)((temp_16 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[3].word2 &= ~0xFF00;
+	CAN_bms_cellTemperaturs_payloads[3].word2 |= (data_scaled << 8) & 0xFF00;
+	CAN_bms_cellTemperaturs_payloads[3].word3 &= ~0x000F;
+	CAN_bms_cellTemperaturs_payloads[3].word3 |= (data_scaled >> 8) & 0x000F;
 }
 void CAN_bms_cellTemperaturs_M4_temp_17_set(float temp_17){
-	uint16_t data_scaled = (temp_17 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word0 &= ~0xFFF0;
-	CAN_bms_cellTemperaturs.payload->word0 |= (data_scaled << 4) & 0xFFF0;
+	uint16_t data_scaled = (uint16_t)((temp_17 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[4].word0 &= ~0xFFF0;
+	CAN_bms_cellTemperaturs_payloads[4].word0 |= (data_scaled << 4) & 0xFFF0;
 }
 void CAN_bms_cellTemperaturs_M4_temp_18_set(float temp_18){
-	uint16_t data_scaled = (temp_18 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word1 &= ~0x0FFF;
-	CAN_bms_cellTemperaturs.payload->word1 |= (data_scaled << 0) & 0x0FFF;
+	uint16_t data_scaled = (uint16_t)((temp_18 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[4].word1 &= ~0x0FFF;
+	CAN_bms_cellTemperaturs_payloads[4].word1 |= (data_scaled << 0) & 0x0FFF;
 }
 void CAN_bms_cellTemperaturs_M4_temp_19_set(float temp_19){
-	uint16_t data_scaled = (temp_19 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word1 &= ~0xF000;
-	CAN_bms_cellTemperaturs.payload->word1 |= (data_scaled << 12) & 0xF000;
-	CAN_bms_cellTemperaturs.payload->word2 &= ~0x00FF;
-	CAN_bms_cellTemperaturs.payload->word2 |= (data_scaled >> 4) & 0x00FF;
+	uint16_t data_scaled = (uint16_t)((temp_19 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[4].word1 &= ~0xF000;
+	CAN_bms_cellTemperaturs_payloads[4].word1 |= (data_scaled << 12) & 0xF000;
+	CAN_bms_cellTemperaturs_payloads[4].word2 &= ~0x00FF;
+	CAN_bms_cellTemperaturs_payloads[4].word2 |= (data_scaled >> 4) & 0x00FF;
 }
 void CAN_bms_cellTemperaturs_M4_temp_20_set(float temp_20){
-	uint16_t data_scaled = (temp_20 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word2 &= ~0xFF00;
-	CAN_bms_cellTemperaturs.payload->word2 |= (data_scaled << 8) & 0xFF00;
-	CAN_bms_cellTemperaturs.payload->word3 &= ~0x000F;
-	CAN_bms_cellTemperaturs.payload->word3 |= (data_scaled >> 8) & 0x000F;
+	uint16_t data_scaled = (uint16_t)((temp_20 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[4].word2 &= ~0xFF00;
+	CAN_bms_cellTemperaturs_payloads[4].word2 |= (data_scaled << 8) & 0xFF00;
+	CAN_bms_cellTemperaturs_payloads[4].word3 &= ~0x000F;
+	CAN_bms_cellTemperaturs_payloads[4].word3 |= (data_scaled >> 8) & 0x000F;
 }
 void CAN_bms_cellTemperaturs_M5_temp_21_set(float temp_21){
-	uint16_t data_scaled = (temp_21 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word0 &= ~0xFFF0;
-	CAN_bms_cellTemperaturs.payload->word0 |= (data_scaled << 4) & 0xFFF0;
+	uint16_t data_scaled = (uint16_t)((temp_21 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[5].word0 &= ~0xFFF0;
+	CAN_bms_cellTemperaturs_payloads[5].word0 |= (data_scaled << 4) & 0xFFF0;
 }
 void CAN_bms_cellTemperaturs_M5_temp_22_set(float temp_22){
-	uint16_t data_scaled = (temp_22 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word1 &= ~0x0FFF;
-	CAN_bms_cellTemperaturs.payload->word1 |= (data_scaled << 0) & 0x0FFF;
+	uint16_t data_scaled = (uint16_t)((temp_22 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[5].word1 &= ~0x0FFF;
+	CAN_bms_cellTemperaturs_payloads[5].word1 |= (data_scaled << 0) & 0x0FFF;
 }
 void CAN_bms_cellTemperaturs_M5_temp_23_set(float temp_23){
-	uint16_t data_scaled = (temp_23 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word1 &= ~0xF000;
-	CAN_bms_cellTemperaturs.payload->word1 |= (data_scaled << 12) & 0xF000;
-	CAN_bms_cellTemperaturs.payload->word2 &= ~0x00FF;
-	CAN_bms_cellTemperaturs.payload->word2 |= (data_scaled >> 4) & 0x00FF;
+	uint16_t data_scaled = (uint16_t)((temp_23 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[5].word1 &= ~0xF000;
+	CAN_bms_cellTemperaturs_payloads[5].word1 |= (data_scaled << 12) & 0xF000;
+	CAN_bms_cellTemperaturs_payloads[5].word2 &= ~0x00FF;
+	CAN_bms_cellTemperaturs_payloads[5].word2 |= (data_scaled >> 4) & 0x00FF;
 }
 void CAN_bms_cellTemperaturs_M5_temp_24_set(float temp_24){
-	uint16_t data_scaled = (temp_24 - -40) / 0.1;
-	CAN_bms_cellTemperaturs.payload->word2 &= ~0xFF00;
-	CAN_bms_cellTemperaturs.payload->word2 |= (data_scaled << 8) & 0xFF00;
-	CAN_bms_cellTemperaturs.payload->word3 &= ~0x000F;
-	CAN_bms_cellTemperaturs.payload->word3 |= (data_scaled >> 8) & 0x000F;
+	uint16_t data_scaled = (uint16_t)((temp_24 - -40) / 0.1 + 0.5f);
+	CAN_bms_cellTemperaturs_payloads[5].word2 &= ~0xFF00;
+	CAN_bms_cellTemperaturs_payloads[5].word2 |= (data_scaled << 8) & 0xFF00;
+	CAN_bms_cellTemperaturs_payloads[5].word3 &= ~0x000F;
+	CAN_bms_cellTemperaturs_payloads[5].word3 |= (data_scaled >> 8) & 0x000F;
 }
 void CAN_bms_cellTemperaturs_dlc_set(uint8_t dlc){
 	CAN_bms_cellTemperaturs.dlc = dlc;
 }
 void CAN_bms_cellTemperaturs_send(void){
+	// Auto-select current mux payload
+	CAN_bms_cellTemperaturs.payload = &CAN_bms_cellTemperaturs_payloads[CAN_bms_cellTemperaturs_mux];
+	// Send the message
 	CAN_write(CAN_bms_cellTemperaturs);
+	// Increment mux counter for next time
+	CAN_bms_cellTemperaturs_mux++;
+	if (CAN_bms_cellTemperaturs_mux >= CAN_BMS_CELLTEMPERATURS_NUM_MUX_VALUES) {
+		CAN_bms_cellTemperaturs_mux = 0;
+	}
 }
 
 /**********************************************************
@@ -1224,6 +1345,44 @@ uint16_t CAN_boot_host_bms_byte7_get(void){
 void CAN_DBC_init(void) {
 	CAN_configureMailbox(&CAN_mcu_status);
 	CAN_configureMailbox(&CAN_mcu_command);
+	// Initialize multiplexed message: status
+	CAN_bms_status.payload = &CAN_bms_status_payloads[0];
+	// Pre-set mux value 0 in payload 0
+	CAN_bms_status_payloads[0].word0 |= (0 << 0) & 0x0003;
+	// Pre-set mux value 1 in payload 1
+	CAN_bms_status_payloads[1].word0 |= (1 << 0) & 0x0003;
+	// Pre-set mux value 2 in payload 2
+	CAN_bms_status_payloads[2].word0 |= (2 << 0) & 0x0003;
+	// Pre-set mux value 3 in payload 3
+	CAN_bms_status_payloads[3].word0 |= (3 << 0) & 0x0003;
+	// Initialize multiplexed message: cellVoltages
+	CAN_bms_cellVoltages.payload = &CAN_bms_cellVoltages_payloads[0];
+	// Pre-set mux value 0 in payload 0
+	CAN_bms_cellVoltages_payloads[0].word0 |= (0 << 0) & 0x000F;
+	// Pre-set mux value 1 in payload 1
+	CAN_bms_cellVoltages_payloads[1].word0 |= (1 << 0) & 0x000F;
+	// Pre-set mux value 2 in payload 2
+	CAN_bms_cellVoltages_payloads[2].word0 |= (2 << 0) & 0x000F;
+	// Pre-set mux value 3 in payload 3
+	CAN_bms_cellVoltages_payloads[3].word0 |= (3 << 0) & 0x000F;
+	// Pre-set mux value 4 in payload 4
+	CAN_bms_cellVoltages_payloads[4].word0 |= (4 << 0) & 0x000F;
+	// Pre-set mux value 5 in payload 5
+	CAN_bms_cellVoltages_payloads[5].word0 |= (5 << 0) & 0x000F;
+	// Initialize multiplexed message: cellTemperaturs
+	CAN_bms_cellTemperaturs.payload = &CAN_bms_cellTemperaturs_payloads[0];
+	// Pre-set mux value 0 in payload 0
+	CAN_bms_cellTemperaturs_payloads[0].word0 |= (0 << 0) & 0x000F;
+	// Pre-set mux value 1 in payload 1
+	CAN_bms_cellTemperaturs_payloads[1].word0 |= (1 << 0) & 0x000F;
+	// Pre-set mux value 2 in payload 2
+	CAN_bms_cellTemperaturs_payloads[2].word0 |= (2 << 0) & 0x000F;
+	// Pre-set mux value 3 in payload 3
+	CAN_bms_cellTemperaturs_payloads[3].word0 |= (3 << 0) & 0x000F;
+	// Pre-set mux value 4 in payload 4
+	CAN_bms_cellTemperaturs_payloads[4].word0 |= (4 << 0) & 0x000F;
+	// Pre-set mux value 5 in payload 5
+	CAN_bms_cellTemperaturs_payloads[5].word0 |= (5 << 0) & 0x000F;
 	CAN_configureMailbox(&CAN_charger_status);
 	CAN_configureMailbox(&CAN_boot_host_bms);
 }
