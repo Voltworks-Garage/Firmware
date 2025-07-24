@@ -17,12 +17,13 @@
  * State Machine Definition
  *******************************************************************************/
 #define BMS_STATES(state)\
-state(idle) /* init state for startup code */ \
-state(voltage)\
-state(temperature)\
-state(balance)\
-state(data_complete)\
-state(error)
+state(bms_idle) /* init state for startup code */ \
+state(bms_voltage)\
+state(bms_temperature)\
+state(bms_flag)\
+state(bms_balance)\
+state(bms_dataComplete)\
+state(bms_error)
 
 /*Creates an enum of states suffixed with _state*/
 #define STATE_FORM(WORD) WORD##_state,
@@ -43,23 +44,24 @@ typedef enum {
     RUN
 } BMS_entry_types_E;
 
-typedef void(*bmsStatePtr)(BMS_entry_types_E);
+typedef void(*bmsState_FPtr)(BMS_entry_types_E);
 
 /******************************************************************************
  * State Variables
  *******************************************************************************/
 BMS_STATES(FUNCTION_FORM)
-static bmsStatePtr bms_state_functions[] = {BMS_STATES(FUNC_PTR_FORM)};
+static bmsState_FPtr bms_state_functions[] = {BMS_STATES(FUNC_PTR_FORM)};
 
 static BMS_states_E prevState = 0;
 static BMS_states_E curState = 0;
-static BMS_states_E nextState = idle_state;
+static BMS_states_E nextState = bms_idle_state;
 
 /******************************************************************************
  * Internal Variables
  *******************************************************************************/
-static uint32_t balancing_mask = 0;
-NEW_TIMER(error_timer, 3000); // 3000ms timer for BMS error operations
+static bool balancingAllowed = false;
+NEW_TIMER(error_timer, 3000); // 3000ms timer for BMS error operation
+NEW_TIMER(balancing_timer, 1000); // 1000ms timer for balancing operations
 
 /******************************************************************************
  * Public Function Implementations
@@ -96,7 +98,7 @@ void BMS_Init(void) {
     // Send all configuration changes to hardware
     LTC6802_1_SendConfig();
     
-    nextState = idle_state;
+    nextState = bms_idle_state;
 }
 
 void BMS_Run_1ms(void) {
@@ -122,14 +124,14 @@ void BMS_Run_10ms(void) {
  * State Functions
  *******************************************************************************/
 
-void idle(BMS_entry_types_E entry_type) {
+static void bms_idle(BMS_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
             break;
         case RUN:
             LTC6802_1_SetGPIO1(0, true, false);
             LTC6802_1_SetGPIO1(1, true, true);
-            nextState = voltage_state;
+            nextState = bms_voltage_state;
             break;
         case EXIT:
             break;
@@ -138,19 +140,19 @@ void idle(BMS_entry_types_E entry_type) {
     }
 }
 
-void voltage(BMS_entry_types_E entry_type) {
+static void bms_voltage(BMS_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
             // Start new measurement cycle every 10ms if driver is ready
             if (LTC6802_1_StartCellVoltageADC() != LTC6802_1_ERROR_NONE) {
                 // If error, move to error state
-                nextState = error_state;
+                nextState = bms_error_state;
             }
             break;
         case RUN:
             // If busy, just wait for next 10ms cycle
             if (!LTC6802_1_IsBusy()) {
-                nextState = temperature_state;
+                nextState = bms_temperature_state;
             }
             break;
         case EXIT:
@@ -160,21 +162,23 @@ void voltage(BMS_entry_types_E entry_type) {
     }
 }
 
-void temperature(BMS_entry_types_E entry_type) {
+static void bms_temperature(BMS_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
             // Driver completed voltage operation, now start temperature
             if (!LTC6802_1_StartTemperatureADC() == LTC6802_1_ERROR_NONE) {
                 // If error, move to error state
-                nextState = error_state;
+                nextState = bms_error_state;
             }
             break;
+
         case RUN:
             // Check if voltage data is ready
             if (!LTC6802_1_IsBusy()) {
-                nextState = balance_state;
+                nextState = bms_flag_state;
             }
             break;
+
         case EXIT:
             break;
         default:
@@ -182,17 +186,23 @@ void temperature(BMS_entry_types_E entry_type) {
     }
 }
 
-void balance(BMS_entry_types_E entry_type) {
+static void bms_flag(BMS_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
-            break;
-        case RUN:
-            // Check if temperature data is ready
-            if (!LTC6802_1_IsBusy()) {
-                // Both voltage and temperature data are now available
-                nextState = data_complete_state;
+            // Driver completed voltage operation, now start flag read
+            if (!LTC6802_1_StartFlagRead() == LTC6802_1_ERROR_NONE) {
+                // If error, move to error state
+                nextState = bms_error_state;
             }
             break;
+
+        case RUN:
+            // Check if voltage data is ready
+            if (!LTC6802_1_IsBusy()) {
+                nextState = bms_balance_state;
+            }
+            break;
+
         case EXIT:
             break;
         default:
@@ -200,7 +210,36 @@ void balance(BMS_entry_types_E entry_type) {
     }
 }
 
-void data_complete(BMS_entry_types_E entry_type) {
+static void bms_balance(BMS_entry_types_E entry_type) {
+    switch (entry_type) {
+        case ENTRY:
+            // Start balancing operation
+            if (balancingAllowed) {
+                // If balancing is not active, start it
+                if(!LTC6802_1_IsBalancingActive()){
+                    LTC6802_1_StartCellBalancing();
+                    SysTick_TimerStart(balancing_timer);
+                }
+            } else {
+                BMS_ClearAllCellBalancing();
+            }
+
+        case RUN:
+                if (SysTick_TimeOut(balancing_timer)){
+                    BMS_ClearAllCellBalancing();
+                }
+                // always move out of this state
+                nextState = bms_dataComplete_state;
+            break;
+
+        case EXIT:
+            break;
+        default:
+            break;
+    }
+}
+
+static void bms_dataComplete(BMS_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
             break;
@@ -209,7 +248,7 @@ void data_complete(BMS_entry_types_E entry_type) {
             // Reset for next cycle
             LTC6802_1_SetGPIO1(0, false, false);
             LTC6802_1_SetGPIO1(1, false, true);
-            nextState = idle_state;
+            nextState = bms_idle_state;
             break;
         case EXIT:
             break;
@@ -218,7 +257,7 @@ void data_complete(BMS_entry_types_E entry_type) {
     }
 }
 
-void error(BMS_entry_types_E entry_type) {
+static void bms_error(BMS_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
             SysTick_TimerStart(error_timer);
@@ -229,7 +268,7 @@ void error(BMS_entry_types_E entry_type) {
         case RUN:
             // Stay in error state until cleared
             if (SysTick_TimeOut(error_timer)) {
-                nextState = idle_state;
+                nextState = bms_idle_state;
             }
             break;
         case EXIT:
@@ -241,38 +280,22 @@ void error(BMS_entry_types_E entry_type) {
 }
 
 
-bool BMS_IsDataReady(void) {
-    return (curState == data_complete_state);
-}
-
-uint16_t BMS_GetCellVoltage(uint8_t cell_id) {
+uint16_t BMS_GetCellVoltage(uint8_t cellId) {
     // Direct pass-through to driver with staleness detection
-    return LTC6802_1_GetCellVoltage(cell_id);
+    return LTC6802_1_GetCellVoltage(cellId);
 }
 
-float BMS_GetTemperatureVoltage(uint8_t temp_id) {
+float BMS_GetTemperatureVoltage(uint8_t tempId) {
     // Direct pass-through to driver with staleness detection
-    return LTC6802_1_GetTemperatureVoltage(temp_id);
-}
-
-void BMS_SetCellBalancing(uint8_t cell_id, bool enable, bool send_immediately) {
-    if (cell_id >= LTC6802_1_TOTAL_CELLS) {
-        return;
-    }
-    
-    // Update local balancing mask
-    if (enable) {
-        balancing_mask |= (1UL << cell_id);
-    } else {
-        balancing_mask &= ~(1UL << cell_id);
-    }
-    
-    // Apply to driver (non-blocking) using new API
-    LTC6802_1_SetCellBalancing(cell_id, enable, send_immediately);
+    return LTC6802_1_GetTemperatureVoltage(tempId);
 }
 
 void BMS_ClearAllCellBalancing(void) {
-    balancing_mask = 0;
+    // Direct pass-through to driver
     LTC6802_1_ClearAllCellBalancing();
+}
+
+void BMS_SetBalancingIsAllowed(bool allowed){
+    balancingAllowed = allowed;
 }
 

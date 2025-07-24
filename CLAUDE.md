@@ -62,3 +62,11 @@ cd "/mnt/c/REPOS/Voltworks_Garage/Firmware/Projects/MCU_Bootloader.X"
 - ALWAYS review and follow the coding standards in `CODING_STANDARDS.md` before generating any new code
 - Check for unused variable/function warnings when building projects
 - Use proper naming conventions and formatting as specified in the standards document
+
+## Function Renaming Protocol
+- When you modify a public function name in a .c file, you MUST:
+  1. Update the corresponding .h header file to match
+  2. Search the entire codebase for usages of the old function name
+  3. Update all calling code to use the new function name
+  4. Ask the user to build the project to verify no compilation errors
+- This ensures interfaces remain consistent and prevents broken builds

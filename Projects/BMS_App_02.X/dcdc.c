@@ -5,100 +5,217 @@
 #include "SysTick.h"
 #include <stdint.h>
 
-static uint8_t dcdc_run = 0;
-static uint8_t dcdc_state = DCDC_OFF;
+/******************************************************************************
+ * State Machine Definition
+ *******************************************************************************/
+#define DCDC_STATES(state)\
+state(off) \
+state(precharge) \
+state(enable) \
+state(fault)
+
+// Generate state enum
+#define STATE_FORM(WORD) WORD##_state,
+typedef enum {
+    DCDC_STATES(STATE_FORM)
+} DCDC_states_E;
+
+// Generate function prototypes
+typedef enum {
+    ENTRY,
+    EXIT, 
+    RUN
+} DCDC_entry_types_E;
+
+#define FUNCTION_FORM(WORD) static void WORD(DCDC_entry_types_E entry_type);
+DCDC_STATES(FUNCTION_FORM)
+
+// Function pointer type and array
+typedef void (*state_FPtr)(DCDC_entry_types_E entry_type);
+#define FUNC_PTR_FORM(WORD) WORD,
+static state_FPtr state_functions[] = {DCDC_STATES(FUNC_PTR_FORM)};
+
+/******************************************************************************
+ * State Variables
+ *******************************************************************************/
+static uint8_t dcdcRun = 0;
+static DCDC_states_E prevState = off_state;
+static DCDC_states_E curState = off_state;
+static DCDC_states_E nextState = off_state;
 NEW_LOW_PASS_FILTER(dcdc_voltage, 10.0, 1000.0);
 NEW_LOW_PASS_FILTER(dcdc_current, 10.0, 1000.0);
-NEW_LOW_PASS_FILTER(hv_bus_voltage, 10.0, 1000.0);
+NEW_LOW_PASS_FILTER(vbus_voltage, 10.0, 1000.0);
 NEW_TIMER(precharge_timer,3000);
 
-void DCDC_init(void) {
-    dcdc_run = 1;
-    dcdc_state = DCDC_OFF;
+/******************************************************************************
+ * Internal Variables
+ *******************************************************************************/
+static uint8_t dcdcCommandFromMcu = 0;
+
+/******************************************************************************
+ * Public Functions
+ *******************************************************************************/
+void DCDC_Init(void) {
+    dcdcRun = 1;
+    prevState = off_state;
+    curState = off_state;
+    nextState = off_state;
 }
 
-void DCDC_run_1ms(void) {
-    if (dcdc_run) {
+void DCDC_Run_1ms(void) {
+    if (dcdcRun) {
         float myval = IO_GET_DCDC_OUTPUT_VOLTAGE();
         takeLowPassFilter(dcdc_voltage, myval);
         takeLowPassFilter(dcdc_current, IO_GET_DCDC_CURRENT());
-        takeLowPassFilter(hv_bus_voltage, IO_GET_HV_BUS_VOLTAGE());
+        takeLowPassFilter(vbus_voltage, IO_GET_VBUS_VOLTAGE());
     }
 }
 
-void DCDC_run_100ms(void) {
-    if (dcdc_run) {
-        uint8_t dcdcCommandFromMCU = CAN_mcu_command_DCDC_enable_get();
-
-        switch (dcdc_state) {
-            case DCDC_OFF:
-                IO_SET_DCDC_EN(LOW);
-                if (dcdcCommandFromMCU) {
-                    dcdc_state = DCDC_PRECHARGE;
-                    SysTick_TimerStart(precharge_timer);
-                }
-                break;
-            case DCDC_PRECHARGE:
-                IO_SET_PRE_CHARGE_EN(HIGH);
-                if (getLowPassFilter(dcdc_voltage)> getLowPassFilter(hv_bus_voltage)*0.90) {
-                    dcdc_state = DCDC_ENABLE;
-                    IO_SET_DCDC_EN(HIGH);
-                    IO_SET_PRE_CHARGE_EN(LOW);
-                }
-                if (dcdcCommandFromMCU == 0) {
-                    dcdc_state = DCDC_OFF;
-                    IO_SET_PRE_CHARGE_EN(LOW);
-                }
-                if (SysTick_TimeOut(precharge_timer)){
-                    dcdc_state = DCDC_OFF;
-                    IO_SET_PRE_CHARGE_EN(LOW);
-                }
-                break;
-            case DCDC_ENABLE:
-                IO_SET_DCDC_EN(HIGH);
-                if (IO_GET_DCDC_FAULT()) {
-                    dcdc_state = DCDC_FAULT;
-                }
-                if(getLowPassFilter(dcdc_voltage)< getLowPassFilter(hv_bus_voltage)*0.90){
-                    dcdc_state = DCDC_FAULT;
-                }
-                if (dcdcCommandFromMCU == 0) {
-                    dcdc_state = DCDC_OFF;
-                }
-                break;
-            case DCDC_FAULT:
-                IO_SET_DCDC_EN(LOW);
-                if (dcdcCommandFromMCU == 0) {
-                    dcdc_state = DCDC_OFF;
-                }
-            default:
-                break;
+void DCDC_Run_100ms(void) {
+    if (dcdcRun) {
+        // Check for state transitions
+        if (nextState != curState) {
+            // Exit current state
+            state_functions[curState](EXIT);
+            
+            // Update state variables
+            prevState = curState;
+            curState = nextState;
+            
+            // Enter new state
+            state_functions[curState](ENTRY);
+        } else {
+            // Run current state
+            state_functions[curState](RUN);
         }
-
-    } else {
-        IO_SET_DCDC_EN(LOW);
-        dcdc_state = DCDC_OFF;
     }
 }
 
-void DCDC_halt(void) {
-    dcdc_run = 0;
-    dcdc_state = DCDC_OFF;
+void DCDC_Halt(void) {
+    dcdcRun = 0;
+    nextState = off_state;
+    curState = off_state;
+    prevState = off_state;
     IO_SET_DCDC_EN(LOW);
+    IO_SET_PRE_CHARGE_EN(LOW);
 }
 
-void DCDC_run(void){
-    dcdc_run = 1;
+void DCDC_Run(void){
+    dcdcRun = 1;
 }
 
-DCDC_state_E DCDC_getState(void){
-    return dcdc_state;
+DCDC_state_E DCDC_GetState(void){
+    return (DCDC_state_E)curState;
 }
 
-float DCDC_getVoltage(void){
+float DCDC_GetVoltage(void){
     return getLowPassFilter(dcdc_voltage);
 }
 
-float DCDC_getCurrent(void){
+float DCDC_GetCurrent(void){
     return getLowPassFilter(dcdc_current);
+}
+
+/******************************************************************************
+ * State Functions
+ *******************************************************************************/
+static void off(DCDC_entry_types_E entry_type) {
+    
+    switch (entry_type) {
+        case ENTRY:
+            IO_SET_DCDC_EN(LOW);
+            IO_SET_PRE_CHARGE_EN(LOW);
+            break;
+            
+        case RUN:
+            if (dcdcCommandFromMcu) {
+                nextState = precharge_state;
+            }
+            break;
+            
+        case EXIT:
+            break;
+            
+        default:
+            break;
+    }
+}
+
+static void precharge(DCDC_entry_types_E entry_type) {
+    
+    switch (entry_type) {
+        case ENTRY:
+            IO_SET_PRE_CHARGE_EN(HIGH);
+            SysTick_TimerStart(precharge_timer);
+            break;
+            
+        case RUN:
+            if (getLowPassFilter(dcdc_voltage) > getLowPassFilter(vbus_voltage) * 0.90) {
+                nextState = enable_state;
+            }
+            else if (dcdcCommandFromMcu == 0) {
+                nextState = off_state;
+            }
+            else if (SysTick_TimeOut(precharge_timer)) {
+                nextState = fault_state;
+            }
+            break;
+            
+        case EXIT:
+            IO_SET_PRE_CHARGE_EN(LOW);
+            break;
+            
+        default:
+            break;
+    }
+}
+
+static void enable(DCDC_entry_types_E entry_type) {
+
+    switch (entry_type) {
+        case ENTRY:
+            IO_SET_DCDC_EN(HIGH);
+            break;
+            
+        case RUN:
+            if (IO_GET_DCDC_FAULT()) {
+                nextState = fault_state;
+            }
+            else if (getLowPassFilter(dcdc_voltage) < getLowPassFilter(vbus_voltage) * 0.90) {
+                nextState = fault_state;
+            }
+            else if (dcdcCommandFromMcu == 0) {
+                nextState = off_state;
+            }
+            break;
+            
+        case EXIT:
+            IO_SET_DCDC_EN(LOW);
+            break;
+            
+        default:
+            break;
+    }
+}
+
+static void fault(DCDC_entry_types_E entry_type) {
+    
+    switch (entry_type) {
+        case ENTRY:
+            IO_SET_DCDC_EN(LOW);
+            IO_SET_PRE_CHARGE_EN(LOW);
+            break;
+            
+        case RUN:
+            if (dcdcCommandFromMcu == 0) {
+                nextState = off_state;
+            }
+            break;
+            
+        case EXIT:
+            break;
+            
+        default:
+            break;
+    }
 }
