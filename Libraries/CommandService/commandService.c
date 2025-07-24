@@ -14,6 +14,7 @@
 #include "commandService_config.h"  // Must include config first to get definitions
 #include "commandService.h"
 #include <stddef.h>
+#include <string.h>
 
 // Function pointer arrays are now defined in IO.h and included via commandService_config.h
 

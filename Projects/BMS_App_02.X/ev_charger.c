@@ -206,6 +206,10 @@ uint8_t EV_CHARGER_get_bms_request_charge(void) {
     return chargeRequestFromBMS;
 }
 
+uint8_t EV_CHARGER_is_charging(void) {
+    return (curState == charging_state);
+}
+
 uint8_t checkHeartBeat(void) {
     static uint8_t lastHeartBeat = 0;
     static uint32_t lastTime = 0;

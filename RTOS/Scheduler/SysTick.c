@@ -87,7 +87,7 @@ void SysTick_CPUTimerEnd(void){
     }
     uint16_t CPU_percentage = (uint16_t)((delta_ticks*100) / TicksPerMS); //10 to get the extra decimal place
     
-    float my_cpu = takeLowPassFilter(CPU_usage, CPU_percentage);
+    takeLowPassFilter(CPU_usage, CPU_percentage);
     if (CPU_percentage > CPU_peak){
         CPU_peak = CPU_percentage;
     }

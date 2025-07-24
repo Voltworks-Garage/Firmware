@@ -213,12 +213,8 @@ void __attribute__((__interrupt__, auto_psv)) _SPI1Interrupt(void) {
             }
             spi1_rx_index++;
         }
-        
-        // Fill TX FIFO with up to 4 bytes at once
-        uint8_t max_tx_buf_index = 0;
 
         while (!SPI1STATbits.SPITBF && (spi1_tx_index < spi1_tx_length)) {
-        // while (!SPI1STATbits.SPITBF && (max_tx_buf_index++ < 3) && (spi1_tx_index < spi1_tx_length)) {
             // Send actual data
             SPI1BUF = spi1_tx_buffer[spi1_tx_index];
             spi1_tx_index++;
@@ -303,11 +299,8 @@ uint8_t spi1StartBufferedTransaction(const uint8_t* tx_buffer, uint8_t tx_length
     // Start transaction
     spi1_transaction_active = 1;
     
-    // Fill TX FIFO with up to 4 bytes to start transaction
     // While there are still bytes to send or if we need to send dummy bytes
-    uint8_t max_tx_buf_index = 0;
     while (!SPI1STATbits.SPITBF && (spi1_tx_index < spi1_tx_length)){
-    // while (!SPI1STATbits.SPITBF && (max_tx_buf_index++ < 3) && (spi1_tx_index < spi1_tx_length)){
         if (spi1_tx_index < spi1_tx_length) {
             // Send actual data
             SPI1BUF = spi1_tx_buffer[spi1_tx_index];

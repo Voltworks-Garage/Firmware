@@ -106,7 +106,7 @@ void idle(STATE_MACHINE_entry_types_E entry_type) {
         case ENTRY:
             IO_SET_SW_EN(HIGH);
             CAN_changeOpMode(CAN_NORMAL);
-            DCDC_init();
+            DCDC_Init();
             break;
         case EXIT:
             break;
@@ -222,11 +222,11 @@ void diag(STATE_MACHINE_entry_types_E entry_type) {
 
 /****Helpers*******************************************************************/
 void halt_all_tasks(void){
-    DCDC_halt();
+    DCDC_Halt();
 }
 
 void resume_all_tasks(void){
-    DCDC_run();
+    DCDC_Run();
 }
 
 /*** End of File **************************************************************/

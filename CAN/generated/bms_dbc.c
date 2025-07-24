@@ -961,6 +961,105 @@ void CAN_bms_cellVoltages_send(void){
 	}
 }
 
+#define CAN_bms_ltc_debug_ID 0x727
+
+static CAN_payload_S CAN_bms_ltc_debug_payloads[2] __attribute__((aligned(sizeof(CAN_payload_S))));
+static uint8_t CAN_bms_ltc_debug_mux = 0;
+static CAN_message_S CAN_bms_ltc_debug={
+	.canID = CAN_bms_ltc_debug_ID,
+	.canXID = 0,
+	.dlc = 8,
+	.payload = 0,
+	.canMessageStatus = 0
+};
+
+#define CAN_BMS_LTC_DEBUG_MULTIPLEX_RANGE 2
+#define CAN_BMS_LTC_DEBUG_MULTIPLEX_OFFSET 0
+#define CAN_BMS_LTC_DEBUG_M0_LTC_STATE_RANGE 4
+#define CAN_BMS_LTC_DEBUG_M0_LTC_STATE_OFFSET 2
+#define CAN_BMS_LTC_DEBUG_M0_LASTERRORSTATE_RANGE 8
+#define CAN_BMS_LTC_DEBUG_M0_LASTERRORSTATE_OFFSET 6
+#define CAN_BMS_LTC_DEBUG_M0_ERRORCOUNT_RANGE 16
+#define CAN_BMS_LTC_DEBUG_M0_ERRORCOUNT_OFFSET 14
+#define CAN_BMS_LTC_DEBUG_M0_BALANCINGACTIVE_RANGE 1
+#define CAN_BMS_LTC_DEBUG_M0_BALANCINGACTIVE_OFFSET 30
+#define CAN_BMS_LTC_DEBUG_M1_CELL_1_BALANCING_RANGE 8
+#define CAN_BMS_LTC_DEBUG_M1_CELL_1_BALANCING_OFFSET 2
+#define CAN_BMS_LTC_DEBUG_M1_CELL_2_BALANCING_RANGE 8
+#define CAN_BMS_LTC_DEBUG_M1_CELL_2_BALANCING_OFFSET 10
+#define CAN_BMS_LTC_DEBUG_M1_CELL_3_BALANCING_RANGE 8
+#define CAN_BMS_LTC_DEBUG_M1_CELL_3_BALANCING_OFFSET 18
+#define CAN_BMS_LTC_DEBUG_M1_CELL_4_BALANCING_RANGE 8
+#define CAN_BMS_LTC_DEBUG_M1_CELL_4_BALANCING_OFFSET 26
+#define CAN_BMS_LTC_DEBUG_M1_CELL_5_BALANCING_RANGE 8
+#define CAN_BMS_LTC_DEBUG_M1_CELL_5_BALANCING_OFFSET 34
+
+void CAN_bms_ltc_debug_M0_ltc_state_set(uint16_t ltc_state){
+	uint16_t data_scaled = (ltc_state - 0) / 1.0;
+	CAN_bms_ltc_debug_payloads[0].word0 &= ~0x003C;
+	CAN_bms_ltc_debug_payloads[0].word0 |= (data_scaled << 2) & 0x003C;
+}
+void CAN_bms_ltc_debug_M0_lastErrorState_set(uint16_t lastErrorState){
+	uint16_t data_scaled = (lastErrorState - 0) / 1.0;
+	CAN_bms_ltc_debug_payloads[0].word0 &= ~0x3FC0;
+	CAN_bms_ltc_debug_payloads[0].word0 |= (data_scaled << 6) & 0x3FC0;
+}
+void CAN_bms_ltc_debug_M0_ErrorCount_set(uint16_t ErrorCount){
+	uint16_t data_scaled = (ErrorCount - 0) / 1.0;
+	CAN_bms_ltc_debug_payloads[0].word0 &= ~0xC000;
+	CAN_bms_ltc_debug_payloads[0].word0 |= (data_scaled << 14) & 0xC000;
+	CAN_bms_ltc_debug_payloads[0].word1 &= ~0x3FFF;
+	CAN_bms_ltc_debug_payloads[0].word1 |= (data_scaled >> 2) & 0x3FFF;
+}
+void CAN_bms_ltc_debug_M0_balancingActive_set(uint16_t balancingActive){
+	uint16_t data_scaled = (balancingActive - 0) / 1.0;
+	CAN_bms_ltc_debug_payloads[0].word1 &= ~0x4000;
+	CAN_bms_ltc_debug_payloads[0].word1 |= (data_scaled << 14) & 0x4000;
+}
+void CAN_bms_ltc_debug_M1_cell_1_balancing_set(uint16_t cell_1_balancing){
+	uint16_t data_scaled = (cell_1_balancing - 0) / 1.0;
+	CAN_bms_ltc_debug_payloads[1].word0 &= ~0x03FC;
+	CAN_bms_ltc_debug_payloads[1].word0 |= (data_scaled << 2) & 0x03FC;
+}
+void CAN_bms_ltc_debug_M1_cell_2_balancing_set(uint16_t cell_2_balancing){
+	uint16_t data_scaled = (cell_2_balancing - 0) / 1.0;
+	CAN_bms_ltc_debug_payloads[1].word0 &= ~0xFC00;
+	CAN_bms_ltc_debug_payloads[1].word0 |= (data_scaled << 10) & 0xFC00;
+	CAN_bms_ltc_debug_payloads[1].word1 &= ~0x0003;
+	CAN_bms_ltc_debug_payloads[1].word1 |= (data_scaled >> 6) & 0x0003;
+}
+void CAN_bms_ltc_debug_M1_cell_3_balancing_set(uint16_t cell_3_balancing){
+	uint16_t data_scaled = (cell_3_balancing - 0) / 1.0;
+	CAN_bms_ltc_debug_payloads[1].word1 &= ~0x03FC;
+	CAN_bms_ltc_debug_payloads[1].word1 |= (data_scaled << 2) & 0x03FC;
+}
+void CAN_bms_ltc_debug_M1_cell_4_balancing_set(uint16_t cell_4_balancing){
+	uint16_t data_scaled = (cell_4_balancing - 0) / 1.0;
+	CAN_bms_ltc_debug_payloads[1].word1 &= ~0xFC00;
+	CAN_bms_ltc_debug_payloads[1].word1 |= (data_scaled << 10) & 0xFC00;
+	CAN_bms_ltc_debug_payloads[1].word2 &= ~0x0003;
+	CAN_bms_ltc_debug_payloads[1].word2 |= (data_scaled >> 6) & 0x0003;
+}
+void CAN_bms_ltc_debug_M1_cell_5_balancing_set(uint16_t cell_5_balancing){
+	uint16_t data_scaled = (cell_5_balancing - 0) / 1.0;
+	CAN_bms_ltc_debug_payloads[1].word2 &= ~0x03FC;
+	CAN_bms_ltc_debug_payloads[1].word2 |= (data_scaled << 2) & 0x03FC;
+}
+void CAN_bms_ltc_debug_dlc_set(uint8_t dlc){
+	CAN_bms_ltc_debug.dlc = dlc;
+}
+void CAN_bms_ltc_debug_send(void){
+	// Auto-select current mux payload
+	CAN_bms_ltc_debug.payload = &CAN_bms_ltc_debug_payloads[CAN_bms_ltc_debug_mux];
+	// Send the message
+	CAN_write(CAN_bms_ltc_debug);
+	// Increment mux counter for next time
+	CAN_bms_ltc_debug_mux++;
+	if (CAN_bms_ltc_debug_mux >= CAN_BMS_LTC_DEBUG_NUM_MUX_VALUES) {
+		CAN_bms_ltc_debug_mux = 0;
+	}
+}
+
 #define CAN_bms_cellTemperaturs_ID 0x726
 
 static CAN_payload_S CAN_bms_cellTemperaturs_payloads[6] __attribute__((aligned(sizeof(CAN_payload_S))));
@@ -1369,6 +1468,12 @@ void CAN_DBC_init(void) {
 	CAN_bms_cellVoltages_payloads[4].word0 |= (4 << 0) & 0x000F;
 	// Pre-set mux value 5 in payload 5
 	CAN_bms_cellVoltages_payloads[5].word0 |= (5 << 0) & 0x000F;
+	// Initialize multiplexed message: ltc_debug
+	CAN_bms_ltc_debug.payload = &CAN_bms_ltc_debug_payloads[0];
+	// Pre-set mux value 0 in payload 0
+	CAN_bms_ltc_debug_payloads[0].word0 |= (0 << 0) & 0x0003;
+	// Pre-set mux value 1 in payload 1
+	CAN_bms_ltc_debug_payloads[1].word0 |= (1 << 0) & 0x0003;
 	// Initialize multiplexed message: cellTemperaturs
 	CAN_bms_cellTemperaturs.payload = &CAN_bms_cellTemperaturs_payloads[0];
 	// Pre-set mux value 0 in payload 0
@@ -1397,4 +1502,8 @@ void CAN_send_1000ms(void){
 	CAN_bms_charger_request_send();
 	CAN_bms_cellVoltages_send();
 	CAN_bms_cellTemperaturs_send();
+}
+
+void CAN_send_1ms(void){
+	CAN_bms_ltc_debug_send();
 }

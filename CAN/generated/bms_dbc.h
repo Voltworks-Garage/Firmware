@@ -176,6 +176,23 @@ void CAN_bms_cellVoltages_dlc_set(uint8_t dlc);
 void CAN_bms_cellVoltages_send(void);
 
 
+#define CAN_bms_ltc_debug_interval() 1
+#define CAN_BMS_LTC_DEBUG_NUM_MUX_VALUES 2
+void CAN_bms_ltc_debug_M0_ltc_state_set(uint16_t ltc_state);
+void CAN_bms_ltc_debug_M0_lastErrorState_set(uint16_t lastErrorState);
+void CAN_bms_ltc_debug_M0_ErrorCount_set(uint16_t ErrorCount);
+void CAN_bms_ltc_debug_M0_balancingActive_set(uint16_t balancingActive);
+void CAN_bms_ltc_debug_M1_cell_1_balancing_set(uint16_t cell_1_balancing);
+void CAN_bms_ltc_debug_M1_cell_2_balancing_set(uint16_t cell_2_balancing);
+void CAN_bms_ltc_debug_M1_cell_3_balancing_set(uint16_t cell_3_balancing);
+void CAN_bms_ltc_debug_M1_cell_4_balancing_set(uint16_t cell_4_balancing);
+void CAN_bms_ltc_debug_M1_cell_5_balancing_set(uint16_t cell_5_balancing);
+void CAN_bms_ltc_debug_dlc_set(uint8_t dlc);
+
+
+void CAN_bms_ltc_debug_send(void);
+
+
 #define CAN_bms_cellTemperaturs_interval() 1000
 #define CAN_BMS_CELLTEMPERATURS_NUM_MUX_VALUES 6
 void CAN_bms_cellTemperaturs_M0_temp_1_set(float temp_1);
@@ -247,6 +264,7 @@ void CAN_DBC_init();
 
 void CAN_send_10ms(void);
 void CAN_send_1000ms(void);
+void CAN_send_1ms(void);
 
 
 #endif /*bms_DBC_H*/

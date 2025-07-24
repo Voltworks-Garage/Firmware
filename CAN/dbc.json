@@ -1176,6 +1176,95 @@
                     ]
                 },
                 {
+                    "name": "ltc_debug",
+                    "id": 1831,
+                    "x_id": 0,
+                    "freq": 1,
+                    "consumers": [
+                    ],
+                    "signals": [
+                        {
+                            "name": "Multiplex",
+                            "length": 2,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": ""
+                        },
+                        {
+                            "name": "ltc_state",
+                            "length": 4,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 0
+                        },
+                        {
+                            "name": "lastErrorState",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 0
+                        },
+                        {
+                            "name": "ErrorCount",
+                            "length": 16,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 0
+                        },
+                        {
+                            "name": "balancingActive",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool",
+                            "multiplex": 0
+                        },
+                        {
+                            "name": "cell_1_balancing",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "cell_2_balancing",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "cell_3_balancing",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "cell_4_balancing",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "cell_5_balancing",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 1
+                        }
+                    ]
+                },
+                {
                     "name": "cellTemperaturs",
                     "id": 1830,
                     "x_id": 0,

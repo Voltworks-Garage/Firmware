@@ -6,7 +6,7 @@
 
 [BUSMASTER_VERSION] [3.2.2]
 
-[NUMBER_OF_MESSAGES] 21
+[NUMBER_OF_MESSAGES] 22
 
 [START_MSG] dash_status,1793,8,7,1,S
 [START_SIGNALS] heartBeat,4,1,0.0,U,15,0,1,0,1.0,
@@ -186,6 +186,19 @@
 [START_SIGNALS] cell_22_voltage,15,3,3.0,U,32767,0,1,0,1,mV,M5
 [START_SIGNALS] cell_23_voltage,15,5,2.0,U,32767,0,1,0,1,mV,M5
 [START_SIGNALS] cell_24_voltage,15,7,1.0,U,32767,0,1,0,1,mV,M5
+[END_MSG]
+
+[START_MSG] bms_ltc_debug,1831,8,10,1,S
+[START_SIGNALS] Multiplex,2,1,0.0,U,3,0,1,0,1.0,,m
+[START_SIGNALS] ltc_state,4,1,2.0,U,15,0,1,0,1.0,,M0
+[START_SIGNALS] lastErrorState,8,1,6.0,U,255,0,1,0,1.0,,M0
+[START_SIGNALS] ErrorCount,16,2,6.0,U,65535,0,1,0,1.0,,M0
+[START_SIGNALS] balancingActive,1,4,6.0,B,1,0,1,0,1.0,bool,M0
+[START_SIGNALS] cell_1_balancing,8,1,2.0,U,255,0,1,0,1.0,,M1
+[START_SIGNALS] cell_2_balancing,8,2,2.0,U,255,0,1,0,1.0,,M1
+[START_SIGNALS] cell_3_balancing,8,3,2.0,U,255,0,1,0,1.0,,M1
+[START_SIGNALS] cell_4_balancing,8,4,2.0,U,255,0,1,0,1.0,,M1
+[START_SIGNALS] cell_5_balancing,8,5,2.0,U,255,0,1,0,1.0,,M1
 [END_MSG]
 
 [START_MSG] bms_cellTemperaturs,1830,8,25,1,S

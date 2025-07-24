@@ -197,6 +197,12 @@ LTC6802_1_Error_E LTC6802_1_StartCellVoltageADC(void);
 LTC6802_1_Error_E LTC6802_1_StartTemperatureADC(void);
 
 /**
+ * @brief Start flag data read sequence
+ * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
+ */
+LTC6802_1_Error_E LTC6802_1_StartFlagRead(void);
+
+/**
  * @brief Write configuration to hardware
  * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
  */
@@ -298,26 +304,16 @@ LTC6802_1_Error_E LTC6802_1_SetVoltageThresholds8(uint8_t overvoltage_threshold,
 LTC6802_1_Error_E LTC6802_1_SendConfig(void);
 
 /**
- * @brief Set cell balancing configuration and optionally write to hardware
- * @param cell_id Cell ID (0-23 for total cells across all stacks)
- * @param enable True to enable balancing, false to disable
- * @param send_immediately True to send config immediately, false to update internal config only
+ * @brief Start cell balancing configuration and write to hardware
  * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
  */
-LTC6802_1_Error_E LTC6802_1_SetCellBalancing(uint8_t cell_id, bool enable, bool send_immediately);
+LTC6802_1_Error_E LTC6802_1_StartCellBalancing(void);
 
 /**
  * @brief Clear all cell balancing and write to hardware
  * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
  */
 LTC6802_1_Error_E LTC6802_1_ClearAllCellBalancing(void);
-
-/**
- * @brief Example: Batch configure multiple settings efficiently
- * Shows how to use send_immediately=false for multiple changes
- * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
- */
-LTC6802_1_Error_E LTC6802_1_BatchConfigExample(void);
 
 /******************************************************************************
  * Data Access Functions
@@ -349,6 +345,12 @@ float LTC6802_1_GetStackVoltage(uint8_t stack_id);
  * @return Pack voltage in volts, or -1.0 if no valid voltage data
  */
 float LTC6802_1_GetPackVoltage(void);
+
+/**
+ * @brief Check if cell balancing is active
+ * @return True if balancing is active, false otherwise
+ */
+bool LTC6802_1_IsBalancingActive(void);
 
 /**
  * @brief Get last error for a specific stack
