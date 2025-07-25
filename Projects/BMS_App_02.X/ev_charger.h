@@ -15,11 +15,9 @@
 void EV_Charger_Init(void);
 void EV_CHARGER_Run_10ms(void);
 
-void EV_CHARGER_set_charge_voltage(float volts);
-void EV_CHARGER_set_charge_current(float current);
-float EV_CHARGER_get_charge_current();
-float EV_CHARGER_get_charge_voltage();
-uint8_t EV_CHARGER_get_bms_request_charge(void);
+void EV_CHARGER_charge_voltage_set(float volts);
+void EV_CHARGER_charge_current_set(float current);
+
 uint8_t EV_CHARGER_is_charging(void);
 
 #endif	/* EV_CHARGER_H */

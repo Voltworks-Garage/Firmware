@@ -17,9 +17,6 @@ static CAN_message_S CAN_mcu_status={
 	.canMessageStatus = 0
 };
 
-uint8_t CAN_mcu_status_checkDataIsFresh(void){
-	return CAN_checkDataIsFresh(&CAN_mcu_status);
-}
 #define CAN_MCU_STATUS_HEARTBEAT_RANGE 4
 #define CAN_MCU_STATUS_HEARTBEAT_OFFSET 0
 #define CAN_MCU_STATUS_HIGHBEAM_RANGE 1
@@ -69,6 +66,9 @@ uint8_t CAN_mcu_status_checkDataIsFresh(void){
 #define CAN_MCU_STATUS_DCDC_FAULT_RANGE 1
 #define CAN_MCU_STATUS_DCDC_FAULT_OFFSET 63
 
+uint8_t CAN_mcu_status_checkDataIsFresh(void){
+	return CAN_checkDataIsFresh(&CAN_mcu_status);
+}
 uint16_t CAN_mcu_status_heartbeat_get(void){
 	uint16_t data = get_bits((size_t*)CAN_mcu_status.payload, CAN_MCU_STATUS_HEARTBEAT_OFFSET, CAN_MCU_STATUS_HEARTBEAT_RANGE);
 	return (data * 1.0) + 0;
@@ -176,9 +176,6 @@ static CAN_message_S CAN_mcu_command={
 	.canMessageStatus = 0
 };
 
-uint8_t CAN_mcu_command_checkDataIsFresh(void){
-	return CAN_checkDataIsFresh(&CAN_mcu_command);
-}
 #define CAN_MCU_COMMAND_DCDC_ENABLE_RANGE 1
 #define CAN_MCU_COMMAND_DCDC_ENABLE_OFFSET 0
 #define CAN_MCU_COMMAND_EV_CHARGER_ENABLE_RANGE 1
@@ -190,6 +187,9 @@ uint8_t CAN_mcu_command_checkDataIsFresh(void){
 #define CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_RANGE 1
 #define CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_OFFSET 16
 
+uint8_t CAN_mcu_command_checkDataIsFresh(void){
+	return CAN_checkDataIsFresh(&CAN_mcu_command);
+}
 uint16_t CAN_mcu_command_DCDC_enable_get(void){
 	uint16_t data = get_bits((size_t*)CAN_mcu_command.payload, CAN_MCU_COMMAND_DCDC_ENABLE_OFFSET, CAN_MCU_COMMAND_DCDC_ENABLE_RANGE);
 	return (data * 1.0) + 0;
@@ -211,13 +211,319 @@ uint16_t CAN_mcu_command_motor_controller_enable_get(void){
 	return (data * 1.0) + 0;
 }
 
+static CAN_payload_S CAN_mcu_mcu_debug_payloads[4] __attribute__((aligned(sizeof(CAN_payload_S))));
+static uint8_t CAN_mcu_mcu_debug_mux = 0;
+#define CAN_mcu_mcu_debug_ID 0x713
+
+static CAN_message_S CAN_mcu_mcu_debug={
+	.canID = CAN_mcu_mcu_debug_ID,
+	.canXID = 0,
+	.dlc = 8,
+	.payload = 0,
+	.canMessageStatus = 0
+};
+
+#define CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE 2
+#define CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET 0
+#define CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_1_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_1_OFFSET 2
+#define CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_2_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_2_OFFSET 10
+#define CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_3_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_3_OFFSET 18
+#define CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_4_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_4_OFFSET 26
+#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_5_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_5_OFFSET 2
+#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_6_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_6_OFFSET 10
+#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_7_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_7_OFFSET 18
+#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_8_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_8_OFFSET 26
+#define CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_9_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_9_OFFSET 2
+#define CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_10_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_10_OFFSET 10
+#define CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_11_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_11_OFFSET 18
+#define CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_12_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_12_OFFSET 26
+#define CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_13_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_13_OFFSET 2
+#define CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_14_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_14_OFFSET 10
+#define CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_15_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_15_OFFSET 18
+#define CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_16_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_16_OFFSET 26
+
+uint8_t CAN_mcu_mcu_debug_checkDataIsFresh(void){
+	return CAN_checkDataIsFresh(&CAN_mcu_mcu_debug);
+}
+uint16_t CAN_mcu_mcu_debug_Multiplex_get(void){
+	// Check for fresh data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Fresh data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy fresh payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	uint16_t data = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_M0_debug_value_1_get(void){
+	// Check for fresh data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Fresh data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy fresh payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	uint16_t data = get_bits((size_t*)&CAN_mcu_mcu_debug_payloads[0], CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_1_OFFSET, CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_1_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_M0_debug_value_2_get(void){
+	// Check for fresh data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Fresh data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy fresh payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	uint16_t data = get_bits((size_t*)&CAN_mcu_mcu_debug_payloads[0], CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_2_OFFSET, CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_2_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_M0_debug_value_3_get(void){
+	// Check for fresh data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Fresh data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy fresh payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	uint16_t data = get_bits((size_t*)&CAN_mcu_mcu_debug_payloads[0], CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_3_OFFSET, CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_3_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_M0_debug_value_4_get(void){
+	// Check for fresh data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Fresh data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy fresh payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	uint16_t data = get_bits((size_t*)&CAN_mcu_mcu_debug_payloads[0], CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_4_OFFSET, CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_4_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_M1_debug_value_5_get(void){
+	// Check for fresh data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Fresh data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy fresh payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	uint16_t data = get_bits((size_t*)&CAN_mcu_mcu_debug_payloads[1], CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_5_OFFSET, CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_5_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_M1_debug_value_6_get(void){
+	// Check for fresh data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Fresh data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy fresh payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	uint16_t data = get_bits((size_t*)&CAN_mcu_mcu_debug_payloads[1], CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_6_OFFSET, CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_6_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_M1_debug_value_7_get(void){
+	// Check for fresh data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Fresh data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy fresh payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	uint16_t data = get_bits((size_t*)&CAN_mcu_mcu_debug_payloads[1], CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_7_OFFSET, CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_7_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_M1_debug_value_8_get(void){
+	// Check for fresh data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Fresh data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy fresh payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	uint16_t data = get_bits((size_t*)&CAN_mcu_mcu_debug_payloads[1], CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_8_OFFSET, CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_8_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_M2_debug_value_9_get(void){
+	// Check for fresh data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Fresh data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy fresh payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	uint16_t data = get_bits((size_t*)&CAN_mcu_mcu_debug_payloads[2], CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_9_OFFSET, CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_9_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_M2_debug_value_10_get(void){
+	// Check for fresh data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Fresh data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy fresh payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	uint16_t data = get_bits((size_t*)&CAN_mcu_mcu_debug_payloads[2], CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_10_OFFSET, CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_10_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_M2_debug_value_11_get(void){
+	// Check for fresh data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Fresh data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy fresh payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	uint16_t data = get_bits((size_t*)&CAN_mcu_mcu_debug_payloads[2], CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_11_OFFSET, CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_11_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_M2_debug_value_12_get(void){
+	// Check for fresh data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Fresh data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy fresh payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	uint16_t data = get_bits((size_t*)&CAN_mcu_mcu_debug_payloads[2], CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_12_OFFSET, CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_12_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_M3_debug_value_13_get(void){
+	// Check for fresh data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Fresh data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy fresh payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	uint16_t data = get_bits((size_t*)&CAN_mcu_mcu_debug_payloads[3], CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_13_OFFSET, CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_13_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_M3_debug_value_14_get(void){
+	// Check for fresh data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Fresh data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy fresh payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	uint16_t data = get_bits((size_t*)&CAN_mcu_mcu_debug_payloads[3], CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_14_OFFSET, CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_14_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_M3_debug_value_15_get(void){
+	// Check for fresh data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Fresh data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy fresh payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	uint16_t data = get_bits((size_t*)&CAN_mcu_mcu_debug_payloads[3], CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_15_OFFSET, CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_15_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_M3_debug_value_16_get(void){
+	// Check for fresh data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Fresh data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy fresh payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	uint16_t data = get_bits((size_t*)&CAN_mcu_mcu_debug_payloads[3], CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_16_OFFSET, CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_16_RANGE);
+	return (data * 1.0) + 0;
+}
+
 /**********************************************************
  * bms NODE MESSAGES
  */
-#define CAN_bms_status_ID 0x721
-
 static CAN_payload_S CAN_bms_status_payloads[4] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_bms_status_mux = 0;
+#define CAN_bms_status_ID 0x721
+
 static CAN_message_S CAN_bms_status={
 	.canID = CAN_bms_status_ID,
 	.canXID = 0,
@@ -394,9 +700,9 @@ void CAN_bms_status_send(void){
 	}
 }
 
+static CAN_payload_S CAN_bms_status_2_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 #define CAN_bms_status_2_ID 0x722
 
-static CAN_payload_S CAN_bms_status_2_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 static CAN_message_S CAN_bms_status_2={
 	.canID = CAN_bms_status_2_ID,
 	.canXID = 0,
@@ -496,9 +802,9 @@ void CAN_bms_status_2_send(void){
 	CAN_write(CAN_bms_status_2);
 }
 
+static CAN_payload_S CAN_bms_debug_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 #define CAN_bms_debug_ID 0x723
 
-static CAN_payload_S CAN_bms_debug_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 static CAN_message_S CAN_bms_debug={
 	.canID = CAN_bms_debug_ID,
 	.canXID = 0,
@@ -570,9 +876,9 @@ void CAN_bms_debug_send(void){
 	CAN_write(CAN_bms_debug);
 }
 
+static CAN_payload_S CAN_bms_boot_response_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 #define CAN_bms_boot_response_ID 0xa2
 
-static CAN_payload_S CAN_bms_boot_response_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 static CAN_message_S CAN_bms_boot_response={
 	.canID = CAN_bms_boot_response_ID,
 	.canXID = 0,
@@ -652,9 +958,9 @@ void CAN_bms_boot_response_send(void){
 	CAN_write(CAN_bms_boot_response);
 }
 
+static CAN_payload_S CAN_bms_charger_request_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 #define CAN_bms_charger_request_ID 0x1806e5f4
 
-static CAN_payload_S CAN_bms_charger_request_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 static CAN_message_S CAN_bms_charger_request={
 	.canID = CAN_bms_charger_request_ID,
 	.canXID = 1,
@@ -727,10 +1033,10 @@ void CAN_bms_charger_request_send(void){
 	CAN_write(CAN_bms_charger_request);
 }
 
-#define CAN_bms_cellVoltages_ID 0x725
-
 static CAN_payload_S CAN_bms_cellVoltages_payloads[6] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_bms_cellVoltages_mux = 0;
+#define CAN_bms_cellVoltages_ID 0x725
+
 static CAN_message_S CAN_bms_cellVoltages={
 	.canID = CAN_bms_cellVoltages_ID,
 	.canXID = 0,
@@ -961,10 +1267,10 @@ void CAN_bms_cellVoltages_send(void){
 	}
 }
 
+static CAN_payload_S CAN_bms_ltc_debug_payloads[3] __attribute__((aligned(sizeof(CAN_payload_S))));
+static uint8_t CAN_bms_ltc_debug_mux = 0;
 #define CAN_bms_ltc_debug_ID 0x727
 
-static CAN_payload_S CAN_bms_ltc_debug_payloads[2] __attribute__((aligned(sizeof(CAN_payload_S))));
-static uint8_t CAN_bms_ltc_debug_mux = 0;
 static CAN_message_S CAN_bms_ltc_debug={
 	.canID = CAN_bms_ltc_debug_ID,
 	.canXID = 0,
@@ -983,16 +1289,24 @@ static CAN_message_S CAN_bms_ltc_debug={
 #define CAN_BMS_LTC_DEBUG_M0_ERRORCOUNT_OFFSET 14
 #define CAN_BMS_LTC_DEBUG_M0_BALANCINGACTIVE_RANGE 1
 #define CAN_BMS_LTC_DEBUG_M0_BALANCINGACTIVE_OFFSET 30
-#define CAN_BMS_LTC_DEBUG_M1_CELL_1_BALANCING_RANGE 8
-#define CAN_BMS_LTC_DEBUG_M1_CELL_1_BALANCING_OFFSET 2
-#define CAN_BMS_LTC_DEBUG_M1_CELL_2_BALANCING_RANGE 8
-#define CAN_BMS_LTC_DEBUG_M1_CELL_2_BALANCING_OFFSET 10
-#define CAN_BMS_LTC_DEBUG_M1_CELL_3_BALANCING_RANGE 8
-#define CAN_BMS_LTC_DEBUG_M1_CELL_3_BALANCING_OFFSET 18
-#define CAN_BMS_LTC_DEBUG_M1_CELL_4_BALANCING_RANGE 8
-#define CAN_BMS_LTC_DEBUG_M1_CELL_4_BALANCING_OFFSET 26
-#define CAN_BMS_LTC_DEBUG_M1_CELL_5_BALANCING_RANGE 8
-#define CAN_BMS_LTC_DEBUG_M1_CELL_5_BALANCING_OFFSET 34
+#define CAN_BMS_LTC_DEBUG_M1_CELL_A_BALANCING_RANGE 8
+#define CAN_BMS_LTC_DEBUG_M1_CELL_A_BALANCING_OFFSET 2
+#define CAN_BMS_LTC_DEBUG_M1_CELL_B_BALANCING_RANGE 8
+#define CAN_BMS_LTC_DEBUG_M1_CELL_B_BALANCING_OFFSET 10
+#define CAN_BMS_LTC_DEBUG_M1_CELL_C_BALANCING_RANGE 8
+#define CAN_BMS_LTC_DEBUG_M1_CELL_C_BALANCING_OFFSET 18
+#define CAN_BMS_LTC_DEBUG_M1_CELL_D_BALANCING_RANGE 8
+#define CAN_BMS_LTC_DEBUG_M1_CELL_D_BALANCING_OFFSET 26
+#define CAN_BMS_LTC_DEBUG_M1_CELL_E_BALANCING_RANGE 8
+#define CAN_BMS_LTC_DEBUG_M1_CELL_E_BALANCING_OFFSET 34
+#define CAN_BMS_LTC_DEBUG_M2_MAX_CELL_DELTA_MV_RANGE 13
+#define CAN_BMS_LTC_DEBUG_M2_MAX_CELL_DELTA_MV_OFFSET 2
+#define CAN_BMS_LTC_DEBUG_M2_MAX_CELL_MV_RANGE 13
+#define CAN_BMS_LTC_DEBUG_M2_MAX_CELL_MV_OFFSET 15
+#define CAN_BMS_LTC_DEBUG_M2_MIN_CELL_MV_RANGE 13
+#define CAN_BMS_LTC_DEBUG_M2_MIN_CELL_MV_OFFSET 28
+#define CAN_BMS_LTC_DEBUG_M2_MAX_CHARGE_CURRENT_ALLOWED_RANGE 16
+#define CAN_BMS_LTC_DEBUG_M2_MAX_CHARGE_CURRENT_ALLOWED_OFFSET 41
 
 void CAN_bms_ltc_debug_M0_ltc_state_set(uint16_t ltc_state){
 	uint16_t data_scaled = (ltc_state - 0) / 1.0;
@@ -1016,41 +1330,129 @@ void CAN_bms_ltc_debug_M0_balancingActive_set(uint16_t balancingActive){
 	CAN_bms_ltc_debug_payloads[0].word1 &= ~0x4000;
 	CAN_bms_ltc_debug_payloads[0].word1 |= (data_scaled << 14) & 0x4000;
 }
-void CAN_bms_ltc_debug_M1_cell_1_balancing_set(uint16_t cell_1_balancing){
-	uint16_t data_scaled = (cell_1_balancing - 0) / 1.0;
+void CAN_bms_ltc_debug_M1_cell_A_balancing_set(uint16_t cell_A_balancing){
+	uint16_t data_scaled = (cell_A_balancing - 0) / 1.0;
 	CAN_bms_ltc_debug_payloads[1].word0 &= ~0x03FC;
 	CAN_bms_ltc_debug_payloads[1].word0 |= (data_scaled << 2) & 0x03FC;
 }
-void CAN_bms_ltc_debug_M1_cell_2_balancing_set(uint16_t cell_2_balancing){
-	uint16_t data_scaled = (cell_2_balancing - 0) / 1.0;
+void CAN_bms_ltc_debug_M1_cell_B_balancing_set(uint16_t cell_B_balancing){
+	uint16_t data_scaled = (cell_B_balancing - 0) / 1.0;
 	CAN_bms_ltc_debug_payloads[1].word0 &= ~0xFC00;
 	CAN_bms_ltc_debug_payloads[1].word0 |= (data_scaled << 10) & 0xFC00;
 	CAN_bms_ltc_debug_payloads[1].word1 &= ~0x0003;
 	CAN_bms_ltc_debug_payloads[1].word1 |= (data_scaled >> 6) & 0x0003;
 }
-void CAN_bms_ltc_debug_M1_cell_3_balancing_set(uint16_t cell_3_balancing){
-	uint16_t data_scaled = (cell_3_balancing - 0) / 1.0;
+void CAN_bms_ltc_debug_M1_cell_C_balancing_set(uint16_t cell_C_balancing){
+	uint16_t data_scaled = (cell_C_balancing - 0) / 1.0;
 	CAN_bms_ltc_debug_payloads[1].word1 &= ~0x03FC;
 	CAN_bms_ltc_debug_payloads[1].word1 |= (data_scaled << 2) & 0x03FC;
 }
-void CAN_bms_ltc_debug_M1_cell_4_balancing_set(uint16_t cell_4_balancing){
-	uint16_t data_scaled = (cell_4_balancing - 0) / 1.0;
+void CAN_bms_ltc_debug_M1_cell_D_balancing_set(uint16_t cell_D_balancing){
+	uint16_t data_scaled = (cell_D_balancing - 0) / 1.0;
 	CAN_bms_ltc_debug_payloads[1].word1 &= ~0xFC00;
 	CAN_bms_ltc_debug_payloads[1].word1 |= (data_scaled << 10) & 0xFC00;
 	CAN_bms_ltc_debug_payloads[1].word2 &= ~0x0003;
 	CAN_bms_ltc_debug_payloads[1].word2 |= (data_scaled >> 6) & 0x0003;
 }
-void CAN_bms_ltc_debug_M1_cell_5_balancing_set(uint16_t cell_5_balancing){
-	uint16_t data_scaled = (cell_5_balancing - 0) / 1.0;
+void CAN_bms_ltc_debug_M1_cell_E_balancing_set(uint16_t cell_E_balancing){
+	uint16_t data_scaled = (cell_E_balancing - 0) / 1.0;
 	CAN_bms_ltc_debug_payloads[1].word2 &= ~0x03FC;
 	CAN_bms_ltc_debug_payloads[1].word2 |= (data_scaled << 2) & 0x03FC;
 }
+void CAN_bms_ltc_debug_M2_max_cell_delta_mV_set(uint16_t max_cell_delta_mV){
+	uint16_t data_scaled = (max_cell_delta_mV - 0) / 1.0;
+	CAN_bms_ltc_debug_payloads[2].word0 &= ~0x7FFC;
+	CAN_bms_ltc_debug_payloads[2].word0 |= (data_scaled << 2) & 0x7FFC;
+}
+void CAN_bms_ltc_debug_M2_max_cell_mV_set(uint16_t max_cell_mV){
+	uint16_t data_scaled = (max_cell_mV - 0) / 1.0;
+	CAN_bms_ltc_debug_payloads[2].word0 &= ~0x8000;
+	CAN_bms_ltc_debug_payloads[2].word0 |= (data_scaled << 15) & 0x8000;
+	CAN_bms_ltc_debug_payloads[2].word1 &= ~0x0FFF;
+	CAN_bms_ltc_debug_payloads[2].word1 |= (data_scaled >> 1) & 0x0FFF;
+}
+void CAN_bms_ltc_debug_M2_min_cell_mV_set(uint16_t min_cell_mV){
+	uint16_t data_scaled = (min_cell_mV - 0) / 1.0;
+	CAN_bms_ltc_debug_payloads[2].word1 &= ~0xF000;
+	CAN_bms_ltc_debug_payloads[2].word1 |= (data_scaled << 12) & 0xF000;
+	CAN_bms_ltc_debug_payloads[2].word2 &= ~0x01FF;
+	CAN_bms_ltc_debug_payloads[2].word2 |= (data_scaled >> 4) & 0x01FF;
+}
+void CAN_bms_ltc_debug_M2_max_charge_current_allowed_set(uint16_t max_charge_current_allowed){
+	uint16_t data_scaled = (max_charge_current_allowed - 0) / 1.0;
+	CAN_bms_ltc_debug_payloads[2].word2 &= ~0xFE00;
+	CAN_bms_ltc_debug_payloads[2].word2 |= (data_scaled << 9) & 0xFE00;
+	CAN_bms_ltc_debug_payloads[2].word3 &= ~0x01FF;
+	CAN_bms_ltc_debug_payloads[2].word3 |= (data_scaled >> 7) & 0x01FF;
+}
+uint8_t CAN_bms_ltc_debug_checkDataIsFresh(void){
+	return CAN_checkDataIsFresh(&CAN_bms_ltc_debug);
+}
+uint16_t CAN_bms_ltc_debug_Multiplex_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_ltc_debug.payload, CAN_BMS_LTC_DEBUG_MULTIPLEX_OFFSET, CAN_BMS_LTC_DEBUG_MULTIPLEX_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_ltc_debug_M0_ltc_state_get(void){
+	uint16_t data = get_bits((size_t*)&CAN_bms_ltc_debug_payloads[0], CAN_BMS_LTC_DEBUG_M0_LTC_STATE_OFFSET, CAN_BMS_LTC_DEBUG_M0_LTC_STATE_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_ltc_debug_M0_lastErrorState_get(void){
+	uint16_t data = get_bits((size_t*)&CAN_bms_ltc_debug_payloads[0], CAN_BMS_LTC_DEBUG_M0_LASTERRORSTATE_OFFSET, CAN_BMS_LTC_DEBUG_M0_LASTERRORSTATE_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_ltc_debug_M0_ErrorCount_get(void){
+	uint16_t data = get_bits((size_t*)&CAN_bms_ltc_debug_payloads[0], CAN_BMS_LTC_DEBUG_M0_ERRORCOUNT_OFFSET, CAN_BMS_LTC_DEBUG_M0_ERRORCOUNT_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_ltc_debug_M0_balancingActive_get(void){
+	uint16_t data = get_bits((size_t*)&CAN_bms_ltc_debug_payloads[0], CAN_BMS_LTC_DEBUG_M0_BALANCINGACTIVE_OFFSET, CAN_BMS_LTC_DEBUG_M0_BALANCINGACTIVE_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_ltc_debug_M1_cell_A_balancing_get(void){
+	uint16_t data = get_bits((size_t*)&CAN_bms_ltc_debug_payloads[1], CAN_BMS_LTC_DEBUG_M1_CELL_A_BALANCING_OFFSET, CAN_BMS_LTC_DEBUG_M1_CELL_A_BALANCING_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_ltc_debug_M1_cell_B_balancing_get(void){
+	uint16_t data = get_bits((size_t*)&CAN_bms_ltc_debug_payloads[1], CAN_BMS_LTC_DEBUG_M1_CELL_B_BALANCING_OFFSET, CAN_BMS_LTC_DEBUG_M1_CELL_B_BALANCING_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_ltc_debug_M1_cell_C_balancing_get(void){
+	uint16_t data = get_bits((size_t*)&CAN_bms_ltc_debug_payloads[1], CAN_BMS_LTC_DEBUG_M1_CELL_C_BALANCING_OFFSET, CAN_BMS_LTC_DEBUG_M1_CELL_C_BALANCING_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_ltc_debug_M1_cell_D_balancing_get(void){
+	uint16_t data = get_bits((size_t*)&CAN_bms_ltc_debug_payloads[1], CAN_BMS_LTC_DEBUG_M1_CELL_D_BALANCING_OFFSET, CAN_BMS_LTC_DEBUG_M1_CELL_D_BALANCING_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_ltc_debug_M1_cell_E_balancing_get(void){
+	uint16_t data = get_bits((size_t*)&CAN_bms_ltc_debug_payloads[1], CAN_BMS_LTC_DEBUG_M1_CELL_E_BALANCING_OFFSET, CAN_BMS_LTC_DEBUG_M1_CELL_E_BALANCING_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_ltc_debug_M2_max_cell_delta_mV_get(void){
+	uint16_t data = get_bits((size_t*)&CAN_bms_ltc_debug_payloads[2], CAN_BMS_LTC_DEBUG_M2_MAX_CELL_DELTA_MV_OFFSET, CAN_BMS_LTC_DEBUG_M2_MAX_CELL_DELTA_MV_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_ltc_debug_M2_max_cell_mV_get(void){
+	uint16_t data = get_bits((size_t*)&CAN_bms_ltc_debug_payloads[2], CAN_BMS_LTC_DEBUG_M2_MAX_CELL_MV_OFFSET, CAN_BMS_LTC_DEBUG_M2_MAX_CELL_MV_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_ltc_debug_M2_min_cell_mV_get(void){
+	uint16_t data = get_bits((size_t*)&CAN_bms_ltc_debug_payloads[2], CAN_BMS_LTC_DEBUG_M2_MIN_CELL_MV_OFFSET, CAN_BMS_LTC_DEBUG_M2_MIN_CELL_MV_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_ltc_debug_M2_max_charge_current_allowed_get(void){
+	uint16_t data = get_bits((size_t*)&CAN_bms_ltc_debug_payloads[2], CAN_BMS_LTC_DEBUG_M2_MAX_CHARGE_CURRENT_ALLOWED_OFFSET, CAN_BMS_LTC_DEBUG_M2_MAX_CHARGE_CURRENT_ALLOWED_RANGE);
+	return (data * 1.0) + 0;
+}
+
 void CAN_bms_ltc_debug_dlc_set(uint8_t dlc){
 	CAN_bms_ltc_debug.dlc = dlc;
 }
 void CAN_bms_ltc_debug_send(void){
 	// Auto-select current mux payload
 	CAN_bms_ltc_debug.payload = &CAN_bms_ltc_debug_payloads[CAN_bms_ltc_debug_mux];
+	// Update message status for self-consumption
+	CAN_bms_ltc_debug.canMessageStatus = 1;
 	// Send the message
 	CAN_write(CAN_bms_ltc_debug);
 	// Increment mux counter for next time
@@ -1060,10 +1462,10 @@ void CAN_bms_ltc_debug_send(void){
 	}
 }
 
-#define CAN_bms_cellTemperaturs_ID 0x726
-
 static CAN_payload_S CAN_bms_cellTemperaturs_payloads[6] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_bms_cellTemperaturs_mux = 0;
+#define CAN_bms_cellTemperaturs_ID 0x726
+
 static CAN_message_S CAN_bms_cellTemperaturs={
 	.canID = CAN_bms_cellTemperaturs_ID,
 	.canXID = 0,
@@ -1298,9 +1700,6 @@ static CAN_message_S CAN_charger_status={
 	.canMessageStatus = 0
 };
 
-uint8_t CAN_charger_status_checkDataIsFresh(void){
-	return CAN_checkDataIsFresh(&CAN_charger_status);
-}
 #define CAN_CHARGER_STATUS_OUTPUT_VOLTAGE_HIGH_BYTE_RANGE 8
 #define CAN_CHARGER_STATUS_OUTPUT_VOLTAGE_HIGH_BYTE_OFFSET 0
 #define CAN_CHARGER_STATUS_OUTPUT_VOLTAGE_LOW_BYTE_RANGE 8
@@ -1324,6 +1723,9 @@ uint8_t CAN_charger_status_checkDataIsFresh(void){
 #define CAN_CHARGER_STATUS_BYTE8_RANGE 8
 #define CAN_CHARGER_STATUS_BYTE8_OFFSET 45
 
+uint8_t CAN_charger_status_checkDataIsFresh(void){
+	return CAN_checkDataIsFresh(&CAN_charger_status);
+}
 uint16_t CAN_charger_status_output_voltage_high_byte_get(void){
 	uint16_t data = get_bits((size_t*)CAN_charger_status.payload, CAN_CHARGER_STATUS_OUTPUT_VOLTAGE_HIGH_BYTE_OFFSET, CAN_CHARGER_STATUS_OUTPUT_VOLTAGE_HIGH_BYTE_RANGE);
 	return (data * 1.0) + 0;
@@ -1382,9 +1784,6 @@ static CAN_message_S CAN_boot_host_bms={
 	.canMessageStatus = 0
 };
 
-uint8_t CAN_boot_host_bms_checkDataIsFresh(void){
-	return CAN_checkDataIsFresh(&CAN_boot_host_bms);
-}
 #define CAN_BOOT_HOST_BMS_TYPE_RANGE 4
 #define CAN_BOOT_HOST_BMS_TYPE_OFFSET 0
 #define CAN_BOOT_HOST_BMS_CODE_RANGE 4
@@ -1404,6 +1803,9 @@ uint8_t CAN_boot_host_bms_checkDataIsFresh(void){
 #define CAN_BOOT_HOST_BMS_BYTE7_RANGE 8
 #define CAN_BOOT_HOST_BMS_BYTE7_OFFSET 56
 
+uint8_t CAN_boot_host_bms_checkDataIsFresh(void){
+	return CAN_checkDataIsFresh(&CAN_boot_host_bms);
+}
 uint16_t CAN_boot_host_bms_type_get(void){
 	uint16_t data = get_bits((size_t*)CAN_boot_host_bms.payload, CAN_BOOT_HOST_BMS_TYPE_OFFSET, CAN_BOOT_HOST_BMS_TYPE_RANGE);
 	return (data * 1.0) + 0;
@@ -1442,52 +1844,74 @@ uint16_t CAN_boot_host_bms_byte7_get(void){
 }
 
 void CAN_DBC_init(void) {
-	CAN_configureMailbox(&CAN_mcu_status);
-	CAN_configureMailbox(&CAN_mcu_command);
 	// Initialize multiplexed message: status
 	CAN_bms_status.payload = &CAN_bms_status_payloads[0];
 	// Pre-set mux value 0 in payload 0
+	CAN_bms_status_payloads[0].word0 &= ~0x0003;
 	CAN_bms_status_payloads[0].word0 |= (0 << 0) & 0x0003;
 	// Pre-set mux value 1 in payload 1
+	CAN_bms_status_payloads[1].word0 &= ~0x0003;
 	CAN_bms_status_payloads[1].word0 |= (1 << 0) & 0x0003;
 	// Pre-set mux value 2 in payload 2
+	CAN_bms_status_payloads[2].word0 &= ~0x0003;
 	CAN_bms_status_payloads[2].word0 |= (2 << 0) & 0x0003;
 	// Pre-set mux value 3 in payload 3
+	CAN_bms_status_payloads[3].word0 &= ~0x0003;
 	CAN_bms_status_payloads[3].word0 |= (3 << 0) & 0x0003;
 	// Initialize multiplexed message: cellVoltages
 	CAN_bms_cellVoltages.payload = &CAN_bms_cellVoltages_payloads[0];
 	// Pre-set mux value 0 in payload 0
+	CAN_bms_cellVoltages_payloads[0].word0 &= ~0x000F;
 	CAN_bms_cellVoltages_payloads[0].word0 |= (0 << 0) & 0x000F;
 	// Pre-set mux value 1 in payload 1
+	CAN_bms_cellVoltages_payloads[1].word0 &= ~0x000F;
 	CAN_bms_cellVoltages_payloads[1].word0 |= (1 << 0) & 0x000F;
 	// Pre-set mux value 2 in payload 2
+	CAN_bms_cellVoltages_payloads[2].word0 &= ~0x000F;
 	CAN_bms_cellVoltages_payloads[2].word0 |= (2 << 0) & 0x000F;
 	// Pre-set mux value 3 in payload 3
+	CAN_bms_cellVoltages_payloads[3].word0 &= ~0x000F;
 	CAN_bms_cellVoltages_payloads[3].word0 |= (3 << 0) & 0x000F;
 	// Pre-set mux value 4 in payload 4
+	CAN_bms_cellVoltages_payloads[4].word0 &= ~0x000F;
 	CAN_bms_cellVoltages_payloads[4].word0 |= (4 << 0) & 0x000F;
 	// Pre-set mux value 5 in payload 5
+	CAN_bms_cellVoltages_payloads[5].word0 &= ~0x000F;
 	CAN_bms_cellVoltages_payloads[5].word0 |= (5 << 0) & 0x000F;
 	// Initialize multiplexed message: ltc_debug
 	CAN_bms_ltc_debug.payload = &CAN_bms_ltc_debug_payloads[0];
 	// Pre-set mux value 0 in payload 0
+	CAN_bms_ltc_debug_payloads[0].word0 &= ~0x0003;
 	CAN_bms_ltc_debug_payloads[0].word0 |= (0 << 0) & 0x0003;
 	// Pre-set mux value 1 in payload 1
+	CAN_bms_ltc_debug_payloads[1].word0 &= ~0x0003;
 	CAN_bms_ltc_debug_payloads[1].word0 |= (1 << 0) & 0x0003;
+	// Pre-set mux value 2 in payload 2
+	CAN_bms_ltc_debug_payloads[2].word0 &= ~0x0003;
+	CAN_bms_ltc_debug_payloads[2].word0 |= (2 << 0) & 0x0003;
 	// Initialize multiplexed message: cellTemperaturs
 	CAN_bms_cellTemperaturs.payload = &CAN_bms_cellTemperaturs_payloads[0];
 	// Pre-set mux value 0 in payload 0
+	CAN_bms_cellTemperaturs_payloads[0].word0 &= ~0x000F;
 	CAN_bms_cellTemperaturs_payloads[0].word0 |= (0 << 0) & 0x000F;
 	// Pre-set mux value 1 in payload 1
+	CAN_bms_cellTemperaturs_payloads[1].word0 &= ~0x000F;
 	CAN_bms_cellTemperaturs_payloads[1].word0 |= (1 << 0) & 0x000F;
 	// Pre-set mux value 2 in payload 2
+	CAN_bms_cellTemperaturs_payloads[2].word0 &= ~0x000F;
 	CAN_bms_cellTemperaturs_payloads[2].word0 |= (2 << 0) & 0x000F;
 	// Pre-set mux value 3 in payload 3
+	CAN_bms_cellTemperaturs_payloads[3].word0 &= ~0x000F;
 	CAN_bms_cellTemperaturs_payloads[3].word0 |= (3 << 0) & 0x000F;
 	// Pre-set mux value 4 in payload 4
+	CAN_bms_cellTemperaturs_payloads[4].word0 &= ~0x000F;
 	CAN_bms_cellTemperaturs_payloads[4].word0 |= (4 << 0) & 0x000F;
 	// Pre-set mux value 5 in payload 5
+	CAN_bms_cellTemperaturs_payloads[5].word0 &= ~0x000F;
 	CAN_bms_cellTemperaturs_payloads[5].word0 |= (5 << 0) & 0x000F;
+	CAN_configureMailbox(&CAN_mcu_status);
+	CAN_configureMailbox(&CAN_mcu_command);
+	CAN_configureMailbox(&CAN_mcu_mcu_debug);
 	CAN_configureMailbox(&CAN_charger_status);
 	CAN_configureMailbox(&CAN_boot_host_bms);
 }

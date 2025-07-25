@@ -32,8 +32,8 @@ typedef struct CAN_message_S {
     uint32_t canID;
     uint8_t canXID;
     uint8_t dlc;
-    CAN_payload_S * payload;
-    uint8_t * canMessageStatus;
+    volatile CAN_payload_S * payload;
+    volatile uint8_t * canMessageStatus;
 } CAN_message_S;
 
 /* mode types */

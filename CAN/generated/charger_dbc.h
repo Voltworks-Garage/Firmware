@@ -49,19 +49,6 @@ uint16_t CAN_bms_charger_request_charge_mode_get(void);
 uint16_t CAN_bms_charger_request_byte_7_get(void);
 uint16_t CAN_bms_charger_request_byte_8_get(void);
 
-#define CAN_bms_ltc_debug_interval() 1
-uint8_t CAN_bms_ltc_debug_checkDataIsFresh(void);
-uint16_t CAN_bms_ltc_debug_Multiplex_get(void);
-uint16_t CAN_bms_ltc_debug_M0_ltc_state_get(void);
-uint16_t CAN_bms_ltc_debug_M0_lastErrorState_get(void);
-uint16_t CAN_bms_ltc_debug_M0_ErrorCount_get(void);
-uint16_t CAN_bms_ltc_debug_M0_balancingActive_get(void);
-uint16_t CAN_bms_ltc_debug_M1_cell_1_balancing_get(void);
-uint16_t CAN_bms_ltc_debug_M1_cell_2_balancing_get(void);
-uint16_t CAN_bms_ltc_debug_M1_cell_3_balancing_get(void);
-uint16_t CAN_bms_ltc_debug_M1_cell_4_balancing_get(void);
-uint16_t CAN_bms_ltc_debug_M1_cell_5_balancing_get(void);
-
 /**********************************************************
  * motorcontroller NODE MESSAGES
  */

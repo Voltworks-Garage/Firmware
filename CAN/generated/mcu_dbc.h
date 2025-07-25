@@ -100,7 +100,6 @@ void CAN_mcu_motorControllerRequest_dlc_set(uint8_t dlc);
 void CAN_mcu_motorControllerRequest_send(void);
 
 
-#define CAN_mcu_boot_response_interval() 
 void CAN_mcu_boot_response_type_set(uint16_t type);
 void CAN_mcu_boot_response_code_set(uint16_t code);
 void CAN_mcu_boot_response_byte1_set(uint16_t byte1);
@@ -116,10 +115,35 @@ void CAN_mcu_boot_response_dlc_set(uint8_t dlc);
 void CAN_mcu_boot_response_send(void);
 
 
+#define CAN_mcu_mcu_debug_interval() 10
+void CAN_mcu_mcu_debug_M0_debug_value_1_set(uint16_t debug_value_1);
+void CAN_mcu_mcu_debug_M0_debug_value_2_set(uint16_t debug_value_2);
+void CAN_mcu_mcu_debug_M0_debug_value_3_set(uint16_t debug_value_3);
+void CAN_mcu_mcu_debug_M0_debug_value_4_set(uint16_t debug_value_4);
+void CAN_mcu_mcu_debug_M1_debug_value_5_set(uint16_t debug_value_5);
+void CAN_mcu_mcu_debug_M1_debug_value_6_set(uint16_t debug_value_6);
+void CAN_mcu_mcu_debug_M1_debug_value_7_set(uint16_t debug_value_7);
+void CAN_mcu_mcu_debug_M1_debug_value_8_set(uint16_t debug_value_8);
+void CAN_mcu_mcu_debug_M2_debug_value_9_set(uint16_t debug_value_9);
+void CAN_mcu_mcu_debug_M2_debug_value_10_set(uint16_t debug_value_10);
+void CAN_mcu_mcu_debug_M2_debug_value_11_set(uint16_t debug_value_11);
+void CAN_mcu_mcu_debug_M2_debug_value_12_set(uint16_t debug_value_12);
+void CAN_mcu_mcu_debug_M3_debug_value_13_set(uint16_t debug_value_13);
+void CAN_mcu_mcu_debug_M3_debug_value_14_set(uint16_t debug_value_14);
+void CAN_mcu_mcu_debug_M3_debug_value_15_set(uint16_t debug_value_15);
+void CAN_mcu_mcu_debug_M3_debug_value_16_set(uint16_t debug_value_16);
+void CAN_mcu_mcu_debug_dlc_set(uint8_t dlc);
+
+
+void CAN_mcu_mcu_debug_send(void);
+
+
+#define CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES 4
 /**********************************************************
  * bms NODE MESSAGES
  */
 #define CAN_bms_status_interval() 10
+#define CAN_BMS_STATUS_NUM_MUX_VALUES 4
 uint8_t CAN_bms_status_checkDataIsFresh(void);
 uint16_t CAN_bms_status_Multiplex_get(void);
 uint16_t CAN_bms_status_M0_state_get(void);
@@ -165,19 +189,6 @@ float CAN_bms_debug_VBUS_Voltage_get(void);
 uint16_t CAN_bms_debug_CPU_USAGE_get(void);
 uint16_t CAN_bms_debug_CPU_peak_get(void);
 
-#define CAN_bms_ltc_debug_interval() 1
-uint8_t CAN_bms_ltc_debug_checkDataIsFresh(void);
-uint16_t CAN_bms_ltc_debug_Multiplex_get(void);
-uint16_t CAN_bms_ltc_debug_M0_ltc_state_get(void);
-uint16_t CAN_bms_ltc_debug_M0_lastErrorState_get(void);
-uint16_t CAN_bms_ltc_debug_M0_ErrorCount_get(void);
-uint16_t CAN_bms_ltc_debug_M0_balancingActive_get(void);
-uint16_t CAN_bms_ltc_debug_M1_cell_1_balancing_get(void);
-uint16_t CAN_bms_ltc_debug_M1_cell_2_balancing_get(void);
-uint16_t CAN_bms_ltc_debug_M1_cell_3_balancing_get(void);
-uint16_t CAN_bms_ltc_debug_M1_cell_4_balancing_get(void);
-uint16_t CAN_bms_ltc_debug_M1_cell_5_balancing_get(void);
-
 /**********************************************************
  * motorcontroller NODE MESSAGES
  */
@@ -192,7 +203,6 @@ uint16_t CAN_motorcontroller_motorStatus_VphaseA_get(void);
 uint16_t CAN_motorcontroller_motorStatus_VphaseB_get(void);
 uint16_t CAN_motorcontroller_motorStatus_VphaseC_get(void);
 
-#define CAN_motorcontroller_response_interval() None
 uint8_t CAN_motorcontroller_response_checkDataIsFresh(void);
 uint16_t CAN_motorcontroller_response_byte1_get(void);
 uint16_t CAN_motorcontroller_response_byte2_get(void);

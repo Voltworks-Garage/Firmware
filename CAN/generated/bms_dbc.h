@@ -52,11 +52,31 @@ float CAN_mcu_command_ev_charger_current_get(void);
 uint16_t CAN_mcu_command_precharge_enable_get(void);
 uint16_t CAN_mcu_command_motor_controller_enable_get(void);
 
+#define CAN_mcu_mcu_debug_interval() 10
+#define CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES 4
+uint8_t CAN_mcu_mcu_debug_checkDataIsFresh(void);
+uint16_t CAN_mcu_mcu_debug_Multiplex_get(void);
+uint16_t CAN_mcu_mcu_debug_M0_debug_value_1_get(void);
+uint16_t CAN_mcu_mcu_debug_M0_debug_value_2_get(void);
+uint16_t CAN_mcu_mcu_debug_M0_debug_value_3_get(void);
+uint16_t CAN_mcu_mcu_debug_M0_debug_value_4_get(void);
+uint16_t CAN_mcu_mcu_debug_M1_debug_value_5_get(void);
+uint16_t CAN_mcu_mcu_debug_M1_debug_value_6_get(void);
+uint16_t CAN_mcu_mcu_debug_M1_debug_value_7_get(void);
+uint16_t CAN_mcu_mcu_debug_M1_debug_value_8_get(void);
+uint16_t CAN_mcu_mcu_debug_M2_debug_value_9_get(void);
+uint16_t CAN_mcu_mcu_debug_M2_debug_value_10_get(void);
+uint16_t CAN_mcu_mcu_debug_M2_debug_value_11_get(void);
+uint16_t CAN_mcu_mcu_debug_M2_debug_value_12_get(void);
+uint16_t CAN_mcu_mcu_debug_M3_debug_value_13_get(void);
+uint16_t CAN_mcu_mcu_debug_M3_debug_value_14_get(void);
+uint16_t CAN_mcu_mcu_debug_M3_debug_value_15_get(void);
+uint16_t CAN_mcu_mcu_debug_M3_debug_value_16_get(void);
+
 /**********************************************************
  * bms NODE MESSAGES
  */
 #define CAN_bms_status_interval() 10
-#define CAN_BMS_STATUS_NUM_MUX_VALUES 4
 void CAN_bms_status_M0_state_set(uint16_t state);
 void CAN_bms_status_M0_SOC_set(float SOC);
 void CAN_bms_status_M0_packVoltage_set(float packVoltage);
@@ -81,6 +101,7 @@ void CAN_bms_status_dlc_set(uint8_t dlc);
 void CAN_bms_status_send(void);
 
 
+#define CAN_BMS_STATUS_NUM_MUX_VALUES 4
 #define CAN_bms_status_2_interval() 10
 void CAN_bms_status_2_DCDC_state_set(uint16_t DCDC_state);
 void CAN_bms_status_2_DCDC_fault_set(uint16_t DCDC_fault);
@@ -113,7 +134,6 @@ void CAN_bms_debug_dlc_set(uint8_t dlc);
 void CAN_bms_debug_send(void);
 
 
-#define CAN_bms_boot_response_interval() 
 void CAN_bms_boot_response_type_set(uint16_t type);
 void CAN_bms_boot_response_code_set(uint16_t code);
 void CAN_bms_boot_response_byte1_set(uint16_t byte1);
@@ -145,7 +165,6 @@ void CAN_bms_charger_request_send(void);
 
 
 #define CAN_bms_cellVoltages_interval() 1000
-#define CAN_BMS_CELLVOLTAGES_NUM_MUX_VALUES 6
 void CAN_bms_cellVoltages_M0_cell_1_voltage_set(uint16_t cell_1_voltage);
 void CAN_bms_cellVoltages_M0_cell_2_voltage_set(uint16_t cell_2_voltage);
 void CAN_bms_cellVoltages_M0_cell_3_voltage_set(uint16_t cell_3_voltage);
@@ -176,25 +195,45 @@ void CAN_bms_cellVoltages_dlc_set(uint8_t dlc);
 void CAN_bms_cellVoltages_send(void);
 
 
+#define CAN_BMS_CELLVOLTAGES_NUM_MUX_VALUES 6
 #define CAN_bms_ltc_debug_interval() 1
-#define CAN_BMS_LTC_DEBUG_NUM_MUX_VALUES 2
 void CAN_bms_ltc_debug_M0_ltc_state_set(uint16_t ltc_state);
 void CAN_bms_ltc_debug_M0_lastErrorState_set(uint16_t lastErrorState);
 void CAN_bms_ltc_debug_M0_ErrorCount_set(uint16_t ErrorCount);
 void CAN_bms_ltc_debug_M0_balancingActive_set(uint16_t balancingActive);
-void CAN_bms_ltc_debug_M1_cell_1_balancing_set(uint16_t cell_1_balancing);
-void CAN_bms_ltc_debug_M1_cell_2_balancing_set(uint16_t cell_2_balancing);
-void CAN_bms_ltc_debug_M1_cell_3_balancing_set(uint16_t cell_3_balancing);
-void CAN_bms_ltc_debug_M1_cell_4_balancing_set(uint16_t cell_4_balancing);
-void CAN_bms_ltc_debug_M1_cell_5_balancing_set(uint16_t cell_5_balancing);
+void CAN_bms_ltc_debug_M1_cell_A_balancing_set(uint16_t cell_A_balancing);
+void CAN_bms_ltc_debug_M1_cell_B_balancing_set(uint16_t cell_B_balancing);
+void CAN_bms_ltc_debug_M1_cell_C_balancing_set(uint16_t cell_C_balancing);
+void CAN_bms_ltc_debug_M1_cell_D_balancing_set(uint16_t cell_D_balancing);
+void CAN_bms_ltc_debug_M1_cell_E_balancing_set(uint16_t cell_E_balancing);
+void CAN_bms_ltc_debug_M2_max_cell_delta_mV_set(uint16_t max_cell_delta_mV);
+void CAN_bms_ltc_debug_M2_max_cell_mV_set(uint16_t max_cell_mV);
+void CAN_bms_ltc_debug_M2_min_cell_mV_set(uint16_t min_cell_mV);
+void CAN_bms_ltc_debug_M2_max_charge_current_allowed_set(uint16_t max_charge_current_allowed);
+uint8_t CAN_bms_ltc_debug_checkDataIsFresh(void);
+uint16_t CAN_bms_ltc_debug_Multiplex_get(void);
+uint16_t CAN_bms_ltc_debug_M0_ltc_state_get(void);
+uint16_t CAN_bms_ltc_debug_M0_lastErrorState_get(void);
+uint16_t CAN_bms_ltc_debug_M0_ErrorCount_get(void);
+uint16_t CAN_bms_ltc_debug_M0_balancingActive_get(void);
+uint16_t CAN_bms_ltc_debug_M1_cell_A_balancing_get(void);
+uint16_t CAN_bms_ltc_debug_M1_cell_B_balancing_get(void);
+uint16_t CAN_bms_ltc_debug_M1_cell_C_balancing_get(void);
+uint16_t CAN_bms_ltc_debug_M1_cell_D_balancing_get(void);
+uint16_t CAN_bms_ltc_debug_M1_cell_E_balancing_get(void);
+uint16_t CAN_bms_ltc_debug_M2_max_cell_delta_mV_get(void);
+uint16_t CAN_bms_ltc_debug_M2_max_cell_mV_get(void);
+uint16_t CAN_bms_ltc_debug_M2_min_cell_mV_get(void);
+uint16_t CAN_bms_ltc_debug_M2_max_charge_current_allowed_get(void);
+
 void CAN_bms_ltc_debug_dlc_set(uint8_t dlc);
 
 
 void CAN_bms_ltc_debug_send(void);
 
 
+#define CAN_BMS_LTC_DEBUG_NUM_MUX_VALUES 3
 #define CAN_bms_cellTemperaturs_interval() 1000
-#define CAN_BMS_CELLTEMPERATURS_NUM_MUX_VALUES 6
 void CAN_bms_cellTemperaturs_M0_temp_1_set(float temp_1);
 void CAN_bms_cellTemperaturs_M0_temp_2_set(float temp_2);
 void CAN_bms_cellTemperaturs_M0_temp_3_set(float temp_3);
@@ -225,6 +264,7 @@ void CAN_bms_cellTemperaturs_dlc_set(uint8_t dlc);
 void CAN_bms_cellTemperaturs_send(void);
 
 
+#define CAN_BMS_CELLTEMPERATURS_NUM_MUX_VALUES 6
 /**********************************************************
  * motorcontroller NODE MESSAGES
  */

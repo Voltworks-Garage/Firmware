@@ -17,9 +17,6 @@ static CAN_message_S CAN_mcu_command={
 	.canMessageStatus = 0
 };
 
-uint8_t CAN_mcu_command_checkDataIsFresh(void){
-	return CAN_checkDataIsFresh(&CAN_mcu_command);
-}
 #define CAN_MCU_COMMAND_DCDC_ENABLE_RANGE 1
 #define CAN_MCU_COMMAND_DCDC_ENABLE_OFFSET 0
 #define CAN_MCU_COMMAND_EV_CHARGER_ENABLE_RANGE 1
@@ -31,6 +28,9 @@ uint8_t CAN_mcu_command_checkDataIsFresh(void){
 #define CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_RANGE 1
 #define CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_OFFSET 16
 
+uint8_t CAN_mcu_command_checkDataIsFresh(void){
+	return CAN_checkDataIsFresh(&CAN_mcu_command);
+}
 uint16_t CAN_mcu_command_DCDC_enable_get(void){
 	uint16_t data = get_bits((size_t*)CAN_mcu_command.payload, CAN_MCU_COMMAND_DCDC_ENABLE_OFFSET, CAN_MCU_COMMAND_DCDC_ENABLE_RANGE);
 	return (data * 1.0) + 0;
@@ -62,12 +62,12 @@ static CAN_message_S CAN_mcu_motorControllerRequest={
 	.canMessageStatus = 0
 };
 
-uint8_t CAN_mcu_motorControllerRequest_checkDataIsFresh(void){
-	return CAN_checkDataIsFresh(&CAN_mcu_motorControllerRequest);
-}
 #define CAN_MCU_MOTORCONTROLLERREQUEST_REQUESTTYPE_RANGE 8
 #define CAN_MCU_MOTORCONTROLLERREQUEST_REQUESTTYPE_OFFSET 0
 
+uint8_t CAN_mcu_motorControllerRequest_checkDataIsFresh(void){
+	return CAN_checkDataIsFresh(&CAN_mcu_motorControllerRequest);
+}
 uint16_t CAN_mcu_motorControllerRequest_requestType_get(void){
 	uint16_t data = get_bits((size_t*)CAN_mcu_motorControllerRequest.payload, CAN_MCU_MOTORCONTROLLERREQUEST_REQUESTTYPE_OFFSET, CAN_MCU_MOTORCONTROLLERREQUEST_REQUESTTYPE_RANGE);
 	return (data * 1.0) + 0;
@@ -86,9 +86,6 @@ static CAN_message_S CAN_bms_debug={
 	.canMessageStatus = 0
 };
 
-uint8_t CAN_bms_debug_checkDataIsFresh(void){
-	return CAN_checkDataIsFresh(&CAN_bms_debug);
-}
 #define CAN_BMS_DEBUG_BOOL0_RANGE 1
 #define CAN_BMS_DEBUG_BOOL0_OFFSET 0
 #define CAN_BMS_DEBUG_BOOL1_RANGE 1
@@ -104,6 +101,9 @@ uint8_t CAN_bms_debug_checkDataIsFresh(void){
 #define CAN_BMS_DEBUG_CPU_PEAK_RANGE 10
 #define CAN_BMS_DEBUG_CPU_PEAK_OFFSET 54
 
+uint8_t CAN_bms_debug_checkDataIsFresh(void){
+	return CAN_checkDataIsFresh(&CAN_bms_debug);
+}
 uint16_t CAN_bms_debug_bool0_get(void){
 	uint16_t data = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_BOOL0_OFFSET, CAN_BMS_DEBUG_BOOL0_RANGE);
 	return (data * 1.0) + 0;
@@ -133,87 +133,12 @@ uint16_t CAN_bms_debug_CPU_peak_get(void){
 	return (data * 0.1) + 0;
 }
 
-#define CAN_bms_ltc_debug_ID 0x727
-
-static CAN_message_S CAN_bms_ltc_debug={
-	.canID = CAN_bms_ltc_debug_ID,
-	.canXID = 0,
-	.dlc = 8,
-	.payload = 0,
-	.canMessageStatus = 0
-};
-
-uint8_t CAN_bms_ltc_debug_checkDataIsFresh(void){
-	return CAN_checkDataIsFresh(&CAN_bms_ltc_debug);
-}
-#define CAN_BMS_LTC_DEBUG_MULTIPLEX_RANGE 2
-#define CAN_BMS_LTC_DEBUG_MULTIPLEX_OFFSET 0
-#define CAN_BMS_LTC_DEBUG_M0_LTC_STATE_RANGE 4
-#define CAN_BMS_LTC_DEBUG_M0_LTC_STATE_OFFSET 2
-#define CAN_BMS_LTC_DEBUG_M0_LASTERRORSTATE_RANGE 8
-#define CAN_BMS_LTC_DEBUG_M0_LASTERRORSTATE_OFFSET 6
-#define CAN_BMS_LTC_DEBUG_M0_ERRORCOUNT_RANGE 16
-#define CAN_BMS_LTC_DEBUG_M0_ERRORCOUNT_OFFSET 14
-#define CAN_BMS_LTC_DEBUG_M0_BALANCINGACTIVE_RANGE 1
-#define CAN_BMS_LTC_DEBUG_M0_BALANCINGACTIVE_OFFSET 30
-#define CAN_BMS_LTC_DEBUG_M1_CELL_1_BALANCING_RANGE 8
-#define CAN_BMS_LTC_DEBUG_M1_CELL_1_BALANCING_OFFSET 2
-#define CAN_BMS_LTC_DEBUG_M1_CELL_2_BALANCING_RANGE 8
-#define CAN_BMS_LTC_DEBUG_M1_CELL_2_BALANCING_OFFSET 10
-#define CAN_BMS_LTC_DEBUG_M1_CELL_3_BALANCING_RANGE 8
-#define CAN_BMS_LTC_DEBUG_M1_CELL_3_BALANCING_OFFSET 18
-#define CAN_BMS_LTC_DEBUG_M1_CELL_4_BALANCING_RANGE 8
-#define CAN_BMS_LTC_DEBUG_M1_CELL_4_BALANCING_OFFSET 26
-#define CAN_BMS_LTC_DEBUG_M1_CELL_5_BALANCING_RANGE 8
-#define CAN_BMS_LTC_DEBUG_M1_CELL_5_BALANCING_OFFSET 34
-
-uint16_t CAN_bms_ltc_debug_Multiplex_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_ltc_debug.payload, CAN_BMS_LTC_DEBUG_MULTIPLEX_OFFSET, CAN_BMS_LTC_DEBUG_MULTIPLEX_RANGE);
-	return (data * 1.0) + 0;
-}
-uint16_t CAN_bms_ltc_debug_M0_ltc_state_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_ltc_debug.payload, CAN_BMS_LTC_DEBUG_M0_LTC_STATE_OFFSET, CAN_BMS_LTC_DEBUG_M0_LTC_STATE_RANGE);
-	return (data * 1.0) + 0;
-}
-uint16_t CAN_bms_ltc_debug_M0_lastErrorState_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_ltc_debug.payload, CAN_BMS_LTC_DEBUG_M0_LASTERRORSTATE_OFFSET, CAN_BMS_LTC_DEBUG_M0_LASTERRORSTATE_RANGE);
-	return (data * 1.0) + 0;
-}
-uint16_t CAN_bms_ltc_debug_M0_ErrorCount_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_ltc_debug.payload, CAN_BMS_LTC_DEBUG_M0_ERRORCOUNT_OFFSET, CAN_BMS_LTC_DEBUG_M0_ERRORCOUNT_RANGE);
-	return (data * 1.0) + 0;
-}
-uint16_t CAN_bms_ltc_debug_M0_balancingActive_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_ltc_debug.payload, CAN_BMS_LTC_DEBUG_M0_BALANCINGACTIVE_OFFSET, CAN_BMS_LTC_DEBUG_M0_BALANCINGACTIVE_RANGE);
-	return (data * 1.0) + 0;
-}
-uint16_t CAN_bms_ltc_debug_M1_cell_1_balancing_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_ltc_debug.payload, CAN_BMS_LTC_DEBUG_M1_CELL_1_BALANCING_OFFSET, CAN_BMS_LTC_DEBUG_M1_CELL_1_BALANCING_RANGE);
-	return (data * 1.0) + 0;
-}
-uint16_t CAN_bms_ltc_debug_M1_cell_2_balancing_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_ltc_debug.payload, CAN_BMS_LTC_DEBUG_M1_CELL_2_BALANCING_OFFSET, CAN_BMS_LTC_DEBUG_M1_CELL_2_BALANCING_RANGE);
-	return (data * 1.0) + 0;
-}
-uint16_t CAN_bms_ltc_debug_M1_cell_3_balancing_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_ltc_debug.payload, CAN_BMS_LTC_DEBUG_M1_CELL_3_BALANCING_OFFSET, CAN_BMS_LTC_DEBUG_M1_CELL_3_BALANCING_RANGE);
-	return (data * 1.0) + 0;
-}
-uint16_t CAN_bms_ltc_debug_M1_cell_4_balancing_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_ltc_debug.payload, CAN_BMS_LTC_DEBUG_M1_CELL_4_BALANCING_OFFSET, CAN_BMS_LTC_DEBUG_M1_CELL_4_BALANCING_RANGE);
-	return (data * 1.0) + 0;
-}
-uint16_t CAN_bms_ltc_debug_M1_cell_5_balancing_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_ltc_debug.payload, CAN_BMS_LTC_DEBUG_M1_CELL_5_BALANCING_OFFSET, CAN_BMS_LTC_DEBUG_M1_CELL_5_BALANCING_RANGE);
-	return (data * 1.0) + 0;
-}
-
 /**********************************************************
  * motorcontroller NODE MESSAGES
  */
+static CAN_payload_S CAN_motorcontroller_motorStatus_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 #define CAN_motorcontroller_motorStatus_ID 0x731
 
-static CAN_payload_S CAN_motorcontroller_motorStatus_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 static CAN_message_S CAN_motorcontroller_motorStatus={
 	.canID = CAN_motorcontroller_motorStatus_ID,
 	.canXID = 0,
@@ -286,9 +211,9 @@ void CAN_motorcontroller_motorStatus_send(void){
 	CAN_write(CAN_motorcontroller_motorStatus);
 }
 
+static CAN_payload_S CAN_motorcontroller_response_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 #define CAN_motorcontroller_response_ID 0x6ff
 
-static CAN_payload_S CAN_motorcontroller_response_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 static CAN_message_S CAN_motorcontroller_response={
 	.canID = CAN_motorcontroller_response_ID,
 	.canXID = 0,
@@ -371,7 +296,6 @@ void CAN_DBC_init(void) {
 	CAN_configureMailbox(&CAN_mcu_command);
 	CAN_configureMailbox(&CAN_mcu_motorControllerRequest);
 	CAN_configureMailbox(&CAN_bms_debug);
-	CAN_configureMailbox(&CAN_bms_ltc_debug);
 }
 
 void CAN_send_10ms(void){

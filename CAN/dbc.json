@@ -506,6 +506,153 @@
                             "units": ""
                         }
                     ]
+                },
+                {
+                    "name": "mcu_debug",
+                    "id": 1811,
+                    "x_id": 0,
+                    "freq": 10,
+                    "consumers": [
+                        "dash",
+                        "bms"
+                    ],
+                    "signals": [
+                        {
+                            "name": "Multiplex",
+                            "length": 2,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": ""
+                        },
+                        {
+                            "name": "debug_value_1",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 0
+                        },
+                        {
+                            "name": "debug_value_2",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 0
+                        },
+                        {
+                            "name": "debug_value_3",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 0
+                        },
+                        {
+                            "name": "debug_value_4",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 0
+                        },
+                        {
+                            "name": "debug_value_5",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "debug_value_6",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "debug_value_7",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "debug_value_8",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "debug_value_9",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 2
+                        },
+                        {
+                            "name": "debug_value_10",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 2
+                        },
+                        {
+                            "name": "debug_value_11",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 2
+                        },
+                        {
+                            "name": "debug_value_12",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 2
+                        },
+                        {
+                            "name": "debug_value_13",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 3
+                        },
+                        {
+                            "name": "debug_value_14",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 3
+                        },
+                        {
+                            "name": "debug_value_15",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 3
+                        },
+                        {
+                            "name": "debug_value_16",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 3
+                        }
+                    ]
                 }
             ]
         },
@@ -1180,7 +1327,7 @@
                     "id": 1831,
                     "x_id": 0,
                     "freq": 1,
-                    "consumers": [
+                    "consumers": ["bms"
                     ],
                     "signals": [
                         {
@@ -1223,7 +1370,7 @@
                             "multiplex": 0
                         },
                         {
-                            "name": "cell_1_balancing",
+                            "name": "cell_A_balancing",
                             "length": 8,
                             "scale": 1.0,
                             "offset": 0,
@@ -1231,7 +1378,7 @@
                             "multiplex": 1
                         },
                         {
-                            "name": "cell_2_balancing",
+                            "name": "cell_B_balancing",
                             "length": 8,
                             "scale": 1.0,
                             "offset": 0,
@@ -1239,7 +1386,7 @@
                             "multiplex": 1
                         },
                         {
-                            "name": "cell_3_balancing",
+                            "name": "cell_C_balancing",
                             "length": 8,
                             "scale": 1.0,
                             "offset": 0,
@@ -1247,7 +1394,7 @@
                             "multiplex": 1
                         },
                         {
-                            "name": "cell_4_balancing",
+                            "name": "cell_D_balancing",
                             "length": 8,
                             "scale": 1.0,
                             "offset": 0,
@@ -1255,13 +1402,46 @@
                             "multiplex": 1
                         },
                         {
-                            "name": "cell_5_balancing",
+                            "name": "cell_E_balancing",
                             "length": 8,
                             "scale": 1.0,
                             "offset": 0,
                             "units": "",
                             "multiplex": 1
+                        },
+                        {
+                            "name": "max_cell_delta_mV",
+                            "length": 13,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "mV",
+                            "multiplex": 2
+                        },
+                        {
+                            "name": "max_cell_mV",
+                            "length": 13,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "mV",
+                            "multiplex": 2
+                        },
+                        {
+                            "name": "min_cell_mV",
+                            "length": 13,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "mV",
+                            "multiplex": 2
+                        },
+                        {
+                            "name": "max_charge_current_allowed",
+                            "length": 16,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "mA",
+                            "multiplex": 2
                         }
+
                     ]
                 },
                 {

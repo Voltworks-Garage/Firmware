@@ -25,7 +25,6 @@ float CAN_mcu_command_ev_charger_current_get(void);
 uint16_t CAN_mcu_command_precharge_enable_get(void);
 uint16_t CAN_mcu_command_motor_controller_enable_get(void);
 
-#define CAN_mcu_boot_response_interval() 
 uint8_t CAN_mcu_boot_response_checkDataIsFresh(void);
 uint16_t CAN_mcu_boot_response_type_get(void);
 uint16_t CAN_mcu_boot_response_code_get(void);
@@ -50,7 +49,6 @@ float CAN_bms_debug_VBUS_Voltage_get(void);
 uint16_t CAN_bms_debug_CPU_USAGE_get(void);
 uint16_t CAN_bms_debug_CPU_peak_get(void);
 
-#define CAN_bms_boot_response_interval() 
 uint8_t CAN_bms_boot_response_checkDataIsFresh(void);
 uint16_t CAN_bms_boot_response_type_get(void);
 uint16_t CAN_bms_boot_response_code_get(void);
@@ -61,19 +59,6 @@ uint16_t CAN_bms_boot_response_byte4_get(void);
 uint16_t CAN_bms_boot_response_byte5_get(void);
 uint16_t CAN_bms_boot_response_byte6_get(void);
 uint16_t CAN_bms_boot_response_byte7_get(void);
-
-#define CAN_bms_ltc_debug_interval() 1
-uint8_t CAN_bms_ltc_debug_checkDataIsFresh(void);
-uint16_t CAN_bms_ltc_debug_Multiplex_get(void);
-uint16_t CAN_bms_ltc_debug_M0_ltc_state_get(void);
-uint16_t CAN_bms_ltc_debug_M0_lastErrorState_get(void);
-uint16_t CAN_bms_ltc_debug_M0_ErrorCount_get(void);
-uint16_t CAN_bms_ltc_debug_M0_balancingActive_get(void);
-uint16_t CAN_bms_ltc_debug_M1_cell_1_balancing_get(void);
-uint16_t CAN_bms_ltc_debug_M1_cell_2_balancing_get(void);
-uint16_t CAN_bms_ltc_debug_M1_cell_3_balancing_get(void);
-uint16_t CAN_bms_ltc_debug_M1_cell_4_balancing_get(void);
-uint16_t CAN_bms_ltc_debug_M1_cell_5_balancing_get(void);
 
 /**********************************************************
  * motorcontroller NODE MESSAGES

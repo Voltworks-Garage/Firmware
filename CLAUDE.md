@@ -70,3 +70,15 @@ cd "/mnt/c/REPOS/Voltworks_Garage/Firmware/Projects/MCU_Bootloader.X"
   3. Update all calling code to use the new function name
   4. Ask the user to build the project to verify no compilation errors
 - This ensures interfaces remain consistent and prevents broken builds
+
+## File Management Protocol
+- NEVER rename, move, or delete user files without explicit permission
+- NEVER modify file extensions or file paths without explicit user request
+- When testing scripts or code generation tools, use temporary files or ask permission first
+- If you need to test file operations, create temporary files with clearly temporary names
+- Always preserve original files when making modifications
+- Example violations to avoid:
+  - Renaming `dbc.json` to `dbc_backup.json` for testing purposes
+  - Moving files to different directories without permission
+  - Changing file extensions during testing
+- If file operations fail, use git commands to restore originals when possible

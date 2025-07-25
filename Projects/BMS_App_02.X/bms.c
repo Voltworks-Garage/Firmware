@@ -225,11 +225,12 @@ static void bms_balance(BMS_entry_types_E entry_type) {
             }
 
         case RUN:
-                if (SysTick_TimeOut(balancing_timer)){
-                    BMS_ClearAllCellBalancing();
-                }
-                // always move out of this state
+            if (SysTick_TimeOut(balancing_timer)){
+                BMS_ClearAllCellBalancing();
+            }
+            if (!LTC6802_1_IsBusy()) {
                 nextState = bms_dataComplete_state;
+            }
             break;
 
         case EXIT:
@@ -260,6 +261,7 @@ static void bms_dataComplete(BMS_entry_types_E entry_type) {
 static void bms_error(BMS_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
+            // Entering into error mode will halt communications with LTC6802 for long enough for it to reset and go into standyby mode.
             SysTick_TimerStart(error_timer);
             LTC6802_1_ClearError(0); // Clear error for stack 0
             LTC6802_1_ClearError(1); // Clear error for stack 1

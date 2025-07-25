@@ -107,12 +107,9 @@ void idle(EV_CHARGER_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
             IO_SET_EV_CHARGER_EN(LOW);
-            CAN_bms_charger_request_output_voltage_low_byte_set(0);
-            CAN_bms_charger_request_output_voltage_high_byte_set(0);
-            CAN_bms_charger_request_output_current_low_byte_set(0);
-            CAN_bms_charger_request_output_current_high_byte_set(0);
-            CAN_bms_charger_request_start_charge_not_request_set(1);
-            CAN_bms_charger_request_charge_mode_set(0);
+            EV_CHARGER_charge_current_set(0);
+            EV_CHARGER_charge_voltage_set(0);
+            EV_CHARGER_charge_request_set(0);
             break;
         case RUN:
             CAN_bms_charger_request_start_charge_not_request_set(1);//inverted logic. 1 means stop charging
@@ -171,12 +168,9 @@ void negotiating(EV_CHARGER_entry_types_E entry_type) {
         case RUN:
             // TODO: Implement negotiation logic
             // For now, just check if we should stop charging
-            CAN_bms_charger_request_output_voltage_low_byte_set(chargeVoltageTarget);
-            CAN_bms_charger_request_output_voltage_high_byte_set(chargeVoltageTarget>>8);
-            CAN_bms_charger_request_output_current_low_byte_set(chargeCurrentTarget);
-            CAN_bms_charger_request_output_current_high_byte_set(chargeCurrentTarget>>8);
-            CAN_bms_charger_request_charge_mode_set(0); //always set to charing mode, not heating
-            CAN_bms_charger_request_start_charge_not_request_set(1);//inverted logic. 1 means stop charging
+            EV_CHARGER_charge_voltage_set(chargeVoltageTarget);
+            EV_CHARGER_charge_current_set(0);
+            EV_CHARGER_charge_request_set(0);
             if (!chargeRequestFromMCU) {
                 nextState = idle_state;
             } else if (!checkChargerErrors()) {
@@ -195,7 +189,7 @@ void charging(EV_CHARGER_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
             IO_SET_EV_CHARGER_EN(HIGH);
-            CAN_bms_charger_request_start_charge_not_request_set(0);//start charging with inverted logic. 1 means stop charging
+            EV_CHARGER_charge_request_set(1);
             //SysTick_TimerStart(chargerMiaTimer); // Uncomment this when ready to charge with real charger
             break;
 
@@ -212,14 +206,12 @@ void charging(EV_CHARGER_entry_types_E entry_type) {
 
             }
             //Always set the charge request to BMS
-            CAN_bms_charger_request_output_voltage_low_byte_set(chargeVoltageTarget);
-            CAN_bms_charger_request_output_voltage_high_byte_set(chargeVoltageTarget>>8);
-            CAN_bms_charger_request_output_current_low_byte_set(chargeCurrentTarget);
-            CAN_bms_charger_request_output_current_high_byte_set(chargeCurrentTarget>>8);
+            EV_CHARGER_charge_current_set(CAN_bms_ltc_debug_M2_max_charge_current_allowed_get());
+
             break;
 
         case EXIT:
-            CAN_bms_charger_request_start_charge_not_request_set(1);//inverted logic. 1 means stop charging
+            EV_CHARGER_charge_request_set(0);
             break;
         default:
             break;
@@ -244,24 +236,21 @@ void stopping(EV_CHARGER_entry_types_E entry_type) {
     }
 }
 
-void EV_CHARGER_set_charge_voltage(float volts) {
+void EV_CHARGER_charge_voltage_set(float volts) {
     chargeVoltageTarget = (uint16_t) (volts * CHARGER_VOLTAGE_SCALING);
+    CAN_bms_charger_request_output_voltage_low_byte_set(chargeVoltageTarget);
+    CAN_bms_charger_request_output_voltage_high_byte_set(chargeVoltageTarget>>8);
 }
 
-void EV_CHARGER_set_charge_current(float current) {
+void EV_CHARGER_charge_current_set(float current) {
     chargeCurrentTarget = (uint16_t) (current * CHARGER_CURRENT_SCALING);
+    CAN_bms_charger_request_output_current_low_byte_set(chargeCurrentTarget);
+    CAN_bms_charger_request_output_current_high_byte_set(chargeCurrentTarget>>8);
 }
 
-float EV_CHARGER_get_charge_current() {
-    return (float) chargeCurrentTarget / CHARGER_CURRENT_SCALING;
-}
-
-float EV_CHARGER_get_charge_voltage() {
-    return (float) chargeVoltageTarget / CHARGER_VOLTAGE_SCALING;
-}
-
-uint8_t EV_CHARGER_get_bms_request_charge(void) {
-    return chargeRequestFromBMS;
+void EV_CHARGER_charge_request_set(bool request) {
+    CAN_bms_charger_request_charge_mode_set(0); //always set to charing mode, not heating
+    CAN_bms_charger_request_start_charge_not_request_set(!request);//inverted logic. 1 means stop charging
 }
 
 uint8_t EV_CHARGER_is_charging(void) {
