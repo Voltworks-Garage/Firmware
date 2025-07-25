@@ -64,10 +64,12 @@ void SysTick_Resume(void){
 
 void SysTick_TimerStart(SysTick_Timer_S *timer){
     timer->start_time = SysTick_Get();
+    timer->enabled = true;
 }
 
 uint8_t SysTick_TimeOut(SysTick_Timer_S *timer){
-    if (SysTick_Get() - timer->start_time > timer->end_value){
+    if (timer->enabled && (SysTick_Get() - timer->start_time > timer->end_value)){
+        timer->enabled = false;
         return 1;
     }
     return 0;

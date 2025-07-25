@@ -72,6 +72,7 @@ void DCDC_Run_1ms(void) {
 }
 
 void DCDC_Run_100ms(void) {
+    dcdcCommandFromMcu = CAN_mcu_command_DCDC_enable_get();
     if (dcdcRun) {
         // Check for state transitions
         if (nextState != curState) {

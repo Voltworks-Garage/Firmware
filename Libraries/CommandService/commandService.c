@@ -13,6 +13,7 @@
 #include "can_iso_tp_lite.h"
 #include "commandService_config.h"  // Must include config first to get definitions
 #include "commandService.h"
+#include "SysTick.h"
 #include <stddef.h>
 #include <string.h>
 
@@ -35,6 +36,9 @@ static uint8_t commandService_handleGetAnalogIn(uint8_t arrayIndex, uint8_t* pay
 static uint8_t commandService_handleGetVoltage(uint8_t arrayIndex, uint8_t* payload, uint8_t length);
 static uint8_t commandService_handleGetCurrent(uint8_t arrayIndex, uint8_t* payload, uint8_t length);
 
+//Timers for callback actions
+NEW_TIMER(sleep_timer, 200);
+
 void CommandService_Init(void) {
     isoTP_init();
 }
@@ -52,8 +56,7 @@ void CommandService_Run(void) {
             case ISO_TP_RESET:
                 // Handle reset command - typically resets the system
                 //CommandService_SendResponse(CMD_SUCCESS, NULL, 0);
-                // TODO: Implement system reset functionality
-                asm("reset"); // Uncomment when ready to implement actual reset
+                SysTick_TimerStart(sleep_timer);
                 break;
                 
             case ISO_TP_SLEEP:
@@ -72,6 +75,10 @@ void CommandService_Run(void) {
                 // Should not reach here, but handle gracefully
                 break;
         }
+    }
+
+    if (SysTick_TimeOut(sleep_timer)){
+        asm("reset"); // Uncomment when ready to implement actual reset
     }
 }
 

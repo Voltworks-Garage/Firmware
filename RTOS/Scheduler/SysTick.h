@@ -2,10 +2,12 @@
 #define SYS_TICK_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef struct {
     uint32_t start_time;
     uint32_t end_value;
+    bool enabled;
 } SysTick_Timer_S;
 
 /**
@@ -34,11 +36,13 @@ void SysTick_Set(uint32_t value);
 
 /**
  * SysTick_Timer will create a timer variable with a given name.
- * @param myTimer name of variable
+ * @param name name of variable
+ * @param time time in milliseconds
  */
 #define NEW_TIMER(name, time) static SysTick_Timer_S name##_systimer = \
 {.start_time = 0,\
-.end_value = time};\
+.end_value = time,\
+.enabled = false};\
 static SysTick_Timer_S *name = &name##_systimer\
 
 /**

@@ -1,245 +1,680 @@
-/* 
- * File:   ic.c
- * Author: Zachary Levenberg
- *
- * Created on August 6, 2016, 9:27 AM
+/**
+ * @file ic.c
+ * @brief Input Capture module implementation for PIC33 microcontrollers
+ * 
+ * Provides a flexible, configurable interface for Input Capture modules
+ * with support for multiple timer sources including Timer4, runtime
+ * mode switching, and proper data management.
+ * 
+ * @author Redesigned for Voltworks Garage
+ * @date 2025
  */
 
 #include "ic.h"
 #include <xc.h>
+#include <stddef.h>
 
 /******************************************************************************
- * MODULE DEFINES
- ******************************************************************************/
-#define AVAILABLE 0
-#define UNAVAILABLE 1
+ * Private Constants
+ *******************************************************************************/
+#define IC_MAX_CAPTURE_BUFFER_SIZE  8
+#define IC_INTERRUPT_PRIORITY_MIN   1
+#define IC_INTERRUPT_PRIORITY_MAX   7
 
-#define RISING 0
-#define FALLING 1
-
-typedef enum {
-    IC_MODULE1,
-    IC_MODULE2,
-    IC_MODULE3,
-    IC_MODULE4,
-    NUMBER_IC_MODULES,
-} ic_module_number;
-
-
-
-/*******************************************************************************
- * MODULE VARIABLES
- ******************************************************************************/
-typedef struct _icReadyBits {
-    uint8_t ICmodule1 : 1;
-    uint8_t ICmodule2 : 1;
-    uint8_t ICmodule3 : 1;
-    uint8_t ICmodule4 : 1;
-} icReadyBits;
-
-static union {
-    icReadyBits theBitField;
-    uint8_t theInt;
-} icReadyStatus;
-
-static uint16_t icTime[NUMBER_IC_MODULES] = {};
-
-typedef struct _ic_module {
-    uint8_t moduleNumber;
-    pps_input_pin_t Pin;
-    uint8_t availability;
-    uint16_t time;
-} ic_module;
-
-static ic_module modules[NUMBER_IC_MODULES];
-
-
-/*******************************************************************************
- * MODULE FUNCTIONS
- ******************************************************************************/
+/******************************************************************************
+ * Private Type Definitions
+ *******************************************************************************/
 
 /**
- * 
- * @param newICPin
- * @return 
+ * @brief Internal module state structure
  */
-uint8_t ic_Init(pps_input_pin_t newICPin, ic_mode mode) {
-    uint8_t returnVal = 0;
+typedef struct {
+    bool isInitialized;
+    bool isEnabled;
+    IC_Config_S config;
+    IC_CaptureData_S captureBuffer[IC_MAX_CAPTURE_BUFFER_SIZE];
+    uint8_t bufferHead;
+    uint8_t bufferTail;
+    uint8_t bufferCount;
+    bool dataReady;
+    bool bufferOverflow;
+    uint16_t pendingHighDuration;
+    uint16_t pendingLowDuration;
+    bool expectingHighDuration;
+} IC_ModuleState_S;
 
-    /*check the pin for available modules*/
-    uint8_t i = 0;
-    for (i = 0; i < NUMBER_IC_MODULES; i++) {/*check modules in use*/
-        if (modules[i].availability == AVAILABLE) {
-            modules[i].availability = UNAVAILABLE;
-            modules[i].moduleNumber = i;
-            modules[i].Pin = newICPin;
-            break;
+/******************************************************************************
+ * Private Variables
+ *******************************************************************************/
+static IC_ModuleState_S icModules[IC_MODULE_COUNT];
+
+/******************************************************************************
+ * Private Function Prototypes
+ *******************************************************************************/
+static IC_Result_E ic_validateModule(IC_Module_E module);
+static IC_Result_E ic_validateConfig(const IC_Config_S* config);
+static IC_Result_E ic_configureHardware(IC_Module_E module, const IC_Config_S* config);
+static IC_Result_E ic_enableModule(IC_Module_E module);
+static IC_Result_E ic_disableModule(IC_Module_E module);
+static void ic_addCaptureValue(IC_Module_E module, uint16_t duration, bool isHighDuration);
+static void ic_calculateFrequencyAndDuty(IC_Module_E module, IC_CaptureData_S* data);
+static void ic_clearBuffer(IC_Module_E module);
+
+/******************************************************************************
+ * Public Function Implementations
+ *******************************************************************************/
+
+IC_Result_E IC_Init(IC_Module_E module, const IC_Config_S* config) {
+    IC_Result_E result;
+    
+    // Validate parameters
+    result = ic_validateModule(module);
+    if (result != IC_RESULT_SUCCESS) {
+        return result;
+    }
+    
+    if (config == NULL) {
+        return IC_RESULT_ERROR_NULL_POINTER;
+    }
+    
+    result = ic_validateConfig(config);
+    if (result != IC_RESULT_SUCCESS) {
+        return result;
+    }
+    
+    // Check if module is already initialized
+    if (icModules[module].isInitialized) {
+        return IC_RESULT_ERROR_MODULE_IN_USE;
+    }
+    
+    // Initialize module state
+    icModules[module].config = *config;
+    icModules[module].isInitialized = true;
+    icModules[module].isEnabled = false;
+    ic_clearBuffer(module);
+    
+    // Configure hardware
+    result = ic_configureHardware(module, config);
+    if (result != IC_RESULT_SUCCESS) {
+        icModules[module].isInitialized = false;
+        return result;
+    }
+    
+    // Enable interrupts if requested
+    if (config->enableInterrupt) {
+        result = ic_enableModule(module);
+        if (result != IC_RESULT_SUCCESS) {
+            icModules[module].isInitialized = false;
+            return result;
         }
     }
+    
+    return IC_RESULT_SUCCESS;
+}
 
-    /*set the pinmap to the correct pin and configure the module*/
-    switch (i) {
-        case IC_MODULE1:
-            _IC1R = modules[IC_MODULE1].Pin;
-            IC1CON1bits.ICTSEL = 0b111; /*Use peripheral clock source*/
-            IC1CON1bits.ICM = 0b001; /*Capture on every rising and falling edge*/
-            IC1CON2bits.SYNCSEL = 0b00000; /*Input Source is Software*/
-            IC1CON2bits.ICTRIG = 0b00; /*no input trigger trigger*/
-            IC1CON2bits.TRIGSTAT = 0; /*Hold the ICx Timer in reset*/
-            _IC1IP = 4;
+IC_Result_E IC_Deinit(IC_Module_E module) {
+    IC_Result_E result;
+    
+    result = ic_validateModule(module);
+    if (result != IC_RESULT_SUCCESS) {
+        return result;
+    }
+    
+    if (!icModules[module].isInitialized) {
+        return IC_RESULT_ERROR_MODULE_NOT_INITIALIZED;
+    }
+    
+    // Disable module
+    ic_disableModule(module);
+    
+    // Clear state
+    icModules[module].isInitialized = false;
+    icModules[module].isEnabled = false;
+    ic_clearBuffer(module);
+    
+    return IC_RESULT_SUCCESS;
+}
+
+IC_Result_E IC_SetConfig(IC_Module_E module, const IC_Config_S* config) {
+    IC_Result_E result;
+    
+    result = ic_validateModule(module);
+    if (result != IC_RESULT_SUCCESS) {
+        return result;
+    }
+    
+    if (config == NULL) {
+        return IC_RESULT_ERROR_NULL_POINTER;
+    }
+    
+    result = ic_validateConfig(config);
+    if (result != IC_RESULT_SUCCESS) {
+        return result;
+    }
+    
+    if (!icModules[module].isInitialized) {
+        return IC_RESULT_ERROR_MODULE_NOT_INITIALIZED;
+    }
+    
+    // Update configuration
+    icModules[module].config = *config;
+    
+    // Reconfigure hardware
+    return ic_configureHardware(module, config);
+}
+
+IC_Result_E IC_Enable(IC_Module_E module) {
+    IC_Result_E result;
+    
+    result = ic_validateModule(module);
+    if (result != IC_RESULT_SUCCESS) {
+        return result;
+    }
+    
+    if (!icModules[module].isInitialized) {
+        return IC_RESULT_ERROR_MODULE_NOT_INITIALIZED;
+    }
+    
+    return ic_enableModule(module);
+}
+
+IC_Result_E IC_Disable(IC_Module_E module) {
+    IC_Result_E result;
+    
+    result = ic_validateModule(module);
+    if (result != IC_RESULT_SUCCESS) {
+        return result;
+    }
+    
+    if (!icModules[module].isInitialized) {
+        return IC_RESULT_ERROR_MODULE_NOT_INITIALIZED;
+    }
+    
+    return ic_disableModule(module);
+}
+
+IC_Result_E IC_SetCaptureMode(IC_Module_E module, IC_CaptureMode_E mode) {
+    IC_Result_E result;
+    
+    result = ic_validateModule(module);
+    if (result != IC_RESULT_SUCCESS) {
+        return result;
+    }
+    
+    if (!icModules[module].isInitialized) {
+        return IC_RESULT_ERROR_MODULE_NOT_INITIALIZED;
+    }
+    
+    // Update configuration
+    icModules[module].config.captureMode = mode;
+    
+    // Apply to hardware
+    switch (module) {
+        case IC_MODULE_1:
+            IC1CON1bits.ICM = mode;
+            break;
+        case IC_MODULE_2:
+            IC2CON1bits.ICM = mode;
+            break;
+        case IC_MODULE_3:
+            IC3CON1bits.ICM = mode;
+            break;
+        case IC_MODULE_4:
+            IC4CON1bits.ICM = mode;
+            break;
+        default:
+            return IC_RESULT_ERROR_INVALID_MODULE;
+    }
+    
+    return IC_RESULT_SUCCESS;
+}
+
+IC_Result_E IC_SetTimerSource(IC_Module_E module, IC_TimerSource_E source) {
+    IC_Result_E result;
+    
+    result = ic_validateModule(module);
+    if (result != IC_RESULT_SUCCESS) {
+        return result;
+    }
+    
+    if (!icModules[module].isInitialized) {
+        return IC_RESULT_ERROR_MODULE_NOT_INITIALIZED;
+    }
+    
+    // Update configuration
+    icModules[module].config.timerSource = source;
+    
+    // Apply to hardware
+    switch (module) {
+        case IC_MODULE_1:
+            IC1CON1bits.ICTSEL = source;
+            break;
+        case IC_MODULE_2:
+            IC2CON1bits.ICTSEL = source;
+            break;
+        case IC_MODULE_3:
+            IC3CON1bits.ICTSEL = source;
+            break;
+        case IC_MODULE_4:
+            IC4CON1bits.ICTSEL = source;
+            break;
+        default:
+            return IC_RESULT_ERROR_INVALID_MODULE;
+    }
+    
+    return IC_RESULT_SUCCESS;
+}
+
+IC_Result_E IC_SetTriggerMode(IC_Module_E module, IC_TriggerMode_E triggerMode) {
+    IC_Result_E result;
+    
+    result = ic_validateModule(module);
+    if (result != IC_RESULT_SUCCESS) {
+        return result;
+    }
+    
+    if (!icModules[module].isInitialized) {
+        return IC_RESULT_ERROR_MODULE_NOT_INITIALIZED;
+    }
+    
+    // Update configuration
+    icModules[module].config.triggerMode = triggerMode;
+    
+    // Apply to hardware
+    switch (module) {
+        case IC_MODULE_1:
+            IC1CON2bits.ICTRIG = triggerMode;
+            break;
+        case IC_MODULE_2:
+            IC2CON2bits.ICTRIG = triggerMode;
+            break;
+        case IC_MODULE_3:
+            IC3CON2bits.ICTRIG = triggerMode;
+            break;
+        case IC_MODULE_4:
+            IC4CON2bits.ICTRIG = triggerMode;
+            break;
+        default:
+            return IC_RESULT_ERROR_INVALID_MODULE;
+    }
+    
+    return IC_RESULT_SUCCESS;
+}
+
+bool IC_IsDataReady(IC_Module_E module) {
+    if (ic_validateModule(module) != IC_RESULT_SUCCESS) {
+        return false;
+    }
+    
+    if (!icModules[module].isInitialized) {
+        return false;
+    }
+    
+    return icModules[module].dataReady && (icModules[module].bufferCount > 0);
+}
+
+IC_Result_E IC_GetCaptureData(IC_Module_E module, IC_CaptureData_S* data) {
+    IC_Result_E result;
+    
+    result = ic_validateModule(module);
+    if (result != IC_RESULT_SUCCESS) {
+        return result;
+    }
+    
+    if (data == NULL) {
+        return IC_RESULT_ERROR_NULL_POINTER;
+    }
+    
+    if (!icModules[module].isInitialized) {
+        return IC_RESULT_ERROR_MODULE_NOT_INITIALIZED;
+    }
+    
+    if (icModules[module].bufferCount == 0) {
+        return IC_RESULT_ERROR_NO_DATA;
+    }
+    
+    // Get data from buffer
+    *data = icModules[module].captureBuffer[icModules[module].bufferTail];
+    icModules[module].bufferTail = (icModules[module].bufferTail + 1) % IC_MAX_CAPTURE_BUFFER_SIZE;
+    icModules[module].bufferCount--;
+    
+    // Update data ready flag
+    icModules[module].dataReady = (icModules[module].bufferCount > 0);
+    
+    return IC_RESULT_SUCCESS;
+}
+
+IC_Result_E IC_GetCaptureDataArray(IC_Module_E module, IC_CaptureData_S* dataArray, 
+                                   uint8_t maxCount, uint8_t* actualCount) {
+    IC_Result_E result;
+    uint8_t i;
+    
+    result = ic_validateModule(module);
+    if (result != IC_RESULT_SUCCESS) {
+        return result;
+    }
+    
+    if (dataArray == NULL || actualCount == NULL) {
+        return IC_RESULT_ERROR_NULL_POINTER;
+    }
+    
+    if (!icModules[module].isInitialized) {
+        return IC_RESULT_ERROR_MODULE_NOT_INITIALIZED;
+    }
+    
+    *actualCount = 0;
+    
+    // Get up to maxCount data entries
+    for (i = 0; i < maxCount && icModules[module].bufferCount > 0; i++) {
+        dataArray[i] = icModules[module].captureBuffer[icModules[module].bufferTail];
+        icModules[module].bufferTail = (icModules[module].bufferTail + 1) % IC_MAX_CAPTURE_BUFFER_SIZE;
+        icModules[module].bufferCount--;
+        (*actualCount)++;
+    }
+    
+    // Update data ready flag
+    icModules[module].dataReady = (icModules[module].bufferCount > 0);
+    
+    return (*actualCount > 0) ? IC_RESULT_SUCCESS : IC_RESULT_ERROR_NO_DATA;
+}
+
+IC_Result_E IC_ClearData(IC_Module_E module) {
+    IC_Result_E result;
+    
+    result = ic_validateModule(module);
+    if (result != IC_RESULT_SUCCESS) {
+        return result;
+    }
+    
+    if (!icModules[module].isInitialized) {
+        return IC_RESULT_ERROR_MODULE_NOT_INITIALIZED;
+    }
+    
+    ic_clearBuffer(module);
+    
+    return IC_RESULT_SUCCESS;
+}
+
+IC_Result_E IC_GetStatus(IC_Module_E module, bool* isInitialized, bool* isEnabled) {
+    IC_Result_E result;
+    
+    result = ic_validateModule(module);
+    if (result != IC_RESULT_SUCCESS) {
+        return result;
+    }
+    
+    if (isInitialized == NULL || isEnabled == NULL) {
+        return IC_RESULT_ERROR_NULL_POINTER;
+    }
+    
+    *isInitialized = icModules[module].isInitialized;
+    *isEnabled = icModules[module].isEnabled;
+    
+    return IC_RESULT_SUCCESS;
+}
+
+bool IC_HasBufferOverflow(IC_Module_E module) {
+    if (ic_validateModule(module) != IC_RESULT_SUCCESS) {
+        return false;
+    }
+    
+    if (!icModules[module].isInitialized) {
+        return false;
+    }
+    
+    return icModules[module].bufferOverflow;
+}
+
+IC_Result_E IC_ClearBufferOverflow(IC_Module_E module) {
+    IC_Result_E result;
+    
+    result = ic_validateModule(module);
+    if (result != IC_RESULT_SUCCESS) {
+        return result;
+    }
+    
+    if (!icModules[module].isInitialized) {
+        return IC_RESULT_ERROR_MODULE_NOT_INITIALIZED;
+    }
+    
+    icModules[module].bufferOverflow = false;
+    
+    return IC_RESULT_SUCCESS;
+}
+
+/******************************************************************************
+ * Private Function Implementations
+ *******************************************************************************/
+
+static IC_Result_E ic_validateModule(IC_Module_E module) {
+    if (module >= IC_MODULE_COUNT) {
+        return IC_RESULT_ERROR_INVALID_MODULE;
+    }
+    return IC_RESULT_SUCCESS;
+}
+
+static IC_Result_E ic_validateConfig(const IC_Config_S* config) {
+    if (config->interruptPriority < IC_INTERRUPT_PRIORITY_MIN || 
+        config->interruptPriority > IC_INTERRUPT_PRIORITY_MAX) {
+        return IC_RESULT_ERROR_INVALID_CONFIG;
+    }
+    return IC_RESULT_SUCCESS;
+}
+
+static IC_Result_E ic_configureHardware(IC_Module_E module, const IC_Config_S* config) {
+    switch (module) {
+        case IC_MODULE_1:
+            _IC1R = config->inputPin;
+            IC1CON1bits.ICTSEL = config->timerSource;
+            IC1CON1bits.ICM = config->captureMode;
+            IC1CON2bits.SYNCSEL = 0b00000;
+            IC1CON2bits.ICTRIG = config->triggerMode;
+            IC1CON2bits.TRIGSTAT = 0;
+            _IC1IP = config->interruptPriority;
+            break;
+            
+        case IC_MODULE_2:
+            _IC2R = config->inputPin;
+            IC2CON1bits.ICTSEL = config->timerSource;
+            IC2CON1bits.ICM = config->captureMode;
+            IC2CON2bits.SYNCSEL = 0b00000;
+            IC2CON2bits.ICTRIG = config->triggerMode;
+            IC2CON2bits.TRIGSTAT = 0;
+            _IC2IP = config->interruptPriority;
+            break;
+            
+        case IC_MODULE_3:
+            _IC3R = config->inputPin;
+            IC3CON1bits.ICTSEL = config->timerSource;
+            IC3CON1bits.ICM = config->captureMode;
+            IC3CON2bits.SYNCSEL = 0b00000;
+            IC3CON2bits.ICTRIG = config->triggerMode;
+            IC3CON2bits.TRIGSTAT = 0;
+            _IC3IP = config->interruptPriority;
+            break;
+            
+        case IC_MODULE_4:
+            _IC4R = config->inputPin;
+            IC4CON1bits.ICTSEL = config->timerSource;
+            IC4CON1bits.ICM = config->captureMode;
+            IC4CON2bits.SYNCSEL = 0b00000;
+            IC4CON2bits.ICTRIG = config->triggerMode;
+            IC4CON2bits.TRIGSTAT = 0;
+            _IC4IP = config->interruptPriority;
+            break;
+            
+        default:
+            return IC_RESULT_ERROR_INVALID_MODULE;
+    }
+    
+    return IC_RESULT_SUCCESS;
+}
+
+static IC_Result_E ic_enableModule(IC_Module_E module) {
+    // Read current PIN state to determine starting expectation
+    PINS_State_E pinState = PINS_read(icModules[module].config.digitalPin);
+    icModules[module].expectingHighDuration = (pinState == LOW);  // If pin is LOW, expect HIGH duration next
+    
+    switch (module) {
+        case IC_MODULE_1:
             _IC1IE = 1;
             break;
-
-        case IC_MODULE2:
-            _IC2R = modules[IC_MODULE2].Pin;
-            IC2CON1bits.ICTSEL = 0b111; /*Use peripheral clock source*/
-            IC2CON1bits.ICM = 0b001; /*Capture on every rising and falling edge*/
-            IC2CON2bits.SYNCSEL = 0b00000; /*Input Source is Software*/
-            IC2CON2bits.ICTRIG = 0b01; /*Input Source is the timer trigger*/
-            IC2CON2bits.TRIGSTAT = 0; /*Hold the ICx Timer in reset*/
-            _IC2IP = 4;
+        case IC_MODULE_2:
             _IC2IE = 1;
             break;
-
-        case IC_MODULE3:
-            _IC3R = modules[IC_MODULE3].Pin;
-            IC3CON1bits.ICTSEL = 0b111; /*Use peripheral clock source*/
-            IC3CON1bits.ICM = 0b001; /*Capture on every rising and falling edge*/
-            IC3CON2bits.SYNCSEL = 0b00000; /*Input Source is Software*/
-            IC3CON2bits.ICTRIG = 0b01; /*Input Source is the timer trigger*/
-            IC3CON2bits.TRIGSTAT = 0; /*Hold the ICx Timer in reset*/
-            _IC3IP = 4;
+        case IC_MODULE_3:
             _IC3IE = 1;
             break;
-
-        case IC_MODULE4:
-            _IC4R = modules[IC_MODULE4].Pin;
-            IC4CON1bits.ICTSEL = 0b111; /*Use peripheral clock source*/
-            IC4CON1bits.ICM = 0b001; /*Capture on every rising and falling edge*/
-            IC4CON2bits.SYNCSEL = 0b00000; /*Input Source is Software*/
-            IC4CON2bits.ICTRIG = 0b01; /*Input Source is the timer trigger*/
-            IC4CON2bits.TRIGSTAT = 0; /*Hold the ICx Timer in reset*/
-            _IC4IP = 4;
+        case IC_MODULE_4:
             _IC4IE = 1;
             break;
-
         default:
-            returnVal = 1; /*not a valid pin*/
-            break;
+            return IC_RESULT_ERROR_INVALID_MODULE;
     }
-
-    return returnVal;
+    
+    icModules[module].isEnabled = true;
+    return IC_RESULT_SUCCESS;
 }
 
-/**
- * 
- * @return 
- */
-uint8_t ic_Ready(void) {
-    return icReadyStatus.theInt;
-}
-
-/**
- * 
- * @param thisModule
- * @return 
- */
-uint16_t ic_getTime(pps_input_pin_t thisModule) {
-    /*check the pin for available modules*/
-    uint16_t time = 0;
-    uint8_t i = 0;
-    for (i = 0; i < NUMBER_IC_MODULES; i++) {/*check modules in use*/
-        if ((modules[i].Pin == thisModule) && (icReadyStatus.theInt & (1 << i))) {
-            icReadyStatus.theInt &= ~(1 << i); /*Clear ready bit*/
-            time = modules[i].time; /*return the Time*/
+static IC_Result_E ic_disableModule(IC_Module_E module) {
+    switch (module) {
+        case IC_MODULE_1:
+            _IC1IE = 0;
+            IC1CON1bits.ICM = IC_CAPTURE_MODE_DISABLED;
             break;
+        case IC_MODULE_2:
+            _IC2IE = 0;
+            IC2CON1bits.ICM = IC_CAPTURE_MODE_DISABLED;
+            break;
+        case IC_MODULE_3:
+            _IC3IE = 0;
+            IC3CON1bits.ICM = IC_CAPTURE_MODE_DISABLED;
+            break;
+        case IC_MODULE_4:
+            _IC4IE = 0;
+            IC4CON1bits.ICM = IC_CAPTURE_MODE_DISABLED;
+            break;
+        default:
+            return IC_RESULT_ERROR_INVALID_MODULE;
+    }
+    
+    icModules[module].isEnabled = false;
+    return IC_RESULT_SUCCESS;
+}
+
+static void ic_addCaptureValue(IC_Module_E module, uint16_t duration, bool isHighDuration) {
+    if (isHighDuration) {
+        icModules[module].pendingHighDuration = duration;
+    } else {
+        icModules[module].pendingLowDuration = duration;
+        
+        // We have both high and low durations - create complete capture data
+        IC_CaptureData_S captureData;
+        captureData.highDuration = icModules[module].pendingHighDuration;
+        captureData.lowDuration = icModules[module].pendingLowDuration;
+        
+        // Calculate frequency and duty cycle
+        ic_calculateFrequencyAndDuty(module, &captureData);
+        
+        // Always write to buffer, even if full (overwrite oldest data)
+        icModules[module].captureBuffer[icModules[module].bufferHead] = captureData;
+        icModules[module].bufferHead = (icModules[module].bufferHead + 1) % IC_MAX_CAPTURE_BUFFER_SIZE;
+        
+        if (icModules[module].bufferCount < IC_MAX_CAPTURE_BUFFER_SIZE) {
+            icModules[module].bufferCount++;
+        } else {
+            // Buffer is full - set overflow flag and advance tail to maintain circular buffer
+            icModules[module].bufferOverflow = true;
+            icModules[module].bufferTail = (icModules[module].bufferTail + 1) % IC_MAX_CAPTURE_BUFFER_SIZE;
         }
+        
+        icModules[module].dataReady = true;
     }
-    /*invalid pin or no new data*/
-    return time;
 }
 
+static void ic_calculateFrequencyAndDuty(IC_Module_E module, IC_CaptureData_S* data) {
+    uint32_t totalPeriod = data->highDuration + data->lowDuration;
+    
+    if (totalPeriod > 0 && icModules[module].config.clockFrequency > 0) {
+        // Calculate frequency: frequency = clockFrequency / totalPeriod
+        data->frequency = icModules[module].config.clockFrequency / totalPeriod;
+        
+        // Calculate duty cycle: dutyCycle = (highDuration * 10000) / totalPeriod for 0.01% resolution
+        data->dutyCycle = ((uint32_t)data->highDuration * 10000) / totalPeriod;
+        
+        data->isValid = true;
+    } else {
+        data->frequency = 0;
+        data->dutyCycle = 0;
+        data->isValid = false;
+    }
+}
 
-//void __attribute__((__interrupt__, auto_psv)) _IC1Interrupt(void) {
-//    /*clear the interrupt*/
-//    _IC1IF = 0;
-//
-//    testVar = 1;
-//    switch (modules[1].status) {
-//        case IDLE:
-//            IC1CON2bits.TRIGSTAT = 1; /*Release the ICx Timer from reset*/
-//            /*clear the 0x0000 reading*/
-//            uint16_t temp = IC1BUF;
-//            modules[1].status = RUNNING;
-//            break;
-//        case RUNNING:
-//            /*get the rise time*/
-//            modules[1].time = IC1BUF;
-//            modules[1].status = IDLE;
-//            IC1CON2bits.TRIGSTAT = 0; /*Hold the ICx Timer in reset*/
-//            break;
-//        default:
-//            break;
-//    }
-//
-//    /*set the ready bit*/
-//    icReadyStatus.theBitField.ICmodule1 = 1;
-//}
+static void ic_clearBuffer(IC_Module_E module) {
+    icModules[module].bufferHead = 0;
+    icModules[module].bufferTail = 0;
+    icModules[module].bufferCount = 0;
+    icModules[module].dataReady = false;
+    icModules[module].bufferOverflow = false;
+    icModules[module].pendingHighDuration = 0;
+    icModules[module].pendingLowDuration = 0;
+    // expectingHighDuration will be set based on actual pin reading in ic_enableModule
+}
+
+/******************************************************************************
+ * Interrupt Service Routines
+ *******************************************************************************/
+
+void __attribute__((__interrupt__, auto_psv)) _IC1Interrupt(void) {
+    _IC1IF = 0;  // Clear interrupt flag
+    
+    // Read capture value - IC buffer is automatically cleared on read
+    uint16_t duration = IC1BUF;
+    
+    // Read current pin state to determine what duration we just measured
+    // If pin is HIGH now, we just finished measuring a LOW duration
+    // If pin is LOW now, we just finished measuring a HIGH duration
+    PINS_State_E pinState = PINS_read(icModules[IC_MODULE_1].config.digitalPin);
+    bool isHighDuration = (pinState == LOW);  // Inverted logic
+    
+    ic_addCaptureValue(IC_MODULE_1, duration, isHighDuration);
+}
 
 void __attribute__((__interrupt__, auto_psv)) _IC2Interrupt(void) {
-    /*clear the interrupt*/
-    _IC2IF = 0;
-
-    /*get the rise time and the fall time*/
-    uint16_t start = IC2BUF;
-    uint16_t end = IC2BUF;
-
-    /*Caluclate time with wrap-around protection*/
-    if (start < end) {
-        icTime[IC_MODULE2] = end - start;
-    } else {
-        icTime[IC_MODULE2] = 65535 - start + end;
-    }
-
-    /*set the ready bit*/
-    icReadyStatus.theBitField.ICmodule2 = 1;
+    _IC2IF = 0;  // Clear interrupt flag
+    
+    // Read capture value - IC buffer is automatically cleared on read
+    uint16_t duration = IC2BUF;
+    
+    // Read current pin state to determine what duration we just measured
+    PINS_State_E pinState = PINS_read(icModules[IC_MODULE_2].config.digitalPin);
+    bool isHighDuration = (pinState == LOW);  // Inverted logic
+    
+    ic_addCaptureValue(IC_MODULE_2, duration, isHighDuration);
 }
 
 void __attribute__((__interrupt__, auto_psv)) _IC3Interrupt(void) {
-    /*clear the interrupt*/
-    _IC3IF = 0;
-
-    /*get the rise time and the fall time*/
-    uint16_t start = IC3BUF;
-    uint16_t end = IC3BUF;
-
-    /*Caluclate time with wrap-around protection*/
-    if (start < end) {
-        icTime[IC_MODULE3] = end - start;
-    } else {
-        icTime[IC_MODULE3] = 65535 - start + end;
-    }
-
-    /*set the ready bit*/
-    icReadyStatus.theBitField.ICmodule3 = 1;
+    _IC3IF = 0;  // Clear interrupt flag
+    
+    // Read capture value - IC buffer is automatically cleared on read
+    uint16_t duration = IC3BUF;
+    
+    // Read current pin state to determine what duration we just measured
+    PINS_State_E pinState = PINS_read(icModules[IC_MODULE_3].config.digitalPin);
+    bool isHighDuration = (pinState == LOW);  // Inverted logic
+    
+    ic_addCaptureValue(IC_MODULE_3, duration, isHighDuration);
 }
 
 void __attribute__((__interrupt__, auto_psv)) _IC4Interrupt(void) {
-    /*clear the interrupt*/
-    _IC4IF = 0;
-
-    /*get the rise time and the fall time*/
-    uint16_t start = IC4BUF;
-    uint16_t end = IC4BUF;
-
-    /*Caluclate time with wrap-around protection*/
-    if (start < end) {
-        icTime[IC_MODULE4] = end - start;
-    } else {
-        icTime[IC_MODULE4] = 65535 - start + end;
-    }
-
-    /*set the ready bit*/
-    icReadyStatus.theBitField.ICmodule4 = 1;
+    _IC4IF = 0;  // Clear interrupt flag
+    
+    // Read capture value - IC buffer is automatically cleared on read
+    uint16_t duration = IC4BUF;
+    
+    // Read current pin state to determine what duration we just measured
+    PINS_State_E pinState = PINS_read(icModules[IC_MODULE_4].config.digitalPin);
+    bool isHighDuration = (pinState == LOW);  // Inverted logic
+    
+    ic_addCaptureValue(IC_MODULE_4, duration, isHighDuration);
 }
-

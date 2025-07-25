@@ -84,15 +84,6 @@ void CAN_populate_1000ms(void){
         CAN_bms_cellVoltages_M5_cell_22_voltage_set(BMS_GetCellVoltage(21));
         CAN_bms_cellVoltages_M5_cell_23_voltage_set(BMS_GetCellVoltage(22));
         CAN_bms_cellVoltages_M5_cell_24_voltage_set(BMS_GetCellVoltage(23));
-
-    uint16_t voltage = EV_CHARGER_get_charge_voltage()*10;
-    uint16_t current = EV_CHARGER_get_charge_current()*10;
-    CAN_bms_charger_request_output_voltage_low_byte_set(voltage);
-    CAN_bms_charger_request_output_voltage_high_byte_set(voltage>>8);
-    CAN_bms_charger_request_output_current_low_byte_set(current);
-    CAN_bms_charger_request_output_current_high_byte_set(current>>8);
-    CAN_bms_charger_request_charge_mode_set(0); //always set to charing mode, not heating
-    CAN_bms_charger_request_start_charge_not_request_set(EV_CHARGER_get_bms_request_charge()); //inverted logic. 1 means stop charging
     
     CAN_bms_cellTemperaturs_M0_temp_1_set(BMS_GetTemperatureVoltage(0));
     CAN_bms_cellTemperaturs_M0_temp_2_set(BMS_GetTemperatureVoltage(1)*19.007); // Convert to Stack Voltage
