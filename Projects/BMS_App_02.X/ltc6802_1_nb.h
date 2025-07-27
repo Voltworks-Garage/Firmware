@@ -119,8 +119,41 @@ typedef enum {
     LTC6802_1_ERROR_INVALID_STACK,
     LTC6802_1_ERROR_BUSY,
     LTC6802_1_ERROR_MAX_RETRIES,
-    LTC6802_1_ERROR_ALREADY_RUNNING
+    LTC6802_1_ERROR_ALREADY_RUNNING,
+    LTC6802_1_ERROR_CONFIG_MISMATCH,
+    LTC6802_1_ERROR_DATA_CORRUPTION
 } LTC6802_1_Error_E;
+
+/**
+ * @brief Error severity levels for intelligent error handling
+ */
+typedef enum {
+    LTC6802_1_ERROR_SEVERITY_INFO = 0,    // Informational, auto-recoverable
+    LTC6802_1_ERROR_SEVERITY_WARNING,     // Warning, may need attention
+    LTC6802_1_ERROR_SEVERITY_CRITICAL     // Critical, requires intervention
+} LTC6802_1_Error_Severity_E;
+
+/**
+ * @brief Error scope classification
+ */
+typedef enum {
+    LTC6802_1_ERROR_SCOPE_MODULE = 0,     // Affects entire module (SPI, communication)
+    LTC6802_1_ERROR_SCOPE_STACK          // Affects specific stack (data corruption)
+} LTC6802_1_Error_Scope_E;
+
+/**
+ * @brief Comprehensive error information structure
+ */
+typedef struct {
+    LTC6802_1_Error_E error_code;
+    LTC6802_1_Error_Severity_E severity;
+    LTC6802_1_Error_Scope_E scope;
+    uint8_t stack_id;                     // Valid only if scope is STACK
+    uint8_t error_state;                  // State where error occurred (internal state enum)
+    uint32_t timestamp;                   // When error occurred
+    uint8_t retry_count;                  // Retry attempts for this error
+    uint8_t consecutive_count;            // Consecutive occurrences of same error
+} LTC6802_1_Error_Info_S;
 
 /**
  * @brief ADC conversion modes
@@ -333,7 +366,7 @@ float LTC6802_1_GetTemperatureVoltage(uint8_t temp_id);
 bool LTC6802_1_IsBalancingActive(void);
 
 /**
- * @brief Get last error for a specific stack
+ * @brief Get last error for a specific stack (legacy function)
  * @param stack_id Stack ID (use LTC6802_1_Stack_E enum)
  * @return Last error code
  */
@@ -344,6 +377,32 @@ LTC6802_1_Error_E LTC6802_1_GetLastError(uint8_t stack_id);
  * @param stack_id Stack ID (use LTC6802_1_Stack_E enum)
  */
 void LTC6802_1_ClearError(uint8_t stack_id);
+
+/**
+ * @brief Get comprehensive error information for enhanced diagnostics
+ * @param error_info Pointer to structure to fill with current error information
+ * @return true if active error exists, false if no errors
+ */
+bool LTC6802_1_GetErrorInfo(LTC6802_1_Error_Info_S* error_info);
+
+/**
+ * @brief Get error history for analysis and debugging
+ * @param error_history Array to store error history (caller allocated)
+ * @param max_entries Maximum number of entries to return
+ * @return Number of entries filled in error_history array
+ */
+uint8_t LTC6802_1_GetErrorHistory(LTC6802_1_Error_Info_S* error_history, uint8_t max_entries);
+
+/**
+ * @brief Clear all errors and reset error history
+ */
+void LTC6802_1_ClearAllErrors(void);
+
+/**
+ * @brief Force recovery attempt from current error state
+ * @return ERROR_NONE if recovery initiated, error code if recovery not possible
+ */
+LTC6802_1_Error_E LTC6802_1_ForceRecovery(void);
 
 /******************************************************************************
  * Diagnostic Functions

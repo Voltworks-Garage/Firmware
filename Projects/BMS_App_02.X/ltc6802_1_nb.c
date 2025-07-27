@@ -135,8 +135,18 @@ typedef struct {
     
     // Calculated voltage values removed - now handled by BMS layer
     
-    // Error tracking
-    LTC6802_1_Error_E last_error[LTC6802_1_NUM_STACKS];
+    // Enhanced error tracking
+    LTC6802_1_Error_E last_error[LTC6802_1_NUM_STACKS];  // Legacy support
+    LTC6802_1_Error_Info_S current_error;                // Current active error
+    LTC6802_1_Error_Info_S error_history[8];             // Error history buffer
+    uint8_t error_history_index;                         // Circular buffer index
+    uint8_t error_history_count;                         // Number of errors in history
+    bool has_active_error;                               // True if error is active
+    
+    // Error recovery tracking
+    uint8_t consecutive_error_count;                     // Consecutive errors of same type
+    uint32_t last_recovery_attempt;                      // Timestamp of last recovery attempt
+    uint8_t recovery_attempt_count;                      // Number of recovery attempts
     
     // Statistics
     uint32_t total_transactions;
@@ -176,6 +186,14 @@ static bool IsDataStale(uint32_t timestamp);
 static void SetError(uint8_t stack_id, LTC6802_1_Error_E error);
 static void TransitionToIdle(void);
 static void TransitionToFaulted(LTC6802_1_Error_E error);
+
+// Enhanced error handling functions
+static void HandleError(LTC6802_1_Error_E error_code, uint8_t stack_id);
+static LTC6802_1_Error_Severity_E GetErrorSeverity(LTC6802_1_Error_E error_code);
+static LTC6802_1_Error_Scope_E GetErrorScope(LTC6802_1_Error_E error_code);
+static void AddToErrorHistory(const LTC6802_1_Error_Info_S* error_info);
+static bool ShouldAttemptRecovery(const LTC6802_1_Error_Info_S* error_info);
+static LTC6802_1_Error_E AttemptErrorRecovery(const LTC6802_1_Error_Info_S* error_info);
 static void ProcessVoltageData(void);
 static void ProcessTemperatureData(void);
 static void ProcessFlagData(void);
@@ -247,8 +265,7 @@ void LTC6802_1_Run(void) {
         // Check for SPI timeout
         else if (SysTick_TimeOut(ltc6802_spiTimer)) {
             
-            SetError(0, LTC6802_1_ERROR_SPI_TIMEOUT);  // Set error for stack 0 as representative error
-            ltc_module.nextState = faulted_state;
+            HandleError(LTC6802_1_ERROR_SPI_TIMEOUT, 0);  // Module-wide error
             ltc_module.spi_transaction_active = false;
             IO_SET_SPI_CS(HIGH);
             
@@ -657,6 +674,14 @@ void LTC6802_1_ClearError(uint8_t stack_id) {
         ltc_module.last_error[stack_id] = LTC6802_1_ERROR_NONE;
     }
     
+    // Clear current error if it matches this stack or if clearing stack-agnostic errors
+    if (ltc_module.has_active_error && 
+        (ltc_module.current_error.scope == LTC6802_1_ERROR_SCOPE_STACK && 
+         ltc_module.current_error.stack_id == stack_id)) {
+        ltc_module.has_active_error = false;
+        ltc_module.consecutive_error_count = 0;
+    }
+    
     // If all errors cleared, exit faulted state
     if (ltc_module.curState == faulted_state) {
         bool all_clear = true;
@@ -666,7 +691,7 @@ void LTC6802_1_ClearError(uint8_t stack_id) {
                 break;
             }
         }
-        if (all_clear) {
+        if (all_clear && !ltc_module.has_active_error) {
             TransitionToIdle();
         }
     }
@@ -752,7 +777,7 @@ static void TransitionToIdle(void) {
 
 static void TransitionToFaulted(LTC6802_1_Error_E error) {
     ltc_module.nextState = faulted_state;
-    SetError(0, error);  // Set error for stack 0 as representative error
+    // Error already handled by HandleError function
     ltc_module.failed_transactions++;
 }
 
@@ -817,7 +842,7 @@ static void ProcessVoltageData(void) {
                 ltc_module.voltage_data_valid = false; // Mark voltage data as invalid
             }
             // Set error for this stack
-            SetError(stack, LTC6802_1_ERROR_CRC_FAIL);
+            HandleError(LTC6802_1_ERROR_CRC_FAIL, stack);
 
         }
     }
@@ -902,7 +927,7 @@ static void ProcessTemperatureData(void) {
             // Mark temperature data as invalid
             ltc_module.temp_data_valid = false;
             // Set error for this stack
-            SetError(stack, LTC6802_1_ERROR_CRC_FAIL);
+            HandleError(LTC6802_1_ERROR_CRC_FAIL, stack);
         }
     }
 }
@@ -940,7 +965,7 @@ static void ProcessFlagData(void) {
         } else {
             // PEC failed - flag data corrupted
             // Set error for this stack
-            SetError(stack, LTC6802_1_ERROR_CRC_FAIL);
+            HandleError(LTC6802_1_ERROR_CRC_FAIL, stack);
         }
     }
 }
@@ -971,8 +996,7 @@ static void ProcessConfigData(void) {
         if (!pec_valid) {
             // PEC failed - configuration data corrupted
             ltc_module.debug_failure_point = 1; // PEC validation failed
-            SetError(stack, LTC6802_1_ERROR_CRC_FAIL);
-            TransitionToFaulted(LTC6802_1_ERROR_CRC_FAIL);
+            HandleError(LTC6802_1_ERROR_CRC_FAIL, stack);
             return;
         }
         
@@ -984,9 +1008,7 @@ static void ProcessConfigData(void) {
         if (!config_valid) {
             // Configuration mismatch - hardware didn't accept our config
             ltc_module.debug_failure_point = 2; // Config data mismatch
-            SetError(stack, LTC6802_1_ERROR_CRC_FAIL);
-            // For safety, transition to faulted state if any config mismatch
-            TransitionToFaulted(LTC6802_1_ERROR_CRC_FAIL);
+            HandleError(LTC6802_1_ERROR_CONFIG_MISMATCH, stack);
             return;
         }
 
@@ -1255,4 +1277,248 @@ LTC6802_1_Error_E LTC6802_1_EnableVoltageComparison(uint8_t stack_id, bool enabl
 
 bool LTC6802_1_IsBalancingActive(void) {
     return ltc_module.balancing_active;
+}
+
+/******************************************************************************
+ * Enhanced Error Handling Implementation
+ *******************************************************************************/
+
+static void HandleError(LTC6802_1_Error_E error_code, uint8_t stack_id) {
+    // Update legacy error tracking for backward compatibility
+    SetError(stack_id, error_code);
+    
+    // Create comprehensive error information
+    LTC6802_1_Error_Info_S error_info = {
+        .error_code = error_code,
+        .severity = GetErrorSeverity(error_code),
+        .scope = GetErrorScope(error_code),
+        .stack_id = stack_id,
+        .error_state = (uint8_t)ltc_module.curState,
+        .timestamp = SysTick_Get(),
+        .retry_count = 0,
+        .consecutive_count = 1
+    };
+    
+    // Check if this is the same error as currently active
+    if (ltc_module.has_active_error && 
+        ltc_module.current_error.error_code == error_code &&
+        ltc_module.current_error.stack_id == stack_id) {
+        // Increment consecutive count
+        ltc_module.current_error.consecutive_count++;
+        ltc_module.consecutive_error_count++;
+        error_info.consecutive_count = ltc_module.current_error.consecutive_count;
+    } else {
+        // New error type - reset consecutive count
+        ltc_module.consecutive_error_count = 1;
+    }
+    
+    // Store current error information
+    ltc_module.current_error = error_info;
+    ltc_module.has_active_error = true;
+    
+    // Add to error history
+    AddToErrorHistory(&error_info);
+    
+    // Determine response based on severity
+    switch (error_info.severity) {
+        case LTC6802_1_ERROR_SEVERITY_INFO:
+            // Auto-recovery for informational errors
+            if (ShouldAttemptRecovery(&error_info)) {
+                AttemptErrorRecovery(&error_info);
+            }
+            break;
+            
+        case LTC6802_1_ERROR_SEVERITY_WARNING:
+            // Attempt recovery with retry limits
+            if (ShouldAttemptRecovery(&error_info)) {
+                if (AttemptErrorRecovery(&error_info) != LTC6802_1_ERROR_NONE) {
+                    // Recovery failed - escalate to faulted state
+                    TransitionToFaulted(error_code);
+                }
+            } else {
+                TransitionToFaulted(error_code);
+            }
+            break;
+            
+        case LTC6802_1_ERROR_SEVERITY_CRITICAL:
+            // Immediate transition to faulted state
+            TransitionToFaulted(error_code);
+            break;
+    }
+}
+
+static LTC6802_1_Error_Severity_E GetErrorSeverity(LTC6802_1_Error_E error_code) {
+    switch (error_code) {
+        case LTC6802_1_ERROR_NONE:
+            return LTC6802_1_ERROR_SEVERITY_INFO;
+            
+        case LTC6802_1_ERROR_BUSY:
+        case LTC6802_1_ERROR_ALREADY_RUNNING:
+            return LTC6802_1_ERROR_SEVERITY_INFO;
+            
+        case LTC6802_1_ERROR_CRC_FAIL:
+        case LTC6802_1_ERROR_ADC_TIMEOUT:
+        case LTC6802_1_ERROR_DATA_CORRUPTION:
+            return LTC6802_1_ERROR_SEVERITY_WARNING;
+            
+        case LTC6802_1_ERROR_SPI_TIMEOUT:
+        case LTC6802_1_ERROR_MAX_RETRIES:
+        case LTC6802_1_ERROR_CONFIG_MISMATCH:
+        case LTC6802_1_ERROR_INVALID_STACK:
+            return LTC6802_1_ERROR_SEVERITY_CRITICAL;
+            
+        default:
+            return LTC6802_1_ERROR_SEVERITY_CRITICAL;
+    }
+}
+
+static LTC6802_1_Error_Scope_E GetErrorScope(LTC6802_1_Error_E error_code) {
+    switch (error_code) {
+        case LTC6802_1_ERROR_SPI_TIMEOUT:
+        case LTC6802_1_ERROR_BUSY:
+        case LTC6802_1_ERROR_MAX_RETRIES:
+        case LTC6802_1_ERROR_ALREADY_RUNNING:
+        case LTC6802_1_ERROR_INVALID_STACK:
+            return LTC6802_1_ERROR_SCOPE_MODULE;
+            
+        case LTC6802_1_ERROR_CRC_FAIL:
+        case LTC6802_1_ERROR_ADC_TIMEOUT:
+        case LTC6802_1_ERROR_CONFIG_MISMATCH:
+        case LTC6802_1_ERROR_DATA_CORRUPTION:
+            return LTC6802_1_ERROR_SCOPE_STACK;
+            
+        default:
+            return LTC6802_1_ERROR_SCOPE_MODULE;
+    }
+}
+
+static void AddToErrorHistory(const LTC6802_1_Error_Info_S* error_info) {
+    // Add to circular buffer
+    ltc_module.error_history[ltc_module.error_history_index] = *error_info;
+    ltc_module.error_history_index = (ltc_module.error_history_index + 1) % 8;
+    
+    // Track count (max 8 entries)
+    if (ltc_module.error_history_count < 8) {
+        ltc_module.error_history_count++;
+    }
+}
+
+static bool ShouldAttemptRecovery(const LTC6802_1_Error_Info_S* error_info) {
+    // Don't attempt recovery if too many consecutive errors
+    if (ltc_module.consecutive_error_count > 3) {
+        return false;
+    }
+    
+    // Don't attempt recovery too frequently
+    uint32_t time_since_last_recovery = SysTick_Get() - ltc_module.last_recovery_attempt;
+    if (time_since_last_recovery < 1000) { // 1 second minimum between attempts
+        return false;
+    }
+    
+    // Don't attempt recovery if too many attempts already
+    if (ltc_module.recovery_attempt_count > 5) {
+        return false;
+    }
+    
+    // Recovery is possible for certain error types
+    switch (error_info->error_code) {
+        case LTC6802_1_ERROR_CRC_FAIL:
+        case LTC6802_1_ERROR_ADC_TIMEOUT:
+        case LTC6802_1_ERROR_DATA_CORRUPTION:
+            return true;
+            
+        default:
+            return false;
+    }
+}
+
+static LTC6802_1_Error_E AttemptErrorRecovery(const LTC6802_1_Error_Info_S* error_info) {
+    ltc_module.last_recovery_attempt = SysTick_Get();
+    ltc_module.recovery_attempt_count++;
+    
+    switch (error_info->error_code) {
+        case LTC6802_1_ERROR_CRC_FAIL:
+        case LTC6802_1_ERROR_DATA_CORRUPTION:
+            // Reset SPI and restart measurement cycle
+            spi1ResetBufferedTransaction();
+            ltc_module.retry_count = 0;
+            ltc_module.nextState = cell_read_state;
+            return LTC6802_1_ERROR_NONE;
+            
+        case LTC6802_1_ERROR_ADC_TIMEOUT:
+            // Restart ADC conversion
+            ltc_module.retry_count = 0;
+            ltc_module.nextState = cell_read_state;
+            return LTC6802_1_ERROR_NONE;
+            
+        default:
+            return LTC6802_1_ERROR_MAX_RETRIES;
+    }
+}
+
+bool LTC6802_1_GetErrorInfo(LTC6802_1_Error_Info_S* error_info) {
+    if (!error_info) {
+        return false;
+    }
+    
+    if (ltc_module.has_active_error) {
+        *error_info = ltc_module.current_error;
+        return true;
+    }
+    
+    return false;
+}
+
+uint8_t LTC6802_1_GetErrorHistory(LTC6802_1_Error_Info_S* error_history, uint8_t max_entries) {
+    if (!error_history || max_entries == 0) {
+        return 0;
+    }
+    
+    uint8_t entries_to_copy = (ltc_module.error_history_count < max_entries) ? 
+                             ltc_module.error_history_count : max_entries;
+    
+    // Copy from circular buffer in chronological order (oldest first)
+    uint8_t start_index = (ltc_module.error_history_index - ltc_module.error_history_count + 8) % 8;
+    
+    for (uint8_t i = 0; i < entries_to_copy; i++) {
+        uint8_t src_index = (start_index + i) % 8;
+        error_history[i] = ltc_module.error_history[src_index];
+    }
+    
+    return entries_to_copy;
+}
+
+void LTC6802_1_ClearAllErrors(void) {
+    // Clear all error state
+    ltc_module.has_active_error = false;
+    ltc_module.consecutive_error_count = 0;
+    ltc_module.recovery_attempt_count = 0;
+    ltc_module.error_history_count = 0;
+    ltc_module.error_history_index = 0;
+    
+    // Clear legacy error tracking
+    for (uint8_t i = 0; i < LTC6802_1_NUM_STACKS; i++) {
+        ltc_module.last_error[i] = LTC6802_1_ERROR_NONE;
+    }
+    
+    // Reset error information
+    memset(&ltc_module.current_error, 0, sizeof(ltc_module.current_error));
+    memset(ltc_module.error_history, 0, sizeof(ltc_module.error_history));
+}
+
+LTC6802_1_Error_E LTC6802_1_ForceRecovery(void) {
+    if (!ltc_module.has_active_error) {
+        return LTC6802_1_ERROR_NONE; // No error to recover from
+    }
+    
+    // Force recovery attempt regardless of normal criteria
+    LTC6802_1_Error_E result = AttemptErrorRecovery(&ltc_module.current_error);
+    
+    if (result == LTC6802_1_ERROR_NONE) {
+        // Recovery successful - clear active error
+        ltc_module.has_active_error = false;
+        ltc_module.consecutive_error_count = 0;
+    }
+    
+    return result;
 }
