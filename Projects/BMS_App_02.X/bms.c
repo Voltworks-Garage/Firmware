@@ -17,20 +17,16 @@
 /******************************************************************************
  * defines
  *******************************************************************************/
-#define BMS_MAX_CHARGE_VOLTAGE_ALLOWED LTC6802_1_TOTAL_CELLS*4.2
-#define BMS_MAX_CHARGE_CURRENT_ALLOWED 30
+#define BMS_MAX_CHARGE_VOLTAGE_ALLOWED (LTC6802_1_TOTAL_CELLS * 4.2f)
+#define BMS_MAX_CHARGE_CURRENT_ALLOWED (30)
 
 /******************************************************************************
  * State Machine Definition
  *******************************************************************************/
 #define BMS_STATES(state)\
-state(bms_idle) /* init state for startup code */ \
-state(bms_voltage)\
-state(bms_temperature)\
-state(bms_flag)\
-state(bms_balance)\
-state(bms_dataComplete)\
-state(bms_error)
+state(bms_init) /* initialization state */ \
+state(bms_running) /* main operation state */ \
+state(bms_error) /* error handling state */
 
 /*Creates an enum of states suffixed with _state*/
 #define STATE_FORM(WORD) WORD##_state,
@@ -61,23 +57,29 @@ static bmsState_FPtr bms_state_functions[] = {BMS_STATES(FUNC_PTR_FORM)};
 
 static BMS_states_E prevState = 0;
 static BMS_states_E curState = 0;
-static BMS_states_E nextState = bms_idle_state;
+static BMS_states_E nextState = bms_init_state;
 
 /******************************************************************************
  * Internal Variables
  *******************************************************************************/
-static bool balancingAllowed = false;
+static bool bms_balancingAllowed = false;
 NEW_TIMER(error_timer, 3000); // 3000ms timer for BMS error operation
 NEW_TIMER(balancing_timer, 1000); // 1000ms timer for balancing operations
-static uint32_t voltageTargetmV = BMS_MAX_CHARGE_VOLTAGE_ALLOWED*1000;
-static uint32_t currentTargetmA = BMS_MAX_CHARGE_CURRENT_ALLOWED*1000;
+static uint32_t bms_voltageTargetmV = BMS_MAX_CHARGE_VOLTAGE_ALLOWED * 1000;
+static uint32_t bms_currentTargetmA = BMS_MAX_CHARGE_CURRENT_ALLOWED * 1000;
+static uint16_t bms_highestCellVoltagemV = 0;
+static uint16_t bms_lowestCellVoltagemV = 0;
+
+// BMS voltage calculation variables
+static float bms_stackVoltage[LTC6802_1_NUM_STACKS] = {0.0f};
+static float bms_packVoltage = 0.0f;
 
 /******************************************************************************
  * Private Function Prototypes
  *******************************************************************************/
-uint16_t BMS_GetMaxCellVoltage(void);
-uint16_t BMS_GetMinCellVoltage(void);
-void BMS_TaperCurrentCommandForBalancing(void);
+static void bms_taperCurrentCommandForBalancing(void);
+static uint8_t bms_calculateCellsToBalance(uint8_t* cells_to_balance);
+static void bms_calculateStackVoltages(void);
 
 
 /******************************************************************************
@@ -91,31 +93,30 @@ void BMS_Init(void) {
     // Configure for BMS operation with safe defaults
     
     // Reset to safe defaults first
-    LTC6802_1_ResetConfigToDefaults(false);
+    LTC6802_1_ResetConfigToDefaults();
     
     // Set voltage thresholds for safe BMS operation
     // 4.2V overvoltage, 2.5V undervoltage (converted to millivolts)
-    LTC6802_1_SetVoltageThresholds(4200, 2500, false);
+    LTC6802_1_SetVoltageThresholds(4200, 2500);
     
     // Enable monitoring for all 12 cells on both stacks
-    LTC6802_1_SetCellMonitoring(LTC6802_1_ALL_STACKS, 0x0FFF, false);
+    LTC6802_1_SetCellMonitoring(LTC6802_1_ALL_STACKS, 0x0FFF);
     
     // Set ADC mode to normal for balanced speed/accuracy
-    LTC6802_1_SetADCMode(LTC6802_1_ADC_MODE_NORMAL, false);
+    LTC6802_1_SetADCMode(LTC6802_1_ADC_MODE_NORMAL);
     
     // Configure GPIO pins as inputs initially
-    LTC6802_1_SetGPIO1(LTC6802_1_ALL_STACKS, true, false);
+    LTC6802_1_SetGPIO1(LTC6802_1_ALL_STACKS, true);
     
     // Enable temperature measurement
-    LTC6802_1_SetPolling(true, false);
+    LTC6802_1_SetPolling(true);
     
     // Enable voltage comparison for fault detection
-    LTC6802_1_EnableVoltageComparison(LTC6802_1_ALL_STACKS, true, false);
+    LTC6802_1_EnableVoltageComparison(LTC6802_1_ALL_STACKS, true);
     
-    // Send all configuration changes to hardware
-    LTC6802_1_SendConfig();
+    // Configuration will be sent automatically by autonomous driver
     
-    nextState = bms_idle_state;
+    nextState = bms_init_state;
 }
 
 void BMS_Run_1ms(void) {
@@ -127,13 +128,13 @@ void BMS_Run_10ms(void) {
 
     // If we are getting a charge request, that means we are in a charging state. (negative logic)
     if (CAN_bms_charger_request_start_charge_not_request_get()){
-        balancingAllowed = false;
+        bms_balancingAllowed = false;
     } else {
-        balancingAllowed = true;
+        bms_balancingAllowed = true;
     }
 
-    CAN_bms_ltc_debug_M2_max_charge_current_allowed_mA_set(currentTargetmA);
-    CAN_bms_ltc_debug_M3_max_charge_voltage_allowed_mV_set(voltageTargetmV);
+    CAN_bms_ltc_debug_M2_max_charge_current_allowed_mA_set(bms_currentTargetmA);
+    CAN_bms_ltc_debug_M3_max_charge_voltage_allowed_mV_set(bms_voltageTargetmV);
     
 
     /* This only happens during state transition
@@ -153,14 +154,15 @@ void BMS_Run_10ms(void) {
  * State Functions
  *******************************************************************************/
 
-static void bms_idle(BMS_entry_types_E entry_type) {
+static void bms_init(BMS_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
+            // Start the autonomous LTC driver
+            LTC6802_1_Resume();
             break;
         case RUN:
-            LTC6802_1_SetGPIO1(0, true, false);
-            LTC6802_1_SetGPIO1(1, true, true);
-            nextState = bms_voltage_state;
+            // Move to running state immediately
+            nextState = bms_running_state;
             break;
         case EXIT:
             break;
@@ -169,123 +171,47 @@ static void bms_idle(BMS_entry_types_E entry_type) {
     }
 }
 
-static void bms_voltage(BMS_entry_types_E entry_type) {
+static void bms_running(BMS_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
-            // Start new measurement cycle every 10ms if driver is ready
-            if (LTC6802_1_StartCellVoltageADC() != LTC6802_1_ERROR_NONE) {
-                // If error, move to error state
-                nextState = bms_error_state;
-            }
             break;
         case RUN:
-            // If busy, just wait for next 10ms cycle
-            if (!LTC6802_1_IsBusy()) {
-                nextState = bms_temperature_state;
-            }
-            break;
-        case EXIT:
-            break;
-        default:
-            break;
-    }
-}
-
-static void bms_temperature(BMS_entry_types_E entry_type) {
-    switch (entry_type) {
-        case ENTRY:
-            // Driver completed voltage operation, now start temperature
-            if (!LTC6802_1_StartTemperatureADC() == LTC6802_1_ERROR_NONE) {
-                // If error, move to error state
-                nextState = bms_error_state;
-            }
-            break;
-
-        case RUN:
-            // Check if voltage data is ready
-            if (!LTC6802_1_IsBusy()) {
-                nextState = bms_flag_state;
-            }
-            break;
-
-        case EXIT:
-            break;
-        default:
-            break;
-    }
-}
-
-static void bms_flag(BMS_entry_types_E entry_type) {
-    switch (entry_type) {
-        case ENTRY:
-            // Driver completed voltage operation, now start flag read
-            if (!LTC6802_1_StartFlagRead() == LTC6802_1_ERROR_NONE) {
-                // If error, move to error state
-                nextState = bms_error_state;
-            }
-            break;
-
-        case RUN:
-            // Check if voltage data is ready
-            if (!LTC6802_1_IsBusy()) {
-                nextState = bms_balance_state;
-            }
-            break;
-
-        case EXIT:
-            break;
-        default:
-            break;
-    }
-}
-
-static void bms_balance(BMS_entry_types_E entry_type) {
-    switch (entry_type) {
-        case ENTRY:
-            // Start balancing operation
-            if (balancingAllowed) {
-                // If balancing is not active, start it
-                if(!LTC6802_1_IsBalancingActive()){
-                    if (LTC6802_1_StartCellBalancing()  == LTC6802_1_ERROR_NONE) {
-                        // If error, move to error state
-                        nextState = bms_error_state;
-                    } else {
+            // Main BMS operation - process available data
+            
+            // Calculate stack and pack voltages from individual cell data
+            bms_calculateStackVoltages();
+            
+            // Handle balancing decisions
+            if (bms_balancingAllowed) {
+                // Calculate which cells need balancing
+                static uint8_t cells_to_balance[MAX_BALANCE_CELLS];
+                uint8_t num_cells = bms_calculateCellsToBalance(cells_to_balance);
+                
+                if (num_cells > 0) {
+                    // If balancing is not active, start it with current decisions
+                    if(!LTC6802_1_IsBalancingActive()){
+                        // Set which cells to balance in the driver and start balancing
+                        LTC6802_1_SetCellsToBalance(cells_to_balance, num_cells);
+                        LTC6802_1_StartCellBalancing();
                         SysTick_TimerStart(balancing_timer);
                     }
                 }
 
                 // If a cell is over the balance threshold, start to taper the current
-                BMS_TaperCurrentCommandForBalancing();
+                bms_taperCurrentCommandForBalancing();
             } else {
                 BMS_ClearAllCellBalancing();
             }
 
-        case RUN:
+            // Handle balancing timeout
             if (SysTick_TimeOut(balancing_timer)){
                 BMS_ClearAllCellBalancing();
             }
-            if (!LTC6802_1_IsBusy()) {
-                nextState = bms_dataComplete_state;
-            }
-            break;
-
-        case EXIT:
-            break;
-        default:
-            break;
-    }
-}
-
-static void bms_dataComplete(BMS_entry_types_E entry_type) {
-    switch (entry_type) {
-        case ENTRY:
-            break;
-        case RUN:
-            // Data is ready for BMS processing
-            // Reset for next cycle
-            LTC6802_1_SetGPIO1(0, false, false);
-            LTC6802_1_SetGPIO1(1, false, true);
-            nextState = bms_idle_state;
+            
+            // Toggle GPIO for debugging/indication
+            LTC6802_1_SetGPIO1(0, true);
+            LTC6802_1_SetGPIO1(1, true);
+            
             break;
         case EXIT:
             break;
@@ -297,7 +223,8 @@ static void bms_dataComplete(BMS_entry_types_E entry_type) {
 static void bms_error(BMS_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
-            // Entering into error mode will halt communications with LTC6802 for long enough for it to reset and go into standyby mode.
+            // Halt LTC driver and reset
+            LTC6802_1_Halt();
             SysTick_TimerStart(error_timer);
             LTC6802_1_ClearError(0); // Clear error for stack 0
             LTC6802_1_ClearError(1); // Clear error for stack 1
@@ -306,11 +233,10 @@ static void bms_error(BMS_entry_types_E entry_type) {
         case RUN:
             // Stay in error state until cleared
             if (SysTick_TimeOut(error_timer)) {
-                nextState = bms_idle_state;
+                nextState = bms_init_state;  // Return to init to restart
             }
             break;
         case EXIT:
-            // Clear error and return to idle
             break;
         default:
             break;
@@ -334,54 +260,146 @@ void BMS_ClearAllCellBalancing(void) {
 }
 
 void BMS_SetBalancingIsAllowed(bool allowed){
-    balancingAllowed = allowed;
+    bms_balancingAllowed = allowed;
 }
 
 
-
-uint16_t BMS_GetMaxCellVoltage(void){
-    return (LTC6802_1_GetHighestCell());
-}
-
-uint16_t BMS_GetMinCellVoltage(void){
-    return LTC6802_1_GetCellVoltage(LTC6802_1_GetLowestCell());
-}
-
-void BMS_TaperCurrentCommandForBalancing(void){
-    uint16_t cell_delta = 0;
-    cell_delta = BMS_GetMaxCellVoltage() - BMS_GetMinCellVoltage();
-    if (BMS_GetMaxCellVoltage() > MINIMUM_BALANCE_VOLTAGE_MV){
-        switch(cell_delta){
-            case 0 ... 50:
-                currentTargetmA = 5000;
-                break;
-            case 51 ... 100:
-                currentTargetmA = 2000;
-                break;
-            case 101 ... 200:
-                currentTargetmA = 500;
-                break;
-            default:
-                currentTargetmA = 100;
-                break;
-        }   
-
-        uint16_t cellVoltageRemaining = 4.2 - BMS_GetMaxCellVoltage();
-        switch (cellVoltageRemaining)
-        {
-        case 0 ... 50:
-            currentTargetmA = currentTargetmA * 0.1;
-            break;
-        case 51 ... 100:
-            currentTargetmA = currentTargetmA * 0.3;
-            break;
-        case 101 ... 200:
-            currentTargetmA = currentTargetmA * 0.5;
-            break;
-        default:
-            break;
+static uint8_t bms_calculateCellsToBalance(uint8_t* cells_to_balance) {
+    uint8_t i, j;
+    uint16_t cell_voltage;
+    uint16_t top_voltages[MAX_BALANCE_CELLS] = {0};
+    uint8_t top_indices[MAX_BALANCE_CELLS] = {0};
+    uint16_t min_voltage = 0xFFFF;
+    uint16_t max_voltage = 0;
+    uint8_t num_cells_to_balance = 0;
+    
+    // Find min and max voltages
+    for (i = 0; i < LTC6802_1_TOTAL_CELLS; i++) {
+        cell_voltage = LTC6802_1_GetCellVoltage(i);
+        if (cell_voltage != 0) {  // 0 indicates invalid data from LTC driver
+            if (cell_voltage < min_voltage) {
+                min_voltage = cell_voltage;
+                bms_lowestCellVoltagemV = cell_voltage;
+            }
+            if (cell_voltage > max_voltage) {
+                max_voltage = cell_voltage;
+                bms_highestCellVoltagemV = cell_voltage;
+            }
         }
     }
 
+    // Check if all cells are below the minimum threshold for balancing
+    if (max_voltage < MINIMUM_BALANCE_VOLTAGE_MV){
+        return 0;  // No balancing needed
+    }
+    
+    // Check if all cells are within threshold
+    if ((max_voltage - min_voltage) <= BALANCE_VOLTAGE_THRESHOLD_MV) {
+        return 0;  // No balancing needed
+    }
+    
+    // Find the highest voltage cells that need balancing
+    uint16_t balance_threshold = min_voltage + BALANCE_VOLTAGE_THRESHOLD_MV;
+    
+    for (i = 0; i < LTC6802_1_TOTAL_CELLS; i++) {
+        cell_voltage = LTC6802_1_GetCellVoltage(i);
+        if (cell_voltage != 0 && cell_voltage > balance_threshold && cell_voltage > MINIMUM_BALANCE_VOLTAGE_MV) {
+            // Insert into sorted top list
+            if (cell_voltage > top_voltages[MAX_BALANCE_CELLS-1]) {
+                j = MAX_BALANCE_CELLS - 1;
+                while (j > 0 && cell_voltage > top_voltages[j-1]) {
+                    top_voltages[j] = top_voltages[j-1];
+                    top_indices[j] = top_indices[j-1];
+                    j--;
+                }
+                top_voltages[j] = cell_voltage;
+                top_indices[j] = i;
+            }
+        }
+    }
+    
+    // Count valid entries and copy to output array
+    for (i = 0; i < MAX_BALANCE_CELLS; i++) {
+        if (top_voltages[i] > 0) {
+            cells_to_balance[num_cells_to_balance] = top_indices[i];
+            num_cells_to_balance++;
+        }
+    }
+    
+    return num_cells_to_balance;
+}
+
+static void bms_taperCurrentCommandForBalancing(void){
+
+    // Check if the highest cell is within balancing range
+    if (bms_highestCellVoltagemV > MINIMUM_BALANCE_VOLTAGE_MV){
+        
+        // Find the greatest cell delta.
+        uint16_t cell_delta = bms_highestCellVoltagemV - bms_lowestCellVoltagemV;
+
+        // As the cell_delta increases, decrease the charge current.
+        if (cell_delta <= 50) {
+            bms_currentTargetmA = 5000;
+        } else if (cell_delta <= 100) {
+            bms_currentTargetmA = 2000;
+        } else if (cell_delta <= 200) {
+            bms_currentTargetmA = 500;
+        } else {
+            bms_currentTargetmA = 100;
+        }   
+
+        // As the charge voltage approaches full, decrease the charge current .
+        uint16_t cellVoltageRemaining = 4200 - bms_highestCellVoltagemV;
+        if (cellVoltageRemaining <= 50) {
+            bms_currentTargetmA = bms_currentTargetmA / 10;  // 0.1 multiplier
+        } else if (cellVoltageRemaining <= 100) {
+            bms_currentTargetmA = bms_currentTargetmA / 4;  // 0.25 multiplier
+        } else if (cellVoltageRemaining <= 200) {
+            bms_currentTargetmA = bms_currentTargetmA / 2;  // 0.5 multiplier
+        }
+
+        // Round up to nearest 100mA because that is the minimum resolution of the charger.
+        bms_currentTargetmA = ((bms_currentTargetmA + 99) / 100) * 100;
+    }
+}
+
+static void bms_calculateStackVoltages(void) {
+    // Calculate stack voltages and pack voltage using integer arithmetic
+    uint32_t pack_voltage_raw = 0;
+    
+    for (uint8_t stack = 0; stack < LTC6802_1_NUM_STACKS; stack++) {
+        uint32_t stack_voltage_raw = 0;
+        
+        // Sum all valid cell voltages for this stack (raw ADC counts)
+        for (uint8_t cell = 0; cell < LTC6802_1_CELLS_PER_STACK; cell++) {
+            uint8_t cell_index = stack * LTC6802_1_CELLS_PER_STACK + cell;
+            uint16_t cell_voltage = LTC6802_1_GetCellVoltage(cell_index);
+            
+            // Only add if we got valid data (not 0)
+            if (cell_voltage != 0) {
+                stack_voltage_raw += cell_voltage;
+            }
+        }
+        
+        // Convert to volts and store result
+        bms_stackVoltage[stack] = (float)stack_voltage_raw / 1000.0f; // Convert mV to V
+        
+        // Add this stack's raw voltage to total pack voltage
+        pack_voltage_raw += stack_voltage_raw;
+    }
+    
+    // Convert pack voltage to volts
+    bms_packVoltage = (float)pack_voltage_raw / 1000.0f; // Convert mV to V
+}
+
+float BMS_GetStackVoltage(uint8_t stack_id) {
+    if (stack_id >= LTC6802_1_NUM_STACKS) {
+        return 0.0f;
+    }
+    return bms_stackVoltage[stack_id];
+}
+
+float BMS_GetPackVoltage(void) {
+    return bms_packVoltage;
 }
 

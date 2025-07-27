@@ -118,7 +118,8 @@ typedef enum {
     LTC6802_1_ERROR_ADC_TIMEOUT,
     LTC6802_1_ERROR_INVALID_STACK,
     LTC6802_1_ERROR_BUSY,
-    LTC6802_1_ERROR_MAX_RETRIES
+    LTC6802_1_ERROR_MAX_RETRIES,
+    LTC6802_1_ERROR_ALREADY_RUNNING
 } LTC6802_1_Error_E;
 
 /**
@@ -185,33 +186,18 @@ void LTC6802_1_Run(void);
  */
 bool LTC6802_1_IsBusy(void);
 
-/******************************************************************************
- * Stateful API Functions
- *******************************************************************************/
+/**
+ * @brief Halt autonomous operation and return to idle
+ * @return ERROR_NONE always (safe to call multiple times)
+ */
+LTC6802_1_Error_E LTC6802_1_Halt(void);
 
 /**
- * @brief Start cell voltage ADC conversion and read sequence
- * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
+ * @brief Resume autonomous operation from halted state
+ * @return ERROR_NONE if resumed, ERROR_ALREADY_RUNNING if already active
  */
-LTC6802_1_Error_E LTC6802_1_StartCellVoltageADC(void);
+LTC6802_1_Error_E LTC6802_1_Resume(void);
 
-/**
- * @brief Start temperature ADC conversion and read sequence
- * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
- */
-LTC6802_1_Error_E LTC6802_1_StartTemperatureADC(void);
-
-/**
- * @brief Start flag data read sequence
- * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
- */
-LTC6802_1_Error_E LTC6802_1_StartFlagRead(void);
-
-/**
- * @brief Write configuration to hardware
- * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
- */
-LTC6802_1_Error_E LTC6802_1_WriteConfig(void);
 
 /******************************************************************************
  * Configuration Helper Functions
@@ -229,7 +215,7 @@ void LTC6802_1_GetConfig(LTC6802_1_Config_S* config);
  * @param send_immediately True to send config immediately, false to update internal config only
  * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
  */
-LTC6802_1_Error_E LTC6802_1_SetADCMode(LTC6802_1_ADC_Mode_E mode, bool send_immediately);
+LTC6802_1_Error_E LTC6802_1_SetADCMode(LTC6802_1_ADC_Mode_E mode);
 
 /**
  * @brief Set voltage thresholds
@@ -238,7 +224,7 @@ LTC6802_1_Error_E LTC6802_1_SetADCMode(LTC6802_1_ADC_Mode_E mode, bool send_imme
  * @param send_immediately True to send config immediately, false to update internal config only
  * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
  */
-LTC6802_1_Error_E LTC6802_1_SetVoltageThresholds(uint16_t overvoltage_mv, uint16_t undervoltage_mv, bool send_immediately);
+LTC6802_1_Error_E LTC6802_1_SetVoltageThresholds(uint16_t overvoltage_mv, uint16_t undervoltage_mv);
 
 /**
  * @brief Enable/disable LVLPL (level polling) or TGLPL (toggle polling)
@@ -246,7 +232,7 @@ LTC6802_1_Error_E LTC6802_1_SetVoltageThresholds(uint16_t overvoltage_mv, uint16
  * @param send_immediately True to send config immediately, false to update internal config only
  * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
  */
-LTC6802_1_Error_E LTC6802_1_SetPolling(bool enable, bool send_immediately);
+LTC6802_1_Error_E LTC6802_1_SetPolling(bool enable);
 
 /**
  * @brief Enable/disable voltage comparison for specific stack(s)
@@ -255,7 +241,7 @@ LTC6802_1_Error_E LTC6802_1_SetPolling(bool enable, bool send_immediately);
  * @param send_immediately True to send config immediately, false to update internal config only
  * @return ERROR_BUSY if not idle, ERROR_INVALID_STACK if stack_id invalid, ERROR_NONE if started successfully
  */
-LTC6802_1_Error_E LTC6802_1_EnableVoltageComparison(uint8_t stack_id, bool enable, bool send_immediately);
+LTC6802_1_Error_E LTC6802_1_EnableVoltageComparison(uint8_t stack_id, bool enable);
 
 
 /**
@@ -263,7 +249,7 @@ LTC6802_1_Error_E LTC6802_1_EnableVoltageComparison(uint8_t stack_id, bool enabl
  * @param send_immediately True to send config immediately, false to update internal config only
  * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
  */
-LTC6802_1_Error_E LTC6802_1_ResetConfigToDefaults(bool send_immediately);
+LTC6802_1_Error_E LTC6802_1_ResetConfigToDefaults(void);
 
 /**
  * @brief Set GPIO1 pin state for a specific stack
@@ -272,7 +258,7 @@ LTC6802_1_Error_E LTC6802_1_ResetConfigToDefaults(bool send_immediately);
  * @param send_immediately True to send config immediately, false to update internal config only
  * @return ERROR_BUSY if not idle, ERROR_INVALID_STACK if stack_id invalid, ERROR_NONE if started successfully
  */
-LTC6802_1_Error_E LTC6802_1_SetGPIO1(uint8_t stack_id, bool state, bool send_immediately);
+LTC6802_1_Error_E LTC6802_1_SetGPIO1(uint8_t stack_id, bool state);
 
 /**
  * @brief Set GPIO2 pin state for a specific stack UNUSED ON THIS HARDWARE!
@@ -290,7 +276,7 @@ LTC6802_1_Error_E LTC6802_1_SetGPIO1(uint8_t stack_id, bool state, bool send_imm
  * @param send_immediately True to send config immediately, false to update internal config only
  * @return ERROR_BUSY if not idle, ERROR_INVALID_STACK if stack_id invalid, ERROR_NONE if started successfully
  */
-LTC6802_1_Error_E LTC6802_1_SetCellMonitoring(uint8_t stack_id, uint16_t monitor_mask, bool send_immediately);
+LTC6802_1_Error_E LTC6802_1_SetCellMonitoring(uint8_t stack_id, uint16_t monitor_mask);
 
 /**
  * @brief Set voltage thresholds (8-bit values)
@@ -299,20 +285,21 @@ LTC6802_1_Error_E LTC6802_1_SetCellMonitoring(uint8_t stack_id, uint16_t monitor
  * @param send_immediately True to send config immediately, false to update internal config only
  * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
  */
-LTC6802_1_Error_E LTC6802_1_SetVoltageThresholds8(uint8_t overvoltage_threshold, uint8_t undervoltage_threshold, bool send_immediately);
-
-/**
- * @brief Send current configuration to hardware
- * Use this after making multiple config changes with send_immediately=false
- * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
- */
-LTC6802_1_Error_E LTC6802_1_SendConfig(void);
+LTC6802_1_Error_E LTC6802_1_SetVoltageThresholds8(uint8_t overvoltage_threshold, uint8_t undervoltage_threshold);
 
 /**
  * @brief Start cell balancing configuration and write to hardware
  * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
  */
 LTC6802_1_Error_E LTC6802_1_StartCellBalancing(void);
+
+/**
+ * @brief Set which cells should be balanced
+ * @param cells_to_balance Array of cell IDs to balance
+ * @param num_cells Number of cells in the array
+ * @return ERROR_NONE if successful
+ */
+LTC6802_1_Error_E LTC6802_1_SetCellsToBalance(const uint8_t* cells_to_balance, uint8_t num_cells);
 
 /**
  * @brief Clear all cell balancing and write to hardware
@@ -338,30 +325,7 @@ uint16_t LTC6802_1_GetCellVoltage(uint8_t cell_id);
  */
 float LTC6802_1_GetTemperatureVoltage(uint8_t temp_id);
 
-/**
- * @brief Get stack voltage (sum of all cells in a stack)
- * @param stack_id Stack ID (0 to LTC6802_1_NUM_STACKS-1)
- * @return Stack voltage in volts, or -1.0 if invalid stack_id or data stale
- */
-float LTC6802_1_GetStackVoltage(uint8_t stack_id);
 
-/**
- * @brief Get total pack voltage (sum of all stacks)
- * @return Pack voltage in volts, or -1.0 if no valid voltage data
- */
-float LTC6802_1_GetPackVoltage(void);
-
-/**
- * @brief Get max cell within the whole stack
- * @return Cell number
- */
-uint8_t LTC6802_1_GetHighestCell(void);
-
-/**
- * @brief Get min cell within the whole stack
- * @return Cell number
- */
-uint8_t LTC6802_1_GetLowestCell(void);
 /**
  * @brief Check if cell balancing is active
  * @return True if balancing is active, false otherwise

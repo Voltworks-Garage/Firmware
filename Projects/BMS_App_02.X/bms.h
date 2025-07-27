@@ -55,4 +55,17 @@ void BMS_ClearAllCellBalancing(void);
  */
 void BMS_SetBalancingIsAllowed(bool allowed);
 
+/**
+ * @brief Get stack voltage (sum of cells in a stack)
+ * @param stack_id Stack ID (0 to LTC6802_1_NUM_STACKS-1)
+ * @return Stack voltage in volts, or 0.0 if invalid stack_id
+ */
+float BMS_GetStackVoltage(uint8_t stack_id);
+
+/**
+ * @brief Get total pack voltage (sum of all stacks)
+ * @return Pack voltage in volts
+ */
+float BMS_GetPackVoltage(void);
+
 #endif // BMS_H
