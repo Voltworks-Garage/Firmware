@@ -400,7 +400,35 @@ def setup_message_payload(dot_c: Any, message_id: str, message: Dict[str, Any]) 
         return f".payload = &{message_id}_payload"
 
 
-def write_message_structure(dot_c: Any, _: Any, message_id: str, message: Dict[str, Any], payload_init: str) -> None:
+def setup_tx_message_payload(dot_c: Any, message_id: str, message: Dict[str, Any]) -> str:
+    """Setup message payload structure for TX messages and return payload initialization string."""
+    signals = message["signals"]
+    
+    # Check for multiplex
+    has_multiplex = any(signal.get("multiplex") is not None for signal in signals)
+    multiplex_signal_found = any(signal["name"].lower() == "multiplex" for signal in signals)
+    
+    if has_multiplex and multiplex_signal_found:
+        # Multiplexed message - create payload array
+        max_mux_value = max((signal.get("multiplex", -1) for signal in signals 
+                           if signal.get("multiplex") is not None), default=0)
+        num_mux_groups = max_mux_value + 1
+        
+        dot_c.write(f"static CAN_payload_S {message_id}_payloads[{num_mux_groups}] __attribute__((aligned(sizeof(CAN_payload_S))));\n")
+        dot_c.write(f"static uint8_t {message_id}_mux = 0;\n")
+        payload_init = ".payload = 0"
+    else:
+        # Non-multiplexed message
+        dot_c.write(f"static CAN_payload_S {message_id}_payload __attribute__((aligned(sizeof(CAN_payload_S))));\n")
+        payload_init = f".payload = &{message_id}_payload"
+    
+    # Generate static status variable for TX messages
+    dot_c.write(f"static volatile uint8_t {message_id}_status = 0;\n")
+    
+    return payload_init
+
+
+def write_message_structure(dot_c: Any, _: Any, message_id: str, message: Dict[str, Any], payload_init: str, is_tx: bool = False) -> None:
     """Write the CAN message structure definition."""
     message_id_hex = hex(message["id"])
     can_xid = message.get("x_id", 0)
@@ -408,13 +436,21 @@ def write_message_structure(dot_c: Any, _: Any, message_id: str, message: Dict[s
     # Write message ID define
     dot_c.write(f"#define {message_id}_ID {message_id_hex}\n\n")
     
+    # Set canMessageStatus based on whether this is a TX or RX message
+    if is_tx:
+        # TX message - point to the static status variable
+        status_init = f".canMessageStatus = &{message_id}_status"
+    else:
+        # RX message - initialize to 0 (will be set by CAN driver)
+        status_init = ".canMessageStatus = 0"
+    
     # Write message structure
     dot_c.write(f"static CAN_message_S {message_id}={{\n")
     dot_c.write(f"\t.canID = {message_id}_ID,\n")
     dot_c.write(f"\t.canXID = {can_xid},\n")
     dot_c.write(f"\t.dlc = 8,\n")
     dot_c.write(f"\t{payload_init},\n")
-    dot_c.write(f"\t.canMessageStatus = 0\n}};\n\n")
+    dot_c.write(f"\t{status_init}\n}};\n\n")
 
 
 def write_send_functions(dot_h: Any, dot_c: Any, node: Dict[str, Any], message: Dict[str, Any], is_self_consumed: bool = False) -> None:
@@ -445,11 +481,10 @@ def write_send_functions(dot_h: Any, dot_c: Any, node: Dict[str, Any], message: 
         dot_h.write(f"#define {message_id.upper()}_NUM_MUX_VALUES {num_mux_groups}\n")
         
         dot_c.write(f"void CAN_{node_name}_{message_name}_send(void){{\n")
+        dot_c.write(f"\t// Update message status for self-consumption\n")
+        dot_c.write(f"\t*CAN_{node_name}_{message_name}.canMessageStatus = 1;\n")
         dot_c.write(f"\t// Auto-select current mux payload\n")
         dot_c.write(f"\tCAN_{node_name}_{message_name}.payload = &CAN_{node_name}_{message_name}_payloads[CAN_{node_name}_{message_name}_mux];\n")
-        if is_self_consumed:
-            dot_c.write(f"\t// Update message status for self-consumption\n")
-            dot_c.write(f"\tCAN_{node_name}_{message_name}.canMessageStatus = 1;\n")
         dot_c.write(f"\t// Send the message\n")
         dot_c.write(f"\tCAN_write(CAN_{node_name}_{message_name});\n")
         dot_c.write(f"\t// Increment mux counter for next time\n")
@@ -460,9 +495,8 @@ def write_send_functions(dot_h: Any, dot_c: Any, node: Dict[str, Any], message: 
     else:
         # Non-multiplexed message
         dot_c.write(f"void CAN_{node_name}_{message_name}_send(void){{\n")
-        if is_self_consumed:
-            dot_c.write(f"\t// Update message status for self-consumption\n")
-            dot_c.write(f"\tCAN_{node_name}_{message_name}.canMessageStatus = 1;\n")
+        dot_c.write(f"\t// Update message status for self-consumption\n")
+        dot_c.write(f"\t*CAN_{node_name}_{message_name}.canMessageStatus = 1;\n")
         dot_c.write(f"\tCAN_write(CAN_{node_name}_{message_name});\n}}\n\n")
 
 
@@ -493,7 +527,9 @@ def process_node_messages(dot_h: Any, dot_c: Any, nodes: List[Dict[str, Any]], c
             
             # Setup message payload and structure
             if node_idx == current_node_idx:
-                payload_init = setup_message_payload(dot_c, message_id, message)
+                # TX message - use special TX setup with status variable
+                payload_init = setup_tx_message_payload(dot_c, message_id, message)
+                is_tx = True
             else:
                 # For consumer nodes, check if they need payload arrays for multiplexed messages
                 generate_getters = should_generate_getters(message, node_idx, current_node_idx, current_node_name)
@@ -509,8 +545,9 @@ def process_node_messages(dot_h: Any, dot_c: Any, nodes: List[Dict[str, Any]], c
                         payload_init = ".payload = 0"
                 else:
                     payload_init = ".payload = 0"
+                is_tx = False
             
-            write_message_structure(dot_c, dot_h, message_id, message, payload_init)
+            write_message_structure(dot_c, dot_h, message_id, message, payload_init, is_tx)
             
             # checkDataIsFresh is now generated in process_message_signals when getters are needed
             

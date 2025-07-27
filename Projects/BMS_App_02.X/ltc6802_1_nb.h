@@ -42,6 +42,11 @@
 // Voltage scaling for LTC6802-1 (1.5mV per LSB)
 #define LTC6802_1_VOLTAGE_SCALE_FACTOR     0.0015f
 
+// Cell balancing defines
+#define MAX_BALANCE_CELLS 5
+#define BALANCE_VOLTAGE_THRESHOLD_MV 5
+#define MINIMUM_BALANCE_VOLTAGE_MV 4100
+
 /******************************************************************************
  * Type Definitions
  *******************************************************************************/
@@ -346,6 +351,17 @@ float LTC6802_1_GetStackVoltage(uint8_t stack_id);
  */
 float LTC6802_1_GetPackVoltage(void);
 
+/**
+ * @brief Get max cell within the whole stack
+ * @return Cell number
+ */
+uint8_t LTC6802_1_GetHighestCell(void);
+
+/**
+ * @brief Get min cell within the whole stack
+ * @return Cell number
+ */
+uint8_t LTC6802_1_GetLowestCell(void);
 /**
  * @brief Check if cell balancing is active
  * @return True if balancing is active, false otherwise

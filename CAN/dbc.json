@@ -1051,7 +1051,8 @@
                     "freq": 1000,
                     "consumers": [
                         "charger",
-                        "dash"
+                        "dash",
+                        "bms"
                     ],
                     "signals": [
                         {
@@ -1434,12 +1435,20 @@
                             "multiplex": 2
                         },
                         {
-                            "name": "max_charge_current_allowed",
+                            "name": "max_charge_current_allowed_mA",
                             "length": 16,
                             "scale": 1.0,
                             "offset": 0,
                             "units": "mA",
                             "multiplex": 2
+                        },
+                        {
+                            "name": "max_charge_voltage_allowed_mV",
+                            "length": 16,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "mV",
+                            "multiplex": 3
                         }
 
                     ]

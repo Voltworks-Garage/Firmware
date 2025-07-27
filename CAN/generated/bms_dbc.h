@@ -158,6 +158,16 @@ void CAN_bms_charger_request_start_charge_not_request_set(uint16_t start_charge_
 void CAN_bms_charger_request_charge_mode_set(uint16_t charge_mode);
 void CAN_bms_charger_request_byte_7_set(uint16_t byte_7);
 void CAN_bms_charger_request_byte_8_set(uint16_t byte_8);
+uint8_t CAN_bms_charger_request_checkDataIsFresh(void);
+uint16_t CAN_bms_charger_request_output_voltage_high_byte_get(void);
+uint16_t CAN_bms_charger_request_output_voltage_low_byte_get(void);
+uint16_t CAN_bms_charger_request_output_current_high_byte_get(void);
+uint16_t CAN_bms_charger_request_output_current_low_byte_get(void);
+uint16_t CAN_bms_charger_request_start_charge_not_request_get(void);
+uint16_t CAN_bms_charger_request_charge_mode_get(void);
+uint16_t CAN_bms_charger_request_byte_7_get(void);
+uint16_t CAN_bms_charger_request_byte_8_get(void);
+
 void CAN_bms_charger_request_dlc_set(uint8_t dlc);
 
 
@@ -209,7 +219,8 @@ void CAN_bms_ltc_debug_M1_cell_E_balancing_set(uint16_t cell_E_balancing);
 void CAN_bms_ltc_debug_M2_max_cell_delta_mV_set(uint16_t max_cell_delta_mV);
 void CAN_bms_ltc_debug_M2_max_cell_mV_set(uint16_t max_cell_mV);
 void CAN_bms_ltc_debug_M2_min_cell_mV_set(uint16_t min_cell_mV);
-void CAN_bms_ltc_debug_M2_max_charge_current_allowed_set(uint16_t max_charge_current_allowed);
+void CAN_bms_ltc_debug_M2_max_charge_current_allowed_mA_set(uint16_t max_charge_current_allowed_mA);
+void CAN_bms_ltc_debug_M3_max_charge_voltage_allowed_mV_set(uint16_t max_charge_voltage_allowed_mV);
 uint8_t CAN_bms_ltc_debug_checkDataIsFresh(void);
 uint16_t CAN_bms_ltc_debug_Multiplex_get(void);
 uint16_t CAN_bms_ltc_debug_M0_ltc_state_get(void);
@@ -224,7 +235,8 @@ uint16_t CAN_bms_ltc_debug_M1_cell_E_balancing_get(void);
 uint16_t CAN_bms_ltc_debug_M2_max_cell_delta_mV_get(void);
 uint16_t CAN_bms_ltc_debug_M2_max_cell_mV_get(void);
 uint16_t CAN_bms_ltc_debug_M2_min_cell_mV_get(void);
-uint16_t CAN_bms_ltc_debug_M2_max_charge_current_allowed_get(void);
+uint16_t CAN_bms_ltc_debug_M2_max_charge_current_allowed_mA_get(void);
+uint16_t CAN_bms_ltc_debug_M3_max_charge_voltage_allowed_mV_get(void);
 
 void CAN_bms_ltc_debug_dlc_set(uint8_t dlc);
 
@@ -232,7 +244,7 @@ void CAN_bms_ltc_debug_dlc_set(uint8_t dlc);
 void CAN_bms_ltc_debug_send(void);
 
 
-#define CAN_BMS_LTC_DEBUG_NUM_MUX_VALUES 3
+#define CAN_BMS_LTC_DEBUG_NUM_MUX_VALUES 4
 #define CAN_bms_cellTemperaturs_interval() 1000
 void CAN_bms_cellTemperaturs_M0_temp_1_set(float temp_1);
 void CAN_bms_cellTemperaturs_M0_temp_2_set(float temp_2);

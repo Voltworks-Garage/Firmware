@@ -208,7 +208,7 @@
 [START_SIGNALS] cell_24_voltage,15,7,1.0,U,32767,0,1,0,1,mV,M5
 [END_MSG]
 
-[START_MSG] bms_ltc_debug,1831,8,14,1,S
+[START_MSG] bms_ltc_debug,1831,8,15,1,S
 [START_SIGNALS] Multiplex,2,1,0.0,U,3,0,1,0,1.0,,m
 [START_SIGNALS] ltc_state,4,1,2.0,U,15,0,1,0,1.0,,M0
 [START_SIGNALS] lastErrorState,8,1,6.0,U,255,0,1,0,1.0,,M0
@@ -222,7 +222,8 @@
 [START_SIGNALS] max_cell_delta_mV,13,1,2.0,U,8191,0,1,0,1.0,mV,M2
 [START_SIGNALS] max_cell_mV,13,2,7.0,U,8191,0,1,0,1.0,mV,M2
 [START_SIGNALS] min_cell_mV,13,4,4.0,U,8191,0,1,0,1.0,mV,M2
-[START_SIGNALS] max_charge_current_allowed,16,6,1.0,U,65535,0,1,0,1.0,mA,M2
+[START_SIGNALS] max_charge_current_allowed_mA,16,6,1.0,U,65535,0,1,0,1.0,mA,M2
+[START_SIGNALS] max_charge_voltage_allowed_mV,16,1,2.0,U,65535,0,1,0,1.0,mV,M3
 [END_MSG]
 
 [START_MSG] bms_cellTemperaturs,1830,8,25,1,S

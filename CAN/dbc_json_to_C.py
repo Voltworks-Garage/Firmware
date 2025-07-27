@@ -108,10 +108,21 @@ for node in range(0,numberOfNodes):
                     # Non-multiplexed message uses single payload as before
                     dot_c.write("static CAN_payload_S " + ID_name + "_payload __attribute__((aligned(sizeof(CAN_payload_S))));\n")
                     payload_init = ".payload = &" + ID_name + "_payload"
+                
+                # Generate static status variable for TX messages
+                dot_c.write("static volatile uint8_t " + ID_name + "_status = 0;\n")
 
+            # Set canMessageStatus based on whether this is a TX or RX message
+            if i == thisNode:
+                # TX message - point to the static status variable
+                status_init = ".canMessageStatus = &" + ID_name + "_status"
+            else:
+                # RX message - initialize to 0 (will be set by CAN driver)
+                status_init = ".canMessageStatus = 0"
+            
             dot_c.write("static CAN_message_S " + ID_name + "={\n")
             dot_c.write("\t.canID = " + ID_name + "_ID" + ",\n\t.canXID = " + str(canXID) + ",\n\t.dlc = 8,\n\t" + payload_init
-                        + ",\n\t.canMessageStatus = 0\n};\n\n")
+                        + ",\n\t" + status_init + "\n};\n\n")
             if i != thisNode:
                 dot_c.write("uint8_t " + ID_name + "_checkDataIsFresh(void){\n\treturn CAN_checkDataIsFresh(&" + ID_name + ");\n}\n")
 
@@ -360,6 +371,8 @@ for node in range(0,numberOfNodes):
                 if has_multiplex and multiplex_signal_found:
                     # Multiplexed message - auto-cycle through mux values
                     dot_c.write("void CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + "_send(void){\n")
+                    dot_c.write("\t// Update message status for self-consumption\n")
+                    dot_c.write("\t*CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + ".canMessageStatus = 1;\n")
                     dot_c.write("\t// Auto-select current mux payload\n")
                     dot_c.write("\tCAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + ".payload = &CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + "_payloads[CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + "_mux];\n")
                     dot_c.write("\t// Send the message\n")
@@ -372,6 +385,8 @@ for node in range(0,numberOfNodes):
                 else:
                     # Non-multiplexed message - standard send
                     dot_c.write("void CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + "_send(void){\n")
+                    dot_c.write("\t// Update message status for self-consumption\n")
+                    dot_c.write("\t*CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + ".canMessageStatus = 1;\n")
                     dot_c.write("\tCAN_write(CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + ");\n}\n\n")
 
     #write the initializer function and close header guards

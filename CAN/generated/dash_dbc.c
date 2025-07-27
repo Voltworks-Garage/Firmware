@@ -5,6 +5,7 @@
  * dash NODE MESSAGES
  */
 static CAN_payload_S CAN_dash_status_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_dash_status_status = 0;
 #define CAN_dash_status_ID 0x701
 
 static CAN_message_S CAN_dash_status={
@@ -12,7 +13,7 @@ static CAN_message_S CAN_dash_status={
 	.canXID = 0,
 	.dlc = 8,
 	.payload = &CAN_dash_status_payload,
-	.canMessageStatus = 0
+	.canMessageStatus = &CAN_dash_status_status
 };
 
 #define CAN_DASH_STATUS_HEARTBEAT_RANGE 4
@@ -71,10 +72,13 @@ void CAN_dash_status_dlc_set(uint8_t dlc){
 	CAN_dash_status.dlc = dlc;
 }
 void CAN_dash_status_send(void){
+	// Update message status for self-consumption
+	*CAN_dash_status.canMessageStatus = 1;
 	CAN_write(CAN_dash_status);
 }
 
 static CAN_payload_S CAN_dash_command_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_dash_command_status = 0;
 #define CAN_dash_command_ID 0x702
 
 static CAN_message_S CAN_dash_command={
@@ -82,7 +86,7 @@ static CAN_message_S CAN_dash_command={
 	.canXID = 0,
 	.dlc = 8,
 	.payload = &CAN_dash_command_payload,
-	.canMessageStatus = 0
+	.canMessageStatus = &CAN_dash_command_status
 };
 
 #define CAN_DASH_COMMAND_IGNITIONREQUEST_RANGE 1
@@ -125,10 +129,13 @@ void CAN_dash_command_dlc_set(uint8_t dlc){
 	CAN_dash_command.dlc = dlc;
 }
 void CAN_dash_command_send(void){
+	// Update message status for self-consumption
+	*CAN_dash_command.canMessageStatus = 1;
 	CAN_write(CAN_dash_command);
 }
 
 static CAN_payload_S CAN_dash_data1_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_dash_data1_status = 0;
 #define CAN_dash_data1_ID 0x1806e5f5
 
 static CAN_message_S CAN_dash_data1={
@@ -136,7 +143,7 @@ static CAN_message_S CAN_dash_data1={
 	.canXID = 1,
 	.dlc = 8,
 	.payload = &CAN_dash_data1_payload,
-	.canMessageStatus = 0
+	.canMessageStatus = &CAN_dash_data1_status
 };
 
 #define CAN_DASH_DATA1_SPEED_RANGE 16
@@ -172,10 +179,13 @@ void CAN_dash_data1_dlc_set(uint8_t dlc){
 	CAN_dash_data1.dlc = dlc;
 }
 void CAN_dash_data1_send(void){
+	// Update message status for self-consumption
+	*CAN_dash_data1.canMessageStatus = 1;
 	CAN_write(CAN_dash_data1);
 }
 
 static CAN_payload_S CAN_dash_data2_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_dash_data2_status = 0;
 #define CAN_dash_data2_ID 0x704
 
 static CAN_message_S CAN_dash_data2={
@@ -183,7 +193,7 @@ static CAN_message_S CAN_dash_data2={
 	.canXID = 0,
 	.dlc = 8,
 	.payload = &CAN_dash_data2_payload,
-	.canMessageStatus = 0
+	.canMessageStatus = &CAN_dash_data2_status
 };
 
 #define CAN_DASH_DATA2_RUNNINGTIME_RANGE 16
@@ -219,6 +229,8 @@ void CAN_dash_data2_dlc_set(uint8_t dlc){
 	CAN_dash_data2.dlc = dlc;
 }
 void CAN_dash_data2_send(void){
+	// Update message status for self-consumption
+	*CAN_dash_data2.canMessageStatus = 1;
 	CAN_write(CAN_dash_data2);
 }
 

@@ -137,6 +137,7 @@ uint16_t CAN_bms_debug_CPU_peak_get(void){
  * motorcontroller NODE MESSAGES
  */
 static CAN_payload_S CAN_motorcontroller_motorStatus_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_motorcontroller_motorStatus_status = 0;
 #define CAN_motorcontroller_motorStatus_ID 0x731
 
 static CAN_message_S CAN_motorcontroller_motorStatus={
@@ -144,7 +145,7 @@ static CAN_message_S CAN_motorcontroller_motorStatus={
 	.canXID = 0,
 	.dlc = 8,
 	.payload = &CAN_motorcontroller_motorStatus_payload,
-	.canMessageStatus = 0
+	.canMessageStatus = &CAN_motorcontroller_motorStatus_status
 };
 
 #define CAN_MOTORCONTROLLER_MOTORSTATUS_MOTORSPEED_RANGE 8
@@ -208,10 +209,13 @@ void CAN_motorcontroller_motorStatus_dlc_set(uint8_t dlc){
 	CAN_motorcontroller_motorStatus.dlc = dlc;
 }
 void CAN_motorcontroller_motorStatus_send(void){
+	// Update message status for self-consumption
+	*CAN_motorcontroller_motorStatus.canMessageStatus = 1;
 	CAN_write(CAN_motorcontroller_motorStatus);
 }
 
 static CAN_payload_S CAN_motorcontroller_response_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_motorcontroller_response_status = 0;
 #define CAN_motorcontroller_response_ID 0x6ff
 
 static CAN_message_S CAN_motorcontroller_response={
@@ -219,7 +223,7 @@ static CAN_message_S CAN_motorcontroller_response={
 	.canXID = 0,
 	.dlc = 8,
 	.payload = &CAN_motorcontroller_response_payload,
-	.canMessageStatus = 0
+	.canMessageStatus = &CAN_motorcontroller_response_status
 };
 
 #define CAN_MOTORCONTROLLER_RESPONSE_BYTE1_RANGE 8
@@ -283,6 +287,8 @@ void CAN_motorcontroller_response_dlc_set(uint8_t dlc){
 	CAN_motorcontroller_response.dlc = dlc;
 }
 void CAN_motorcontroller_response_send(void){
+	// Update message status for self-consumption
+	*CAN_motorcontroller_response.canMessageStatus = 1;
 	CAN_write(CAN_motorcontroller_response);
 }
 

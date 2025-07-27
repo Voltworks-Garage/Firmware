@@ -522,6 +522,7 @@ uint16_t CAN_mcu_mcu_debug_M3_debug_value_16_get(void){
  */
 static CAN_payload_S CAN_bms_status_payloads[4] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_bms_status_mux = 0;
+static volatile uint8_t CAN_bms_status_status = 0;
 #define CAN_bms_status_ID 0x721
 
 static CAN_message_S CAN_bms_status={
@@ -529,7 +530,7 @@ static CAN_message_S CAN_bms_status={
 	.canXID = 0,
 	.dlc = 8,
 	.payload = 0,
-	.canMessageStatus = 0
+	.canMessageStatus = &CAN_bms_status_status
 };
 
 #define CAN_BMS_STATUS_MULTIPLEX_RANGE 2
@@ -689,6 +690,8 @@ void CAN_bms_status_dlc_set(uint8_t dlc){
 	CAN_bms_status.dlc = dlc;
 }
 void CAN_bms_status_send(void){
+	// Update message status for self-consumption
+	*CAN_bms_status.canMessageStatus = 1;
 	// Auto-select current mux payload
 	CAN_bms_status.payload = &CAN_bms_status_payloads[CAN_bms_status_mux];
 	// Send the message
@@ -701,6 +704,7 @@ void CAN_bms_status_send(void){
 }
 
 static CAN_payload_S CAN_bms_status_2_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_bms_status_2_status = 0;
 #define CAN_bms_status_2_ID 0x722
 
 static CAN_message_S CAN_bms_status_2={
@@ -708,7 +712,7 @@ static CAN_message_S CAN_bms_status_2={
 	.canXID = 0,
 	.dlc = 8,
 	.payload = &CAN_bms_status_2_payload,
-	.canMessageStatus = 0
+	.canMessageStatus = &CAN_bms_status_2_status
 };
 
 #define CAN_BMS_STATUS_2_DCDC_STATE_RANGE 1
@@ -799,10 +803,13 @@ void CAN_bms_status_2_dlc_set(uint8_t dlc){
 	CAN_bms_status_2.dlc = dlc;
 }
 void CAN_bms_status_2_send(void){
+	// Update message status for self-consumption
+	*CAN_bms_status_2.canMessageStatus = 1;
 	CAN_write(CAN_bms_status_2);
 }
 
 static CAN_payload_S CAN_bms_debug_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_bms_debug_status = 0;
 #define CAN_bms_debug_ID 0x723
 
 static CAN_message_S CAN_bms_debug={
@@ -810,7 +817,7 @@ static CAN_message_S CAN_bms_debug={
 	.canXID = 0,
 	.dlc = 8,
 	.payload = &CAN_bms_debug_payload,
-	.canMessageStatus = 0
+	.canMessageStatus = &CAN_bms_debug_status
 };
 
 #define CAN_BMS_DEBUG_BOOL0_RANGE 1
@@ -873,10 +880,13 @@ void CAN_bms_debug_dlc_set(uint8_t dlc){
 	CAN_bms_debug.dlc = dlc;
 }
 void CAN_bms_debug_send(void){
+	// Update message status for self-consumption
+	*CAN_bms_debug.canMessageStatus = 1;
 	CAN_write(CAN_bms_debug);
 }
 
 static CAN_payload_S CAN_bms_boot_response_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_bms_boot_response_status = 0;
 #define CAN_bms_boot_response_ID 0xa2
 
 static CAN_message_S CAN_bms_boot_response={
@@ -884,7 +894,7 @@ static CAN_message_S CAN_bms_boot_response={
 	.canXID = 0,
 	.dlc = 8,
 	.payload = &CAN_bms_boot_response_payload,
-	.canMessageStatus = 0
+	.canMessageStatus = &CAN_bms_boot_response_status
 };
 
 #define CAN_BMS_BOOT_RESPONSE_TYPE_RANGE 4
@@ -955,10 +965,13 @@ void CAN_bms_boot_response_dlc_set(uint8_t dlc){
 	CAN_bms_boot_response.dlc = dlc;
 }
 void CAN_bms_boot_response_send(void){
+	// Update message status for self-consumption
+	*CAN_bms_boot_response.canMessageStatus = 1;
 	CAN_write(CAN_bms_boot_response);
 }
 
 static CAN_payload_S CAN_bms_charger_request_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_bms_charger_request_status = 0;
 #define CAN_bms_charger_request_ID 0x1806e5f4
 
 static CAN_message_S CAN_bms_charger_request={
@@ -966,7 +979,7 @@ static CAN_message_S CAN_bms_charger_request={
 	.canXID = 1,
 	.dlc = 8,
 	.payload = &CAN_bms_charger_request_payload,
-	.canMessageStatus = 0
+	.canMessageStatus = &CAN_bms_charger_request_status
 };
 
 #define CAN_BMS_CHARGER_REQUEST_OUTPUT_VOLTAGE_HIGH_BYTE_RANGE 8
@@ -1026,15 +1039,54 @@ void CAN_bms_charger_request_byte_8_set(uint16_t byte_8){
 	CAN_bms_charger_request.payload->word3 &= ~0xFF00;
 	CAN_bms_charger_request.payload->word3 |= (data_scaled << 8) & 0xFF00;
 }
+uint8_t CAN_bms_charger_request_checkDataIsFresh(void){
+	return CAN_checkDataIsFresh(&CAN_bms_charger_request);
+}
+uint16_t CAN_bms_charger_request_output_voltage_high_byte_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_charger_request.payload, CAN_BMS_CHARGER_REQUEST_OUTPUT_VOLTAGE_HIGH_BYTE_OFFSET, CAN_BMS_CHARGER_REQUEST_OUTPUT_VOLTAGE_HIGH_BYTE_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_charger_request_output_voltage_low_byte_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_charger_request.payload, CAN_BMS_CHARGER_REQUEST_OUTPUT_VOLTAGE_LOW_BYTE_OFFSET, CAN_BMS_CHARGER_REQUEST_OUTPUT_VOLTAGE_LOW_BYTE_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_charger_request_output_current_high_byte_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_charger_request.payload, CAN_BMS_CHARGER_REQUEST_OUTPUT_CURRENT_HIGH_BYTE_OFFSET, CAN_BMS_CHARGER_REQUEST_OUTPUT_CURRENT_HIGH_BYTE_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_charger_request_output_current_low_byte_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_charger_request.payload, CAN_BMS_CHARGER_REQUEST_OUTPUT_CURRENT_LOW_BYTE_OFFSET, CAN_BMS_CHARGER_REQUEST_OUTPUT_CURRENT_LOW_BYTE_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_charger_request_start_charge_not_request_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_charger_request.payload, CAN_BMS_CHARGER_REQUEST_START_CHARGE_NOT_REQUEST_OFFSET, CAN_BMS_CHARGER_REQUEST_START_CHARGE_NOT_REQUEST_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_charger_request_charge_mode_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_charger_request.payload, CAN_BMS_CHARGER_REQUEST_CHARGE_MODE_OFFSET, CAN_BMS_CHARGER_REQUEST_CHARGE_MODE_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_charger_request_byte_7_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_charger_request.payload, CAN_BMS_CHARGER_REQUEST_BYTE_7_OFFSET, CAN_BMS_CHARGER_REQUEST_BYTE_7_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_charger_request_byte_8_get(void){
+	uint16_t data = get_bits((size_t*)CAN_bms_charger_request.payload, CAN_BMS_CHARGER_REQUEST_BYTE_8_OFFSET, CAN_BMS_CHARGER_REQUEST_BYTE_8_RANGE);
+	return (data * 1.0) + 0;
+}
+
 void CAN_bms_charger_request_dlc_set(uint8_t dlc){
 	CAN_bms_charger_request.dlc = dlc;
 }
 void CAN_bms_charger_request_send(void){
+	// Update message status for self-consumption
+	*CAN_bms_charger_request.canMessageStatus = 1;
 	CAN_write(CAN_bms_charger_request);
 }
 
 static CAN_payload_S CAN_bms_cellVoltages_payloads[6] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_bms_cellVoltages_mux = 0;
+static volatile uint8_t CAN_bms_cellVoltages_status = 0;
 #define CAN_bms_cellVoltages_ID 0x725
 
 static CAN_message_S CAN_bms_cellVoltages={
@@ -1042,7 +1094,7 @@ static CAN_message_S CAN_bms_cellVoltages={
 	.canXID = 0,
 	.dlc = 8,
 	.payload = 0,
-	.canMessageStatus = 0
+	.canMessageStatus = &CAN_bms_cellVoltages_status
 };
 
 #define CAN_BMS_CELLVOLTAGES_MULTIPLEX_RANGE 4
@@ -1256,6 +1308,8 @@ void CAN_bms_cellVoltages_dlc_set(uint8_t dlc){
 	CAN_bms_cellVoltages.dlc = dlc;
 }
 void CAN_bms_cellVoltages_send(void){
+	// Update message status for self-consumption
+	*CAN_bms_cellVoltages.canMessageStatus = 1;
 	// Auto-select current mux payload
 	CAN_bms_cellVoltages.payload = &CAN_bms_cellVoltages_payloads[CAN_bms_cellVoltages_mux];
 	// Send the message
@@ -1267,8 +1321,9 @@ void CAN_bms_cellVoltages_send(void){
 	}
 }
 
-static CAN_payload_S CAN_bms_ltc_debug_payloads[3] __attribute__((aligned(sizeof(CAN_payload_S))));
+static CAN_payload_S CAN_bms_ltc_debug_payloads[4] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_bms_ltc_debug_mux = 0;
+static volatile uint8_t CAN_bms_ltc_debug_status = 0;
 #define CAN_bms_ltc_debug_ID 0x727
 
 static CAN_message_S CAN_bms_ltc_debug={
@@ -1276,7 +1331,7 @@ static CAN_message_S CAN_bms_ltc_debug={
 	.canXID = 0,
 	.dlc = 8,
 	.payload = 0,
-	.canMessageStatus = 0
+	.canMessageStatus = &CAN_bms_ltc_debug_status
 };
 
 #define CAN_BMS_LTC_DEBUG_MULTIPLEX_RANGE 2
@@ -1305,8 +1360,10 @@ static CAN_message_S CAN_bms_ltc_debug={
 #define CAN_BMS_LTC_DEBUG_M2_MAX_CELL_MV_OFFSET 15
 #define CAN_BMS_LTC_DEBUG_M2_MIN_CELL_MV_RANGE 13
 #define CAN_BMS_LTC_DEBUG_M2_MIN_CELL_MV_OFFSET 28
-#define CAN_BMS_LTC_DEBUG_M2_MAX_CHARGE_CURRENT_ALLOWED_RANGE 16
-#define CAN_BMS_LTC_DEBUG_M2_MAX_CHARGE_CURRENT_ALLOWED_OFFSET 41
+#define CAN_BMS_LTC_DEBUG_M2_MAX_CHARGE_CURRENT_ALLOWED_MA_RANGE 16
+#define CAN_BMS_LTC_DEBUG_M2_MAX_CHARGE_CURRENT_ALLOWED_MA_OFFSET 41
+#define CAN_BMS_LTC_DEBUG_M3_MAX_CHARGE_VOLTAGE_ALLOWED_MV_RANGE 16
+#define CAN_BMS_LTC_DEBUG_M3_MAX_CHARGE_VOLTAGE_ALLOWED_MV_OFFSET 2
 
 void CAN_bms_ltc_debug_M0_ltc_state_set(uint16_t ltc_state){
 	uint16_t data_scaled = (ltc_state - 0) / 1.0;
@@ -1378,12 +1435,19 @@ void CAN_bms_ltc_debug_M2_min_cell_mV_set(uint16_t min_cell_mV){
 	CAN_bms_ltc_debug_payloads[2].word2 &= ~0x01FF;
 	CAN_bms_ltc_debug_payloads[2].word2 |= (data_scaled >> 4) & 0x01FF;
 }
-void CAN_bms_ltc_debug_M2_max_charge_current_allowed_set(uint16_t max_charge_current_allowed){
-	uint16_t data_scaled = (max_charge_current_allowed - 0) / 1.0;
+void CAN_bms_ltc_debug_M2_max_charge_current_allowed_mA_set(uint16_t max_charge_current_allowed_mA){
+	uint16_t data_scaled = (max_charge_current_allowed_mA - 0) / 1.0;
 	CAN_bms_ltc_debug_payloads[2].word2 &= ~0xFE00;
 	CAN_bms_ltc_debug_payloads[2].word2 |= (data_scaled << 9) & 0xFE00;
 	CAN_bms_ltc_debug_payloads[2].word3 &= ~0x01FF;
 	CAN_bms_ltc_debug_payloads[2].word3 |= (data_scaled >> 7) & 0x01FF;
+}
+void CAN_bms_ltc_debug_M3_max_charge_voltage_allowed_mV_set(uint16_t max_charge_voltage_allowed_mV){
+	uint16_t data_scaled = (max_charge_voltage_allowed_mV - 0) / 1.0;
+	CAN_bms_ltc_debug_payloads[3].word0 &= ~0xFFFC;
+	CAN_bms_ltc_debug_payloads[3].word0 |= (data_scaled << 2) & 0xFFFC;
+	CAN_bms_ltc_debug_payloads[3].word1 &= ~0x0003;
+	CAN_bms_ltc_debug_payloads[3].word1 |= (data_scaled >> 14) & 0x0003;
 }
 uint8_t CAN_bms_ltc_debug_checkDataIsFresh(void){
 	return CAN_checkDataIsFresh(&CAN_bms_ltc_debug);
@@ -1440,8 +1504,12 @@ uint16_t CAN_bms_ltc_debug_M2_min_cell_mV_get(void){
 	uint16_t data = get_bits((size_t*)&CAN_bms_ltc_debug_payloads[2], CAN_BMS_LTC_DEBUG_M2_MIN_CELL_MV_OFFSET, CAN_BMS_LTC_DEBUG_M2_MIN_CELL_MV_RANGE);
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_bms_ltc_debug_M2_max_charge_current_allowed_get(void){
-	uint16_t data = get_bits((size_t*)&CAN_bms_ltc_debug_payloads[2], CAN_BMS_LTC_DEBUG_M2_MAX_CHARGE_CURRENT_ALLOWED_OFFSET, CAN_BMS_LTC_DEBUG_M2_MAX_CHARGE_CURRENT_ALLOWED_RANGE);
+uint16_t CAN_bms_ltc_debug_M2_max_charge_current_allowed_mA_get(void){
+	uint16_t data = get_bits((size_t*)&CAN_bms_ltc_debug_payloads[2], CAN_BMS_LTC_DEBUG_M2_MAX_CHARGE_CURRENT_ALLOWED_MA_OFFSET, CAN_BMS_LTC_DEBUG_M2_MAX_CHARGE_CURRENT_ALLOWED_MA_RANGE);
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_ltc_debug_M3_max_charge_voltage_allowed_mV_get(void){
+	uint16_t data = get_bits((size_t*)&CAN_bms_ltc_debug_payloads[3], CAN_BMS_LTC_DEBUG_M3_MAX_CHARGE_VOLTAGE_ALLOWED_MV_OFFSET, CAN_BMS_LTC_DEBUG_M3_MAX_CHARGE_VOLTAGE_ALLOWED_MV_RANGE);
 	return (data * 1.0) + 0;
 }
 
@@ -1449,10 +1517,10 @@ void CAN_bms_ltc_debug_dlc_set(uint8_t dlc){
 	CAN_bms_ltc_debug.dlc = dlc;
 }
 void CAN_bms_ltc_debug_send(void){
+	// Update message status for self-consumption
+	*CAN_bms_ltc_debug.canMessageStatus = 1;
 	// Auto-select current mux payload
 	CAN_bms_ltc_debug.payload = &CAN_bms_ltc_debug_payloads[CAN_bms_ltc_debug_mux];
-	// Update message status for self-consumption
-	CAN_bms_ltc_debug.canMessageStatus = 1;
 	// Send the message
 	CAN_write(CAN_bms_ltc_debug);
 	// Increment mux counter for next time
@@ -1464,6 +1532,7 @@ void CAN_bms_ltc_debug_send(void){
 
 static CAN_payload_S CAN_bms_cellTemperaturs_payloads[6] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_bms_cellTemperaturs_mux = 0;
+static volatile uint8_t CAN_bms_cellTemperaturs_status = 0;
 #define CAN_bms_cellTemperaturs_ID 0x726
 
 static CAN_message_S CAN_bms_cellTemperaturs={
@@ -1471,7 +1540,7 @@ static CAN_message_S CAN_bms_cellTemperaturs={
 	.canXID = 0,
 	.dlc = 8,
 	.payload = 0,
-	.canMessageStatus = 0
+	.canMessageStatus = &CAN_bms_cellTemperaturs_status
 };
 
 #define CAN_BMS_CELLTEMPERATURS_MULTIPLEX_RANGE 4
@@ -1673,6 +1742,8 @@ void CAN_bms_cellTemperaturs_dlc_set(uint8_t dlc){
 	CAN_bms_cellTemperaturs.dlc = dlc;
 }
 void CAN_bms_cellTemperaturs_send(void){
+	// Update message status for self-consumption
+	*CAN_bms_cellTemperaturs.canMessageStatus = 1;
 	// Auto-select current mux payload
 	CAN_bms_cellTemperaturs.payload = &CAN_bms_cellTemperaturs_payloads[CAN_bms_cellTemperaturs_mux];
 	// Send the message
@@ -1889,6 +1960,9 @@ void CAN_DBC_init(void) {
 	// Pre-set mux value 2 in payload 2
 	CAN_bms_ltc_debug_payloads[2].word0 &= ~0x0003;
 	CAN_bms_ltc_debug_payloads[2].word0 |= (2 << 0) & 0x0003;
+	// Pre-set mux value 3 in payload 3
+	CAN_bms_ltc_debug_payloads[3].word0 &= ~0x0003;
+	CAN_bms_ltc_debug_payloads[3].word0 |= (3 << 0) & 0x0003;
 	// Initialize multiplexed message: cellTemperaturs
 	CAN_bms_cellTemperaturs.payload = &CAN_bms_cellTemperaturs_payloads[0];
 	// Pre-set mux value 0 in payload 0

@@ -12,6 +12,13 @@
 #include "bms.h"
 #include "ltc6802_1_nb.h"
 #include "SysTick.h"
+#include "bms_dbc.h"
+
+/******************************************************************************
+ * defines
+ *******************************************************************************/
+#define BMS_MAX_CHARGE_VOLTAGE_ALLOWED LTC6802_1_TOTAL_CELLS*4.2
+#define BMS_MAX_CHARGE_CURRENT_ALLOWED 30
 
 /******************************************************************************
  * State Machine Definition
@@ -62,6 +69,16 @@ static BMS_states_E nextState = bms_idle_state;
 static bool balancingAllowed = false;
 NEW_TIMER(error_timer, 3000); // 3000ms timer for BMS error operation
 NEW_TIMER(balancing_timer, 1000); // 1000ms timer for balancing operations
+static uint32_t voltageTargetmV = BMS_MAX_CHARGE_VOLTAGE_ALLOWED*1000;
+static uint32_t currentTargetmA = BMS_MAX_CHARGE_CURRENT_ALLOWED*1000;
+
+/******************************************************************************
+ * Private Function Prototypes
+ *******************************************************************************/
+uint16_t BMS_GetMaxCellVoltage(void);
+uint16_t BMS_GetMinCellVoltage(void);
+void BMS_TaperCurrentCommandForBalancing(void);
+
 
 /******************************************************************************
  * Public Function Implementations
@@ -107,6 +124,18 @@ void BMS_Run_1ms(void) {
 }
 
 void BMS_Run_10ms(void) {
+
+    // If we are getting a charge request, that means we are in a charging state. (negative logic)
+    if (CAN_bms_charger_request_start_charge_not_request_get()){
+        balancingAllowed = false;
+    } else {
+        balancingAllowed = true;
+    }
+
+    CAN_bms_ltc_debug_M2_max_charge_current_allowed_mA_set(currentTargetmA);
+    CAN_bms_ltc_debug_M3_max_charge_voltage_allowed_mV_set(voltageTargetmV);
+    
+
     /* This only happens during state transition
      * State transitions thus have priority over posting new events
      * State transitions always consist of an exit event to curState and entry event to nextState */
@@ -217,9 +246,16 @@ static void bms_balance(BMS_entry_types_E entry_type) {
             if (balancingAllowed) {
                 // If balancing is not active, start it
                 if(!LTC6802_1_IsBalancingActive()){
-                    LTC6802_1_StartCellBalancing();
-                    SysTick_TimerStart(balancing_timer);
+                    if (LTC6802_1_StartCellBalancing()  == LTC6802_1_ERROR_NONE) {
+                        // If error, move to error state
+                        nextState = bms_error_state;
+                    } else {
+                        SysTick_TimerStart(balancing_timer);
+                    }
                 }
+
+                // If a cell is over the balance threshold, start to taper the current
+                BMS_TaperCurrentCommandForBalancing();
             } else {
                 BMS_ClearAllCellBalancing();
             }
@@ -299,5 +335,53 @@ void BMS_ClearAllCellBalancing(void) {
 
 void BMS_SetBalancingIsAllowed(bool allowed){
     balancingAllowed = allowed;
+}
+
+
+
+uint16_t BMS_GetMaxCellVoltage(void){
+    return (LTC6802_1_GetHighestCell());
+}
+
+uint16_t BMS_GetMinCellVoltage(void){
+    return LTC6802_1_GetCellVoltage(LTC6802_1_GetLowestCell());
+}
+
+void BMS_TaperCurrentCommandForBalancing(void){
+    uint16_t cell_delta = 0;
+    cell_delta = BMS_GetMaxCellVoltage() - BMS_GetMinCellVoltage();
+    if (BMS_GetMaxCellVoltage() > MINIMUM_BALANCE_VOLTAGE_MV){
+        switch(cell_delta){
+            case 0 ... 50:
+                currentTargetmA = 5000;
+                break;
+            case 51 ... 100:
+                currentTargetmA = 2000;
+                break;
+            case 101 ... 200:
+                currentTargetmA = 500;
+                break;
+            default:
+                currentTargetmA = 100;
+                break;
+        }   
+
+        uint16_t cellVoltageRemaining = 4.2 - BMS_GetMaxCellVoltage();
+        switch (cellVoltageRemaining)
+        {
+        case 0 ... 50:
+            currentTargetmA = currentTargetmA * 0.1;
+            break;
+        case 51 ... 100:
+            currentTargetmA = currentTargetmA * 0.3;
+            break;
+        case 101 ... 200:
+            currentTargetmA = currentTargetmA * 0.5;
+            break;
+        default:
+            break;
+        }
+    }
+
 }
 

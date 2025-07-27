@@ -79,6 +79,9 @@ static uint16_t chargeCurrentTarget = 5 * CHARGER_CURRENT_SCALING;
  *******************************************************************************/
 uint8_t checkHeartBeat(void);
 uint8_t checkChargerErrors(void);
+void EV_CHARGER_charge_voltage_set(float volts);
+void EV_CHARGER_charge_current_set(float current);
+void EV_CHARGER_charge_request_set(bool request);
 
 /******************************************************************************
  * Function Definitions
@@ -206,7 +209,7 @@ void charging(EV_CHARGER_entry_types_E entry_type) {
 
             }
             //Always set the charge request to BMS
-            EV_CHARGER_charge_current_set(CAN_bms_ltc_debug_M2_max_charge_current_allowed_get());
+            EV_CHARGER_charge_current_set(CAN_bms_ltc_debug_M2_max_charge_current_allowed_mA_get());
 
             break;
 

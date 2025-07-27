@@ -188,6 +188,7 @@ uint16_t CAN_dash_data2_tripB_get(void){
  * mcu NODE MESSAGES
  */
 static CAN_payload_S CAN_mcu_status_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_mcu_status_status = 0;
 #define CAN_mcu_status_ID 0x711
 
 static CAN_message_S CAN_mcu_status={
@@ -195,7 +196,7 @@ static CAN_message_S CAN_mcu_status={
 	.canXID = 0,
 	.dlc = 8,
 	.payload = &CAN_mcu_status_payload,
-	.canMessageStatus = 0
+	.canMessageStatus = &CAN_mcu_status_status
 };
 
 #define CAN_MCU_STATUS_HEARTBEAT_RANGE 4
@@ -375,10 +376,13 @@ void CAN_mcu_status_dlc_set(uint8_t dlc){
 	CAN_mcu_status.dlc = dlc;
 }
 void CAN_mcu_status_send(void){
+	// Update message status for self-consumption
+	*CAN_mcu_status.canMessageStatus = 1;
 	CAN_write(CAN_mcu_status);
 }
 
 static CAN_payload_S CAN_mcu_command_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_mcu_command_status = 0;
 #define CAN_mcu_command_ID 0x712
 
 static CAN_message_S CAN_mcu_command={
@@ -386,7 +390,7 @@ static CAN_message_S CAN_mcu_command={
 	.canXID = 0,
 	.dlc = 8,
 	.payload = &CAN_mcu_command_payload,
-	.canMessageStatus = 0
+	.canMessageStatus = &CAN_mcu_command_status
 };
 
 #define CAN_MCU_COMMAND_DCDC_ENABLE_RANGE 1
@@ -429,10 +433,13 @@ void CAN_mcu_command_dlc_set(uint8_t dlc){
 	CAN_mcu_command.dlc = dlc;
 }
 void CAN_mcu_command_send(void){
+	// Update message status for self-consumption
+	*CAN_mcu_command.canMessageStatus = 1;
 	CAN_write(CAN_mcu_command);
 }
 
 static CAN_payload_S CAN_mcu_motorControllerRequest_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_mcu_motorControllerRequest_status = 0;
 #define CAN_mcu_motorControllerRequest_ID 0x700
 
 static CAN_message_S CAN_mcu_motorControllerRequest={
@@ -440,7 +447,7 @@ static CAN_message_S CAN_mcu_motorControllerRequest={
 	.canXID = 0,
 	.dlc = 8,
 	.payload = &CAN_mcu_motorControllerRequest_payload,
-	.canMessageStatus = 0
+	.canMessageStatus = &CAN_mcu_motorControllerRequest_status
 };
 
 #define CAN_MCU_MOTORCONTROLLERREQUEST_REQUESTTYPE_RANGE 8
@@ -455,10 +462,13 @@ void CAN_mcu_motorControllerRequest_dlc_set(uint8_t dlc){
 	CAN_mcu_motorControllerRequest.dlc = dlc;
 }
 void CAN_mcu_motorControllerRequest_send(void){
+	// Update message status for self-consumption
+	*CAN_mcu_motorControllerRequest.canMessageStatus = 1;
 	CAN_write(CAN_mcu_motorControllerRequest);
 }
 
 static CAN_payload_S CAN_mcu_boot_response_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_mcu_boot_response_status = 0;
 #define CAN_mcu_boot_response_ID 0xa2
 
 static CAN_message_S CAN_mcu_boot_response={
@@ -466,7 +476,7 @@ static CAN_message_S CAN_mcu_boot_response={
 	.canXID = 0,
 	.dlc = 8,
 	.payload = &CAN_mcu_boot_response_payload,
-	.canMessageStatus = 0
+	.canMessageStatus = &CAN_mcu_boot_response_status
 };
 
 #define CAN_MCU_BOOT_RESPONSE_TYPE_RANGE 4
@@ -537,11 +547,14 @@ void CAN_mcu_boot_response_dlc_set(uint8_t dlc){
 	CAN_mcu_boot_response.dlc = dlc;
 }
 void CAN_mcu_boot_response_send(void){
+	// Update message status for self-consumption
+	*CAN_mcu_boot_response.canMessageStatus = 1;
 	CAN_write(CAN_mcu_boot_response);
 }
 
 static CAN_payload_S CAN_mcu_mcu_debug_payloads[4] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_mcu_mcu_debug_mux = 0;
+static volatile uint8_t CAN_mcu_mcu_debug_status = 0;
 #define CAN_mcu_mcu_debug_ID 0x713
 
 static CAN_message_S CAN_mcu_mcu_debug={
@@ -549,7 +562,7 @@ static CAN_message_S CAN_mcu_mcu_debug={
 	.canXID = 0,
 	.dlc = 8,
 	.payload = 0,
-	.canMessageStatus = 0
+	.canMessageStatus = &CAN_mcu_mcu_debug_status
 };
 
 #define CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE 2
@@ -687,6 +700,8 @@ void CAN_mcu_mcu_debug_dlc_set(uint8_t dlc){
 	CAN_mcu_mcu_debug.dlc = dlc;
 }
 void CAN_mcu_mcu_debug_send(void){
+	// Update message status for self-consumption
+	*CAN_mcu_mcu_debug.canMessageStatus = 1;
 	// Auto-select current mux payload
 	CAN_mcu_mcu_debug.payload = &CAN_mcu_mcu_debug_payloads[CAN_mcu_mcu_debug_mux];
 	// Send the message

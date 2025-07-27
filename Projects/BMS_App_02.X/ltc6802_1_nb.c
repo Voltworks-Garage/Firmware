@@ -89,10 +89,7 @@ typedef void(*ltcStatePtr)(LTC6802_1_entry_types_E);
 // Invalid data return value
 #define LTC6802_1_INVALID_DATA      0
 
-// Cell balancing defines
-#define MAX_BALANCE_CELLS 5
-#define BALANCE_VOLTAGE_THRESHOLD_MV 5
-#define MINIMUM_BALANCE_VOLTAGE_MV 4100
+
 
 /******************************************************************************
  * Internal State Structure
@@ -146,7 +143,9 @@ typedef struct {
     
     // Cell balancing data
     uint16_t min_voltage;
+    uint8_t min_cell_number;
     uint16_t max_voltage;
+    uint8_t max_cell_number;
     uint8_t cells_to_balance[MAX_BALANCE_CELLS];
     uint8_t num_cells_to_balance;
     bool balancing_active;
@@ -228,6 +227,10 @@ void LTC6802_1_Run(void) {
     // Publish debug information
     CAN_bms_ltc_debug_M0_ltc_state_set(ltc_module.curState);
     CAN_bms_ltc_debug_M0_ErrorCount_set(ltc_module.last_error[0]);
+    CAN_bms_ltc_debug_M2_max_cell_mV_set(ltc_module.max_voltage);
+    CAN_bms_ltc_debug_M2_min_cell_mV_set(ltc_module.min_voltage);
+    CAN_bms_ltc_debug_M2_max_cell_delta_mV_set(ltc_module.max_voltage-ltc_module.min_voltage);
+
 
     // Check if SPI transaction is complete
     if (ltc_module.spi_transaction_active) {
@@ -890,9 +893,11 @@ uint8_t CalculateCellsToBalance(void) {
         if (cell_voltage != LTC6802_1_INVALID_DATA) {
             if (cell_voltage < ltc_module.min_voltage) {
                 ltc_module.min_voltage = cell_voltage;
+                ltc_module.min_cell_number = i;
             }
             if (cell_voltage > ltc_module.max_voltage) {
                 ltc_module.max_voltage = cell_voltage;
+                ltc_module.max_cell_number = i;
             }
         }
     }
@@ -1519,4 +1524,12 @@ float LTC6802_1_GetPackVoltage(void) {
 
 bool LTC6802_1_IsBalancingActive(void) {
     return ltc_module.balancing_active;
+}
+
+uint8_t LTC6802_1_GetHighestCell(void) {
+    return ltc_module.max_voltage;
+}
+
+uint8_t LTC6802_1_GetLowestCell(void){
+    return ltc_module.min_voltage;
 }

@@ -260,6 +260,7 @@ uint16_t CAN_bms_boot_response_byte7_get(void){
  * boot_host NODE MESSAGES
  */
 static CAN_payload_S CAN_boot_host_bms_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_boot_host_bms_status = 0;
 #define CAN_boot_host_bms_ID 0xa1
 
 static CAN_message_S CAN_boot_host_bms={
@@ -267,7 +268,7 @@ static CAN_message_S CAN_boot_host_bms={
 	.canXID = 0,
 	.dlc = 8,
 	.payload = &CAN_boot_host_bms_payload,
-	.canMessageStatus = 0
+	.canMessageStatus = &CAN_boot_host_bms_status
 };
 
 #define CAN_BOOT_HOST_BMS_TYPE_RANGE 4
@@ -338,10 +339,13 @@ void CAN_boot_host_bms_dlc_set(uint8_t dlc){
 	CAN_boot_host_bms.dlc = dlc;
 }
 void CAN_boot_host_bms_send(void){
+	// Update message status for self-consumption
+	*CAN_boot_host_bms.canMessageStatus = 1;
 	CAN_write(CAN_boot_host_bms);
 }
 
 static CAN_payload_S CAN_boot_host_mcu_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_boot_host_mcu_status = 0;
 #define CAN_boot_host_mcu_ID 0xa3
 
 static CAN_message_S CAN_boot_host_mcu={
@@ -349,7 +353,7 @@ static CAN_message_S CAN_boot_host_mcu={
 	.canXID = 0,
 	.dlc = 8,
 	.payload = &CAN_boot_host_mcu_payload,
-	.canMessageStatus = 0
+	.canMessageStatus = &CAN_boot_host_mcu_status
 };
 
 #define CAN_BOOT_HOST_MCU_TYPE_RANGE 4
@@ -420,10 +424,13 @@ void CAN_boot_host_mcu_dlc_set(uint8_t dlc){
 	CAN_boot_host_mcu.dlc = dlc;
 }
 void CAN_boot_host_mcu_send(void){
+	// Update message status for self-consumption
+	*CAN_boot_host_mcu.canMessageStatus = 1;
 	CAN_write(CAN_boot_host_mcu);
 }
 
 static CAN_payload_S CAN_boot_host_dash_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_boot_host_dash_status = 0;
 #define CAN_boot_host_dash_ID 0xa5
 
 static CAN_message_S CAN_boot_host_dash={
@@ -431,7 +438,7 @@ static CAN_message_S CAN_boot_host_dash={
 	.canXID = 0,
 	.dlc = 8,
 	.payload = &CAN_boot_host_dash_payload,
-	.canMessageStatus = 0
+	.canMessageStatus = &CAN_boot_host_dash_status
 };
 
 #define CAN_BOOT_HOST_DASH_TYPE_RANGE 4
@@ -502,6 +509,8 @@ void CAN_boot_host_dash_dlc_set(uint8_t dlc){
 	CAN_boot_host_dash.dlc = dlc;
 }
 void CAN_boot_host_dash_send(void){
+	// Update message status for self-consumption
+	*CAN_boot_host_dash.canMessageStatus = 1;
 	CAN_write(CAN_boot_host_dash);
 }
 

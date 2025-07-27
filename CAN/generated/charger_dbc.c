@@ -182,6 +182,7 @@ uint16_t CAN_bms_charger_request_byte_8_get(void){
  * charger NODE MESSAGES
  */
 static CAN_payload_S CAN_charger_status_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_charger_status_status = 0;
 #define CAN_charger_status_ID 0x18ff50e5
 
 static CAN_message_S CAN_charger_status={
@@ -189,7 +190,7 @@ static CAN_message_S CAN_charger_status={
 	.canXID = 1,
 	.dlc = 8,
 	.payload = &CAN_charger_status_payload,
-	.canMessageStatus = 0
+	.canMessageStatus = &CAN_charger_status_status
 };
 
 #define CAN_CHARGER_STATUS_OUTPUT_VOLTAGE_HIGH_BYTE_RANGE 8
@@ -276,6 +277,8 @@ void CAN_charger_status_dlc_set(uint8_t dlc){
 	CAN_charger_status.dlc = dlc;
 }
 void CAN_charger_status_send(void){
+	// Update message status for self-consumption
+	*CAN_charger_status.canMessageStatus = 1;
 	CAN_write(CAN_charger_status);
 }
 
