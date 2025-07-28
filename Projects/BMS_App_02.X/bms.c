@@ -65,6 +65,7 @@ static BMS_states_E nextState = bms_init_state;
 static bool bms_balancingAllowed = false;
 NEW_TIMER(error_timer, 3000); // 3000ms timer for BMS error operation
 NEW_TIMER(balancing_timer, 1000); // 1000ms timer for balancing operations
+NEW_TIMER(led_timer, 500);
 static uint32_t bms_voltageTargetmV = BMS_MAX_CHARGE_VOLTAGE_ALLOWED * 1000;
 static uint32_t bms_currentTargetmA = BMS_MAX_CHARGE_CURRENT_ALLOWED * 1000;
 static uint16_t bms_highestCellVoltagemV = 0;
@@ -174,6 +175,7 @@ static void bms_init(BMS_entry_types_E entry_type) {
 static void bms_running(BMS_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
+            SysTick_TimerStart(led_timer);
             break;
         case RUN:
             // Main BMS operation - process available data
@@ -209,8 +211,13 @@ static void bms_running(BMS_entry_types_E entry_type) {
             }
             
             // Toggle GPIO for debugging/indication
-            LTC6802_1_SetGPIO1(0, true);
-            LTC6802_1_SetGPIO1(1, true);
+            if(SysTick_TimeOut(led_timer)){
+                static bool led = false;
+                LTC6802_1_SetGPIO1(0, led);
+                LTC6802_1_SetGPIO1(1, !led);
+                led = !led;
+                SysTick_TimerStart(led_timer);
+            }
             
             break;
         case EXIT:

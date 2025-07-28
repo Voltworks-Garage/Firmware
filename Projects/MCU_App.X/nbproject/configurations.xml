@@ -7,7 +7,6 @@
       <logicalFolder name="f1" displayName="lib" projectFiles="true">
         <itemPath>../../Libraries/PIC33_plib/inc/pins.h</itemPath>
         <itemPath>../../Libraries/PIC33_plib/inc/uart.h</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/inc/clock.h</itemPath>
         <itemPath>../../Libraries/PIC33_plib/inc/ADC.h</itemPath>
         <itemPath>../../Libraries/PIC33_plib/inc/OC.h</itemPath>
         <itemPath>../../Libraries/PIC33_plib/inc/pps.h</itemPath>
@@ -19,6 +18,7 @@
         <itemPath>../../Libraries/Standard/utils.h</itemPath>
         <itemPath>../../Libraries/Drivers/ISO_TP_LITE/can_iso_tp_lite.h</itemPath>
         <itemPath>../../Libraries/Drivers/Buttons/button.h</itemPath>
+        <itemPath>../../Libraries/CommandService/commandService.h</itemPath>
       </logicalFolder>
       <logicalFolder name="MCC Generated Files"
                      displayName="MCC Generated Files"
@@ -76,7 +76,6 @@
                    projectFiles="true">
       <logicalFolder name="f1" displayName="lib" projectFiles="true">
         <itemPath>../../Libraries/PIC33_plib/src/uart.c</itemPath>
-        <itemPath>../../Libraries/PIC33_plib/src/clock.c</itemPath>
         <itemPath>../../Libraries/PIC33_plib/src/ADC.c</itemPath>
         <itemPath>../../Libraries/PIC33_plib/src/pins.c</itemPath>
         <itemPath>../../Libraries/PIC33_plib/src/OC.c</itemPath>
@@ -87,6 +86,7 @@
         <itemPath>../../Libraries/Drivers/ISO_TP_LITE/can_iso_tp_lite.c</itemPath>
         <itemPath>../../Libraries/Drivers/Buttons/button.c</itemPath>
         <itemPath>../../RTOS/Scheduler/SysTick.c</itemPath>
+        <itemPath>../../Libraries/CommandService/commandService.c</itemPath>
       </logicalFolder>
       <logicalFolder name="MCC Generated Files"
                      displayName="MCC Generated Files"
@@ -123,11 +123,13 @@
         <itemPath>pinSetup.c</itemPath>
         <itemPath>canPopulate.c</itemPath>
         <itemPath>lvBattery.c</itemPath>
+        <itemPath>commandService_config.h</itemPath>
       </logicalFolder>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
     <Elem>.</Elem>
+    <Elem>../../Libraries/CommandService</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -190,7 +192,7 @@
         <property key="enable-unroll-loops" value="false"/>
         <property key="expand-pragma-config" value="false"/>
         <property key="extra-include-directories"
-                  value=".;..\..\RTOS\Scheduler;..\..\Libraries\PIC33_plib\inc;..\..\Libraries\PIC33_plib\src;..\..\CAN\generated;..\..\Libraries\Standard;..\..\Libraries\Drivers\ISO_TP_LITE;..\..\Libraries\Drivers\Buttons"/>
+                  value=".;..\..\RTOS\Scheduler;..\..\Libraries\PIC33_plib\inc;..\..\Libraries\PIC33_plib\src;..\..\CAN\generated;..\..\Libraries\Standard;..\..\Libraries\Drivers\ISO_TP_LITE;..\..\Libraries\Drivers\Buttons;..\..\Libraries\CommandService"/>
         <property key="isolate-each-function" value="false"/>
         <property key="keep-inline" value="false"/>
         <property key="oXC16gcc-align-arr" value="false"/>

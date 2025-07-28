@@ -16,6 +16,9 @@
 
 // SPI timeout timer
 NEW_TIMER(ltc6802_spiTimer, 2);
+// Data staleness timers
+NEW_TIMER(voltage_data_timer, LTC6802_1_DATA_STALE_TIME_MS);
+NEW_TIMER(temp_data_timer, LTC6802_1_DATA_STALE_TIME_MS);
 
 /******************************************************************************
  * Internal Type Definitions
@@ -104,7 +107,6 @@ typedef struct {
     LTC6802_1_State_E curState;
     LTC6802_1_State_E nextState;
     // SPI timeout timer removed - now using NEW_TIMER system
-    uint8_t retry_count;
     
     // Debug information
     LTC6802_1_State_E last_successful_state;
@@ -121,11 +123,9 @@ typedef struct {
     LTC6802_1_Config_S config;
     uint8_t config_data[LTC6802_1_NUM_STACKS * LTC6802_1_CONFIG_REG_SIZE];
     
-    // Measurement data and timestamps
+    // Measurement data (staleness tracked by NEW_TIMER system)
     uint16_t voltage_data[LTC6802_1_TOTAL_CELLS];
     uint16_t temp_data[LTC6802_1_TOTAL_TEMPS];
-    uint32_t voltage_data_timestamp;
-    uint32_t temp_data_timestamp;
     bool voltage_data_valid;
     bool temp_data_valid;
     
@@ -181,9 +181,6 @@ static LTC6802_1_Module_S ltc_module;
 static LTC6802_1_Error_E StartSPITransaction(uint8_t command, 
                                             const uint8_t* tx_data, uint8_t data_len,
                                             bool expect_response, uint8_t response_len);
-static bool IsTimeout(uint32_t start_time, uint32_t timeout_ms);
-static bool IsDataStale(uint32_t timestamp);
-static void SetError(uint8_t stack_id, LTC6802_1_Error_E error);
 static void TransitionToIdle(void);
 static void TransitionToFaulted(LTC6802_1_Error_E error);
 
@@ -243,13 +240,6 @@ LTC6802_1_Error_E LTC6802_1_Init(void) {
 }
 
 void LTC6802_1_Run(void) {
-    // Publish debug information
-    CAN_bms_ltc_debug_M0_ltc_state_set(ltc_module.curState);
-    CAN_bms_ltc_debug_M0_ErrorCount_set(ltc_module.last_error[0]);
-    // CAN_bms_ltc_debug_M2_max_cell_mV_set(ltc_module.max_voltage);
-    // CAN_bms_ltc_debug_M2_min_cell_mV_set(ltc_module.min_voltage);
-    // CAN_bms_ltc_debug_M2_max_cell_delta_mV_set(ltc_module.max_voltage-ltc_module.min_voltage);
-
 
     // Check if SPI transaction is complete
     if (ltc_module.spi_transaction_active) {
@@ -299,6 +289,7 @@ void idle(LTC6802_1_entry_types_E entry_type) {
             break;
         case RUN:
             // Nothing to do in idle state
+            ltc_module.nextState = cell_read_state;
             break;
         case EXIT:
             break;
@@ -358,7 +349,7 @@ void cell_data(LTC6802_1_entry_types_E entry_type) {
         case RUN:
             // Process data from entire daisy chain and continue to temperature
             ProcessVoltageData();
-            ltc_module.voltage_data_timestamp = SysTick_Get();
+            SysTick_TimerStart(voltage_data_timer);
             ltc_module.nextState = temp_read_state;
             break;
         case EXIT:
@@ -415,7 +406,7 @@ void temp_data(LTC6802_1_entry_types_E entry_type) {
         case RUN:
             // Process data from entire daisy chain and continue to flags
             ProcessTemperatureData();
-            ltc_module.temp_data_timestamp = SysTick_Get();
+            SysTick_TimerStart(temp_data_timer);
             ltc_module.nextState = flag_data_state;
             break;
         case EXIT:
@@ -511,8 +502,6 @@ void config_readback(LTC6802_1_entry_types_E entry_type) {
 void faulted(LTC6802_1_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
-            // Set error for stack 0 as representative error
-            CAN_bms_ltc_debug_M0_lastErrorState_set(ltc_module.last_error[0]);
             break;
         case RUN:
             // Stay in faulted state until explicit reset
@@ -555,13 +544,11 @@ LTC6802_1_Error_E LTC6802_1_Resume(void) {
     // Resume autonomous operation by starting measurement cycle
     if (ltc_module.curState == halted_state) {
         ltc_module.nextState = cell_read_state;
-        ltc_module.retry_count = 0;
         SysTick_TimerStart(ltc6802_spiTimer);
         return LTC6802_1_ERROR_NONE;
     } else if (ltc_module.curState == idle_state) {
         // If idle, start autonomous cycle
         ltc_module.nextState = cell_read_state;
-        ltc_module.retry_count = 0;
         SysTick_TimerStart(ltc6802_spiTimer);
         return LTC6802_1_ERROR_NONE;
     } else {
@@ -629,7 +616,7 @@ uint16_t LTC6802_1_GetCellVoltage(uint8_t cell_id) {
         return LTC6802_1_INVALID_DATA;
     }
     
-    if (!ltc_module.voltage_data_valid || IsDataStale(ltc_module.voltage_data_timestamp)) {
+    if (!ltc_module.voltage_data_valid || SysTick_TimeOut(voltage_data_timer)) {
         return LTC6802_1_INVALID_DATA;
     }
     
@@ -649,7 +636,7 @@ float LTC6802_1_GetTemperatureVoltage(uint8_t temp_id) {
         return LTC6802_1_INVALID_DATA;
     }
     
-    if (!ltc_module.temp_data_valid || IsDataStale(ltc_module.temp_data_timestamp)) {
+    if (!ltc_module.temp_data_valid || SysTick_TimeOut(temp_data_timer)) {
         return LTC6802_1_INVALID_DATA;
     }
     
@@ -756,23 +743,10 @@ static LTC6802_1_Error_E StartSPITransaction(uint8_t command,
     }
 }
 
-static bool IsTimeout(uint32_t start_time, uint32_t timeout_ms) {
-    return (SysTick_Get() - start_time) >= timeout_ms;
-}
 
-static bool IsDataStale(uint32_t timestamp) {
-    return IsTimeout(timestamp, LTC6802_1_DATA_STALE_TIME_MS);
-}
-
-static void SetError(uint8_t stack_id, LTC6802_1_Error_E error) {
-    if (stack_id < LTC6802_1_NUM_STACKS) {
-        ltc_module.last_error[stack_id] = error;
-    }
-}
 
 static void TransitionToIdle(void) {
     ltc_module.nextState = idle_state;
-    ltc_module.retry_count = 0;
 }
 
 static void TransitionToFaulted(LTC6802_1_Error_E error) {
@@ -1285,7 +1259,9 @@ bool LTC6802_1_IsBalancingActive(void) {
 
 static void HandleError(LTC6802_1_Error_E error_code, uint8_t stack_id) {
     // Update legacy error tracking for backward compatibility
-    SetError(stack_id, error_code);
+    if (stack_id < LTC6802_1_NUM_STACKS) {
+        ltc_module.last_error[stack_id] = error_code;
+    }
     
     // Create comprehensive error information
     LTC6802_1_Error_Info_S error_info = {
@@ -1441,13 +1417,11 @@ static LTC6802_1_Error_E AttemptErrorRecovery(const LTC6802_1_Error_Info_S* erro
         case LTC6802_1_ERROR_DATA_CORRUPTION:
             // Reset SPI and restart measurement cycle
             spi1ResetBufferedTransaction();
-            ltc_module.retry_count = 0;
             ltc_module.nextState = cell_read_state;
             return LTC6802_1_ERROR_NONE;
             
         case LTC6802_1_ERROR_ADC_TIMEOUT:
             // Restart ADC conversion
-            ltc_module.retry_count = 0;
             ltc_module.nextState = cell_read_state;
             return LTC6802_1_ERROR_NONE;
             

@@ -1,5 +1,4 @@
 #include "uart.h"
-#include "clock.h"
 
 #define BUFFER_SIZE 1024
 #define QUEUE_SIZE 32
@@ -97,7 +96,7 @@ static uint16_t delayTime;
 uint8_t Uart1Init(uint32_t baudRate, uint32_t clock_freq) {
     // Configure oscillator as needed
     uint32_t FP = clock_freq / 2;
-    if (FP <= FREQ_250KHZ) {
+    if (FP <= 250000) {
         return 0; //too slow for UART
     }
     uint16_t BRGVAL = (uint16_t) (((FP / baudRate) / 16) - 1);

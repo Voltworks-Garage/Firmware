@@ -34,6 +34,7 @@
 #include "IO.h"
 #include "MCU_dbc.h"
 #include "StateMachine.h"
+#include "commandService.h"
 
 /******************************************************************************
  * Constants
@@ -84,6 +85,9 @@ void Tsk_init(void) {
     PinSetup_Init(); //Pin setup should be first
     CAN_DBC_init(); //Init the CAN System Service
     StateMachine_Init(); //Init state machine
+    CommandService_Init();
+    WATCHDOG_TimerClear();
+    WATCHDOG_TimerSoftwareEnable();
 
     tskService_print("Hello World, Task Init Done.\n"); //hi
     tskService_print("Reset Reason: %x %x\n",(uint8_t)(RCON>>8), (uint8_t)RCON); 
@@ -101,8 +105,8 @@ void Tsk(void) {
  * Runs every 10ms
  */
 void Tsk_1ms(void) {
-    ClrWdt(); 
     run_iso_tp_1ms();
+    CommandService_Run();
     
     StateMachine_Run();
    
@@ -128,6 +132,7 @@ void Tsk_10ms(void) {
  * Runs every 100ms
  */
 void Tsk_100ms(void) {
+    WATCHDOG_TimerClear();
     SerialConsole_Run_100ms(); //Debug Serial Terminal Emulation
     LightsControl_Run_100ms(); //Run the System Lights layer (Responds to button presses, controls, etc...)
     HeatedGripControl_Run_100ms(); //Run Heated Grips. Currently activated by spare sw 2

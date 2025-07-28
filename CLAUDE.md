@@ -49,6 +49,24 @@ cd "/mnt/c/REPOS/Voltworks_Garage/Firmware/Projects/MCU_Bootloader.X"
 - Full path to make.exe required in WSL environment
 - Clean step removes previous build artifacts
 
+## MPLAB X Makefile Directory Hash Algorithm
+MPLAB X generates `_ext/[hash]` directories in Makefiles to avoid filename conflicts. The hash is calculated using Java's String hashCode algorithm on the source directory path, then taking the absolute value:
+
+```python
+def mplab_directory_hash(path):
+    h = 0
+    for c in path:
+        h = ((31 * h + ord(c)) % (2**32))
+        if h >= 2**31:
+            h -= 2**32
+    return abs(h)
+```
+
+Examples:
+- `../../Libraries/PIC33_plib/src` → `_ext/356824117`
+- `../../Libraries/Standard` → `_ext/1136797869`
+- `../../RTOS/Scheduler` → `_ext/1176946926`
+
 ## Git Workflow
 - After rebasing a branch, you MUST force push to update the remote branch: `git push --force-with-lease`
 - Use `--force-with-lease` instead of `--force` for safety (prevents overwriting other people's work)

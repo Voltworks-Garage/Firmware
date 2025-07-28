@@ -44,15 +44,15 @@ void CAN_populate_100ms(void){
 void CAN_populate_1000ms(void){
 
         CAN_bms_status_M0_state_set(1);
-        CAN_bms_status_M0_packVoltage_set(100.2);
-        CAN_bms_status_M0_SOC_set(50);
+        CAN_bms_status_M0_packVoltage_set(BMS_GetPackVoltage());
+        CAN_bms_status_M0_SOC_set((BMS_GetPackVoltage() - 60)*2.5);
         CAN_bms_status_M0_minTemp_set(14);
         CAN_bms_status_M0_maxTemp_set(65);
         CAN_bms_status_M0_packCurrent_set(10.5);
 
         CAN_bms_status_M1_stackVoltage1_set(BMS_GetStackVoltage(0));
         CAN_bms_status_M1_stackVoltage2_set(BMS_GetStackVoltage(1));
-        CAN_bms_status_M1_packVoltageSumOfStacks_set(BMS_GetPackVoltage());
+        CAN_bms_status_M1_packVoltageSumOfStacks_set(BMS_GetStackVoltage(0)+BMS_GetStackVoltage(1));
         CAN_bms_status_M1_mux1_signal4_set(ADC_GetValue(AN2));
 
         CAN_bms_cellVoltages_M0_cell_1_voltage_set(BMS_GetCellVoltage(0));
