@@ -39,8 +39,8 @@ uint16_t CAN_bms_debug_bool1_get(void);
 float CAN_bms_debug_float1_get(void);
 float CAN_bms_debug_float2_get(void);
 float CAN_bms_debug_VBUS_Voltage_get(void);
-uint16_t CAN_bms_debug_CPU_USAGE_get(void);
-uint16_t CAN_bms_debug_CPU_peak_get(void);
+float CAN_bms_debug_CPU_USAGE_get(void);
+float CAN_bms_debug_CPU_peak_get(void);
 
 /**********************************************************
  * motorcontroller NODE MESSAGES
@@ -82,7 +82,10 @@ void CAN_motorcontroller_response_send(void);
  */
 void CAN_DBC_init();
 
+void CAN_send_1ms(void);
 void CAN_send_10ms(void);
+void CAN_send_100ms(void);
+void CAN_send_1000ms(void);
 
 
 #endif /*motorcontroller_DBC_H*/

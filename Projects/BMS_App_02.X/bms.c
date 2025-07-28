@@ -134,8 +134,8 @@ void BMS_Run_10ms(void) {
         bms_balancingAllowed = true;
     }
 
-    CAN_bms_ltc_debug_M2_max_charge_current_allowed_mA_set(bms_currentTargetmA);
-    CAN_bms_ltc_debug_M3_max_charge_voltage_allowed_mV_set(bms_voltageTargetmV);
+    CAN_bms_status_M3_max_charge_current_mA_set(bms_currentTargetmA);
+    CAN_bms_status_M3_max_charge_voltage_mV_set(bms_voltageTargetmV);
     
 
     /* This only happens during state transition

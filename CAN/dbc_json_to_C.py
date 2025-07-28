@@ -450,12 +450,28 @@ for node in range(0,numberOfNodes):
                     continue
                 dot_c.write("\tCAN_configureMailbox(&CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + ");\n")
     dot_c.write("}\n")
-    for send_message_freq in send_message_dict:
-        dot_h.write("void CAN_send_" + send_message_freq + "ms(void);\n")
-        dot_c.write("\nvoid CAN_send_" + send_message_freq + "ms(void){\n")
-        for message in send_message_dict[send_message_freq]:
-            dot_c.write("\t{}();\n".format(message))
+    
+    # Always generate send functions for standard intervals, even if empty
+    standard_intervals = ["1", "10", "100", "1000"]
+    
+    for interval in standard_intervals:
+        dot_h.write("void CAN_send_" + interval + "ms(void);\n")
+        dot_c.write("\nvoid CAN_send_" + interval + "ms(void){\n")
+        if interval in send_message_dict:
+            for message in send_message_dict[interval]:
+                dot_c.write("\t{}();\n".format(message))
+        else:
+            dot_c.write("\t// No messages to send at this interval\n")
         dot_c.write("}\n")
+    
+    # Generate any additional non-standard intervals that exist in the data
+    for send_message_freq in send_message_dict:
+        if send_message_freq not in standard_intervals:
+            dot_h.write("void CAN_send_" + send_message_freq + "ms(void);\n")
+            dot_c.write("\nvoid CAN_send_" + send_message_freq + "ms(void){\n")
+            for message in send_message_dict[send_message_freq]:
+                dot_c.write("\t{}();\n".format(message))
+            dot_c.write("}\n")
     dot_h.write("\n\n#endif /*" + str(data["NODE"][node]["name"]) + "_DBC_H*/\n")
     dot_h.close
     dot_c.close

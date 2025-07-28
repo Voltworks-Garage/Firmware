@@ -175,30 +175,45 @@ def determine_signal_datatype(signal: Dict[str, Any]) -> Tuple[str, str]:
 
 
 def generate_bit_manipulation_code(signal: Dict[str, Any], payload_target: str, accessor: str) -> List[str]:
-    """Generate bit manipulation code for setting signal values."""
+    """Generate bit manipulation code for setting signal values with arbitrary bit lengths."""
     bit_offset = signal["bitOffset"]
     bit_length = signal["length"]
-    word = bit_offset // 16
-    shift = bit_offset % 16
     
     code_lines = []
+    code_lines.append(f"\t// Set {bit_length}-bit signal at bit offset {bit_offset}")
     
-    if shift + bit_length <= 16:
-        # Single word operation
-        mask = ((1 << bit_length) - 1) << shift
-        code_lines.append(f"\t{payload_target}{accessor}word{word} &= ~0x{mask:04X};")
-        code_lines.append(f"\t{payload_target}{accessor}word{word} |= (data_scaled << {shift}) & 0x{mask:04X};")
-    else:
-        # Split across two words
-        bits_first = 16 - shift
-        bits_second = bit_length - bits_first
-        low_mask = ((1 << bits_first) - 1) << shift
-        high_mask = (1 << bits_second) - 1
+    remaining_bits = bit_length
+    current_offset = bit_offset
+    shift_accumulator = 0
+    
+    while remaining_bits > 0:
+        word_index = current_offset // 16
+        bit_in_word = current_offset % 16
+        bits_available = 16 - bit_in_word
+        bits_to_write = min(remaining_bits, bits_available)
         
-        code_lines.append(f"\t{payload_target}{accessor}word{word} &= ~0x{low_mask:04X};")
-        code_lines.append(f"\t{payload_target}{accessor}word{word} |= (data_scaled << {shift}) & 0x{low_mask:04X};")
-        code_lines.append(f"\t{payload_target}{accessor}word{word + 1} &= ~0x{high_mask:04X};")
-        code_lines.append(f"\t{payload_target}{accessor}word{word + 1} |= (data_scaled >> {bits_first}) & 0x{high_mask:04X};")
+        # Create mask for this word
+        mask = ((1 << bits_to_write) - 1) << bit_in_word
+        
+        # Clear and set bits
+        code_lines.append(f"\t{payload_target}{accessor}word{word_index} &= ~0x{mask:04X};")
+        
+        # Calculate the correct shift for this word segment
+        if shift_accumulator == 0:
+            # First segment: shift data_scaled left to align with bit_in_word
+            if bit_in_word > 0:
+                code_lines.append(f"\t{payload_target}{accessor}word{word_index} |= (data_scaled << {bit_in_word}) & 0x{mask:04X};")
+            else:
+                code_lines.append(f"\t{payload_target}{accessor}word{word_index} |= data_scaled & 0x{mask:04X};")
+        else:
+            # Subsequent segments: extract the right bits from data_scaled
+            # We need bits [shift_accumulator : shift_accumulator + bits_to_write] from data_scaled
+            bits_to_shift_right = shift_accumulator - bit_in_word
+            code_lines.append(f"\t{payload_target}{accessor}word{word_index} |= (data_scaled >> {bits_to_shift_right}) & 0x{mask:04X};")
+        
+        remaining_bits -= bits_to_write
+        current_offset += bits_to_write
+        shift_accumulator += bits_to_write
     
     return code_lines
 
@@ -249,7 +264,7 @@ def write_getter_function(dot_h: Any, dot_c: Any, message_id: str, signal: Dict[
     signal_name = signal["name"]
     units = signal["units"]
     
-    datatype = "float" if units in ["V", "A", "degC"] else "uint16_t"
+    datatype, internal_datatype = determine_signal_datatype(signal)
     
     dot_h.write(f"{datatype} {message_id}_{function_name_suffix}_get(void);\n")
     dot_c.write(f"{datatype} {message_id}_{function_name_suffix}_get(void){{\n")
@@ -280,9 +295,47 @@ def write_getter_function(dot_h: Any, dot_c: Any, message_id: str, signal: Dict[
         # For non-multiplexed messages, use main payload
         payload_source = f"{message_id}.payload"
     
-    dot_c.write(f"\tuint16_t data = get_bits((size_t*){payload_source}, ")
-    dot_c.write(f"{message_id.upper()}_{signal_define_name}_OFFSET, ")
-    dot_c.write(f"{message_id.upper()}_{signal_define_name}_RANGE);\n")
+    # Generate hardcoded bit extraction for arbitrary bit lengths
+    bit_offset = signal["bitOffset"]
+    bit_length = signal["length"]
+    
+    # Determine payload access pattern
+    if is_multiplexed and multiplex_value is not None:
+        # For multiplexed signals, access specific payload array element directly
+        payload_access = f"{message_id}_payloads[{multiplex_value}]"
+        accessor = "."  # Direct struct access
+    else:
+        # For non-multiplexed or main payload access
+        if payload_source.endswith(".payload"):
+            payload_access = payload_source
+            accessor = "->"  # Pointer access
+        else:
+            payload_access = f"(*{payload_source})"
+            accessor = "."  # Dereferenced struct access
+    
+    # Generate hardcoded bit extraction for arbitrary lengths
+    dot_c.write(f"\t// Extract {bit_length}-bit signal at bit offset {bit_offset}\n")
+    dot_c.write(f"\t{internal_datatype} data = 0;\n")
+    
+    remaining_bits = bit_length
+    current_offset = bit_offset
+    shift_accumulator = 0
+    
+    while remaining_bits > 0:
+        word_index = current_offset // 16
+        bit_in_word = current_offset % 16
+        bits_available = 16 - bit_in_word
+        bits_to_extract = min(remaining_bits, bits_available)
+        
+        # Create mask for this extraction
+        mask = ((1 << bits_to_extract) - 1) << bit_in_word
+        
+        dot_c.write(f"\tdata |= ({internal_datatype})(({payload_access}{accessor}word{word_index} & 0x{mask:04X}) >> {bit_in_word}) << {shift_accumulator};\n")
+        
+        remaining_bits -= bits_to_extract
+        current_offset += bits_to_extract
+        shift_accumulator += bits_to_extract
+    
     dot_c.write(f"\treturn (data * {signal['scale']}) + {signal['offset']};\n}}\n")
 
 
@@ -631,12 +684,27 @@ def write_initialization_function(dot_c: Any, nodes: List[Dict[str, Any]], curre
 
 def write_frequency_send_functions(dot_h: Any, dot_c: Any, send_message_dict: Dict[str, List[str]]) -> None:
     """Write frequency-based send functions."""
-    for freq, messages in send_message_dict.items():
-        dot_h.write(f"void CAN_send_{freq}ms(void);\n")
-        dot_c.write(f"\nvoid CAN_send_{freq}ms(void){{\n")
-        for message_func in messages:
-            dot_c.write(f"\t{message_func}();\n")
+    # Always generate send functions for standard intervals, even if empty
+    standard_intervals = ["1", "10", "100", "1000"]
+    
+    for interval in standard_intervals:
+        dot_h.write(f"void CAN_send_{interval}ms(void);\n")
+        dot_c.write(f"\nvoid CAN_send_{interval}ms(void){{\n")
+        if interval in send_message_dict:
+            for message_func in send_message_dict[interval]:
+                dot_c.write(f"\t{message_func}();\n")
+        else:
+            dot_c.write(f"\t// No messages to send at this interval\n")
         dot_c.write("}\n")
+    
+    # Generate any additional non-standard intervals that exist in the data
+    for freq, messages in send_message_dict.items():
+        if freq not in standard_intervals:
+            dot_h.write(f"void CAN_send_{freq}ms(void);\n")
+            dot_c.write(f"\nvoid CAN_send_{freq}ms(void){{\n")
+            for message_func in messages:
+                dot_c.write(f"\t{message_func}();\n")
+            dot_c.write("}\n")
 
 
 def write_file_footers(dot_h: Any, node_name: str) -> None:

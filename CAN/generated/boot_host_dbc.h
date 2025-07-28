@@ -46,8 +46,8 @@ uint16_t CAN_bms_debug_bool1_get(void);
 float CAN_bms_debug_float1_get(void);
 float CAN_bms_debug_float2_get(void);
 float CAN_bms_debug_VBUS_Voltage_get(void);
-uint16_t CAN_bms_debug_CPU_USAGE_get(void);
-uint16_t CAN_bms_debug_CPU_peak_get(void);
+float CAN_bms_debug_CPU_USAGE_get(void);
+float CAN_bms_debug_CPU_peak_get(void);
 
 uint8_t CAN_bms_boot_response_checkDataIsFresh(void);
 uint16_t CAN_bms_boot_response_type_get(void);
@@ -120,6 +120,9 @@ void CAN_boot_host_dash_send(void);
 void CAN_DBC_init();
 
 void CAN_send_1ms(void);
+void CAN_send_10ms(void);
+void CAN_send_100ms(void);
+void CAN_send_1000ms(void);
 
 
 #endif /*boot_host_DBC_H*/

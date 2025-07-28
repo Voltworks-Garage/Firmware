@@ -32,23 +32,33 @@ uint8_t CAN_mcu_command_checkDataIsFresh(void){
 	return CAN_checkDataIsFresh(&CAN_mcu_command);
 }
 uint16_t CAN_mcu_command_DCDC_enable_get(void){
-	uint16_t data = get_bits((size_t*)CAN_mcu_command.payload, CAN_MCU_COMMAND_DCDC_ENABLE_OFFSET, CAN_MCU_COMMAND_DCDC_ENABLE_RANGE);
+	// Extract 1-bit signal at bit offset 0
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x0001) >> 0) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_mcu_command_ev_charger_enable_get(void){
-	uint16_t data = get_bits((size_t*)CAN_mcu_command.payload, CAN_MCU_COMMAND_EV_CHARGER_ENABLE_OFFSET, CAN_MCU_COMMAND_EV_CHARGER_ENABLE_RANGE);
+	// Extract 1-bit signal at bit offset 1
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x0002) >> 1) << 0;
 	return (data * 1.0) + 0;
 }
 float CAN_mcu_command_ev_charger_current_get(void){
-	uint16_t data = get_bits((size_t*)CAN_mcu_command.payload, CAN_MCU_COMMAND_EV_CHARGER_CURRENT_OFFSET, CAN_MCU_COMMAND_EV_CHARGER_CURRENT_RANGE);
+	// Extract 13-bit signal at bit offset 2
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x7FFC) >> 2) << 0;
 	return (data * 0.1) + 0;
 }
 uint16_t CAN_mcu_command_precharge_enable_get(void){
-	uint16_t data = get_bits((size_t*)CAN_mcu_command.payload, CAN_MCU_COMMAND_PRECHARGE_ENABLE_OFFSET, CAN_MCU_COMMAND_PRECHARGE_ENABLE_RANGE);
+	// Extract 1-bit signal at bit offset 15
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x8000) >> 15) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_mcu_command_motor_controller_enable_get(void){
-	uint16_t data = get_bits((size_t*)CAN_mcu_command.payload, CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_OFFSET, CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_RANGE);
+	// Extract 1-bit signal at bit offset 16
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_command.payload->word1 & 0x0001) >> 0) << 0;
 	return (data * 1.0) + 0;
 }
 
@@ -85,39 +95,57 @@ uint8_t CAN_mcu_boot_response_checkDataIsFresh(void){
 	return CAN_checkDataIsFresh(&CAN_mcu_boot_response);
 }
 uint16_t CAN_mcu_boot_response_type_get(void){
-	uint16_t data = get_bits((size_t*)CAN_mcu_boot_response.payload, CAN_MCU_BOOT_RESPONSE_TYPE_OFFSET, CAN_MCU_BOOT_RESPONSE_TYPE_RANGE);
+	// Extract 4-bit signal at bit offset 0
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_boot_response.payload->word0 & 0x000F) >> 0) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_mcu_boot_response_code_get(void){
-	uint16_t data = get_bits((size_t*)CAN_mcu_boot_response.payload, CAN_MCU_BOOT_RESPONSE_CODE_OFFSET, CAN_MCU_BOOT_RESPONSE_CODE_RANGE);
+	// Extract 4-bit signal at bit offset 4
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_boot_response.payload->word0 & 0x00F0) >> 4) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_mcu_boot_response_byte1_get(void){
-	uint16_t data = get_bits((size_t*)CAN_mcu_boot_response.payload, CAN_MCU_BOOT_RESPONSE_BYTE1_OFFSET, CAN_MCU_BOOT_RESPONSE_BYTE1_RANGE);
+	// Extract 8-bit signal at bit offset 8
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_boot_response.payload->word0 & 0xFF00) >> 8) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_mcu_boot_response_byte2_get(void){
-	uint16_t data = get_bits((size_t*)CAN_mcu_boot_response.payload, CAN_MCU_BOOT_RESPONSE_BYTE2_OFFSET, CAN_MCU_BOOT_RESPONSE_BYTE2_RANGE);
+	// Extract 8-bit signal at bit offset 16
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_boot_response.payload->word1 & 0x00FF) >> 0) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_mcu_boot_response_byte3_get(void){
-	uint16_t data = get_bits((size_t*)CAN_mcu_boot_response.payload, CAN_MCU_BOOT_RESPONSE_BYTE3_OFFSET, CAN_MCU_BOOT_RESPONSE_BYTE3_RANGE);
+	// Extract 8-bit signal at bit offset 24
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_boot_response.payload->word1 & 0xFF00) >> 8) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_mcu_boot_response_byte4_get(void){
-	uint16_t data = get_bits((size_t*)CAN_mcu_boot_response.payload, CAN_MCU_BOOT_RESPONSE_BYTE4_OFFSET, CAN_MCU_BOOT_RESPONSE_BYTE4_RANGE);
+	// Extract 8-bit signal at bit offset 32
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_boot_response.payload->word2 & 0x00FF) >> 0) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_mcu_boot_response_byte5_get(void){
-	uint16_t data = get_bits((size_t*)CAN_mcu_boot_response.payload, CAN_MCU_BOOT_RESPONSE_BYTE5_OFFSET, CAN_MCU_BOOT_RESPONSE_BYTE5_RANGE);
+	// Extract 8-bit signal at bit offset 40
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_boot_response.payload->word2 & 0xFF00) >> 8) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_mcu_boot_response_byte6_get(void){
-	uint16_t data = get_bits((size_t*)CAN_mcu_boot_response.payload, CAN_MCU_BOOT_RESPONSE_BYTE6_OFFSET, CAN_MCU_BOOT_RESPONSE_BYTE6_RANGE);
+	// Extract 8-bit signal at bit offset 48
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_boot_response.payload->word3 & 0x00FF) >> 0) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_mcu_boot_response_byte7_get(void){
-	uint16_t data = get_bits((size_t*)CAN_mcu_boot_response.payload, CAN_MCU_BOOT_RESPONSE_BYTE7_OFFSET, CAN_MCU_BOOT_RESPONSE_BYTE7_RANGE);
+	// Extract 8-bit signal at bit offset 56
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_boot_response.payload->word3 & 0xFF00) >> 8) << 0;
 	return (data * 1.0) + 0;
 }
 
@@ -153,31 +181,48 @@ uint8_t CAN_bms_debug_checkDataIsFresh(void){
 	return CAN_checkDataIsFresh(&CAN_bms_debug);
 }
 uint16_t CAN_bms_debug_bool0_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_BOOL0_OFFSET, CAN_BMS_DEBUG_BOOL0_RANGE);
+	// Extract 1-bit signal at bit offset 0
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_debug.payload->word0 & 0x0001) >> 0) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_debug_bool1_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_BOOL1_OFFSET, CAN_BMS_DEBUG_BOOL1_RANGE);
+	// Extract 1-bit signal at bit offset 1
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_debug.payload->word0 & 0x0002) >> 1) << 0;
 	return (data * 1.0) + 0;
 }
 float CAN_bms_debug_float1_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_FLOAT1_OFFSET, CAN_BMS_DEBUG_FLOAT1_RANGE);
+	// Extract 16-bit signal at bit offset 2
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_debug.payload->word0 & 0xFFFC) >> 2) << 0;
+	data |= (uint16_t)((CAN_bms_debug.payload->word1 & 0x0003) >> 0) << 14;
 	return (data * 0.01) + 0;
 }
 float CAN_bms_debug_float2_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_FLOAT2_OFFSET, CAN_BMS_DEBUG_FLOAT2_RANGE);
+	// Extract 16-bit signal at bit offset 18
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_debug.payload->word1 & 0xFFFC) >> 2) << 0;
+	data |= (uint16_t)((CAN_bms_debug.payload->word2 & 0x0003) >> 0) << 14;
 	return (data * 0.01) + 0;
 }
 float CAN_bms_debug_VBUS_Voltage_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_VBUS_VOLTAGE_OFFSET, CAN_BMS_DEBUG_VBUS_VOLTAGE_RANGE);
+	// Extract 10-bit signal at bit offset 34
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_debug.payload->word2 & 0x0FFC) >> 2) << 0;
 	return (data * 0.1) + 0;
 }
-uint16_t CAN_bms_debug_CPU_USAGE_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_CPU_USAGE_OFFSET, CAN_BMS_DEBUG_CPU_USAGE_RANGE);
+float CAN_bms_debug_CPU_USAGE_get(void){
+	// Extract 10-bit signal at bit offset 44
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_debug.payload->word2 & 0xF000) >> 12) << 0;
+	data |= (uint16_t)((CAN_bms_debug.payload->word3 & 0x003F) >> 0) << 4;
 	return (data * 0.1) + 0;
 }
-uint16_t CAN_bms_debug_CPU_peak_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_CPU_PEAK_OFFSET, CAN_BMS_DEBUG_CPU_PEAK_RANGE);
+float CAN_bms_debug_CPU_peak_get(void){
+	// Extract 10-bit signal at bit offset 54
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_debug.payload->word3 & 0xFFC0) >> 6) << 0;
 	return (data * 0.1) + 0;
 }
 
@@ -214,39 +259,57 @@ uint8_t CAN_bms_boot_response_checkDataIsFresh(void){
 	return CAN_checkDataIsFresh(&CAN_bms_boot_response);
 }
 uint16_t CAN_bms_boot_response_type_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_boot_response.payload, CAN_BMS_BOOT_RESPONSE_TYPE_OFFSET, CAN_BMS_BOOT_RESPONSE_TYPE_RANGE);
+	// Extract 4-bit signal at bit offset 0
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_boot_response.payload->word0 & 0x000F) >> 0) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_boot_response_code_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_boot_response.payload, CAN_BMS_BOOT_RESPONSE_CODE_OFFSET, CAN_BMS_BOOT_RESPONSE_CODE_RANGE);
+	// Extract 4-bit signal at bit offset 4
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_boot_response.payload->word0 & 0x00F0) >> 4) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_boot_response_byte1_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_boot_response.payload, CAN_BMS_BOOT_RESPONSE_BYTE1_OFFSET, CAN_BMS_BOOT_RESPONSE_BYTE1_RANGE);
+	// Extract 8-bit signal at bit offset 8
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_boot_response.payload->word0 & 0xFF00) >> 8) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_boot_response_byte2_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_boot_response.payload, CAN_BMS_BOOT_RESPONSE_BYTE2_OFFSET, CAN_BMS_BOOT_RESPONSE_BYTE2_RANGE);
+	// Extract 8-bit signal at bit offset 16
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_boot_response.payload->word1 & 0x00FF) >> 0) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_boot_response_byte3_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_boot_response.payload, CAN_BMS_BOOT_RESPONSE_BYTE3_OFFSET, CAN_BMS_BOOT_RESPONSE_BYTE3_RANGE);
+	// Extract 8-bit signal at bit offset 24
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_boot_response.payload->word1 & 0xFF00) >> 8) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_boot_response_byte4_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_boot_response.payload, CAN_BMS_BOOT_RESPONSE_BYTE4_OFFSET, CAN_BMS_BOOT_RESPONSE_BYTE4_RANGE);
+	// Extract 8-bit signal at bit offset 32
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_boot_response.payload->word2 & 0x00FF) >> 0) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_boot_response_byte5_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_boot_response.payload, CAN_BMS_BOOT_RESPONSE_BYTE5_OFFSET, CAN_BMS_BOOT_RESPONSE_BYTE5_RANGE);
+	// Extract 8-bit signal at bit offset 40
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_boot_response.payload->word2 & 0xFF00) >> 8) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_boot_response_byte6_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_boot_response.payload, CAN_BMS_BOOT_RESPONSE_BYTE6_OFFSET, CAN_BMS_BOOT_RESPONSE_BYTE6_RANGE);
+	// Extract 8-bit signal at bit offset 48
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_boot_response.payload->word3 & 0x00FF) >> 0) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_boot_response_byte7_get(void){
-	uint16_t data = get_bits((size_t*)CAN_bms_boot_response.payload, CAN_BMS_BOOT_RESPONSE_BYTE7_OFFSET, CAN_BMS_BOOT_RESPONSE_BYTE7_RANGE);
+	// Extract 8-bit signal at bit offset 56
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_boot_response.payload->word3 & 0xFF00) >> 8) << 0;
 	return (data * 1.0) + 0;
 }
 
@@ -292,46 +355,55 @@ static CAN_message_S CAN_boot_host_bms={
 
 void CAN_boot_host_bms_type_set(uint16_t type){
 	uint16_t data_scaled = (type - 0) / 1.0;
+	// Set 4-bit signal at bit offset 0
 	CAN_boot_host_bms.payload->word0 &= ~0x000F;
-	CAN_boot_host_bms.payload->word0 |= (data_scaled << 0) & 0x000F;
+	CAN_boot_host_bms.payload->word0 |= data_scaled & 0x000F;
 }
 void CAN_boot_host_bms_code_set(uint16_t code){
 	uint16_t data_scaled = (code - 0) / 1.0;
+	// Set 4-bit signal at bit offset 4
 	CAN_boot_host_bms.payload->word0 &= ~0x00F0;
 	CAN_boot_host_bms.payload->word0 |= (data_scaled << 4) & 0x00F0;
 }
 void CAN_boot_host_bms_byte1_set(uint16_t byte1){
 	uint16_t data_scaled = (byte1 - 0) / 1.0;
+	// Set 8-bit signal at bit offset 8
 	CAN_boot_host_bms.payload->word0 &= ~0xFF00;
 	CAN_boot_host_bms.payload->word0 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_boot_host_bms_byte2_set(uint16_t byte2){
 	uint16_t data_scaled = (byte2 - 0) / 1.0;
+	// Set 8-bit signal at bit offset 16
 	CAN_boot_host_bms.payload->word1 &= ~0x00FF;
-	CAN_boot_host_bms.payload->word1 |= (data_scaled << 0) & 0x00FF;
+	CAN_boot_host_bms.payload->word1 |= data_scaled & 0x00FF;
 }
 void CAN_boot_host_bms_byte3_set(uint16_t byte3){
 	uint16_t data_scaled = (byte3 - 0) / 1.0;
+	// Set 8-bit signal at bit offset 24
 	CAN_boot_host_bms.payload->word1 &= ~0xFF00;
 	CAN_boot_host_bms.payload->word1 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_boot_host_bms_byte4_set(uint16_t byte4){
 	uint16_t data_scaled = (byte4 - 0) / 1.0;
+	// Set 8-bit signal at bit offset 32
 	CAN_boot_host_bms.payload->word2 &= ~0x00FF;
-	CAN_boot_host_bms.payload->word2 |= (data_scaled << 0) & 0x00FF;
+	CAN_boot_host_bms.payload->word2 |= data_scaled & 0x00FF;
 }
 void CAN_boot_host_bms_byte5_set(uint16_t byte5){
 	uint16_t data_scaled = (byte5 - 0) / 1.0;
+	// Set 8-bit signal at bit offset 40
 	CAN_boot_host_bms.payload->word2 &= ~0xFF00;
 	CAN_boot_host_bms.payload->word2 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_boot_host_bms_byte6_set(uint16_t byte6){
 	uint16_t data_scaled = (byte6 - 0) / 1.0;
+	// Set 8-bit signal at bit offset 48
 	CAN_boot_host_bms.payload->word3 &= ~0x00FF;
-	CAN_boot_host_bms.payload->word3 |= (data_scaled << 0) & 0x00FF;
+	CAN_boot_host_bms.payload->word3 |= data_scaled & 0x00FF;
 }
 void CAN_boot_host_bms_byte7_set(uint16_t byte7){
 	uint16_t data_scaled = (byte7 - 0) / 1.0;
+	// Set 8-bit signal at bit offset 56
 	CAN_boot_host_bms.payload->word3 &= ~0xFF00;
 	CAN_boot_host_bms.payload->word3 |= (data_scaled << 8) & 0xFF00;
 }
@@ -377,46 +449,55 @@ static CAN_message_S CAN_boot_host_mcu={
 
 void CAN_boot_host_mcu_type_set(uint16_t type){
 	uint16_t data_scaled = (type - 0) / 1.0;
+	// Set 4-bit signal at bit offset 0
 	CAN_boot_host_mcu.payload->word0 &= ~0x000F;
-	CAN_boot_host_mcu.payload->word0 |= (data_scaled << 0) & 0x000F;
+	CAN_boot_host_mcu.payload->word0 |= data_scaled & 0x000F;
 }
 void CAN_boot_host_mcu_code_set(uint16_t code){
 	uint16_t data_scaled = (code - 0) / 1.0;
+	// Set 4-bit signal at bit offset 4
 	CAN_boot_host_mcu.payload->word0 &= ~0x00F0;
 	CAN_boot_host_mcu.payload->word0 |= (data_scaled << 4) & 0x00F0;
 }
 void CAN_boot_host_mcu_byte1_set(uint16_t byte1){
 	uint16_t data_scaled = (byte1 - 0) / 1.0;
+	// Set 8-bit signal at bit offset 8
 	CAN_boot_host_mcu.payload->word0 &= ~0xFF00;
 	CAN_boot_host_mcu.payload->word0 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_boot_host_mcu_byte2_set(uint16_t byte2){
 	uint16_t data_scaled = (byte2 - 0) / 1.0;
+	// Set 8-bit signal at bit offset 16
 	CAN_boot_host_mcu.payload->word1 &= ~0x00FF;
-	CAN_boot_host_mcu.payload->word1 |= (data_scaled << 0) & 0x00FF;
+	CAN_boot_host_mcu.payload->word1 |= data_scaled & 0x00FF;
 }
 void CAN_boot_host_mcu_byte3_set(uint16_t byte3){
 	uint16_t data_scaled = (byte3 - 0) / 1.0;
+	// Set 8-bit signal at bit offset 24
 	CAN_boot_host_mcu.payload->word1 &= ~0xFF00;
 	CAN_boot_host_mcu.payload->word1 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_boot_host_mcu_byte4_set(uint16_t byte4){
 	uint16_t data_scaled = (byte4 - 0) / 1.0;
+	// Set 8-bit signal at bit offset 32
 	CAN_boot_host_mcu.payload->word2 &= ~0x00FF;
-	CAN_boot_host_mcu.payload->word2 |= (data_scaled << 0) & 0x00FF;
+	CAN_boot_host_mcu.payload->word2 |= data_scaled & 0x00FF;
 }
 void CAN_boot_host_mcu_byte5_set(uint16_t byte5){
 	uint16_t data_scaled = (byte5 - 0) / 1.0;
+	// Set 8-bit signal at bit offset 40
 	CAN_boot_host_mcu.payload->word2 &= ~0xFF00;
 	CAN_boot_host_mcu.payload->word2 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_boot_host_mcu_byte6_set(uint16_t byte6){
 	uint16_t data_scaled = (byte6 - 0) / 1.0;
+	// Set 8-bit signal at bit offset 48
 	CAN_boot_host_mcu.payload->word3 &= ~0x00FF;
-	CAN_boot_host_mcu.payload->word3 |= (data_scaled << 0) & 0x00FF;
+	CAN_boot_host_mcu.payload->word3 |= data_scaled & 0x00FF;
 }
 void CAN_boot_host_mcu_byte7_set(uint16_t byte7){
 	uint16_t data_scaled = (byte7 - 0) / 1.0;
+	// Set 8-bit signal at bit offset 56
 	CAN_boot_host_mcu.payload->word3 &= ~0xFF00;
 	CAN_boot_host_mcu.payload->word3 |= (data_scaled << 8) & 0xFF00;
 }
@@ -462,46 +543,55 @@ static CAN_message_S CAN_boot_host_dash={
 
 void CAN_boot_host_dash_type_set(uint16_t type){
 	uint16_t data_scaled = (type - 0) / 1.0;
+	// Set 4-bit signal at bit offset 0
 	CAN_boot_host_dash.payload->word0 &= ~0x000F;
-	CAN_boot_host_dash.payload->word0 |= (data_scaled << 0) & 0x000F;
+	CAN_boot_host_dash.payload->word0 |= data_scaled & 0x000F;
 }
 void CAN_boot_host_dash_code_set(uint16_t code){
 	uint16_t data_scaled = (code - 0) / 1.0;
+	// Set 4-bit signal at bit offset 4
 	CAN_boot_host_dash.payload->word0 &= ~0x00F0;
 	CAN_boot_host_dash.payload->word0 |= (data_scaled << 4) & 0x00F0;
 }
 void CAN_boot_host_dash_byte1_set(uint16_t byte1){
 	uint16_t data_scaled = (byte1 - 0) / 1.0;
+	// Set 8-bit signal at bit offset 8
 	CAN_boot_host_dash.payload->word0 &= ~0xFF00;
 	CAN_boot_host_dash.payload->word0 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_boot_host_dash_byte2_set(uint16_t byte2){
 	uint16_t data_scaled = (byte2 - 0) / 1.0;
+	// Set 8-bit signal at bit offset 16
 	CAN_boot_host_dash.payload->word1 &= ~0x00FF;
-	CAN_boot_host_dash.payload->word1 |= (data_scaled << 0) & 0x00FF;
+	CAN_boot_host_dash.payload->word1 |= data_scaled & 0x00FF;
 }
 void CAN_boot_host_dash_byte3_set(uint16_t byte3){
 	uint16_t data_scaled = (byte3 - 0) / 1.0;
+	// Set 8-bit signal at bit offset 24
 	CAN_boot_host_dash.payload->word1 &= ~0xFF00;
 	CAN_boot_host_dash.payload->word1 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_boot_host_dash_byte4_set(uint16_t byte4){
 	uint16_t data_scaled = (byte4 - 0) / 1.0;
+	// Set 8-bit signal at bit offset 32
 	CAN_boot_host_dash.payload->word2 &= ~0x00FF;
-	CAN_boot_host_dash.payload->word2 |= (data_scaled << 0) & 0x00FF;
+	CAN_boot_host_dash.payload->word2 |= data_scaled & 0x00FF;
 }
 void CAN_boot_host_dash_byte5_set(uint16_t byte5){
 	uint16_t data_scaled = (byte5 - 0) / 1.0;
+	// Set 8-bit signal at bit offset 40
 	CAN_boot_host_dash.payload->word2 &= ~0xFF00;
 	CAN_boot_host_dash.payload->word2 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_boot_host_dash_byte6_set(uint16_t byte6){
 	uint16_t data_scaled = (byte6 - 0) / 1.0;
+	// Set 8-bit signal at bit offset 48
 	CAN_boot_host_dash.payload->word3 &= ~0x00FF;
-	CAN_boot_host_dash.payload->word3 |= (data_scaled << 0) & 0x00FF;
+	CAN_boot_host_dash.payload->word3 |= data_scaled & 0x00FF;
 }
 void CAN_boot_host_dash_byte7_set(uint16_t byte7){
 	uint16_t data_scaled = (byte7 - 0) / 1.0;
+	// Set 8-bit signal at bit offset 56
 	CAN_boot_host_dash.payload->word3 &= ~0xFF00;
 	CAN_boot_host_dash.payload->word3 |= (data_scaled << 8) & 0xFF00;
 }
@@ -525,4 +615,16 @@ void CAN_send_1ms(void){
 	CAN_boot_host_bms_send();
 	CAN_boot_host_mcu_send();
 	CAN_boot_host_dash_send();
+}
+
+void CAN_send_10ms(void){
+	// No messages to send at this interval
+}
+
+void CAN_send_100ms(void){
+	// No messages to send at this interval
+}
+
+void CAN_send_1000ms(void){
+	// No messages to send at this interval
 }

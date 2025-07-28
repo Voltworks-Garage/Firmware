@@ -666,26 +666,43 @@
                     "freq": 10,
                     "consumers": [
                         "mcu",
-                        "dash"
+                        "dash",
+                        "bms"
                     ],
                     "signals": [
                         {
-                            "name": "Multiplex",
+                            "name": "multiplex",
                             "length": 2,
                             "scale": 1.0,
                             "offset": 0,
                             "units": ""
                         },
                         {
-                            "name": "state",
-                            "length": 3,
+                            "name": "bms_state",
+                            "length": 4,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "",
+                            "units": "enum",
                             "multiplex": 0
                         },
                         {
-                            "name": "SOC",
+                            "name": "pack_voltage",
+                            "length": 16,
+                            "scale": 0.01,
+                            "offset": 0,
+                            "units": "V",
+                            "multiplex": 0
+                        },
+                        {
+                            "name": "pack_current",
+                            "length": 16,
+                            "scale": 0.01,
+                            "offset": -320,
+                            "units": "A",
+                            "multiplex": 0
+                        },
+                        {
+                            "name": "soc_percent",
                             "length": 8,
                             "scale": 0.5,
                             "offset": 0,
@@ -693,39 +710,23 @@
                             "multiplex": 0
                         },
                         {
-                            "name": "packVoltage",
-                            "length": 16,
-                            "scale": 0.01,
-                            "offset": 0,
-                            "units": "V",
-                            "multiplex": 0
-                        },
-                        {
-                            "name": "packCurrent",
-                            "length": 16,
-                            "scale": 0.01,
-                            "offset": 0,
-                            "units": "A",
-                            "multiplex": 0
-                        },
-                        {
-                            "name": "minTemp",
-                            "length": 9,
-                            "scale": 0.2,
+                            "name": "pack_temp_min",
+                            "length": 8,
+                            "scale": 1.0,
                             "offset": -40,
                             "units": "degC",
                             "multiplex": 0
                         },
                         {
-                            "name": "maxTemp",
-                            "length": 10,
-                            "scale": 0.2,
+                            "name": "pack_temp_max",
+                            "length": 8,
+                            "scale": 1.0,
                             "offset": -40,
                             "units": "degC",
                             "multiplex": 0
                         },
                         {
-                            "name": "stackVoltage1",
+                            "name": "stack_voltage_1",
                             "length": 16,
                             "scale": 0.001,
                             "offset": 0,
@@ -733,7 +734,7 @@
                             "multiplex": 1
                         },
                         {
-                            "name": "stackVoltage2",
+                            "name": "stack_voltage_2",
                             "length": 16,
                             "scale": 0.001,
                             "offset": 0,
@@ -741,7 +742,7 @@
                             "multiplex": 1
                         },
                         {
-                            "name": "packVoltageSumOfStacks",
+                            "name": "pack_voltage_sum_of_stacks",
                             "length": 18,
                             "scale": 0.001,
                             "offset": 0,
@@ -749,7 +750,7 @@
                             "multiplex": 1
                         },
                         {
-                            "name": "mux1_signal4",
+                            "name": "debug_signal_1",
                             "length": 12,
                             "scale": 1.0,
                             "offset": 0,
@@ -757,73 +758,121 @@
                             "multiplex": 1
                         },
                         {
-                            "name": "mux2_signal1",
-                            "length": 16,
+                            "name": "ltc_state",
+                            "length": 4,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "enum",
+                            "multiplex": 2
+                        },
+                        {
+                            "name": "ltc_error_count",
+                            "length": 12,
                             "scale": 1.0,
                             "offset": 0,
                             "units": "",
                             "multiplex": 2
                         },
                         {
-                            "name": "mux2_signal2",
-                            "length": 16,
+                            "name": "ltc_last_error",
+                            "length": 8,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "",
+                            "units": "enum",
                             "multiplex": 2
                         },
                         {
-                            "name": "mux2_signal3",
-                            "length": 16,
-                            "scale": 1.0,
+                            "name": "cpu_usage_percent",
+                            "length": 8,
+                            "scale": 0.5,
                             "offset": 0,
-                            "units": "",
+                            "units": "%",
                             "multiplex": 2
                         },
                         {
-                            "name": "mux2_signal4",
-                            "length": 14,
-                            "scale": 1.0,
+                            "name": "cpu_peak_percent",
+                            "length": 8,
+                            "scale": 0.5,
                             "offset": 0,
-                            "units": "",
+                            "units": "%",
                             "multiplex": 2
                         },
                         {
-                            "name": "mux3_signal1",
+                            "name": "vbus_voltage",
+                            "length": 10,
+                            "scale": 0.1,
+                            "offset": 0,
+                            "units": "V",
+                            "multiplex": 2
+                        },
+                        {
+                            "name": "internal_temp",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": -40,
+                            "units": "degC",
+                            "multiplex": 2
+                        },
+                        {
+                            "name": "max_charge_current_mA",
                             "length": 16,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "",
+                            "units": "mA",
                             "multiplex": 3
                         },
                         {
-                            "name": "mux3_signal2",
-                            "length": 16,
+                            "name": "max_charge_voltage_mV",
+                            "length": 18,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "",
+                            "units": "mV",
                             "multiplex": 3
                         },
                         {
-                            "name": "mux3_signal3",
-                            "length": 16,
+                            "name": "contactors_closed",
+                            "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "",
+                            "units": "bool",
                             "multiplex": 3
                         },
                         {
-                            "name": "mux3_signal4",
-                            "length": 14,
+                            "name": "precharge_active",
+                            "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "",
+                            "units": "bool",
+                            "multiplex": 3
+                        },
+                        {
+                            "name": "charge_enabled",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool",
+                            "multiplex": 3
+                        },
+                        {
+                            "name": "discharge_enabled",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool",
+                            "multiplex": 3
+                        },
+                        {
+                            "name": "fault_summary",
+                            "length": 12,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bitfield",
                             "multiplex": 3
                         }
                     ]
                 },
                 {
-                    "name": "status_2",
+                    "name": "power_systems",
                     "id": 1826,
                     "x_id": 0,
                     "freq": 10,
@@ -1114,17 +1163,18 @@
                     ]
                 },
                 {
-                    "name": "cellVoltages",
+                    "name": "cell_voltages",
                     "id": 1829,
                     "x_id": 0,
-                    "freq": 1000,
+                    "freq": 10,
                     "consumers": [
-                        "dash"
+                        "dash",
+                        "mcu"
                     ],
                     "signals": [
                         {
-                            "name": "MultiPlex",
-                            "length": 4,
+                            "name": "multiplex",
+                            "length": 3,
                             "scale": 1.0,
                             "offset": 0,
                             "units": ""
@@ -1324,147 +1374,18 @@
                     ]
                 },
                 {
-                    "name": "ltc_debug",
-                    "id": 1831,
-                    "x_id": 0,
-                    "freq": 1,
-                    "consumers": ["bms"
-                    ],
-                    "signals": [
-                        {
-                            "name": "Multiplex",
-                            "length": 2,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": ""
-                        },
-                        {
-                            "name": "ltc_state",
-                            "length": 4,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "",
-                            "multiplex": 0
-                        },
-                        {
-                            "name": "lastErrorState",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "",
-                            "multiplex": 0
-                        },
-                        {
-                            "name": "ErrorCount",
-                            "length": 16,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "",
-                            "multiplex": 0
-                        },
-                        {
-                            "name": "balancingActive",
-                            "length": 1,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "bool",
-                            "multiplex": 0
-                        },
-                        {
-                            "name": "cell_A_balancing",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "",
-                            "multiplex": 1
-                        },
-                        {
-                            "name": "cell_B_balancing",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "",
-                            "multiplex": 1
-                        },
-                        {
-                            "name": "cell_C_balancing",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "",
-                            "multiplex": 1
-                        },
-                        {
-                            "name": "cell_D_balancing",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "",
-                            "multiplex": 1
-                        },
-                        {
-                            "name": "cell_E_balancing",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "",
-                            "multiplex": 1
-                        },
-                        {
-                            "name": "max_cell_delta_mV",
-                            "length": 13,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "mV",
-                            "multiplex": 2
-                        },
-                        {
-                            "name": "max_cell_mV",
-                            "length": 13,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "mV",
-                            "multiplex": 2
-                        },
-                        {
-                            "name": "min_cell_mV",
-                            "length": 13,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "mV",
-                            "multiplex": 2
-                        },
-                        {
-                            "name": "max_charge_current_allowed_mA",
-                            "length": 16,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "mA",
-                            "multiplex": 2
-                        },
-                        {
-                            "name": "max_charge_voltage_allowed_mV",
-                            "length": 16,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "mV",
-                            "multiplex": 3
-                        }
-
-                    ]
-                },
-                {
-                    "name": "cellTemperaturs",
+                    "name": "cell_temperatures",
                     "id": 1830,
                     "x_id": 0,
-                    "freq": 1000,
+                    "freq": 10,
                     "consumers": [
-                        "dash"
+                        "dash",
+                        "mcu"
                     ],
                     "signals": [
                         {
-                            "name": "MultiPlex",
-                            "length": 4,
+                            "name": "multiplex",
+                            "length": 3,
                             "scale": 1.0,
                             "offset": 0,
                             "units": ""

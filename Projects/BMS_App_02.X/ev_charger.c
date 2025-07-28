@@ -32,6 +32,7 @@ state(stopping)\
 
 #define CHARGER_VOLTAGE_SCALING 10.0
 #define CHARGER_CURRENT_SCALING 10.0
+#define CHARGER_MILLI_TO_DECI(x) (x/100)
 
 
 /******************************************************************************
@@ -79,8 +80,8 @@ static uint16_t chargeCurrentTarget = 5 * CHARGER_CURRENT_SCALING;
  *******************************************************************************/
 uint8_t checkHeartBeat(void);
 uint8_t checkChargerErrors(void);
-void EV_CHARGER_charge_voltage_set(float volts);
-void EV_CHARGER_charge_current_set(float current);
+void EV_CHARGER_charge_voltage_mV_set(uint32_t volts);
+void EV_CHARGER_charge_current_mA_set(uint32_t current);
 void EV_CHARGER_charge_request_set(bool request);
 
 /******************************************************************************
@@ -110,8 +111,8 @@ void idle(EV_CHARGER_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
             IO_SET_EV_CHARGER_EN(LOW);
-            EV_CHARGER_charge_current_set(0);
-            EV_CHARGER_charge_voltage_set(0);
+            EV_CHARGER_charge_current_mA_set(0);
+            EV_CHARGER_charge_voltage_mV_set(0);
             EV_CHARGER_charge_request_set(0);
             break;
         case RUN:
@@ -169,11 +170,6 @@ void negotiating(EV_CHARGER_entry_types_E entry_type) {
             break;
 
         case RUN:
-            // TODO: Implement negotiation logic
-            // For now, just check if we should stop charging
-            EV_CHARGER_charge_voltage_set(chargeVoltageTarget);
-            EV_CHARGER_charge_current_set(0);
-            EV_CHARGER_charge_request_set(0);
             if (!chargeRequestFromMCU) {
                 nextState = idle_state;
             } else if (!checkChargerErrors()) {
@@ -209,7 +205,8 @@ void charging(EV_CHARGER_entry_types_E entry_type) {
 
             }
             //Always set the charge request to BMS
-            EV_CHARGER_charge_current_set(CAN_bms_ltc_debug_M2_max_charge_current_allowed_mA_get());
+            EV_CHARGER_charge_current_mA_set(CAN_bms_status_M3_max_charge_current_mA_get());
+            EV_CHARGER_charge_voltage_mV_set(CAN_bms_status_M3_max_charge_voltage_mV_get());
 
             break;
 
@@ -239,14 +236,16 @@ void stopping(EV_CHARGER_entry_types_E entry_type) {
     }
 }
 
-void EV_CHARGER_charge_voltage_set(float volts) {
-    chargeVoltageTarget = (uint16_t) (volts * CHARGER_VOLTAGE_SCALING);
+void EV_CHARGER_charge_voltage_mV_set(uint32_t volts) {
+    // charge voltage target always set in 10th volts
+    chargeVoltageTarget = (uint16_t) (CHARGER_MILLI_TO_DECI(volts));
     CAN_bms_charger_request_output_voltage_low_byte_set(chargeVoltageTarget);
     CAN_bms_charger_request_output_voltage_high_byte_set(chargeVoltageTarget>>8);
 }
 
-void EV_CHARGER_charge_current_set(float current) {
-    chargeCurrentTarget = (uint16_t) (current * CHARGER_CURRENT_SCALING);
+void EV_CHARGER_charge_current_mA_set(uint32_t current) {
+    // charge current always sent in 10th amps
+    chargeCurrentTarget = (uint16_t) (CHARGER_MILLI_TO_DECI(current));
     CAN_bms_charger_request_output_current_low_byte_set(chargeCurrentTarget);
     CAN_bms_charger_request_output_current_high_byte_set(chargeCurrentTarget>>8);
 }
