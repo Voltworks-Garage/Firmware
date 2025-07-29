@@ -1173,12 +1173,10 @@ static CAN_message_S CAN_bms_debug={
 #define CAN_BMS_DEBUG_FLOAT1_OFFSET 2
 #define CAN_BMS_DEBUG_FLOAT2_RANGE 16
 #define CAN_BMS_DEBUG_FLOAT2_OFFSET 18
-#define CAN_BMS_DEBUG_VBUS_VOLTAGE_RANGE 10
-#define CAN_BMS_DEBUG_VBUS_VOLTAGE_OFFSET 34
-#define CAN_BMS_DEBUG_CPU_USAGE_RANGE 10
-#define CAN_BMS_DEBUG_CPU_USAGE_OFFSET 44
-#define CAN_BMS_DEBUG_CPU_PEAK_RANGE 10
-#define CAN_BMS_DEBUG_CPU_PEAK_OFFSET 54
+#define CAN_BMS_DEBUG_WORD1_RANGE 16
+#define CAN_BMS_DEBUG_WORD1_OFFSET 34
+#define CAN_BMS_DEBUG_BYTE1_RANGE 8
+#define CAN_BMS_DEBUG_BYTE1_OFFSET 50
 
 void CAN_bms_debug_bool0_set(uint16_t bool0){
 	uint16_t data_scaled = (bool0 - 0) / 1.0;
@@ -1208,25 +1206,19 @@ void CAN_bms_debug_float2_set(float float2){
 	CAN_bms_debug.payload->word2 &= ~0x0003;
 	CAN_bms_debug.payload->word2 |= (data_scaled >> 14) & 0x0003;
 }
-void CAN_bms_debug_VBUS_Voltage_set(float VBUS_Voltage){
-	uint16_t data_scaled = (uint16_t)((VBUS_Voltage - 0) / 0.1 + 0.5f);
-	// Set 10-bit signal at bit offset 34
-	CAN_bms_debug.payload->word2 &= ~0x0FFC;
-	CAN_bms_debug.payload->word2 |= (data_scaled << 2) & 0x0FFC;
+void CAN_bms_debug_word1_set(uint16_t word1){
+	uint16_t data_scaled = (word1 - 0) / 1;
+	// Set 16-bit signal at bit offset 34
+	CAN_bms_debug.payload->word2 &= ~0xFFFC;
+	CAN_bms_debug.payload->word2 |= (data_scaled << 2) & 0xFFFC;
+	CAN_bms_debug.payload->word3 &= ~0x0003;
+	CAN_bms_debug.payload->word3 |= (data_scaled >> 14) & 0x0003;
 }
-void CAN_bms_debug_CPU_USAGE_set(float CPU_USAGE){
-	uint16_t data_scaled = (uint16_t)((CPU_USAGE - 0) / 0.1 + 0.5f);
-	// Set 10-bit signal at bit offset 44
-	CAN_bms_debug.payload->word2 &= ~0xF000;
-	CAN_bms_debug.payload->word2 |= (data_scaled << 12) & 0xF000;
-	CAN_bms_debug.payload->word3 &= ~0x003F;
-	CAN_bms_debug.payload->word3 |= (data_scaled >> 4) & 0x003F;
-}
-void CAN_bms_debug_CPU_peak_set(float CPU_peak){
-	uint16_t data_scaled = (uint16_t)((CPU_peak - 0) / 0.1 + 0.5f);
-	// Set 10-bit signal at bit offset 54
-	CAN_bms_debug.payload->word3 &= ~0xFFC0;
-	CAN_bms_debug.payload->word3 |= (data_scaled << 6) & 0xFFC0;
+void CAN_bms_debug_byte1_set(uint16_t byte1){
+	uint16_t data_scaled = (byte1 - 0) / 1;
+	// Set 8-bit signal at bit offset 50
+	CAN_bms_debug.payload->word3 &= ~0x03FC;
+	CAN_bms_debug.payload->word3 |= (data_scaled << 2) & 0x03FC;
 }
 void CAN_bms_debug_dlc_set(uint8_t dlc){
 	CAN_bms_debug.dlc = dlc;
@@ -1733,12 +1725,12 @@ static CAN_message_S CAN_bms_cell_temperatures={
 
 #define CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE 3
 #define CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET 0
-#define CAN_BMS_CELL_TEMPERATURES_M0_TEMP_1_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M0_TEMP_1_OFFSET 3
-#define CAN_BMS_CELL_TEMPERATURES_M0_TEMP_2_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M0_TEMP_2_OFFSET 15
-#define CAN_BMS_CELL_TEMPERATURES_M0_TEMP_3_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M0_TEMP_3_OFFSET 27
+#define CAN_BMS_CELL_TEMPERATURES_M0_EXT_TEMP_1_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M0_EXT_TEMP_1_OFFSET 3
+#define CAN_BMS_CELL_TEMPERATURES_M0_STACK_VOLTAGE_1_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M0_STACK_VOLTAGE_1_OFFSET 15
+#define CAN_BMS_CELL_TEMPERATURES_M0_INT_VOLTAGE_1_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M0_INT_VOLTAGE_1_OFFSET 27
 #define CAN_BMS_CELL_TEMPERATURES_M0_TEMP_4_RANGE 12
 #define CAN_BMS_CELL_TEMPERATURES_M0_TEMP_4_OFFSET 39
 #define CAN_BMS_CELL_TEMPERATURES_M1_TEMP_5_RANGE 12
@@ -1782,22 +1774,22 @@ static CAN_message_S CAN_bms_cell_temperatures={
 #define CAN_BMS_CELL_TEMPERATURES_M5_TEMP_24_RANGE 12
 #define CAN_BMS_CELL_TEMPERATURES_M5_TEMP_24_OFFSET 39
 
-void CAN_bms_cell_temperatures_M0_temp_1_set(float temp_1){
-	uint16_t data_scaled = (uint16_t)((temp_1 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_M0_ext_temp_1_set(float ext_temp_1){
+	uint16_t data_scaled = (uint16_t)((ext_temp_1 - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 3
 	CAN_bms_cell_temperatures_payloads[0].word0 &= ~0x7FF8;
 	CAN_bms_cell_temperatures_payloads[0].word0 |= (data_scaled << 3) & 0x7FF8;
 }
-void CAN_bms_cell_temperatures_M0_temp_2_set(float temp_2){
-	uint16_t data_scaled = (uint16_t)((temp_2 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_M0_stack_voltage_1_set(float stack_voltage_1){
+	uint16_t data_scaled = (uint16_t)((stack_voltage_1 - 0) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 15
 	CAN_bms_cell_temperatures_payloads[0].word0 &= ~0x8000;
 	CAN_bms_cell_temperatures_payloads[0].word0 |= (data_scaled << 15) & 0x8000;
 	CAN_bms_cell_temperatures_payloads[0].word1 &= ~0x07FF;
 	CAN_bms_cell_temperatures_payloads[0].word1 |= (data_scaled >> 1) & 0x07FF;
 }
-void CAN_bms_cell_temperatures_M0_temp_3_set(float temp_3){
-	uint16_t data_scaled = (uint16_t)((temp_3 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_M0_int_voltage_1_set(float int_voltage_1){
+	uint16_t data_scaled = (uint16_t)((int_voltage_1 - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 27
 	CAN_bms_cell_temperatures_payloads[0].word1 &= ~0xF800;
 	CAN_bms_cell_temperatures_payloads[0].word1 |= (data_scaled << 11) & 0xF800;
@@ -2265,8 +2257,6 @@ void CAN_send_10ms(void){
 	CAN_bms_status_send();
 	CAN_bms_power_systems_send();
 	CAN_bms_debug_send();
-	CAN_bms_cell_voltages_send();
-	CAN_bms_cell_temperatures_send();
 }
 
 void CAN_send_100ms(void){
@@ -2275,4 +2265,6 @@ void CAN_send_100ms(void){
 
 void CAN_send_1000ms(void){
 	CAN_bms_charger_request_send();
+	CAN_bms_cell_voltages_send();
+	CAN_bms_cell_temperatures_send();
 }

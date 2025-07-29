@@ -191,11 +191,10 @@ uint16_t CAN_bms_debug_bool0_get(void);
 uint16_t CAN_bms_debug_bool1_get(void);
 float CAN_bms_debug_float1_get(void);
 float CAN_bms_debug_float2_get(void);
-float CAN_bms_debug_VBUS_Voltage_get(void);
-float CAN_bms_debug_CPU_USAGE_get(void);
-float CAN_bms_debug_CPU_peak_get(void);
+uint16_t CAN_bms_debug_word1_get(void);
+uint16_t CAN_bms_debug_byte1_get(void);
 
-#define CAN_bms_cell_voltages_interval() 10
+#define CAN_bms_cell_voltages_interval() 1000
 #define CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES 6
 uint8_t CAN_bms_cell_voltages_checkDataIsFresh(void);
 uint16_t CAN_bms_cell_voltages_multiplex_get(void);
@@ -224,13 +223,13 @@ uint16_t CAN_bms_cell_voltages_M5_cell_22_voltage_get(void);
 uint16_t CAN_bms_cell_voltages_M5_cell_23_voltage_get(void);
 uint16_t CAN_bms_cell_voltages_M5_cell_24_voltage_get(void);
 
-#define CAN_bms_cell_temperatures_interval() 10
+#define CAN_bms_cell_temperatures_interval() 1000
 #define CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES 6
 uint8_t CAN_bms_cell_temperatures_checkDataIsFresh(void);
 uint16_t CAN_bms_cell_temperatures_multiplex_get(void);
-float CAN_bms_cell_temperatures_M0_temp_1_get(void);
-float CAN_bms_cell_temperatures_M0_temp_2_get(void);
-float CAN_bms_cell_temperatures_M0_temp_3_get(void);
+float CAN_bms_cell_temperatures_M0_ext_temp_1_get(void);
+float CAN_bms_cell_temperatures_M0_stack_voltage_1_get(void);
+float CAN_bms_cell_temperatures_M0_int_voltage_1_get(void);
 float CAN_bms_cell_temperatures_M0_temp_4_get(void);
 float CAN_bms_cell_temperatures_M1_temp_5_get(void);
 float CAN_bms_cell_temperatures_M1_temp_6_get(void);

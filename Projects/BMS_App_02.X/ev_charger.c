@@ -6,6 +6,7 @@
 #include "IO.h"
 #include "CAN.h"
 #include "bms_dbc.h"
+#include "movingAverage.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -24,6 +25,7 @@ state(precharging)\
 state(negotiating)\
 state(charging)\
 state(stopping)\
+state(faulted)\
 
 /*Creates an enum of states suffixed with _state*/
 #define STATE_FORM(WORD) WORD##_state,
@@ -33,7 +35,7 @@ state(stopping)\
 #define CHARGER_VOLTAGE_SCALING 10.0
 #define CHARGER_CURRENT_SCALING 10.0
 #define CHARGER_MILLI_TO_DECI(x) (x/100)
-
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 /******************************************************************************
  * Configuration
@@ -75,6 +77,9 @@ static uint8_t chargeRequestFromBMS = 0; //TODO delete this
 static uint16_t chargeVoltageTarget = 24 * 4.2 * CHARGER_VOLTAGE_SCALING; //24 cells, 4.2v each, 0.1V/bit
 static uint16_t chargeCurrentTarget = 5 * CHARGER_CURRENT_SCALING;
 
+NEW_LOW_PASS_FILTER(charger_voltage, 10.0, 100.0);
+NEW_LOW_PASS_FILTER(vbus_voltage, 10.0, 100.0);
+
 /******************************************************************************
  * Function Prototypes
  *******************************************************************************/
@@ -91,6 +96,9 @@ void EV_Charger_Init(void) {
 }
 
 void EV_CHARGER_Run_10ms(void) {
+
+    takeLowPassFilter(vbus_voltage, IO_GET_VBUS_VOLTAGE());
+    takeLowPassFilter(charger_voltage, IO_GET_EV_CHARGER_VOLTAGE());
 
     chargeRequestFromMCU = CAN_mcu_command_ev_charger_enable_get();// && checkHeartBeat();
 
@@ -121,7 +129,7 @@ void idle(EV_CHARGER_entry_types_E entry_type) {
                 IO_SET_EV_CHARGER_CALIBRATION();
             }
             if (chargeRequestFromMCU) {
-                nextState = negotiating_state;
+                nextState = precharging_state;
             }
 
             break;
@@ -142,12 +150,12 @@ void precharging(EV_CHARGER_entry_types_E entry_type) {
             break;
 
         case RUN:
-            if (IO_GET_EV_CHARGER_VOLTAGE() > IO_GET_VBUS_VOLTAGE() * 0.9) {
+            if (getLowPassFilter(charger_voltage) > getLowPassFilter(vbus_voltage) * 0.90) {
                 nextState = negotiating_state;
             }
             if (SysTick_TimeOut(precharge_timer)) {
                 // If pre-charge timeout, stop pre-charge
-                nextState = idle_state;
+                nextState = faulted_state;
             }
             if (chargeRequestFromMCU == 0) {
                 // If no charge request, stop pre-charge
@@ -193,9 +201,10 @@ void charging(EV_CHARGER_entry_types_E entry_type) {
             break;
 
         case RUN:
-            if (!chargeRequestFromMCU || checkChargerErrors()) {
+            if (!chargeRequestFromMCU) {
                 nextState = stopping_state;
             }
+            
             if (SysTick_TimeOut(chargerMiaTimer)){
                 if (CAN_charger_status_checkDataIsFresh()){
                     SysTick_TimerStart(chargerMiaTimer);
@@ -204,8 +213,10 @@ void charging(EV_CHARGER_entry_types_E entry_type) {
                 }
 
             }
-            //Always set the charge request to BMS
-            EV_CHARGER_charge_current_mA_set(CAN_bms_status_M3_max_charge_current_mA_get());
+            //Always set the charge request to BMS or MCU command, whichever is less.
+            // uint32_t charging_current = MIN((CAN_mcu_command_ev_charger_current_get()*1000), CAN_bms_status_M3_max_charge_current_mA_get());
+            uint32_t charging_current = MIN((CAN_mcu_command_ev_charger_current_get()*1000), 5000);
+            EV_CHARGER_charge_current_mA_set(charging_current);
             EV_CHARGER_charge_voltage_mV_set(CAN_bms_status_M3_max_charge_voltage_mV_get());
 
             break;
@@ -235,6 +246,27 @@ void stopping(EV_CHARGER_entry_types_E entry_type) {
             break;
     }
 }
+
+void faulted(EV_CHARGER_entry_types_E entry_type) {
+    switch (entry_type) {
+        case ENTRY:
+            CAN_bms_charger_request_start_charge_not_request_set(1);//inverted logic. 1 means stop charging
+            IO_SET_EV_CHARGER_EN(LOW);
+            break;
+        case RUN:
+
+            if (!chargeRequestFromMCU) {
+                nextState = idle_state;
+            }
+
+            break;
+        case EXIT:
+            break;
+        default:
+            break;
+    }
+}
+
 
 void EV_CHARGER_charge_voltage_mV_set(uint32_t volts) {
     // charge voltage target always set in 10th volts

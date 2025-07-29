@@ -45,9 +45,8 @@ uint16_t CAN_bms_debug_bool0_get(void);
 uint16_t CAN_bms_debug_bool1_get(void);
 float CAN_bms_debug_float1_get(void);
 float CAN_bms_debug_float2_get(void);
-float CAN_bms_debug_VBUS_Voltage_get(void);
-float CAN_bms_debug_CPU_USAGE_get(void);
-float CAN_bms_debug_CPU_peak_get(void);
+uint16_t CAN_bms_debug_word1_get(void);
+uint16_t CAN_bms_debug_byte1_get(void);
 
 uint8_t CAN_bms_boot_response_checkDataIsFresh(void);
 uint16_t CAN_bms_boot_response_type_get(void);

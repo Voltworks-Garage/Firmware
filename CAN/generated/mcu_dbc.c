@@ -1440,12 +1440,10 @@ static CAN_message_S CAN_bms_debug={
 #define CAN_BMS_DEBUG_FLOAT1_OFFSET 2
 #define CAN_BMS_DEBUG_FLOAT2_RANGE 16
 #define CAN_BMS_DEBUG_FLOAT2_OFFSET 18
-#define CAN_BMS_DEBUG_VBUS_VOLTAGE_RANGE 10
-#define CAN_BMS_DEBUG_VBUS_VOLTAGE_OFFSET 34
-#define CAN_BMS_DEBUG_CPU_USAGE_RANGE 10
-#define CAN_BMS_DEBUG_CPU_USAGE_OFFSET 44
-#define CAN_BMS_DEBUG_CPU_PEAK_RANGE 10
-#define CAN_BMS_DEBUG_CPU_PEAK_OFFSET 54
+#define CAN_BMS_DEBUG_WORD1_RANGE 16
+#define CAN_BMS_DEBUG_WORD1_OFFSET 34
+#define CAN_BMS_DEBUG_BYTE1_RANGE 8
+#define CAN_BMS_DEBUG_BYTE1_OFFSET 50
 
 uint8_t CAN_bms_debug_checkDataIsFresh(void){
 	return CAN_checkDataIsFresh(&CAN_bms_debug);
@@ -1476,24 +1474,18 @@ float CAN_bms_debug_float2_get(void){
 	data |= (uint16_t)((CAN_bms_debug.payload->word2 & 0x0003) >> 0) << 14;
 	return (data * 0.01) + 0;
 }
-float CAN_bms_debug_VBUS_Voltage_get(void){
-	// Extract 10-bit signal at bit offset 34
+uint16_t CAN_bms_debug_word1_get(void){
+	// Extract 16-bit signal at bit offset 34
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_debug.payload->word2 & 0x0FFC) >> 2) << 0;
-	return (data * 0.1) + 0;
+	data |= (uint16_t)((CAN_bms_debug.payload->word2 & 0xFFFC) >> 2) << 0;
+	data |= (uint16_t)((CAN_bms_debug.payload->word3 & 0x0003) >> 0) << 14;
+	return (data * 1) + 0;
 }
-float CAN_bms_debug_CPU_USAGE_get(void){
-	// Extract 10-bit signal at bit offset 44
+uint16_t CAN_bms_debug_byte1_get(void){
+	// Extract 8-bit signal at bit offset 50
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_debug.payload->word2 & 0xF000) >> 12) << 0;
-	data |= (uint16_t)((CAN_bms_debug.payload->word3 & 0x003F) >> 0) << 4;
-	return (data * 0.1) + 0;
-}
-float CAN_bms_debug_CPU_peak_get(void){
-	// Extract 10-bit signal at bit offset 54
-	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_debug.payload->word3 & 0xFFC0) >> 6) << 0;
-	return (data * 0.1) + 0;
+	data |= (uint16_t)((CAN_bms_debug.payload->word3 & 0x03FC) >> 2) << 0;
+	return (data * 1) + 0;
 }
 
 static CAN_payload_S CAN_bms_cell_voltages_payloads[6] __attribute__((aligned(sizeof(CAN_payload_S))));
@@ -2014,12 +2006,12 @@ static CAN_message_S CAN_bms_cell_temperatures={
 
 #define CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE 3
 #define CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET 0
-#define CAN_BMS_CELL_TEMPERATURES_M0_TEMP_1_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M0_TEMP_1_OFFSET 3
-#define CAN_BMS_CELL_TEMPERATURES_M0_TEMP_2_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M0_TEMP_2_OFFSET 15
-#define CAN_BMS_CELL_TEMPERATURES_M0_TEMP_3_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M0_TEMP_3_OFFSET 27
+#define CAN_BMS_CELL_TEMPERATURES_M0_EXT_TEMP_1_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M0_EXT_TEMP_1_OFFSET 3
+#define CAN_BMS_CELL_TEMPERATURES_M0_STACK_VOLTAGE_1_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M0_STACK_VOLTAGE_1_OFFSET 15
+#define CAN_BMS_CELL_TEMPERATURES_M0_INT_VOLTAGE_1_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M0_INT_VOLTAGE_1_OFFSET 27
 #define CAN_BMS_CELL_TEMPERATURES_M0_TEMP_4_RANGE 12
 #define CAN_BMS_CELL_TEMPERATURES_M0_TEMP_4_OFFSET 39
 #define CAN_BMS_CELL_TEMPERATURES_M1_TEMP_5_RANGE 12
@@ -2083,7 +2075,7 @@ uint16_t CAN_bms_cell_temperatures_multiplex_get(void){
 	data |= (uint16_t)((CAN_bms_cell_temperatures.payload->word0 & 0x0007) >> 0) << 0;
 	return (data * 1.0) + 0;
 }
-float CAN_bms_cell_temperatures_M0_temp_1_get(void){
+float CAN_bms_cell_temperatures_M0_ext_temp_1_get(void){
 	// Check for fresh data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
 		// Fresh data received - determine which mux payload to update
@@ -2100,7 +2092,7 @@ float CAN_bms_cell_temperatures_M0_temp_1_get(void){
 	data |= (uint16_t)((CAN_bms_cell_temperatures_payloads[0].word0 & 0x7FF8) >> 3) << 0;
 	return (data * 0.1) + -40;
 }
-float CAN_bms_cell_temperatures_M0_temp_2_get(void){
+float CAN_bms_cell_temperatures_M0_stack_voltage_1_get(void){
 	// Check for fresh data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
 		// Fresh data received - determine which mux payload to update
@@ -2116,9 +2108,9 @@ float CAN_bms_cell_temperatures_M0_temp_2_get(void){
 	uint16_t data = 0;
 	data |= (uint16_t)((CAN_bms_cell_temperatures_payloads[0].word0 & 0x8000) >> 15) << 0;
 	data |= (uint16_t)((CAN_bms_cell_temperatures_payloads[0].word1 & 0x07FF) >> 0) << 1;
-	return (data * 0.1) + -40;
+	return (data * 0.1) + 0;
 }
-float CAN_bms_cell_temperatures_M0_temp_3_get(void){
+float CAN_bms_cell_temperatures_M0_int_voltage_1_get(void){
 	// Check for fresh data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
 		// Fresh data received - determine which mux payload to update

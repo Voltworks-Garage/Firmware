@@ -997,25 +997,18 @@
                             "units": "V"
                         },
                         {
-                            "name": "VBUS_Voltage",
-                            "length": 10,
-                            "scale": 0.1,
+                            "name": "word1",
+                            "length": 16,
+                            "scale": 1,
                             "offset": 0,
-                            "units": "V"
+                            "units": ""
                         },
                         {
-                            "name": "CPU_USAGE",
-                            "length": 10,
-                            "scale": 0.1,
+                            "name": "byte1",
+                            "length": 8,
+                            "scale":  1,
                             "offset": 0,
-                            "units": "%"
-                        },
-                                                {
-                            "name": "CPU_peak",
-                            "length": 10,
-                            "scale": 0.1,
-                            "offset": 0,
-                            "units": "%"
+                            "units": ""
                         }
                     ]
                 },
@@ -1166,7 +1159,7 @@
                     "name": "cell_voltages",
                     "id": 1829,
                     "x_id": 0,
-                    "freq": 10,
+                    "freq": 1000,
                     "consumers": [
                         "dash",
                         "mcu"
@@ -1377,7 +1370,7 @@
                     "name": "cell_temperatures",
                     "id": 1830,
                     "x_id": 0,
-                    "freq": 10,
+                    "freq": 1000,
                     "consumers": [
                         "dash",
                         "mcu"
@@ -1391,7 +1384,7 @@
                             "units": ""
                         },
                         {
-                            "name": "temp_1",
+                            "name": "ext_temp_1",
                             "length": 12,
                             "scale": 0.1,
                             "offset": -40,
@@ -1399,15 +1392,15 @@
                             "multiplex": 0
                         },
                         {
-                            "name": "temp_2",
+                            "name": "stack_voltage_1",
                             "length": 12,
                             "scale": 0.1,
-                            "offset": -40,
-                            "units": "degC",
+                            "offset": 0,
+                            "units": "V",
                             "multiplex": 0
                         },
                         {
-                            "name": "temp_3",
+                            "name": "int_voltage_1",
                             "length": 12,
                             "scale": 0.1,
                             "offset": -40,

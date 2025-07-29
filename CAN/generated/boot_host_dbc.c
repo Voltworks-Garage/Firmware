@@ -170,12 +170,10 @@ static CAN_message_S CAN_bms_debug={
 #define CAN_BMS_DEBUG_FLOAT1_OFFSET 2
 #define CAN_BMS_DEBUG_FLOAT2_RANGE 16
 #define CAN_BMS_DEBUG_FLOAT2_OFFSET 18
-#define CAN_BMS_DEBUG_VBUS_VOLTAGE_RANGE 10
-#define CAN_BMS_DEBUG_VBUS_VOLTAGE_OFFSET 34
-#define CAN_BMS_DEBUG_CPU_USAGE_RANGE 10
-#define CAN_BMS_DEBUG_CPU_USAGE_OFFSET 44
-#define CAN_BMS_DEBUG_CPU_PEAK_RANGE 10
-#define CAN_BMS_DEBUG_CPU_PEAK_OFFSET 54
+#define CAN_BMS_DEBUG_WORD1_RANGE 16
+#define CAN_BMS_DEBUG_WORD1_OFFSET 34
+#define CAN_BMS_DEBUG_BYTE1_RANGE 8
+#define CAN_BMS_DEBUG_BYTE1_OFFSET 50
 
 uint8_t CAN_bms_debug_checkDataIsFresh(void){
 	return CAN_checkDataIsFresh(&CAN_bms_debug);
@@ -206,24 +204,18 @@ float CAN_bms_debug_float2_get(void){
 	data |= (uint16_t)((CAN_bms_debug.payload->word2 & 0x0003) >> 0) << 14;
 	return (data * 0.01) + 0;
 }
-float CAN_bms_debug_VBUS_Voltage_get(void){
-	// Extract 10-bit signal at bit offset 34
+uint16_t CAN_bms_debug_word1_get(void){
+	// Extract 16-bit signal at bit offset 34
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_debug.payload->word2 & 0x0FFC) >> 2) << 0;
-	return (data * 0.1) + 0;
+	data |= (uint16_t)((CAN_bms_debug.payload->word2 & 0xFFFC) >> 2) << 0;
+	data |= (uint16_t)((CAN_bms_debug.payload->word3 & 0x0003) >> 0) << 14;
+	return (data * 1) + 0;
 }
-float CAN_bms_debug_CPU_USAGE_get(void){
-	// Extract 10-bit signal at bit offset 44
+uint16_t CAN_bms_debug_byte1_get(void){
+	// Extract 8-bit signal at bit offset 50
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_debug.payload->word2 & 0xF000) >> 12) << 0;
-	data |= (uint16_t)((CAN_bms_debug.payload->word3 & 0x003F) >> 0) << 4;
-	return (data * 0.1) + 0;
-}
-float CAN_bms_debug_CPU_peak_get(void){
-	// Extract 10-bit signal at bit offset 54
-	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_debug.payload->word3 & 0xFFC0) >> 6) << 0;
-	return (data * 0.1) + 0;
+	data |= (uint16_t)((CAN_bms_debug.payload->word3 & 0x03FC) >> 2) << 0;
+	return (data * 1) + 0;
 }
 
 #define CAN_bms_boot_response_ID 0xa2

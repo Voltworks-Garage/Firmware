@@ -158,9 +158,8 @@ void CAN_bms_debug_bool0_set(uint16_t bool0);
 void CAN_bms_debug_bool1_set(uint16_t bool1);
 void CAN_bms_debug_float1_set(float float1);
 void CAN_bms_debug_float2_set(float float2);
-void CAN_bms_debug_VBUS_Voltage_set(float VBUS_Voltage);
-void CAN_bms_debug_CPU_USAGE_set(float CPU_USAGE);
-void CAN_bms_debug_CPU_peak_set(float CPU_peak);
+void CAN_bms_debug_word1_set(uint16_t word1);
+void CAN_bms_debug_byte1_set(uint16_t byte1);
 void CAN_bms_debug_dlc_set(uint8_t dlc);
 
 
@@ -207,7 +206,7 @@ void CAN_bms_charger_request_dlc_set(uint8_t dlc);
 void CAN_bms_charger_request_send(void);
 
 
-#define CAN_bms_cell_voltages_interval() 10
+#define CAN_bms_cell_voltages_interval() 1000
 void CAN_bms_cell_voltages_M0_cell_1_voltage_set(uint16_t cell_1_voltage);
 void CAN_bms_cell_voltages_M0_cell_2_voltage_set(uint16_t cell_2_voltage);
 void CAN_bms_cell_voltages_M0_cell_3_voltage_set(uint16_t cell_3_voltage);
@@ -239,10 +238,10 @@ void CAN_bms_cell_voltages_send(void);
 
 
 #define CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES 6
-#define CAN_bms_cell_temperatures_interval() 10
-void CAN_bms_cell_temperatures_M0_temp_1_set(float temp_1);
-void CAN_bms_cell_temperatures_M0_temp_2_set(float temp_2);
-void CAN_bms_cell_temperatures_M0_temp_3_set(float temp_3);
+#define CAN_bms_cell_temperatures_interval() 1000
+void CAN_bms_cell_temperatures_M0_ext_temp_1_set(float ext_temp_1);
+void CAN_bms_cell_temperatures_M0_stack_voltage_1_set(float stack_voltage_1);
+void CAN_bms_cell_temperatures_M0_int_voltage_1_set(float int_voltage_1);
 void CAN_bms_cell_temperatures_M0_temp_4_set(float temp_4);
 void CAN_bms_cell_temperatures_M1_temp_5_set(float temp_5);
 void CAN_bms_cell_temperatures_M1_temp_6_set(float temp_6);

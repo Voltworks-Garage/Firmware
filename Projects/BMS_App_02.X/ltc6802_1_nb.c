@@ -14,12 +14,6 @@
 #include "bms_dbc.h"
 #include <string.h>
 
-// SPI timeout timer
-NEW_TIMER(ltc6802_spiTimer, 2);
-// Data staleness timers
-NEW_TIMER(voltage_data_timer, LTC6802_1_DATA_STALE_TIME_MS);
-NEW_TIMER(temp_data_timer, LTC6802_1_DATA_STALE_TIME_MS);
-
 /******************************************************************************
  * Internal Type Definitions
  *******************************************************************************/
@@ -29,13 +23,13 @@ NEW_TIMER(temp_data_timer, LTC6802_1_DATA_STALE_TIME_MS);
  *******************************************************************************/
 #define LTC6802_1_STATES(state)\
 state(idle) /* init state for startup code */ \
+state(config_write)\
+state(config_readback)\
 state(cell_read)\
 state(cell_data)\
 state(temp_read)\
 state(temp_data)\
 state(flag_data)\
-state(config_write)\
-state(config_readback)\
 state(faulted)\
 state(halted)\
 
@@ -175,6 +169,15 @@ static ltcStatePtr ltc6802_1_state_functions[] = {LTC6802_1_STATES(FUNC_PTR_FORM
  *******************************************************************************/
 static LTC6802_1_Module_S ltc_module;
 
+// SPI timeout timer
+NEW_TIMER(ltc6802_spiTimer, 2);
+// ADC Conversion Timer
+NEW_TIMER(adc_conversion_timer, 5);
+// Data staleness timers
+NEW_TIMER(voltage_data_timer, LTC6802_1_DATA_STALE_TIME_MS);
+NEW_TIMER(temp_data_timer, LTC6802_1_DATA_STALE_TIME_MS);
+
+
 /******************************************************************************
  * Internal Function Prototypes
  *******************************************************************************/
@@ -298,6 +301,58 @@ void idle(LTC6802_1_entry_types_E entry_type) {
     }
 }
 
+void config_write(LTC6802_1_entry_types_E entry_type) {
+    switch (entry_type) {
+        case ENTRY:
+            // Build fresh configuration data right before sending
+            BuildConfigData();
+            
+            // Write configuration to entire daisy chain
+            if (StartSPITransaction(LTC6802_1_CMD_WRCFG,
+                                   ltc_module.config_data, // Configuration data
+                                   LTC6802_1_NUM_STACKS * LTC6802_1_CONFIG_REG_SIZE, // Data length
+                                   false, // No response expected
+                                   0) != LTC6802_1_ERROR_NONE) {
+                ltc_module.nextState = faulted_state;
+            }
+            break;
+        case RUN:
+            // Configuration write completed, move to readback
+            ltc_module.nextState = config_readback_state;
+            SysTick_TimerStart(ltc6802_spiTimer);
+            break;
+        case EXIT:
+            break;
+        default:
+            break;
+    }
+}
+
+void config_readback(LTC6802_1_entry_types_E entry_type) {
+    switch (entry_type) {
+        case ENTRY:
+            // Read back configuration from entire daisy chain to verify
+            if (StartSPITransaction(LTC6802_1_CMD_RDCFG,
+                                   NULL, // No TX data, just read
+                                   0, // No TX data length
+                                   true, // Expect response
+                                   LTC6802_1_NUM_STACKS * (LTC6802_1_CONFIG_REG_SIZE + LTC6802_1_PEC_SIZE) // Length of response data
+                                ) != LTC6802_1_ERROR_NONE) {
+                ltc_module.nextState = faulted_state;
+            }
+            break;
+        case RUN:
+            // Configuration readback completed, restart autonomous cycle
+            ProcessConfigData();
+            ltc_module.nextState = cell_read_state;
+            break;
+        case EXIT:
+            break;
+        default:
+            break;
+    }
+}
+
 void cell_read(LTC6802_1_entry_types_E entry_type) {
     uint8_t command = LTC6802_1_CMD_STCVAD;
     if(ltc_module.balancing_active) {
@@ -311,17 +366,16 @@ void cell_read(LTC6802_1_entry_types_E entry_type) {
                                    0, // No TX data length
                                    false, // No response expected
                                    0 // No response length
-                                ) == LTC6802_1_ERROR_NONE) {
-                SysTick_TimerStart(ltc6802_spiTimer);
-            } else {
+                                ) != LTC6802_1_ERROR_NONE) {
                 ltc_module.nextState = faulted_state;
             }
+            SysTick_TimerStart(adc_conversion_timer);
             break;
         case RUN:
             // Wait for ADC conversion to complete
-            if (IO_GET_SPI_SDI() == HIGH) { // Check if conversion is complete
+            //if (IO_GET_SPI_SDI() == HIGH) { // Check if conversion is complete
+            if ( SysTick_TimeOut(adc_conversion_timer)) {// Check if conversion is complete
                 ltc_module.nextState = cell_data_state;
-                SysTick_TimerStart(ltc6802_spiTimer);
             }
             break;
         case EXIT:
@@ -340,9 +394,7 @@ void cell_data(LTC6802_1_entry_types_E entry_type) {
                                    0, // No TX data length
                                    true, // Expect response
                                    LTC6802_1_NUM_STACKS * (LTC6802_1_VOLTAGE_REG_SIZE + LTC6802_1_PEC_SIZE) // Length of response data
-                                ) == LTC6802_1_ERROR_NONE) {
-                SysTick_TimerStart(ltc6802_spiTimer);
-            } else {
+                                ) != LTC6802_1_ERROR_NONE) {
                 ltc_module.nextState = faulted_state;
             }
             break;
@@ -368,17 +420,16 @@ void temp_read(LTC6802_1_entry_types_E entry_type) {
                                    0, // No TX data length
                                    false, // No response expected
                                    0    // No response length
-                                ) == LTC6802_1_ERROR_NONE) {
-                SysTick_TimerStart(ltc6802_spiTimer);
-            } else {
+                                ) != LTC6802_1_ERROR_NONE) {
                 ltc_module.nextState = faulted_state;
             }
+            SysTick_TimerStart(adc_conversion_timer);
             break;
         case RUN:
             // Wait for ADC conversion to complete
-            if (IO_GET_SPI_SDI() == HIGH) { // Check if conversion is complete
+            // if (IO_GET_SPI_SDI() == HIGH) { // Check if conversion is complete
+            if ( SysTick_TimeOut(adc_conversion_timer)) {// Check if conversion is complete
                 ltc_module.nextState = temp_data_state;
-                SysTick_TimerStart(ltc6802_spiTimer);
             }
             break;
         case EXIT:
@@ -397,9 +448,7 @@ void temp_data(LTC6802_1_entry_types_E entry_type) {
                                    0, // No TX data length
                                    true, // Expect response
                                    LTC6802_1_NUM_STACKS * (LTC6802_1_TEMP_REG_SIZE + LTC6802_1_PEC_SIZE) // Length of response data
-                                ) == LTC6802_1_ERROR_NONE) {
-                SysTick_TimerStart(ltc6802_spiTimer);
-            } else {
+                                ) != LTC6802_1_ERROR_NONE) {
                 ltc_module.nextState = faulted_state;
             }
             break;
@@ -425,9 +474,7 @@ void flag_data(LTC6802_1_entry_types_E entry_type) {
                                    0, // No TX data length
                                    true, // Expect response
                                    LTC6802_1_NUM_STACKS * (LTC6802_1_FLAG_REG_SIZE + LTC6802_1_PEC_SIZE) // Length of response data
-                                ) == LTC6802_1_ERROR_NONE) {
-                SysTick_TimerStart(ltc6802_spiTimer);
-            } else {
+                                ) != LTC6802_1_ERROR_NONE) {
                 ltc_module.nextState = faulted_state;
             }
             break;
@@ -435,62 +482,6 @@ void flag_data(LTC6802_1_entry_types_E entry_type) {
             // Process flag data from entire daisy chain and continue to config write
             ProcessFlagData();
             ltc_module.nextState = config_write_state;
-            break;
-        case EXIT:
-            break;
-        default:
-            break;
-    }
-}
-
-void config_write(LTC6802_1_entry_types_E entry_type) {
-    switch (entry_type) {
-        case ENTRY:
-            // Build fresh configuration data right before sending
-            BuildConfigData();
-            
-            // Write configuration to entire daisy chain
-            if (StartSPITransaction(LTC6802_1_CMD_WRCFG,
-                                   ltc_module.config_data, // Configuration data
-                                   LTC6802_1_NUM_STACKS * LTC6802_1_CONFIG_REG_SIZE, // Data length
-                                   false, // No response expected
-                                   0) == LTC6802_1_ERROR_NONE) {
-                SysTick_TimerStart(ltc6802_spiTimer);
-            } else {
-                ltc_module.nextState = faulted_state;
-            }
-            break;
-        case RUN:
-            // Configuration write completed, move to readback
-            ltc_module.nextState = config_readback_state;
-            SysTick_TimerStart(ltc6802_spiTimer);
-            break;
-        case EXIT:
-            break;
-        default:
-            break;
-    }
-}
-
-void config_readback(LTC6802_1_entry_types_E entry_type) {
-    switch (entry_type) {
-        case ENTRY:
-            // Read back configuration from entire daisy chain to verify
-            if (StartSPITransaction(LTC6802_1_CMD_RDCFG,
-                                   NULL, // No TX data, just read
-                                   0, // No TX data length
-                                   true, // Expect response
-                                   LTC6802_1_NUM_STACKS * (LTC6802_1_CONFIG_REG_SIZE + LTC6802_1_PEC_SIZE) // Length of response data
-                                ) == LTC6802_1_ERROR_NONE) {
-                SysTick_TimerStart(ltc6802_spiTimer);
-            } else {
-                ltc_module.nextState = faulted_state;
-            }
-            break;
-        case RUN:
-            // Configuration readback completed, restart autonomous cycle
-            ProcessConfigData();
-            ltc_module.nextState = cell_read_state;
             break;
         case EXIT:
             break;
@@ -835,6 +826,8 @@ static void ProcessTemperatureData(void) {
     // - Next 5 bytes received are from Stack 1 (top of chain), then PEC byte
     // 
     // Received data: [Stack0_5bytes][Stack0_PEC][Stack1_5bytes][Stack1_PEC] (12 bytes total)
+
+    float error = 0;
     
     uint8_t stack, temp_index = 0;
     uint8_t stack_data_start, pec_byte;
@@ -854,6 +847,7 @@ static void ProcessTemperatureData(void) {
                                LTC6802_1_TEMP_REG_SIZE, pec_byte);
         
         if (pec_valid) {
+            error += 1;
             // PEC valid - process temperature data for this stack
             // Extract temperature data according to register layout:
             // TMPR0: ETMP1[7:0]
@@ -904,6 +898,7 @@ static void ProcessTemperatureData(void) {
             HandleError(LTC6802_1_ERROR_CRC_FAIL, stack);
         }
     }
+    CAN_bms_debug_float1_set(error);
 }
 
 static void ProcessFlagData(void) {
