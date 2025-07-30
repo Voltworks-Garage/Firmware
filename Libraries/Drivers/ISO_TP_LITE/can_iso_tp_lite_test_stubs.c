@@ -7,8 +7,8 @@ static uint8_t fakeFrameLen = 0;
 static uint8_t fakeFrameType = 0x00;
 static uint8_t byteReadIndex = 0;
 
-uint8_t CAN_boot_host_checkDataIsFresh(void) {
-    return 1;  // always say data is fresh
+uint8_t CAN_boot_host_checkDataIsUnread(void) {
+    return 1;  // always say data is unread
 }
 
 uint16_t CAN_boot_host_code_get(void) {

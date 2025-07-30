@@ -18,7 +18,8 @@ typedef enum{
  * mcu NODE MESSAGES
  */
 #define CAN_mcu_status_interval() 10
-uint8_t CAN_mcu_status_checkDataIsFresh(void);
+uint8_t CAN_mcu_status_checkDataIsUnread(void);
+uint8_t CAN_mcu_status_checkDataIsStale(void);
 uint16_t CAN_mcu_status_heartbeat_get(void);
 uint16_t CAN_mcu_status_highBeam_get(void);
 uint16_t CAN_mcu_status_lowBeam_get(void);
@@ -45,7 +46,8 @@ uint16_t CAN_mcu_status_batt_fault_get(void);
 uint16_t CAN_mcu_status_dcdc_fault_get(void);
 
 #define CAN_mcu_command_interval() 100
-uint8_t CAN_mcu_command_checkDataIsFresh(void);
+uint8_t CAN_mcu_command_checkDataIsUnread(void);
+uint8_t CAN_mcu_command_checkDataIsStale(void);
 uint16_t CAN_mcu_command_DCDC_enable_get(void);
 uint16_t CAN_mcu_command_ev_charger_enable_get(void);
 float CAN_mcu_command_ev_charger_current_get(void);
@@ -54,7 +56,8 @@ uint16_t CAN_mcu_command_motor_controller_enable_get(void);
 
 #define CAN_mcu_mcu_debug_interval() 10
 #define CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES 4
-uint8_t CAN_mcu_mcu_debug_checkDataIsFresh(void);
+uint8_t CAN_mcu_mcu_debug_checkDataIsUnread(void);
+uint8_t CAN_mcu_mcu_debug_checkDataIsStale(void);
 uint16_t CAN_mcu_mcu_debug_Multiplex_get(void);
 uint16_t CAN_mcu_mcu_debug_debug_value_1_get(void);
 uint16_t CAN_mcu_mcu_debug_debug_value_2_get(void);
@@ -106,7 +109,8 @@ void CAN_bms_status_cell_B_balancing_set(uint16_t cell_B_balancing);
 void CAN_bms_status_cell_C_balancing_set(uint16_t cell_C_balancing);
 void CAN_bms_status_cell_D_balancing_set(uint16_t cell_D_balancing);
 void CAN_bms_status_cell_E_balancing_set(uint16_t cell_E_balancing);
-uint8_t CAN_bms_status_checkDataIsFresh(void);
+uint8_t CAN_bms_status_checkDataIsUnread(void);
+uint8_t CAN_bms_status_checkDataIsStale(void);
 uint16_t CAN_bms_status_multiplex_get(void);
 uint16_t CAN_bms_status_bms_state_get(void);
 float CAN_bms_status_pack_voltage_get(void);
@@ -200,7 +204,8 @@ void CAN_bms_charger_request_start_charge_not_request_set(uint16_t start_charge_
 void CAN_bms_charger_request_charge_mode_set(uint16_t charge_mode);
 void CAN_bms_charger_request_byte_7_set(uint16_t byte_7);
 void CAN_bms_charger_request_byte_8_set(uint16_t byte_8);
-uint8_t CAN_bms_charger_request_checkDataIsFresh(void);
+uint8_t CAN_bms_charger_request_checkDataIsUnread(void);
+uint8_t CAN_bms_charger_request_checkDataIsStale(void);
 uint16_t CAN_bms_charger_request_output_voltage_high_byte_get(void);
 uint16_t CAN_bms_charger_request_output_voltage_low_byte_get(void);
 uint16_t CAN_bms_charger_request_output_current_high_byte_get(void);
@@ -291,7 +296,8 @@ void CAN_bms_cell_temperatures_send(void);
  * charger NODE MESSAGES
  */
 #define CAN_charger_status_interval() 1000
-uint8_t CAN_charger_status_checkDataIsFresh(void);
+uint8_t CAN_charger_status_checkDataIsUnread(void);
+uint8_t CAN_charger_status_checkDataIsStale(void);
 uint16_t CAN_charger_status_output_voltage_high_byte_get(void);
 uint16_t CAN_charger_status_output_voltage_low_byte_get(void);
 uint16_t CAN_charger_status_output_current_high_byte_get(void);
@@ -308,7 +314,8 @@ uint16_t CAN_charger_status_byte8_get(void);
  * boot_host NODE MESSAGES
  */
 #define CAN_boot_host_bms_interval() 1
-uint8_t CAN_boot_host_bms_checkDataIsFresh(void);
+uint8_t CAN_boot_host_bms_checkDataIsUnread(void);
+uint8_t CAN_boot_host_bms_checkDataIsStale(void);
 uint16_t CAN_boot_host_bms_type_get(void);
 uint16_t CAN_boot_host_bms_code_get(void);
 uint16_t CAN_boot_host_bms_byte1_get(void);

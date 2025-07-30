@@ -34,6 +34,7 @@ typedef struct CAN_message_S {
     uint8_t dlc;
     volatile CAN_payload_S * payload;
     volatile uint8_t * canMessageStatus;
+    uint32_t last_received_timestamp;
 } CAN_message_S;
 
 /* mode types */
@@ -113,11 +114,37 @@ uint8_t CAN_write(CAN_message_S data);
 
 
 /**
- * Checks if data is fresh.
+ * Checks if data is unread (has new data available).
  * @param data
- * @return 1 if fresh, 0 if stale.
+ * @return 1 if unread, 0 if already read.
  */
-uint8_t CAN_checkDataIsFresh(CAN_message_S * data);
+uint8_t CAN_checkDataIsUnread(CAN_message_S * data);
+
+/**
+ * Timestamp function pointer type for CAN staleness detection
+ */
+typedef uint32_t (*CAN_GetTimestamp_t)(void);
+
+/**
+ * Sets the timestamp callback function for CAN staleness detection
+ * @param timestamp_func Function that returns current timestamp in milliseconds
+ */
+void CAN_timeStampFunc(CAN_GetTimestamp_t timestamp_func);
+
+/**
+ * Checks if message data is stale based on timestamp
+ * @param data CAN message to check
+ * @param timeout_ms Timeout threshold in milliseconds
+ * @return 1 if stale, 0 if fresh or no timestamp function set
+ */
+uint8_t CAN_checkDataIsStale(CAN_message_S * data, uint32_t timeout_ms);
+
+/**
+ * Gets time since last message reception
+ * @param data CAN message to check
+ * @return Time in milliseconds since last reception, 0 if no timestamp function set
+ */
+uint32_t CAN_getTimeSinceLastReceived(CAN_message_S * data);
 
 #endif /* CAN_FUNC_H */
 

@@ -18,14 +18,15 @@ typedef enum{
  * mcu NODE MESSAGES
  */
 #define CAN_mcu_command_interval() 100
-uint8_t CAN_mcu_command_checkDataIsFresh(void);
+uint8_t CAN_mcu_command_checkDataIsUnread(void);
+uint8_t CAN_mcu_command_checkDataIsStale(void);
 uint16_t CAN_mcu_command_DCDC_enable_get(void);
 uint16_t CAN_mcu_command_ev_charger_enable_get(void);
 float CAN_mcu_command_ev_charger_current_get(void);
 uint16_t CAN_mcu_command_precharge_enable_get(void);
 uint16_t CAN_mcu_command_motor_controller_enable_get(void);
 
-uint8_t CAN_mcu_boot_response_checkDataIsFresh(void);
+uint8_t CAN_mcu_boot_response_checkDataIsUnread(void);
 uint16_t CAN_mcu_boot_response_type_get(void);
 uint16_t CAN_mcu_boot_response_code_get(void);
 uint16_t CAN_mcu_boot_response_byte1_get(void);
@@ -40,7 +41,8 @@ uint16_t CAN_mcu_boot_response_byte7_get(void);
  * bms NODE MESSAGES
  */
 #define CAN_bms_debug_interval() 10
-uint8_t CAN_bms_debug_checkDataIsFresh(void);
+uint8_t CAN_bms_debug_checkDataIsUnread(void);
+uint8_t CAN_bms_debug_checkDataIsStale(void);
 uint16_t CAN_bms_debug_bool0_get(void);
 uint16_t CAN_bms_debug_bool1_get(void);
 float CAN_bms_debug_float1_get(void);
@@ -48,7 +50,7 @@ float CAN_bms_debug_float2_get(void);
 uint16_t CAN_bms_debug_word1_get(void);
 uint16_t CAN_bms_debug_byte1_get(void);
 
-uint8_t CAN_bms_boot_response_checkDataIsFresh(void);
+uint8_t CAN_bms_boot_response_checkDataIsUnread(void);
 uint16_t CAN_bms_boot_response_type_get(void);
 uint16_t CAN_bms_boot_response_code_get(void);
 uint16_t CAN_bms_boot_response_byte1_get(void);

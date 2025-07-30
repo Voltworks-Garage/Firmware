@@ -29,8 +29,11 @@ static CAN_message_S CAN_dash_status={
 #define CAN_DASH_STATUS_DRIVEMODE_RANGE 3
 #define CAN_DASH_STATUS_DRIVEMODE_OFFSET 15
 
-uint8_t CAN_dash_status_checkDataIsFresh(void){
-	return CAN_checkDataIsFresh(&CAN_dash_status);
+uint8_t CAN_dash_status_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_dash_status);
+}
+uint8_t CAN_dash_status_checkDataIsStale(void){
+	return CAN_checkDataIsStale(&CAN_dash_status, 20);
 }
 uint16_t CAN_dash_status_heartBeat_get(void){
 	// Extract 4-bit signal at bit offset 0
@@ -97,8 +100,11 @@ static CAN_message_S CAN_dash_command={
 #define CAN_DASH_COMMAND_HORNREQUEST_RANGE 1
 #define CAN_DASH_COMMAND_HORNREQUEST_OFFSET 4
 
-uint8_t CAN_dash_command_checkDataIsFresh(void){
-	return CAN_checkDataIsFresh(&CAN_dash_command);
+uint8_t CAN_dash_command_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_dash_command);
+}
+uint8_t CAN_dash_command_checkDataIsStale(void){
+	return CAN_checkDataIsStale(&CAN_dash_command, 20);
 }
 uint16_t CAN_dash_command_ignitionRequest_get(void){
 	// Extract 1-bit signal at bit offset 0
@@ -150,8 +156,11 @@ static CAN_message_S CAN_dash_data1={
 #define CAN_DASH_DATA1_TRIPB_RANGE 16
 #define CAN_DASH_DATA1_TRIPB_OFFSET 48
 
-uint8_t CAN_dash_data1_checkDataIsFresh(void){
-	return CAN_checkDataIsFresh(&CAN_dash_data1);
+uint8_t CAN_dash_data1_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_dash_data1);
+}
+uint8_t CAN_dash_data1_checkDataIsStale(void){
+	return CAN_checkDataIsStale(&CAN_dash_data1, 20);
 }
 uint16_t CAN_dash_data1_speed_get(void){
 	// Extract 16-bit signal at bit offset 0
@@ -197,8 +206,11 @@ static CAN_message_S CAN_dash_data2={
 #define CAN_DASH_DATA2_TRIPB_RANGE 16
 #define CAN_DASH_DATA2_TRIPB_OFFSET 48
 
-uint8_t CAN_dash_data2_checkDataIsFresh(void){
-	return CAN_checkDataIsFresh(&CAN_dash_data2);
+uint8_t CAN_dash_data2_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_dash_data2);
+}
+uint8_t CAN_dash_data2_checkDataIsStale(void){
+	return CAN_checkDataIsStale(&CAN_dash_data2, 20);
 }
 uint16_t CAN_dash_data2_runningTime_get(void){
 	// Extract 16-bit signal at bit offset 0
@@ -885,15 +897,18 @@ static CAN_message_S CAN_bms_status={
 #define CAN_BMS_STATUS_M4_CELL_E_BALANCING_RANGE 5
 #define CAN_BMS_STATUS_M4_CELL_E_BALANCING_OFFSET 18
 
-uint8_t CAN_bms_status_checkDataIsFresh(void){
-	return CAN_checkDataIsFresh(&CAN_bms_status);
+uint8_t CAN_bms_status_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_bms_status);
+}
+uint8_t CAN_bms_status_checkDataIsStale(void){
+	return CAN_checkDataIsStale(&CAN_bms_status, 20);
 }
 uint16_t CAN_bms_status_multiplex_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -906,11 +921,11 @@ uint16_t CAN_bms_status_multiplex_get(void){
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_status_bms_state_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -923,11 +938,11 @@ uint16_t CAN_bms_status_bms_state_get(void){
 	return (data * 1.0) + 0;
 }
 float CAN_bms_status_pack_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -941,11 +956,11 @@ float CAN_bms_status_pack_voltage_get(void){
 	return (data * 0.01) + 0;
 }
 float CAN_bms_status_pack_current_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -959,11 +974,11 @@ float CAN_bms_status_pack_current_get(void){
 	return (data * 0.01) + -320;
 }
 float CAN_bms_status_soc_percent_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -976,11 +991,11 @@ float CAN_bms_status_soc_percent_get(void){
 	return (data * 0.5) + 0;
 }
 float CAN_bms_status_pack_temp_min_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -994,11 +1009,11 @@ float CAN_bms_status_pack_temp_min_get(void){
 	return (data * 1.0) + -40;
 }
 float CAN_bms_status_pack_temp_max_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1011,11 +1026,11 @@ float CAN_bms_status_pack_temp_max_get(void){
 	return (data * 1.0) + -40;
 }
 float CAN_bms_status_stack_voltage_1_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1029,11 +1044,11 @@ float CAN_bms_status_stack_voltage_1_get(void){
 	return (data * 0.001) + 0;
 }
 float CAN_bms_status_stack_voltage_2_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1047,11 +1062,11 @@ float CAN_bms_status_stack_voltage_2_get(void){
 	return (data * 0.001) + 0;
 }
 float CAN_bms_status_pack_voltage_sum_of_stacks_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1065,11 +1080,11 @@ float CAN_bms_status_pack_voltage_sum_of_stacks_get(void){
 	return (data * 0.001) + 0;
 }
 uint16_t CAN_bms_status_ltc_state_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1082,11 +1097,11 @@ uint16_t CAN_bms_status_ltc_state_get(void){
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_status_ltc_error_count_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1100,11 +1115,11 @@ uint16_t CAN_bms_status_ltc_error_count_get(void){
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_status_ltc_last_error_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1117,11 +1132,11 @@ uint16_t CAN_bms_status_ltc_last_error_get(void){
 	return (data * 1.0) + 0;
 }
 float CAN_bms_status_cpu_usage_percent_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1135,11 +1150,11 @@ float CAN_bms_status_cpu_usage_percent_get(void){
 	return (data * 0.5) + 0;
 }
 float CAN_bms_status_cpu_peak_percent_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1152,11 +1167,11 @@ float CAN_bms_status_cpu_peak_percent_get(void){
 	return (data * 0.5) + 0;
 }
 float CAN_bms_status_vbus_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1170,11 +1185,11 @@ float CAN_bms_status_vbus_voltage_get(void){
 	return (data * 0.1) + 0;
 }
 float CAN_bms_status_internal_temp_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1187,11 +1202,11 @@ float CAN_bms_status_internal_temp_get(void){
 	return (data * 1.0) + -40;
 }
 uint16_t CAN_bms_status_max_charge_current_mA_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1205,11 +1220,11 @@ uint16_t CAN_bms_status_max_charge_current_mA_get(void){
 	return (data * 1.0) + 0;
 }
 uint32_t CAN_bms_status_max_charge_voltage_mV_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1223,11 +1238,11 @@ uint32_t CAN_bms_status_max_charge_voltage_mV_get(void){
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_status_contactors_closed_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1240,11 +1255,11 @@ uint16_t CAN_bms_status_contactors_closed_get(void){
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_status_precharge_active_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1257,11 +1272,11 @@ uint16_t CAN_bms_status_precharge_active_get(void){
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_status_charge_enabled_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1274,11 +1289,11 @@ uint16_t CAN_bms_status_charge_enabled_get(void){
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_status_discharge_enabled_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1291,11 +1306,11 @@ uint16_t CAN_bms_status_discharge_enabled_get(void){
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_status_fault_summary_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1309,11 +1324,11 @@ uint16_t CAN_bms_status_fault_summary_get(void){
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_status_is_balancing_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1326,11 +1341,11 @@ uint16_t CAN_bms_status_is_balancing_get(void){
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_status_cell_A_balancing_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1343,11 +1358,11 @@ uint16_t CAN_bms_status_cell_A_balancing_get(void){
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_status_cell_B_balancing_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1360,11 +1375,11 @@ uint16_t CAN_bms_status_cell_B_balancing_get(void){
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_status_cell_C_balancing_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1377,11 +1392,11 @@ uint16_t CAN_bms_status_cell_C_balancing_get(void){
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_status_cell_D_balancing_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1395,11 +1410,11 @@ uint16_t CAN_bms_status_cell_D_balancing_get(void){
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_status_cell_E_balancing_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_status.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_status.payload, CAN_BMS_STATUS_MULTIPLEX_OFFSET, CAN_BMS_STATUS_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_STATUS_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_status_payloads[mux_value] = *CAN_bms_status.payload;
@@ -1445,8 +1460,11 @@ static CAN_message_S CAN_bms_power_systems={
 #define CAN_BMS_POWER_SYSTEMS_HV_CONTACTOR_STATE_RANGE 1
 #define CAN_BMS_POWER_SYSTEMS_HV_CONTACTOR_STATE_OFFSET 55
 
-uint8_t CAN_bms_power_systems_checkDataIsFresh(void){
-	return CAN_checkDataIsFresh(&CAN_bms_power_systems);
+uint8_t CAN_bms_power_systems_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_bms_power_systems);
+}
+uint8_t CAN_bms_power_systems_checkDataIsStale(void){
+	return CAN_checkDataIsStale(&CAN_bms_power_systems, 20);
 }
 uint16_t CAN_bms_power_systems_DCDC_state_get(void){
 	// Extract 1-bit signal at bit offset 0
@@ -1541,8 +1559,11 @@ static CAN_message_S CAN_bms_debug={
 #define CAN_BMS_DEBUG_BYTE1_RANGE 8
 #define CAN_BMS_DEBUG_BYTE1_OFFSET 50
 
-uint8_t CAN_bms_debug_checkDataIsFresh(void){
-	return CAN_checkDataIsFresh(&CAN_bms_debug);
+uint8_t CAN_bms_debug_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_bms_debug);
+}
+uint8_t CAN_bms_debug_checkDataIsStale(void){
+	return CAN_checkDataIsStale(&CAN_bms_debug, 20);
 }
 uint16_t CAN_bms_debug_bool0_get(void){
 	// Extract 1-bit signal at bit offset 0
@@ -1647,15 +1668,18 @@ static CAN_message_S CAN_bms_cell_voltages={
 #define CAN_BMS_CELL_VOLTAGES_M5_CELL_24_VOLTAGE_RANGE 15
 #define CAN_BMS_CELL_VOLTAGES_M5_CELL_24_VOLTAGE_OFFSET 48
 
-uint8_t CAN_bms_cell_voltages_checkDataIsFresh(void){
-	return CAN_checkDataIsFresh(&CAN_bms_cell_voltages);
+uint8_t CAN_bms_cell_voltages_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_bms_cell_voltages);
+}
+uint8_t CAN_bms_cell_voltages_checkDataIsStale(void){
+	return CAN_checkDataIsStale(&CAN_bms_cell_voltages, 200);
 }
 uint16_t CAN_bms_cell_voltages_multiplex_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -1668,11 +1692,11 @@ uint16_t CAN_bms_cell_voltages_multiplex_get(void){
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_1_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -1686,11 +1710,11 @@ uint16_t CAN_bms_cell_voltages_cell_1_voltage_get(void){
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_2_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -1704,11 +1728,11 @@ uint16_t CAN_bms_cell_voltages_cell_2_voltage_get(void){
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_3_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -1721,11 +1745,11 @@ uint16_t CAN_bms_cell_voltages_cell_3_voltage_get(void){
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_4_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -1738,11 +1762,11 @@ uint16_t CAN_bms_cell_voltages_cell_4_voltage_get(void){
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_5_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -1756,11 +1780,11 @@ uint16_t CAN_bms_cell_voltages_cell_5_voltage_get(void){
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_6_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -1774,11 +1798,11 @@ uint16_t CAN_bms_cell_voltages_cell_6_voltage_get(void){
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_7_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -1791,11 +1815,11 @@ uint16_t CAN_bms_cell_voltages_cell_7_voltage_get(void){
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_8_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -1808,11 +1832,11 @@ uint16_t CAN_bms_cell_voltages_cell_8_voltage_get(void){
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_9_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -1826,11 +1850,11 @@ uint16_t CAN_bms_cell_voltages_cell_9_voltage_get(void){
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_10_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -1844,11 +1868,11 @@ uint16_t CAN_bms_cell_voltages_cell_10_voltage_get(void){
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_11_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -1861,11 +1885,11 @@ uint16_t CAN_bms_cell_voltages_cell_11_voltage_get(void){
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_12_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -1878,11 +1902,11 @@ uint16_t CAN_bms_cell_voltages_cell_12_voltage_get(void){
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_13_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -1896,11 +1920,11 @@ uint16_t CAN_bms_cell_voltages_cell_13_voltage_get(void){
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_14_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -1914,11 +1938,11 @@ uint16_t CAN_bms_cell_voltages_cell_14_voltage_get(void){
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_15_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -1931,11 +1955,11 @@ uint16_t CAN_bms_cell_voltages_cell_15_voltage_get(void){
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_16_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -1948,11 +1972,11 @@ uint16_t CAN_bms_cell_voltages_cell_16_voltage_get(void){
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_17_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -1966,11 +1990,11 @@ uint16_t CAN_bms_cell_voltages_cell_17_voltage_get(void){
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_18_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -1984,11 +2008,11 @@ uint16_t CAN_bms_cell_voltages_cell_18_voltage_get(void){
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_19_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -2001,11 +2025,11 @@ uint16_t CAN_bms_cell_voltages_cell_19_voltage_get(void){
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_20_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -2018,11 +2042,11 @@ uint16_t CAN_bms_cell_voltages_cell_20_voltage_get(void){
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_21_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -2036,11 +2060,11 @@ uint16_t CAN_bms_cell_voltages_cell_21_voltage_get(void){
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_22_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -2054,11 +2078,11 @@ uint16_t CAN_bms_cell_voltages_cell_22_voltage_get(void){
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_23_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -2071,11 +2095,11 @@ uint16_t CAN_bms_cell_voltages_cell_23_voltage_get(void){
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_cell_voltages_cell_24_voltage_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_voltages.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_voltages.payload, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_OFFSET, CAN_BMS_CELL_VOLTAGES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_voltages_payloads[mux_value] = *CAN_bms_cell_voltages.payload;
@@ -2159,15 +2183,18 @@ static CAN_message_S CAN_bms_cell_temperatures={
 #define CAN_BMS_CELL_TEMPERATURES_M6_TEMP_24_RANGE 12
 #define CAN_BMS_CELL_TEMPERATURES_M6_TEMP_24_OFFSET 39
 
-uint8_t CAN_bms_cell_temperatures_checkDataIsFresh(void){
-	return CAN_checkDataIsFresh(&CAN_bms_cell_temperatures);
+uint8_t CAN_bms_cell_temperatures_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_bms_cell_temperatures);
+}
+uint8_t CAN_bms_cell_temperatures_checkDataIsStale(void){
+	return CAN_checkDataIsStale(&CAN_bms_cell_temperatures, 2000);
 }
 uint16_t CAN_bms_cell_temperatures_multiplex_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2180,11 +2207,11 @@ uint16_t CAN_bms_cell_temperatures_multiplex_get(void){
 	return (data * 1.0) + 0;
 }
 float CAN_bms_cell_temperatures_stack_1_LTC_internal_temp_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2197,11 +2224,11 @@ float CAN_bms_cell_temperatures_stack_1_LTC_internal_temp_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_stack_1_balance_temp_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2215,11 +2242,11 @@ float CAN_bms_cell_temperatures_stack_1_balance_temp_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_stack_2_LTC_internal_temp_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2233,11 +2260,11 @@ float CAN_bms_cell_temperatures_stack_2_LTC_internal_temp_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_stack_2_balance_temp_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2251,11 +2278,11 @@ float CAN_bms_cell_temperatures_stack_2_balance_temp_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_temp_1_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2268,11 +2295,11 @@ float CAN_bms_cell_temperatures_temp_1_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_temp_2_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2286,11 +2313,11 @@ float CAN_bms_cell_temperatures_temp_2_get(void){
 	return (data * 0.1) + 0;
 }
 float CAN_bms_cell_temperatures_temp_3_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2304,11 +2331,11 @@ float CAN_bms_cell_temperatures_temp_3_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_temp_4_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2322,11 +2349,11 @@ float CAN_bms_cell_temperatures_temp_4_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_temp_5_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2339,11 +2366,11 @@ float CAN_bms_cell_temperatures_temp_5_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_temp_6_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2357,11 +2384,11 @@ float CAN_bms_cell_temperatures_temp_6_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_temp_7_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2375,11 +2402,11 @@ float CAN_bms_cell_temperatures_temp_7_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_temp_8_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2393,11 +2420,11 @@ float CAN_bms_cell_temperatures_temp_8_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_temp_9_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2410,11 +2437,11 @@ float CAN_bms_cell_temperatures_temp_9_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_temp_10_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2428,11 +2455,11 @@ float CAN_bms_cell_temperatures_temp_10_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_temp_11_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2446,11 +2473,11 @@ float CAN_bms_cell_temperatures_temp_11_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_temp_12_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2464,11 +2491,11 @@ float CAN_bms_cell_temperatures_temp_12_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_temp_13_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2481,11 +2508,11 @@ float CAN_bms_cell_temperatures_temp_13_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_temp_14_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2499,11 +2526,11 @@ float CAN_bms_cell_temperatures_temp_14_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_temp_15_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2517,11 +2544,11 @@ float CAN_bms_cell_temperatures_temp_15_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_temp_16_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2535,11 +2562,11 @@ float CAN_bms_cell_temperatures_temp_16_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_temp_17_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2552,11 +2579,11 @@ float CAN_bms_cell_temperatures_temp_17_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_temp_18_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2570,11 +2597,11 @@ float CAN_bms_cell_temperatures_temp_18_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_temp_19_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2588,11 +2615,11 @@ float CAN_bms_cell_temperatures_temp_19_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_temp_20_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2606,11 +2633,11 @@ float CAN_bms_cell_temperatures_temp_20_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_temp_21_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2623,11 +2650,11 @@ float CAN_bms_cell_temperatures_temp_21_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_temp_22_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2641,11 +2668,11 @@ float CAN_bms_cell_temperatures_temp_22_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_temp_23_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2659,11 +2686,11 @@ float CAN_bms_cell_temperatures_temp_23_get(void){
 	return (data * 0.1) + -40;
 }
 float CAN_bms_cell_temperatures_temp_24_get(void){
-	// Check for fresh data and update payload arrays if needed
+	// Check for unread data and update payload arrays if needed
 	if (*CAN_bms_cell_temperatures.canMessageStatus) {
-		// Fresh data received - determine which mux payload to update
+		// Unread data received - determine which mux payload to update
 		uint16_t mux_value = get_bits((size_t*)CAN_bms_cell_temperatures.payload, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET, CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE);
-		// Copy fresh payload data to appropriate mux payload array
+		// Copy unread payload data to appropriate mux payload array
 		if (mux_value < CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {
 			// Copy the entire payload structure to the appropriate mux array
 			CAN_bms_cell_temperatures_payloads[mux_value] = *CAN_bms_cell_temperatures.payload;
@@ -2707,8 +2734,11 @@ static CAN_message_S CAN_motorcontroller_motorStatus={
 #define CAN_MOTORCONTROLLER_MOTORSTATUS_VPHASEC_RANGE 8
 #define CAN_MOTORCONTROLLER_MOTORSTATUS_VPHASEC_OFFSET 56
 
-uint8_t CAN_motorcontroller_motorStatus_checkDataIsFresh(void){
-	return CAN_checkDataIsFresh(&CAN_motorcontroller_motorStatus);
+uint8_t CAN_motorcontroller_motorStatus_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_motorcontroller_motorStatus);
+}
+uint8_t CAN_motorcontroller_motorStatus_checkDataIsStale(void){
+	return CAN_checkDataIsStale(&CAN_motorcontroller_motorStatus, 20);
 }
 uint16_t CAN_motorcontroller_motorStatus_motorSpeed_get(void){
 	// Extract 8-bit signal at bit offset 0
@@ -2786,8 +2816,8 @@ static CAN_message_S CAN_motorcontroller_response={
 #define CAN_MOTORCONTROLLER_RESPONSE_BYTE8_RANGE 8
 #define CAN_MOTORCONTROLLER_RESPONSE_BYTE8_OFFSET 56
 
-uint8_t CAN_motorcontroller_response_checkDataIsFresh(void){
-	return CAN_checkDataIsFresh(&CAN_motorcontroller_response);
+uint8_t CAN_motorcontroller_response_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_motorcontroller_response);
 }
 uint16_t CAN_motorcontroller_response_byte1_get(void){
 	// Extract 8-bit signal at bit offset 0
@@ -2873,8 +2903,11 @@ static CAN_message_S CAN_boot_host_mcu={
 #define CAN_BOOT_HOST_MCU_BYTE7_RANGE 8
 #define CAN_BOOT_HOST_MCU_BYTE7_OFFSET 56
 
-uint8_t CAN_boot_host_mcu_checkDataIsFresh(void){
-	return CAN_checkDataIsFresh(&CAN_boot_host_mcu);
+uint8_t CAN_boot_host_mcu_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_boot_host_mcu);
+}
+uint8_t CAN_boot_host_mcu_checkDataIsStale(void){
+	return CAN_checkDataIsStale(&CAN_boot_host_mcu, 2);
 }
 uint16_t CAN_boot_host_mcu_type_get(void){
 	// Extract 4-bit signal at bit offset 0

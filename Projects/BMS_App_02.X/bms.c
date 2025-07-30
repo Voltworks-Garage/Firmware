@@ -65,7 +65,7 @@ static BMS_states_E nextState = bms_init_state;
 static bool bms_balancingAllowed = false;
 NEW_TIMER(error_timer, 3000); // 3000ms timer for BMS error operation
 NEW_TIMER(balancing_timer, 10000); // 10 second timer for balancing operations
-NEW_TIMER(measuring_timer, 1000); // 1 second timer to measure relaxed voltages
+NEW_TIMER(measuring_timer, 2000); // 1 second timer to measure relaxed voltages
 NEW_TIMER(led_timer, 500);
 static uint32_t bms_voltageTargetmV = BMS_MAX_CHARGE_VOLTAGE_ALLOWED * 1000;
 static uint32_t bms_currentTargetmA = BMS_MAX_CHARGE_CURRENT_ALLOWED * 1000;
@@ -198,6 +198,8 @@ static void bms_running(BMS_entry_types_E entry_type) {
                     if(!LTC6802_1_IsBalancingActive()){
                         // Calculate which cells need balancing
                         uint8_t num_cells = bms_calculateCellsToBalance();
+                        // If a cell is over the balance threshold, start to taper the current
+                        bms_taperCurrentCommandForBalancing();
                         // Start balancing with the selected cells
                         LTC6802_1_StartCellBalancing(cells_to_balance, num_cells);
                         SysTick_TimerStart(balancing_timer);
@@ -221,8 +223,6 @@ static void bms_running(BMS_entry_types_E entry_type) {
                 default:
                     break;
                 }
-                // If a cell is over the balance threshold, start to taper the current
-                bms_taperCurrentCommandForBalancing();
             } else {
                 BMS_ClearAllCellBalancing();
             }
@@ -230,7 +230,7 @@ static void bms_running(BMS_entry_types_E entry_type) {
             CAN_bms_status_is_balancing_set(bms_balancingAllowed);
             // Update which cells are balancing
             for (uint8_t i = 0; i < 5; i++) {
-                uint8_t cell_id = i < num_cells_to_balance ? cells_to_balance[i] : 0xFF;
+                uint8_t cell_id = i < num_cells_to_balance ? (cells_to_balance[i]+1) : 0x00;
                 switch (i) {
                     case 0:
                         CAN_bms_status_cell_A_balancing_set(cell_id);

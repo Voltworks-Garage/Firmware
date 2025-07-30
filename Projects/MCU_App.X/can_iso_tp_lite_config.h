@@ -27,7 +27,7 @@ void (*CAN_boot_response_dlc_set)(uint8_t) = CAN_mcu_boot_response_dlc_set;
 void (*CAN_boot_response_send)(void) = CAN_mcu_boot_response_send;
 
 /*Function pointer to CAN get functions*/
-uint8_t (*CAN_boot_host_checkDataIsFresh)(void) = CAN_boot_host_mcu_checkDataIsFresh;
+uint8_t (*CAN_boot_host_checkDataIsUnread)(void) = CAN_boot_host_mcu_checkDataIsUnread;
 uint16_t (*CAN_boot_host_type_get)(void) = CAN_boot_host_mcu_type_get;
 uint16_t (*CAN_boot_host_code_get)(void) = CAN_boot_host_mcu_code_get;
 

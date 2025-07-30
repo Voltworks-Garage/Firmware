@@ -28,8 +28,11 @@ static CAN_message_S CAN_mcu_command={
 #define CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_RANGE 1
 #define CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_OFFSET 16
 
-uint8_t CAN_mcu_command_checkDataIsFresh(void){
-	return CAN_checkDataIsFresh(&CAN_mcu_command);
+uint8_t CAN_mcu_command_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_mcu_command);
+}
+uint8_t CAN_mcu_command_checkDataIsStale(void){
+	return CAN_checkDataIsStale(&CAN_mcu_command, 200);
 }
 uint16_t CAN_mcu_command_DCDC_enable_get(void){
 	// Extract 1-bit signal at bit offset 0
@@ -88,8 +91,11 @@ static CAN_message_S CAN_bms_debug={
 #define CAN_BMS_DEBUG_BYTE1_RANGE 8
 #define CAN_BMS_DEBUG_BYTE1_OFFSET 50
 
-uint8_t CAN_bms_debug_checkDataIsFresh(void){
-	return CAN_checkDataIsFresh(&CAN_bms_debug);
+uint8_t CAN_bms_debug_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_bms_debug);
+}
+uint8_t CAN_bms_debug_checkDataIsStale(void){
+	return CAN_checkDataIsStale(&CAN_bms_debug, 20);
 }
 uint16_t CAN_bms_debug_bool0_get(void){
 	// Extract 1-bit signal at bit offset 0
@@ -158,8 +164,11 @@ static CAN_message_S CAN_bms_charger_request={
 #define CAN_BMS_CHARGER_REQUEST_BYTE_8_RANGE 8
 #define CAN_BMS_CHARGER_REQUEST_BYTE_8_OFFSET 56
 
-uint8_t CAN_bms_charger_request_checkDataIsFresh(void){
-	return CAN_checkDataIsFresh(&CAN_bms_charger_request);
+uint8_t CAN_bms_charger_request_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_bms_charger_request);
+}
+uint8_t CAN_bms_charger_request_checkDataIsStale(void){
+	return CAN_checkDataIsStale(&CAN_bms_charger_request, 2000);
 }
 uint16_t CAN_bms_charger_request_output_voltage_high_byte_get(void){
 	// Extract 8-bit signal at bit offset 0

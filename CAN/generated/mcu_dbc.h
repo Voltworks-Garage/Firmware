@@ -15,7 +15,8 @@ typedef enum{
  * dash NODE MESSAGES
  */
 #define CAN_dash_status_interval() 10
-uint8_t CAN_dash_status_checkDataIsFresh(void);
+uint8_t CAN_dash_status_checkDataIsUnread(void);
+uint8_t CAN_dash_status_checkDataIsStale(void);
 uint16_t CAN_dash_status_heartBeat_get(void);
 uint16_t CAN_dash_status_state_get(void);
 uint16_t CAN_dash_status_killButton_get(void);
@@ -25,7 +26,8 @@ uint16_t CAN_dash_status_selectButton_get(void);
 uint16_t CAN_dash_status_driveMode_get(void);
 
 #define CAN_dash_command_interval() 10
-uint8_t CAN_dash_command_checkDataIsFresh(void);
+uint8_t CAN_dash_command_checkDataIsUnread(void);
+uint8_t CAN_dash_command_checkDataIsStale(void);
 uint16_t CAN_dash_command_ignitionRequest_get(void);
 uint16_t CAN_dash_command_killRequest_get(void);
 uint16_t CAN_dash_command_batteryEjectRequest_get(void);
@@ -33,14 +35,16 @@ uint16_t CAN_dash_command_lightsRequest_get(void);
 uint16_t CAN_dash_command_hornRequest_get(void);
 
 #define CAN_dash_data1_interval() 10
-uint8_t CAN_dash_data1_checkDataIsFresh(void);
+uint8_t CAN_dash_data1_checkDataIsUnread(void);
+uint8_t CAN_dash_data1_checkDataIsStale(void);
 uint16_t CAN_dash_data1_speed_get(void);
 uint16_t CAN_dash_data1_odometer_get(void);
 uint16_t CAN_dash_data1_tripA_get(void);
 uint16_t CAN_dash_data1_tripB_get(void);
 
 #define CAN_dash_data2_interval() 10
-uint8_t CAN_dash_data2_checkDataIsFresh(void);
+uint8_t CAN_dash_data2_checkDataIsUnread(void);
+uint8_t CAN_dash_data2_checkDataIsStale(void);
 uint16_t CAN_dash_data2_runningTime_get(void);
 uint16_t CAN_dash_data2_odometer_get(void);
 uint16_t CAN_dash_data2_tripA_get(void);
@@ -144,7 +148,8 @@ void CAN_mcu_mcu_debug_send(void);
  */
 #define CAN_bms_status_interval() 10
 #define CAN_BMS_STATUS_NUM_MUX_VALUES 5
-uint8_t CAN_bms_status_checkDataIsFresh(void);
+uint8_t CAN_bms_status_checkDataIsUnread(void);
+uint8_t CAN_bms_status_checkDataIsStale(void);
 uint16_t CAN_bms_status_multiplex_get(void);
 uint16_t CAN_bms_status_bms_state_get(void);
 float CAN_bms_status_pack_voltage_get(void);
@@ -177,7 +182,8 @@ uint16_t CAN_bms_status_cell_D_balancing_get(void);
 uint16_t CAN_bms_status_cell_E_balancing_get(void);
 
 #define CAN_bms_power_systems_interval() 10
-uint8_t CAN_bms_power_systems_checkDataIsFresh(void);
+uint8_t CAN_bms_power_systems_checkDataIsUnread(void);
+uint8_t CAN_bms_power_systems_checkDataIsStale(void);
 uint16_t CAN_bms_power_systems_DCDC_state_get(void);
 uint16_t CAN_bms_power_systems_DCDC_fault_get(void);
 float CAN_bms_power_systems_DCDC_voltage_get(void);
@@ -191,7 +197,8 @@ float CAN_bms_power_systems_HV_isolation_voltage_get(void);
 uint16_t CAN_bms_power_systems_HV_contactor_state_get(void);
 
 #define CAN_bms_debug_interval() 10
-uint8_t CAN_bms_debug_checkDataIsFresh(void);
+uint8_t CAN_bms_debug_checkDataIsUnread(void);
+uint8_t CAN_bms_debug_checkDataIsStale(void);
 uint16_t CAN_bms_debug_bool0_get(void);
 uint16_t CAN_bms_debug_bool1_get(void);
 float CAN_bms_debug_float1_get(void);
@@ -201,7 +208,8 @@ uint16_t CAN_bms_debug_byte1_get(void);
 
 #define CAN_bms_cell_voltages_interval() 100
 #define CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES 6
-uint8_t CAN_bms_cell_voltages_checkDataIsFresh(void);
+uint8_t CAN_bms_cell_voltages_checkDataIsUnread(void);
+uint8_t CAN_bms_cell_voltages_checkDataIsStale(void);
 uint16_t CAN_bms_cell_voltages_multiplex_get(void);
 uint16_t CAN_bms_cell_voltages_cell_1_voltage_get(void);
 uint16_t CAN_bms_cell_voltages_cell_2_voltage_get(void);
@@ -230,7 +238,8 @@ uint16_t CAN_bms_cell_voltages_cell_24_voltage_get(void);
 
 #define CAN_bms_cell_temperatures_interval() 1000
 #define CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES 7
-uint8_t CAN_bms_cell_temperatures_checkDataIsFresh(void);
+uint8_t CAN_bms_cell_temperatures_checkDataIsUnread(void);
+uint8_t CAN_bms_cell_temperatures_checkDataIsStale(void);
 uint16_t CAN_bms_cell_temperatures_multiplex_get(void);
 float CAN_bms_cell_temperatures_stack_1_LTC_internal_temp_get(void);
 float CAN_bms_cell_temperatures_stack_1_balance_temp_get(void);
@@ -265,7 +274,8 @@ float CAN_bms_cell_temperatures_temp_24_get(void);
  * motorcontroller NODE MESSAGES
  */
 #define CAN_motorcontroller_motorStatus_interval() 10
-uint8_t CAN_motorcontroller_motorStatus_checkDataIsFresh(void);
+uint8_t CAN_motorcontroller_motorStatus_checkDataIsUnread(void);
+uint8_t CAN_motorcontroller_motorStatus_checkDataIsStale(void);
 uint16_t CAN_motorcontroller_motorStatus_motorSpeed_get(void);
 float CAN_motorcontroller_motorStatus_motorCurrent_get(void);
 uint16_t CAN_motorcontroller_motorStatus_IphaseA_get(void);
@@ -275,7 +285,7 @@ uint16_t CAN_motorcontroller_motorStatus_VphaseA_get(void);
 uint16_t CAN_motorcontroller_motorStatus_VphaseB_get(void);
 uint16_t CAN_motorcontroller_motorStatus_VphaseC_get(void);
 
-uint8_t CAN_motorcontroller_response_checkDataIsFresh(void);
+uint8_t CAN_motorcontroller_response_checkDataIsUnread(void);
 uint16_t CAN_motorcontroller_response_byte1_get(void);
 uint16_t CAN_motorcontroller_response_byte2_get(void);
 uint16_t CAN_motorcontroller_response_byte3_get(void);
@@ -292,7 +302,8 @@ uint16_t CAN_motorcontroller_response_byte8_get(void);
  * boot_host NODE MESSAGES
  */
 #define CAN_boot_host_mcu_interval() 1
-uint8_t CAN_boot_host_mcu_checkDataIsFresh(void);
+uint8_t CAN_boot_host_mcu_checkDataIsUnread(void);
+uint8_t CAN_boot_host_mcu_checkDataIsStale(void);
 uint16_t CAN_boot_host_mcu_type_get(void);
 uint16_t CAN_boot_host_mcu_code_get(void);
 uint16_t CAN_boot_host_mcu_byte1_get(void);

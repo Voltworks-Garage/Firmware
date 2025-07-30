@@ -124,7 +124,7 @@ for node in range(0,numberOfNodes):
             dot_c.write("\t.canID = " + ID_name + "_ID" + ",\n\t.canXID = " + str(canXID) + ",\n\t.dlc = 8,\n\t" + payload_init
                         + ",\n\t" + status_init + "\n};\n\n")
             if i != thisNode:
-                dot_c.write("uint8_t " + ID_name + "_checkDataIsFresh(void){\n\treturn CAN_checkDataIsFresh(&" + ID_name + ");\n}\n")
+                dot_c.write("uint8_t " + ID_name + "_checkDataIsUnread(void){\n\treturn CAN_checkDataIsUnread(&" + ID_name + ");\n}\n")
 
 
             #loop through each signal and parse the data
@@ -321,7 +321,7 @@ for node in range(0,numberOfNodes):
                     send_message_dict[str(this_message_freq)].append("CAN_" + this_node_name + "_" + this_message_name + "_send")
             else:
                 #loop through signals again and create retrieve functions
-                dot_h.write("uint8_t " + ID_name + "_checkDataIsFresh(void);\n")
+                dot_h.write("uint8_t " + ID_name + "_checkDataIsUnread(void);\n")
                 for k in range(0, numberOfSignals):
                     this_signal_name = data["NODE"][i]["messages"][j]["signals"][k]["name"]
                     this_signal_scale = data["NODE"][i]["messages"][j]["signals"][k]["scale"]

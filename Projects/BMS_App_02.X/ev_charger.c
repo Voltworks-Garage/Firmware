@@ -102,7 +102,11 @@ void EV_CHARGER_Run_10ms(void) {
     takeLowPassFilter(charger_voltage, IO_GET_EV_CHARGER_VOLTAGE());
     takeLowPassFilter(charger_current, IO_GET_EV_CHARGER_CURRENT());
 
-    chargeRequestFromMCU = CAN_mcu_command_ev_charger_enable_get();// && checkHeartBeat();
+    if (!CAN_mcu_command_checkDataIsStale()){
+        chargeRequestFromMCU = CAN_mcu_command_ev_charger_enable_get();// && checkHeartBeat();
+    } else {
+        chargeRequestFromMCU = 0;
+    }
 
     /* This only happens during state transition
      * State transitions thus have priority over posting new events
@@ -208,7 +212,7 @@ void charging(EV_CHARGER_entry_types_E entry_type) {
             }
 
             if (SysTick_TimeOut(chargerMiaTimer)){
-                if (CAN_charger_status_checkDataIsFresh()){
+                if (CAN_charger_status_checkDataIsUnread()){
                     SysTick_TimerStart(chargerMiaTimer);
                 } else {
                     nextState = stopping_state;

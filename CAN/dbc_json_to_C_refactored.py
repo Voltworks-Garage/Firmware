@@ -269,14 +269,14 @@ def write_getter_function(dot_h: Any, dot_c: Any, message_id: str, signal: Dict[
     dot_h.write(f"{datatype} {message_id}_{function_name_suffix}_get(void);\n")
     dot_c.write(f"{datatype} {message_id}_{function_name_suffix}_get(void){{\n")
     
-    # For consumer nodes, add data freshness checking
+    # For consumer nodes, add data unreadness checking
     if is_consumer and not is_producer and is_multiplexed:
-        dot_c.write(f"\t// Check for fresh data and update payload arrays if needed\n")
+        dot_c.write(f"\t// Check for unread data and update payload arrays if needed\n")
         dot_c.write(f"\tif (*{message_id}.canMessageStatus) {{\n")
-        dot_c.write(f"\t\t// Fresh data received - determine which mux payload to update\n")
+        dot_c.write(f"\t\t// Unread data received - determine which mux payload to update\n")
         dot_c.write(f"\t\tuint16_t mux_value = get_bits((size_t*){message_id}.payload, ")
         dot_c.write(f"{message_id.upper()}_MULTIPLEX_OFFSET, {message_id.upper()}_MULTIPLEX_RANGE);\n")  
-        dot_c.write(f"\t\t// Copy fresh payload data to appropriate mux payload array\n")
+        dot_c.write(f"\t\t// Copy unread payload data to appropriate mux payload array\n")
         dot_c.write(f"\t\tif (mux_value < {message_id.upper()}_NUM_MUX_VALUES) {{\n")
         dot_c.write(f"\t\t\t// Copy the entire payload structure to the appropriate mux array\n")
         dot_c.write(f"\t\t\t{message_id}_payloads[mux_value] = *{message_id}.payload;\n")
@@ -400,9 +400,17 @@ def process_message_signals(dot_h: Any, dot_c: Any, node: Dict[str, Any], messag
             num_mux_groups = max_mux_value + 1
             dot_h.write(f"#define {message_id.upper()}_NUM_MUX_VALUES {num_mux_groups}\n")
         
-        dot_h.write(f"uint8_t {message_id}_checkDataIsFresh(void);\n")
-        dot_c.write(f"uint8_t {message_id}_checkDataIsFresh(void){{\n")
-        dot_c.write(f"\treturn CAN_checkDataIsFresh(&{message_id});\n}}\n")
+        dot_h.write(f"uint8_t {message_id}_checkDataIsUnread(void);\n")
+        dot_c.write(f"uint8_t {message_id}_checkDataIsUnread(void){{\n")
+        dot_c.write(f"\treturn CAN_checkDataIsUnread(&{message_id});\n}}\n")
+        
+        # Add staleness detection function if message has a cycle time
+        message_freq = message.get("freq")
+        if message_freq:
+            staleness_timeout = message_freq * 2  # 2x cycle time
+            dot_h.write(f"uint8_t {message_id}_checkDataIsStale(void);\n")
+            dot_c.write(f"uint8_t {message_id}_checkDataIsStale(void){{\n")
+            dot_c.write(f"\treturn CAN_checkDataIsStale(&{message_id}, {staleness_timeout});\n}}\n")
         
         for signal in signals:
             function_name_suffix = signal["name"]
@@ -602,7 +610,7 @@ def process_node_messages(dot_h: Any, dot_c: Any, nodes: List[Dict[str, Any]], c
             
             write_message_structure(dot_c, dot_h, message_id, message, payload_init, is_tx)
             
-            # checkDataIsFresh is now generated in process_message_signals when getters are needed
+            # checkDataIsUnread is now generated in process_message_signals when getters are needed
             
             # Process all signals in this message
             process_message_signals(dot_h, dot_c, node, message, current_node_idx, node_idx, current_node_name)

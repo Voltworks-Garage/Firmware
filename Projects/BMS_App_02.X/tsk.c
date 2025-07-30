@@ -84,6 +84,7 @@ void Tsk_init(void) {
     /*Init each module once*/
     PinSetup_Init(); // Pin setup should be first
     CAN_DBC_init(); // Initialize the CAN mailboxes
+    CAN_timeStampFunc(SysTick_Get);
     StateMachine_Init();
     IO_SET_DEBUG_LED_EN(HIGH);
     BMS_Init();

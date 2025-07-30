@@ -106,7 +106,6 @@ void idle(STATE_MACHINE_entry_types_E entry_type) {
         case ENTRY:
             IO_SET_SW_EN(HIGH);
             CAN_changeOpMode(CAN_NORMAL);
-            DCDC_Init();
             break;
         case EXIT:
             break;
