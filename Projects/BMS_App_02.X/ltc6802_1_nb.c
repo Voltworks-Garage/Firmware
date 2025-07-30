@@ -116,6 +116,7 @@ typedef struct {
     // Configuration data
     LTC6802_1_Config_S config;
     uint8_t config_data[LTC6802_1_NUM_STACKS * LTC6802_1_CONFIG_REG_SIZE];
+    uint8_t config_data_saved[LTC6802_1_NUM_STACKS * LTC6802_1_CONFIG_REG_SIZE];
     
     // Measurement data (staleness tracked by NEW_TIMER system)
     uint16_t voltage_data[LTC6802_1_TOTAL_CELLS];
@@ -172,7 +173,8 @@ static LTC6802_1_Module_S ltc_module;
 // SPI timeout timer
 NEW_TIMER(ltc6802_spiTimer, 2);
 // ADC Conversion Timer
-NEW_TIMER(adc_conversion_timer, 5);
+NEW_TIMER(adc_conversion_timer,13*LTC6802_1_CELLS_PER_STACK);
+NEW_TIMER(temp_conversion_timer,13*LTC6802_1_TEMPS_PER_STACK);
 // Data staleness timers
 NEW_TIMER(voltage_data_timer, LTC6802_1_DATA_STALE_TIME_MS);
 NEW_TIMER(temp_data_timer, LTC6802_1_DATA_STALE_TIME_MS);
@@ -199,6 +201,7 @@ static void ProcessTemperatureData(void);
 static void ProcessFlagData(void);
 static void ProcessConfigData(void);
 static void BuildConfigData(void);
+static void SaveConfigMSG(void);
 // CalculateStackVoltages moved to BMS layer
 static uint8_t CalculateCRC(const uint8_t* data, uint8_t length);
 static bool ValidateCRC(const uint8_t* data, uint8_t length, uint8_t received_crc);
@@ -315,6 +318,8 @@ void config_write(LTC6802_1_entry_types_E entry_type) {
                                    0) != LTC6802_1_ERROR_NONE) {
                 ltc_module.nextState = faulted_state;
             }
+            // save this message in case config data gets changed between states.
+            SaveConfigMSG();
             break;
         case RUN:
             // Configuration write completed, move to readback
@@ -423,12 +428,12 @@ void temp_read(LTC6802_1_entry_types_E entry_type) {
                                 ) != LTC6802_1_ERROR_NONE) {
                 ltc_module.nextState = faulted_state;
             }
-            SysTick_TimerStart(adc_conversion_timer);
+            SysTick_TimerStart(temp_conversion_timer);
             break;
         case RUN:
             // Wait for ADC conversion to complete
             // if (IO_GET_SPI_SDI() == HIGH) { // Check if conversion is complete
-            if ( SysTick_TimeOut(adc_conversion_timer)) {// Check if conversion is complete
+            if ( SysTick_TimeOut(temp_conversion_timer)) {// Check if conversion is complete
                 ltc_module.nextState = temp_data_state;
             }
             break;
@@ -550,7 +555,7 @@ LTC6802_1_Error_E LTC6802_1_Resume(void) {
 
 
 
-LTC6802_1_Error_E LTC6802_1_SetCellsToBalance(const uint8_t* cells_to_balance, uint8_t num_cells) {
+LTC6802_1_Error_E LTC6802_1_StartCellBalancing(const uint8_t* cells_to_balance, uint8_t num_cells) {
     // Validate inputs
     if (num_cells > MAX_BALANCE_CELLS) {
         num_cells = MAX_BALANCE_CELLS; // Limit to maximum
@@ -562,10 +567,6 @@ LTC6802_1_Error_E LTC6802_1_SetCellsToBalance(const uint8_t* cells_to_balance, u
         ltc_module.cells_to_balance[i] = cells_to_balance[i];
     }
     
-    return LTC6802_1_ERROR_NONE;
-}
-
-LTC6802_1_Error_E LTC6802_1_StartCellBalancing(void) {
     // Clear all discharge cells first
     for (uint8_t i = 0; i < LTC6802_1_NUM_STACKS; i++) {
         ltc_module.config.discharge_cells[i] = 0;
@@ -591,6 +592,10 @@ LTC6802_1_Error_E LTC6802_1_StartCellBalancing(void) {
     }
 
     return LTC6802_1_ERROR_NONE;
+}
+
+bool LTC6802_1_IsBalancingActive(void) {
+    return ltc_module.balancing_active;
 }
 
 LTC6802_1_Error_E LTC6802_1_ClearAllCellBalancing(void) {
@@ -827,8 +832,6 @@ static void ProcessTemperatureData(void) {
     // 
     // Received data: [Stack0_5bytes][Stack0_PEC][Stack1_5bytes][Stack1_PEC] (12 bytes total)
 
-    float error = 0;
-    
     uint8_t stack, temp_index = 0;
     uint8_t stack_data_start, pec_byte;
     bool pec_valid;
@@ -847,7 +850,6 @@ static void ProcessTemperatureData(void) {
                                LTC6802_1_TEMP_REG_SIZE, pec_byte);
         
         if (pec_valid) {
-            error += 1;
             // PEC valid - process temperature data for this stack
             // Extract temperature data according to register layout:
             // TMPR0: ETMP1[7:0]
@@ -898,7 +900,6 @@ static void ProcessTemperatureData(void) {
             HandleError(LTC6802_1_ERROR_CRC_FAIL, stack);
         }
     }
-    CAN_bms_debug_float1_set(error);
 }
 
 static void ProcessFlagData(void) {
@@ -971,7 +972,7 @@ static void ProcessConfigData(void) {
         
         // PEC valid - now compare readback data with what we wrote
         config_valid = (memcmp(&ltc_module.spi_rx_buffer[readback_start+1], 
-                              &ltc_module.config_data[written_start+1], 
+                              &ltc_module.config_data_saved[written_start+1], 
                               LTC6802_1_CONFIG_REG_SIZE -1) == 0);
         
         if (!config_valid) {
@@ -1065,6 +1066,13 @@ static uint8_t CalculateCRC(const uint8_t* data, uint8_t length) {
 static bool ValidateCRC(const uint8_t* data, uint8_t length, uint8_t received_crc) {
     uint8_t calculated_crc = CalculateCRC(data, length);
     return (calculated_crc == received_crc);
+}
+
+static void SaveConfigMSG(void){
+    memcpy(ltc_module.config_data_saved,
+        ltc_module.config_data,
+        LTC6802_1_NUM_STACKS * LTC6802_1_CONFIG_REG_SIZE
+    );
 }
 
 /******************************************************************************
@@ -1236,16 +1244,6 @@ LTC6802_1_Error_E LTC6802_1_EnableVoltageComparison(uint8_t stack_id, bool enabl
     }
     
     return LTC6802_1_ERROR_NONE;
-}
-
-
-/******************************************************************************
- * Data Access Function Implementations
- *******************************************************************************/
-
-
-bool LTC6802_1_IsBalancingActive(void) {
-    return ltc_module.balancing_active;
 }
 
 /******************************************************************************

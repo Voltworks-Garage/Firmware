@@ -125,8 +125,8 @@ void Tsk_10ms(void) {
     EV_CHARGER_Run_10ms();
     BMS_Run_10ms();               // Non-blocking LTC6802-1 operations
 
-    CAN_bms_status_M2_cpu_usage_percent_set(SysTick_GetCPUPercentage());
-    CAN_bms_status_M2_cpu_peak_percent_set(SysTick_GetCPUPeak());
+    CAN_bms_status_cpu_usage_percent_set(SysTick_GetCPUPercentage());
+    CAN_bms_status_cpu_peak_percent_set(SysTick_GetCPUPeak());
     CAN_populate_10ms();
     CAN_send_10ms();
 }
@@ -139,7 +139,7 @@ void Tsk_100ms(void) {
     DCDC_Run_100ms();
     IO_SET_DEBUG_LED_EN(TOGGLE); //Toggle Debug LED at 10Hz for scheduler running status
 
-    // CAN_send_100ms();
+    CAN_send_100ms();
 }
 
 /**

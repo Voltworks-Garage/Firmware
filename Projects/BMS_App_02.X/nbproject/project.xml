@@ -18,6 +18,7 @@
                 <sourceRootElem>../../Libraries/PIC33_plib/inc</sourceRootElem>
                 <sourceRootElem>../../Libraries/CommandHandler</sourceRootElem>
                 <sourceRootElem>../../Libraries/CommandService</sourceRootElem>
+                <sourceRootElem>../../Libraries/Standard</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>

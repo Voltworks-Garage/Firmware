@@ -100,3 +100,10 @@ Examples:
   - Moving files to different directories without permission
   - Changing file extensions during testing
 - If file operations fail, use git commands to restore originals when possible
+
+## CAN DBC Protocol
+- ALWAYS read `CAN/README.md` before modifying `CAN/dbc.json`
+- Follow the signal addition guidelines for regular vs multiplexed messages
+- For regular messages: ensure total bits < 65
+- For multiplexed messages: fill mux groups efficiently, each group limited to 64 - mux_bits
+- After DBC changes, regenerate CAN code using the batch file

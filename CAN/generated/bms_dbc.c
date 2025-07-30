@@ -338,7 +338,7 @@ uint16_t CAN_mcu_mcu_debug_Multiplex_get(void){
 	data |= (uint16_t)((CAN_mcu_mcu_debug.payload->word0 & 0x0003) >> 0) << 0;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_mcu_mcu_debug_M0_debug_value_1_get(void){
+uint16_t CAN_mcu_mcu_debug_debug_value_1_get(void){
 	// Check for fresh data and update payload arrays if needed
 	if (*CAN_mcu_mcu_debug.canMessageStatus) {
 		// Fresh data received - determine which mux payload to update
@@ -355,7 +355,7 @@ uint16_t CAN_mcu_mcu_debug_M0_debug_value_1_get(void){
 	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[0].word0 & 0x03FC) >> 2) << 0;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_mcu_mcu_debug_M0_debug_value_2_get(void){
+uint16_t CAN_mcu_mcu_debug_debug_value_2_get(void){
 	// Check for fresh data and update payload arrays if needed
 	if (*CAN_mcu_mcu_debug.canMessageStatus) {
 		// Fresh data received - determine which mux payload to update
@@ -373,7 +373,7 @@ uint16_t CAN_mcu_mcu_debug_M0_debug_value_2_get(void){
 	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[0].word1 & 0x0003) >> 0) << 6;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_mcu_mcu_debug_M0_debug_value_3_get(void){
+uint16_t CAN_mcu_mcu_debug_debug_value_3_get(void){
 	// Check for fresh data and update payload arrays if needed
 	if (*CAN_mcu_mcu_debug.canMessageStatus) {
 		// Fresh data received - determine which mux payload to update
@@ -390,7 +390,7 @@ uint16_t CAN_mcu_mcu_debug_M0_debug_value_3_get(void){
 	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[0].word1 & 0x03FC) >> 2) << 0;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_mcu_mcu_debug_M0_debug_value_4_get(void){
+uint16_t CAN_mcu_mcu_debug_debug_value_4_get(void){
 	// Check for fresh data and update payload arrays if needed
 	if (*CAN_mcu_mcu_debug.canMessageStatus) {
 		// Fresh data received - determine which mux payload to update
@@ -408,7 +408,7 @@ uint16_t CAN_mcu_mcu_debug_M0_debug_value_4_get(void){
 	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[0].word2 & 0x0003) >> 0) << 6;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_mcu_mcu_debug_M1_debug_value_5_get(void){
+uint16_t CAN_mcu_mcu_debug_debug_value_5_get(void){
 	// Check for fresh data and update payload arrays if needed
 	if (*CAN_mcu_mcu_debug.canMessageStatus) {
 		// Fresh data received - determine which mux payload to update
@@ -425,7 +425,7 @@ uint16_t CAN_mcu_mcu_debug_M1_debug_value_5_get(void){
 	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[1].word0 & 0x03FC) >> 2) << 0;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_mcu_mcu_debug_M1_debug_value_6_get(void){
+uint16_t CAN_mcu_mcu_debug_debug_value_6_get(void){
 	// Check for fresh data and update payload arrays if needed
 	if (*CAN_mcu_mcu_debug.canMessageStatus) {
 		// Fresh data received - determine which mux payload to update
@@ -443,7 +443,7 @@ uint16_t CAN_mcu_mcu_debug_M1_debug_value_6_get(void){
 	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[1].word1 & 0x0003) >> 0) << 6;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_mcu_mcu_debug_M1_debug_value_7_get(void){
+uint16_t CAN_mcu_mcu_debug_debug_value_7_get(void){
 	// Check for fresh data and update payload arrays if needed
 	if (*CAN_mcu_mcu_debug.canMessageStatus) {
 		// Fresh data received - determine which mux payload to update
@@ -460,7 +460,7 @@ uint16_t CAN_mcu_mcu_debug_M1_debug_value_7_get(void){
 	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[1].word1 & 0x03FC) >> 2) << 0;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_mcu_mcu_debug_M1_debug_value_8_get(void){
+uint16_t CAN_mcu_mcu_debug_debug_value_8_get(void){
 	// Check for fresh data and update payload arrays if needed
 	if (*CAN_mcu_mcu_debug.canMessageStatus) {
 		// Fresh data received - determine which mux payload to update
@@ -478,7 +478,7 @@ uint16_t CAN_mcu_mcu_debug_M1_debug_value_8_get(void){
 	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[1].word2 & 0x0003) >> 0) << 6;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_mcu_mcu_debug_M2_debug_value_9_get(void){
+uint16_t CAN_mcu_mcu_debug_debug_value_9_get(void){
 	// Check for fresh data and update payload arrays if needed
 	if (*CAN_mcu_mcu_debug.canMessageStatus) {
 		// Fresh data received - determine which mux payload to update
@@ -495,7 +495,7 @@ uint16_t CAN_mcu_mcu_debug_M2_debug_value_9_get(void){
 	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[2].word0 & 0x03FC) >> 2) << 0;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_mcu_mcu_debug_M2_debug_value_10_get(void){
+uint16_t CAN_mcu_mcu_debug_debug_value_10_get(void){
 	// Check for fresh data and update payload arrays if needed
 	if (*CAN_mcu_mcu_debug.canMessageStatus) {
 		// Fresh data received - determine which mux payload to update
@@ -513,7 +513,7 @@ uint16_t CAN_mcu_mcu_debug_M2_debug_value_10_get(void){
 	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[2].word1 & 0x0003) >> 0) << 6;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_mcu_mcu_debug_M2_debug_value_11_get(void){
+uint16_t CAN_mcu_mcu_debug_debug_value_11_get(void){
 	// Check for fresh data and update payload arrays if needed
 	if (*CAN_mcu_mcu_debug.canMessageStatus) {
 		// Fresh data received - determine which mux payload to update
@@ -530,7 +530,7 @@ uint16_t CAN_mcu_mcu_debug_M2_debug_value_11_get(void){
 	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[2].word1 & 0x03FC) >> 2) << 0;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_mcu_mcu_debug_M2_debug_value_12_get(void){
+uint16_t CAN_mcu_mcu_debug_debug_value_12_get(void){
 	// Check for fresh data and update payload arrays if needed
 	if (*CAN_mcu_mcu_debug.canMessageStatus) {
 		// Fresh data received - determine which mux payload to update
@@ -548,7 +548,7 @@ uint16_t CAN_mcu_mcu_debug_M2_debug_value_12_get(void){
 	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[2].word2 & 0x0003) >> 0) << 6;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_mcu_mcu_debug_M3_debug_value_13_get(void){
+uint16_t CAN_mcu_mcu_debug_debug_value_13_get(void){
 	// Check for fresh data and update payload arrays if needed
 	if (*CAN_mcu_mcu_debug.canMessageStatus) {
 		// Fresh data received - determine which mux payload to update
@@ -565,7 +565,7 @@ uint16_t CAN_mcu_mcu_debug_M3_debug_value_13_get(void){
 	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[3].word0 & 0x03FC) >> 2) << 0;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_mcu_mcu_debug_M3_debug_value_14_get(void){
+uint16_t CAN_mcu_mcu_debug_debug_value_14_get(void){
 	// Check for fresh data and update payload arrays if needed
 	if (*CAN_mcu_mcu_debug.canMessageStatus) {
 		// Fresh data received - determine which mux payload to update
@@ -583,7 +583,7 @@ uint16_t CAN_mcu_mcu_debug_M3_debug_value_14_get(void){
 	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[3].word1 & 0x0003) >> 0) << 6;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_mcu_mcu_debug_M3_debug_value_15_get(void){
+uint16_t CAN_mcu_mcu_debug_debug_value_15_get(void){
 	// Check for fresh data and update payload arrays if needed
 	if (*CAN_mcu_mcu_debug.canMessageStatus) {
 		// Fresh data received - determine which mux payload to update
@@ -600,7 +600,7 @@ uint16_t CAN_mcu_mcu_debug_M3_debug_value_15_get(void){
 	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[3].word1 & 0x03FC) >> 2) << 0;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_mcu_mcu_debug_M3_debug_value_16_get(void){
+uint16_t CAN_mcu_mcu_debug_debug_value_16_get(void){
 	// Check for fresh data and update payload arrays if needed
 	if (*CAN_mcu_mcu_debug.canMessageStatus) {
 		// Fresh data received - determine which mux payload to update
@@ -622,7 +622,7 @@ uint16_t CAN_mcu_mcu_debug_M3_debug_value_16_get(void){
 /**********************************************************
  * bms NODE MESSAGES
  */
-static CAN_payload_S CAN_bms_status_payloads[4] __attribute__((aligned(sizeof(CAN_payload_S))));
+static CAN_payload_S CAN_bms_status_payloads[5] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_bms_status_mux = 0;
 static volatile uint8_t CAN_bms_status_status = 0;
 #define CAN_bms_status_ID 0x721
@@ -635,388 +635,461 @@ static CAN_message_S CAN_bms_status={
 	.canMessageStatus = &CAN_bms_status_status
 };
 
-#define CAN_BMS_STATUS_MULTIPLEX_RANGE 2
+#define CAN_BMS_STATUS_MULTIPLEX_RANGE 3
 #define CAN_BMS_STATUS_MULTIPLEX_OFFSET 0
 #define CAN_BMS_STATUS_M0_BMS_STATE_RANGE 4
-#define CAN_BMS_STATUS_M0_BMS_STATE_OFFSET 2
+#define CAN_BMS_STATUS_M0_BMS_STATE_OFFSET 3
 #define CAN_BMS_STATUS_M0_PACK_VOLTAGE_RANGE 16
-#define CAN_BMS_STATUS_M0_PACK_VOLTAGE_OFFSET 6
+#define CAN_BMS_STATUS_M0_PACK_VOLTAGE_OFFSET 7
 #define CAN_BMS_STATUS_M0_PACK_CURRENT_RANGE 16
-#define CAN_BMS_STATUS_M0_PACK_CURRENT_OFFSET 22
+#define CAN_BMS_STATUS_M0_PACK_CURRENT_OFFSET 23
 #define CAN_BMS_STATUS_M0_SOC_PERCENT_RANGE 8
-#define CAN_BMS_STATUS_M0_SOC_PERCENT_OFFSET 38
+#define CAN_BMS_STATUS_M0_SOC_PERCENT_OFFSET 39
 #define CAN_BMS_STATUS_M0_PACK_TEMP_MIN_RANGE 8
-#define CAN_BMS_STATUS_M0_PACK_TEMP_MIN_OFFSET 46
+#define CAN_BMS_STATUS_M0_PACK_TEMP_MIN_OFFSET 47
 #define CAN_BMS_STATUS_M0_PACK_TEMP_MAX_RANGE 8
-#define CAN_BMS_STATUS_M0_PACK_TEMP_MAX_OFFSET 54
+#define CAN_BMS_STATUS_M0_PACK_TEMP_MAX_OFFSET 55
 #define CAN_BMS_STATUS_M1_STACK_VOLTAGE_1_RANGE 16
-#define CAN_BMS_STATUS_M1_STACK_VOLTAGE_1_OFFSET 2
+#define CAN_BMS_STATUS_M1_STACK_VOLTAGE_1_OFFSET 3
 #define CAN_BMS_STATUS_M1_STACK_VOLTAGE_2_RANGE 16
-#define CAN_BMS_STATUS_M1_STACK_VOLTAGE_2_OFFSET 18
+#define CAN_BMS_STATUS_M1_STACK_VOLTAGE_2_OFFSET 19
 #define CAN_BMS_STATUS_M1_PACK_VOLTAGE_SUM_OF_STACKS_RANGE 18
-#define CAN_BMS_STATUS_M1_PACK_VOLTAGE_SUM_OF_STACKS_OFFSET 34
-#define CAN_BMS_STATUS_M1_DEBUG_SIGNAL_1_RANGE 12
-#define CAN_BMS_STATUS_M1_DEBUG_SIGNAL_1_OFFSET 52
+#define CAN_BMS_STATUS_M1_PACK_VOLTAGE_SUM_OF_STACKS_OFFSET 35
 #define CAN_BMS_STATUS_M2_LTC_STATE_RANGE 4
-#define CAN_BMS_STATUS_M2_LTC_STATE_OFFSET 2
+#define CAN_BMS_STATUS_M2_LTC_STATE_OFFSET 3
 #define CAN_BMS_STATUS_M2_LTC_ERROR_COUNT_RANGE 12
-#define CAN_BMS_STATUS_M2_LTC_ERROR_COUNT_OFFSET 6
+#define CAN_BMS_STATUS_M2_LTC_ERROR_COUNT_OFFSET 7
 #define CAN_BMS_STATUS_M2_LTC_LAST_ERROR_RANGE 8
-#define CAN_BMS_STATUS_M2_LTC_LAST_ERROR_OFFSET 18
+#define CAN_BMS_STATUS_M2_LTC_LAST_ERROR_OFFSET 19
 #define CAN_BMS_STATUS_M2_CPU_USAGE_PERCENT_RANGE 8
-#define CAN_BMS_STATUS_M2_CPU_USAGE_PERCENT_OFFSET 26
+#define CAN_BMS_STATUS_M2_CPU_USAGE_PERCENT_OFFSET 27
 #define CAN_BMS_STATUS_M2_CPU_PEAK_PERCENT_RANGE 8
-#define CAN_BMS_STATUS_M2_CPU_PEAK_PERCENT_OFFSET 34
+#define CAN_BMS_STATUS_M2_CPU_PEAK_PERCENT_OFFSET 35
 #define CAN_BMS_STATUS_M2_VBUS_VOLTAGE_RANGE 10
-#define CAN_BMS_STATUS_M2_VBUS_VOLTAGE_OFFSET 42
+#define CAN_BMS_STATUS_M2_VBUS_VOLTAGE_OFFSET 43
 #define CAN_BMS_STATUS_M2_INTERNAL_TEMP_RANGE 8
-#define CAN_BMS_STATUS_M2_INTERNAL_TEMP_OFFSET 52
+#define CAN_BMS_STATUS_M2_INTERNAL_TEMP_OFFSET 53
 #define CAN_BMS_STATUS_M3_MAX_CHARGE_CURRENT_MA_RANGE 16
-#define CAN_BMS_STATUS_M3_MAX_CHARGE_CURRENT_MA_OFFSET 2
+#define CAN_BMS_STATUS_M3_MAX_CHARGE_CURRENT_MA_OFFSET 3
 #define CAN_BMS_STATUS_M3_MAX_CHARGE_VOLTAGE_MV_RANGE 18
-#define CAN_BMS_STATUS_M3_MAX_CHARGE_VOLTAGE_MV_OFFSET 18
+#define CAN_BMS_STATUS_M3_MAX_CHARGE_VOLTAGE_MV_OFFSET 19
 #define CAN_BMS_STATUS_M3_CONTACTORS_CLOSED_RANGE 1
-#define CAN_BMS_STATUS_M3_CONTACTORS_CLOSED_OFFSET 36
+#define CAN_BMS_STATUS_M3_CONTACTORS_CLOSED_OFFSET 37
 #define CAN_BMS_STATUS_M3_PRECHARGE_ACTIVE_RANGE 1
-#define CAN_BMS_STATUS_M3_PRECHARGE_ACTIVE_OFFSET 37
+#define CAN_BMS_STATUS_M3_PRECHARGE_ACTIVE_OFFSET 38
 #define CAN_BMS_STATUS_M3_CHARGE_ENABLED_RANGE 1
-#define CAN_BMS_STATUS_M3_CHARGE_ENABLED_OFFSET 38
+#define CAN_BMS_STATUS_M3_CHARGE_ENABLED_OFFSET 39
 #define CAN_BMS_STATUS_M3_DISCHARGE_ENABLED_RANGE 1
-#define CAN_BMS_STATUS_M3_DISCHARGE_ENABLED_OFFSET 39
+#define CAN_BMS_STATUS_M3_DISCHARGE_ENABLED_OFFSET 40
 #define CAN_BMS_STATUS_M3_FAULT_SUMMARY_RANGE 12
-#define CAN_BMS_STATUS_M3_FAULT_SUMMARY_OFFSET 40
+#define CAN_BMS_STATUS_M3_FAULT_SUMMARY_OFFSET 41
+#define CAN_BMS_STATUS_M3_IS_BALANCING_RANGE 1
+#define CAN_BMS_STATUS_M3_IS_BALANCING_OFFSET 53
+#define CAN_BMS_STATUS_M3_CELL_A_BALANCING_RANGE 5
+#define CAN_BMS_STATUS_M3_CELL_A_BALANCING_OFFSET 54
+#define CAN_BMS_STATUS_M4_CELL_B_BALANCING_RANGE 5
+#define CAN_BMS_STATUS_M4_CELL_B_BALANCING_OFFSET 3
+#define CAN_BMS_STATUS_M4_CELL_C_BALANCING_RANGE 5
+#define CAN_BMS_STATUS_M4_CELL_C_BALANCING_OFFSET 8
+#define CAN_BMS_STATUS_M4_CELL_D_BALANCING_RANGE 5
+#define CAN_BMS_STATUS_M4_CELL_D_BALANCING_OFFSET 13
+#define CAN_BMS_STATUS_M4_CELL_E_BALANCING_RANGE 5
+#define CAN_BMS_STATUS_M4_CELL_E_BALANCING_OFFSET 18
 
-void CAN_bms_status_M0_bms_state_set(uint16_t bms_state){
+void CAN_bms_status_bms_state_set(uint16_t bms_state){
 	uint16_t data_scaled = (bms_state - 0) / 1.0;
-	// Set 4-bit signal at bit offset 2
-	CAN_bms_status_payloads[0].word0 &= ~0x003C;
-	CAN_bms_status_payloads[0].word0 |= (data_scaled << 2) & 0x003C;
+	// Set 4-bit signal at bit offset 3
+	CAN_bms_status_payloads[0].word0 &= ~0x0078;
+	CAN_bms_status_payloads[0].word0 |= (data_scaled << 3) & 0x0078;
 }
-void CAN_bms_status_M0_pack_voltage_set(float pack_voltage){
+void CAN_bms_status_pack_voltage_set(float pack_voltage){
 	uint16_t data_scaled = (uint16_t)((pack_voltage - 0) / 0.01 + 0.5f);
-	// Set 16-bit signal at bit offset 6
-	CAN_bms_status_payloads[0].word0 &= ~0xFFC0;
-	CAN_bms_status_payloads[0].word0 |= (data_scaled << 6) & 0xFFC0;
-	CAN_bms_status_payloads[0].word1 &= ~0x003F;
-	CAN_bms_status_payloads[0].word1 |= (data_scaled >> 10) & 0x003F;
+	// Set 16-bit signal at bit offset 7
+	CAN_bms_status_payloads[0].word0 &= ~0xFF80;
+	CAN_bms_status_payloads[0].word0 |= (data_scaled << 7) & 0xFF80;
+	CAN_bms_status_payloads[0].word1 &= ~0x007F;
+	CAN_bms_status_payloads[0].word1 |= (data_scaled >> 9) & 0x007F;
 }
-void CAN_bms_status_M0_pack_current_set(float pack_current){
+void CAN_bms_status_pack_current_set(float pack_current){
 	uint16_t data_scaled = (uint16_t)((pack_current - -320) / 0.01 + 0.5f);
-	// Set 16-bit signal at bit offset 22
-	CAN_bms_status_payloads[0].word1 &= ~0xFFC0;
-	CAN_bms_status_payloads[0].word1 |= (data_scaled << 6) & 0xFFC0;
-	CAN_bms_status_payloads[0].word2 &= ~0x003F;
-	CAN_bms_status_payloads[0].word2 |= (data_scaled >> 10) & 0x003F;
+	// Set 16-bit signal at bit offset 23
+	CAN_bms_status_payloads[0].word1 &= ~0xFF80;
+	CAN_bms_status_payloads[0].word1 |= (data_scaled << 7) & 0xFF80;
+	CAN_bms_status_payloads[0].word2 &= ~0x007F;
+	CAN_bms_status_payloads[0].word2 |= (data_scaled >> 9) & 0x007F;
 }
-void CAN_bms_status_M0_soc_percent_set(float soc_percent){
+void CAN_bms_status_soc_percent_set(float soc_percent){
 	uint16_t data_scaled = (uint16_t)((soc_percent - 0) / 0.5 + 0.5f);
-	// Set 8-bit signal at bit offset 38
-	CAN_bms_status_payloads[0].word2 &= ~0x3FC0;
-	CAN_bms_status_payloads[0].word2 |= (data_scaled << 6) & 0x3FC0;
+	// Set 8-bit signal at bit offset 39
+	CAN_bms_status_payloads[0].word2 &= ~0x7F80;
+	CAN_bms_status_payloads[0].word2 |= (data_scaled << 7) & 0x7F80;
 }
-void CAN_bms_status_M0_pack_temp_min_set(float pack_temp_min){
+void CAN_bms_status_pack_temp_min_set(float pack_temp_min){
 	uint16_t data_scaled = (uint16_t)((pack_temp_min - -40) / 1.0 + 0.5f);
-	// Set 8-bit signal at bit offset 46
-	CAN_bms_status_payloads[0].word2 &= ~0xC000;
-	CAN_bms_status_payloads[0].word2 |= (data_scaled << 14) & 0xC000;
-	CAN_bms_status_payloads[0].word3 &= ~0x003F;
-	CAN_bms_status_payloads[0].word3 |= (data_scaled >> 2) & 0x003F;
+	// Set 8-bit signal at bit offset 47
+	CAN_bms_status_payloads[0].word2 &= ~0x8000;
+	CAN_bms_status_payloads[0].word2 |= (data_scaled << 15) & 0x8000;
+	CAN_bms_status_payloads[0].word3 &= ~0x007F;
+	CAN_bms_status_payloads[0].word3 |= (data_scaled >> 1) & 0x007F;
 }
-void CAN_bms_status_M0_pack_temp_max_set(float pack_temp_max){
+void CAN_bms_status_pack_temp_max_set(float pack_temp_max){
 	uint16_t data_scaled = (uint16_t)((pack_temp_max - -40) / 1.0 + 0.5f);
-	// Set 8-bit signal at bit offset 54
-	CAN_bms_status_payloads[0].word3 &= ~0x3FC0;
-	CAN_bms_status_payloads[0].word3 |= (data_scaled << 6) & 0x3FC0;
+	// Set 8-bit signal at bit offset 55
+	CAN_bms_status_payloads[0].word3 &= ~0x7F80;
+	CAN_bms_status_payloads[0].word3 |= (data_scaled << 7) & 0x7F80;
 }
-void CAN_bms_status_M1_stack_voltage_1_set(float stack_voltage_1){
+void CAN_bms_status_stack_voltage_1_set(float stack_voltage_1){
 	uint16_t data_scaled = (uint16_t)((stack_voltage_1 - 0) / 0.001 + 0.5f);
-	// Set 16-bit signal at bit offset 2
-	CAN_bms_status_payloads[1].word0 &= ~0xFFFC;
-	CAN_bms_status_payloads[1].word0 |= (data_scaled << 2) & 0xFFFC;
-	CAN_bms_status_payloads[1].word1 &= ~0x0003;
-	CAN_bms_status_payloads[1].word1 |= (data_scaled >> 14) & 0x0003;
+	// Set 16-bit signal at bit offset 3
+	CAN_bms_status_payloads[1].word0 &= ~0xFFF8;
+	CAN_bms_status_payloads[1].word0 |= (data_scaled << 3) & 0xFFF8;
+	CAN_bms_status_payloads[1].word1 &= ~0x0007;
+	CAN_bms_status_payloads[1].word1 |= (data_scaled >> 13) & 0x0007;
 }
-void CAN_bms_status_M1_stack_voltage_2_set(float stack_voltage_2){
+void CAN_bms_status_stack_voltage_2_set(float stack_voltage_2){
 	uint16_t data_scaled = (uint16_t)((stack_voltage_2 - 0) / 0.001 + 0.5f);
-	// Set 16-bit signal at bit offset 18
-	CAN_bms_status_payloads[1].word1 &= ~0xFFFC;
-	CAN_bms_status_payloads[1].word1 |= (data_scaled << 2) & 0xFFFC;
-	CAN_bms_status_payloads[1].word2 &= ~0x0003;
-	CAN_bms_status_payloads[1].word2 |= (data_scaled >> 14) & 0x0003;
+	// Set 16-bit signal at bit offset 19
+	CAN_bms_status_payloads[1].word1 &= ~0xFFF8;
+	CAN_bms_status_payloads[1].word1 |= (data_scaled << 3) & 0xFFF8;
+	CAN_bms_status_payloads[1].word2 &= ~0x0007;
+	CAN_bms_status_payloads[1].word2 |= (data_scaled >> 13) & 0x0007;
 }
-void CAN_bms_status_M1_pack_voltage_sum_of_stacks_set(float pack_voltage_sum_of_stacks){
+void CAN_bms_status_pack_voltage_sum_of_stacks_set(float pack_voltage_sum_of_stacks){
 	uint32_t data_scaled = (uint32_t)((pack_voltage_sum_of_stacks - 0) / 0.001 + 0.5f);
-	// Set 18-bit signal at bit offset 34
-	CAN_bms_status_payloads[1].word2 &= ~0xFFFC;
-	CAN_bms_status_payloads[1].word2 |= (data_scaled << 2) & 0xFFFC;
-	CAN_bms_status_payloads[1].word3 &= ~0x000F;
-	CAN_bms_status_payloads[1].word3 |= (data_scaled >> 14) & 0x000F;
+	// Set 18-bit signal at bit offset 35
+	CAN_bms_status_payloads[1].word2 &= ~0xFFF8;
+	CAN_bms_status_payloads[1].word2 |= (data_scaled << 3) & 0xFFF8;
+	CAN_bms_status_payloads[1].word3 &= ~0x001F;
+	CAN_bms_status_payloads[1].word3 |= (data_scaled >> 13) & 0x001F;
 }
-void CAN_bms_status_M1_debug_signal_1_set(uint16_t debug_signal_1){
-	uint16_t data_scaled = (debug_signal_1 - 0) / 1.0;
-	// Set 12-bit signal at bit offset 52
-	CAN_bms_status_payloads[1].word3 &= ~0xFFF0;
-	CAN_bms_status_payloads[1].word3 |= (data_scaled << 4) & 0xFFF0;
-}
-void CAN_bms_status_M2_ltc_state_set(uint16_t ltc_state){
+void CAN_bms_status_ltc_state_set(uint16_t ltc_state){
 	uint16_t data_scaled = (ltc_state - 0) / 1.0;
-	// Set 4-bit signal at bit offset 2
-	CAN_bms_status_payloads[2].word0 &= ~0x003C;
-	CAN_bms_status_payloads[2].word0 |= (data_scaled << 2) & 0x003C;
+	// Set 4-bit signal at bit offset 3
+	CAN_bms_status_payloads[2].word0 &= ~0x0078;
+	CAN_bms_status_payloads[2].word0 |= (data_scaled << 3) & 0x0078;
 }
-void CAN_bms_status_M2_ltc_error_count_set(uint16_t ltc_error_count){
+void CAN_bms_status_ltc_error_count_set(uint16_t ltc_error_count){
 	uint16_t data_scaled = (ltc_error_count - 0) / 1.0;
-	// Set 12-bit signal at bit offset 6
-	CAN_bms_status_payloads[2].word0 &= ~0xFFC0;
-	CAN_bms_status_payloads[2].word0 |= (data_scaled << 6) & 0xFFC0;
-	CAN_bms_status_payloads[2].word1 &= ~0x0003;
-	CAN_bms_status_payloads[2].word1 |= (data_scaled >> 10) & 0x0003;
+	// Set 12-bit signal at bit offset 7
+	CAN_bms_status_payloads[2].word0 &= ~0xFF80;
+	CAN_bms_status_payloads[2].word0 |= (data_scaled << 7) & 0xFF80;
+	CAN_bms_status_payloads[2].word1 &= ~0x0007;
+	CAN_bms_status_payloads[2].word1 |= (data_scaled >> 9) & 0x0007;
 }
-void CAN_bms_status_M2_ltc_last_error_set(uint16_t ltc_last_error){
+void CAN_bms_status_ltc_last_error_set(uint16_t ltc_last_error){
 	uint16_t data_scaled = (ltc_last_error - 0) / 1.0;
-	// Set 8-bit signal at bit offset 18
-	CAN_bms_status_payloads[2].word1 &= ~0x03FC;
-	CAN_bms_status_payloads[2].word1 |= (data_scaled << 2) & 0x03FC;
+	// Set 8-bit signal at bit offset 19
+	CAN_bms_status_payloads[2].word1 &= ~0x07F8;
+	CAN_bms_status_payloads[2].word1 |= (data_scaled << 3) & 0x07F8;
 }
-void CAN_bms_status_M2_cpu_usage_percent_set(float cpu_usage_percent){
+void CAN_bms_status_cpu_usage_percent_set(float cpu_usage_percent){
 	uint16_t data_scaled = (uint16_t)((cpu_usage_percent - 0) / 0.5 + 0.5f);
-	// Set 8-bit signal at bit offset 26
-	CAN_bms_status_payloads[2].word1 &= ~0xFC00;
-	CAN_bms_status_payloads[2].word1 |= (data_scaled << 10) & 0xFC00;
-	CAN_bms_status_payloads[2].word2 &= ~0x0003;
-	CAN_bms_status_payloads[2].word2 |= (data_scaled >> 6) & 0x0003;
+	// Set 8-bit signal at bit offset 27
+	CAN_bms_status_payloads[2].word1 &= ~0xF800;
+	CAN_bms_status_payloads[2].word1 |= (data_scaled << 11) & 0xF800;
+	CAN_bms_status_payloads[2].word2 &= ~0x0007;
+	CAN_bms_status_payloads[2].word2 |= (data_scaled >> 5) & 0x0007;
 }
-void CAN_bms_status_M2_cpu_peak_percent_set(float cpu_peak_percent){
+void CAN_bms_status_cpu_peak_percent_set(float cpu_peak_percent){
 	uint16_t data_scaled = (uint16_t)((cpu_peak_percent - 0) / 0.5 + 0.5f);
-	// Set 8-bit signal at bit offset 34
-	CAN_bms_status_payloads[2].word2 &= ~0x03FC;
-	CAN_bms_status_payloads[2].word2 |= (data_scaled << 2) & 0x03FC;
+	// Set 8-bit signal at bit offset 35
+	CAN_bms_status_payloads[2].word2 &= ~0x07F8;
+	CAN_bms_status_payloads[2].word2 |= (data_scaled << 3) & 0x07F8;
 }
-void CAN_bms_status_M2_vbus_voltage_set(float vbus_voltage){
+void CAN_bms_status_vbus_voltage_set(float vbus_voltage){
 	uint16_t data_scaled = (uint16_t)((vbus_voltage - 0) / 0.1 + 0.5f);
-	// Set 10-bit signal at bit offset 42
-	CAN_bms_status_payloads[2].word2 &= ~0xFC00;
-	CAN_bms_status_payloads[2].word2 |= (data_scaled << 10) & 0xFC00;
-	CAN_bms_status_payloads[2].word3 &= ~0x000F;
-	CAN_bms_status_payloads[2].word3 |= (data_scaled >> 6) & 0x000F;
+	// Set 10-bit signal at bit offset 43
+	CAN_bms_status_payloads[2].word2 &= ~0xF800;
+	CAN_bms_status_payloads[2].word2 |= (data_scaled << 11) & 0xF800;
+	CAN_bms_status_payloads[2].word3 &= ~0x001F;
+	CAN_bms_status_payloads[2].word3 |= (data_scaled >> 5) & 0x001F;
 }
-void CAN_bms_status_M2_internal_temp_set(float internal_temp){
+void CAN_bms_status_internal_temp_set(float internal_temp){
 	uint16_t data_scaled = (uint16_t)((internal_temp - -40) / 1.0 + 0.5f);
-	// Set 8-bit signal at bit offset 52
-	CAN_bms_status_payloads[2].word3 &= ~0x0FF0;
-	CAN_bms_status_payloads[2].word3 |= (data_scaled << 4) & 0x0FF0;
+	// Set 8-bit signal at bit offset 53
+	CAN_bms_status_payloads[2].word3 &= ~0x1FE0;
+	CAN_bms_status_payloads[2].word3 |= (data_scaled << 5) & 0x1FE0;
 }
-void CAN_bms_status_M3_max_charge_current_mA_set(uint16_t max_charge_current_mA){
+void CAN_bms_status_max_charge_current_mA_set(uint16_t max_charge_current_mA){
 	uint16_t data_scaled = (max_charge_current_mA - 0) / 1.0;
-	// Set 16-bit signal at bit offset 2
-	CAN_bms_status_payloads[3].word0 &= ~0xFFFC;
-	CAN_bms_status_payloads[3].word0 |= (data_scaled << 2) & 0xFFFC;
-	CAN_bms_status_payloads[3].word1 &= ~0x0003;
-	CAN_bms_status_payloads[3].word1 |= (data_scaled >> 14) & 0x0003;
+	// Set 16-bit signal at bit offset 3
+	CAN_bms_status_payloads[3].word0 &= ~0xFFF8;
+	CAN_bms_status_payloads[3].word0 |= (data_scaled << 3) & 0xFFF8;
+	CAN_bms_status_payloads[3].word1 &= ~0x0007;
+	CAN_bms_status_payloads[3].word1 |= (data_scaled >> 13) & 0x0007;
 }
-void CAN_bms_status_M3_max_charge_voltage_mV_set(uint32_t max_charge_voltage_mV){
+void CAN_bms_status_max_charge_voltage_mV_set(uint32_t max_charge_voltage_mV){
 	uint32_t data_scaled = (max_charge_voltage_mV - 0) / 1.0;
-	// Set 18-bit signal at bit offset 18
-	CAN_bms_status_payloads[3].word1 &= ~0xFFFC;
-	CAN_bms_status_payloads[3].word1 |= (data_scaled << 2) & 0xFFFC;
-	CAN_bms_status_payloads[3].word2 &= ~0x000F;
-	CAN_bms_status_payloads[3].word2 |= (data_scaled >> 14) & 0x000F;
+	// Set 18-bit signal at bit offset 19
+	CAN_bms_status_payloads[3].word1 &= ~0xFFF8;
+	CAN_bms_status_payloads[3].word1 |= (data_scaled << 3) & 0xFFF8;
+	CAN_bms_status_payloads[3].word2 &= ~0x001F;
+	CAN_bms_status_payloads[3].word2 |= (data_scaled >> 13) & 0x001F;
 }
-void CAN_bms_status_M3_contactors_closed_set(uint16_t contactors_closed){
+void CAN_bms_status_contactors_closed_set(uint16_t contactors_closed){
 	uint16_t data_scaled = (contactors_closed - 0) / 1.0;
-	// Set 1-bit signal at bit offset 36
-	CAN_bms_status_payloads[3].word2 &= ~0x0010;
-	CAN_bms_status_payloads[3].word2 |= (data_scaled << 4) & 0x0010;
-}
-void CAN_bms_status_M3_precharge_active_set(uint16_t precharge_active){
-	uint16_t data_scaled = (precharge_active - 0) / 1.0;
 	// Set 1-bit signal at bit offset 37
 	CAN_bms_status_payloads[3].word2 &= ~0x0020;
 	CAN_bms_status_payloads[3].word2 |= (data_scaled << 5) & 0x0020;
 }
-void CAN_bms_status_M3_charge_enabled_set(uint16_t charge_enabled){
-	uint16_t data_scaled = (charge_enabled - 0) / 1.0;
+void CAN_bms_status_precharge_active_set(uint16_t precharge_active){
+	uint16_t data_scaled = (precharge_active - 0) / 1.0;
 	// Set 1-bit signal at bit offset 38
 	CAN_bms_status_payloads[3].word2 &= ~0x0040;
 	CAN_bms_status_payloads[3].word2 |= (data_scaled << 6) & 0x0040;
 }
-void CAN_bms_status_M3_discharge_enabled_set(uint16_t discharge_enabled){
-	uint16_t data_scaled = (discharge_enabled - 0) / 1.0;
+void CAN_bms_status_charge_enabled_set(uint16_t charge_enabled){
+	uint16_t data_scaled = (charge_enabled - 0) / 1.0;
 	// Set 1-bit signal at bit offset 39
 	CAN_bms_status_payloads[3].word2 &= ~0x0080;
 	CAN_bms_status_payloads[3].word2 |= (data_scaled << 7) & 0x0080;
 }
-void CAN_bms_status_M3_fault_summary_set(uint16_t fault_summary){
+void CAN_bms_status_discharge_enabled_set(uint16_t discharge_enabled){
+	uint16_t data_scaled = (discharge_enabled - 0) / 1.0;
+	// Set 1-bit signal at bit offset 40
+	CAN_bms_status_payloads[3].word2 &= ~0x0100;
+	CAN_bms_status_payloads[3].word2 |= (data_scaled << 8) & 0x0100;
+}
+void CAN_bms_status_fault_summary_set(uint16_t fault_summary){
 	uint16_t data_scaled = (fault_summary - 0) / 1.0;
-	// Set 12-bit signal at bit offset 40
-	CAN_bms_status_payloads[3].word2 &= ~0xFF00;
-	CAN_bms_status_payloads[3].word2 |= (data_scaled << 8) & 0xFF00;
-	CAN_bms_status_payloads[3].word3 &= ~0x000F;
-	CAN_bms_status_payloads[3].word3 |= (data_scaled >> 8) & 0x000F;
+	// Set 12-bit signal at bit offset 41
+	CAN_bms_status_payloads[3].word2 &= ~0xFE00;
+	CAN_bms_status_payloads[3].word2 |= (data_scaled << 9) & 0xFE00;
+	CAN_bms_status_payloads[3].word3 &= ~0x001F;
+	CAN_bms_status_payloads[3].word3 |= (data_scaled >> 7) & 0x001F;
+}
+void CAN_bms_status_is_balancing_set(uint16_t is_balancing){
+	uint16_t data_scaled = (is_balancing - 0) / 1.0;
+	// Set 1-bit signal at bit offset 53
+	CAN_bms_status_payloads[3].word3 &= ~0x0020;
+	CAN_bms_status_payloads[3].word3 |= (data_scaled << 5) & 0x0020;
+}
+void CAN_bms_status_cell_A_balancing_set(uint16_t cell_A_balancing){
+	uint16_t data_scaled = (cell_A_balancing - 0) / 1.0;
+	// Set 5-bit signal at bit offset 54
+	CAN_bms_status_payloads[3].word3 &= ~0x07C0;
+	CAN_bms_status_payloads[3].word3 |= (data_scaled << 6) & 0x07C0;
+}
+void CAN_bms_status_cell_B_balancing_set(uint16_t cell_B_balancing){
+	uint16_t data_scaled = (cell_B_balancing - 0) / 1.0;
+	// Set 5-bit signal at bit offset 3
+	CAN_bms_status_payloads[4].word0 &= ~0x00F8;
+	CAN_bms_status_payloads[4].word0 |= (data_scaled << 3) & 0x00F8;
+}
+void CAN_bms_status_cell_C_balancing_set(uint16_t cell_C_balancing){
+	uint16_t data_scaled = (cell_C_balancing - 0) / 1.0;
+	// Set 5-bit signal at bit offset 8
+	CAN_bms_status_payloads[4].word0 &= ~0x1F00;
+	CAN_bms_status_payloads[4].word0 |= (data_scaled << 8) & 0x1F00;
+}
+void CAN_bms_status_cell_D_balancing_set(uint16_t cell_D_balancing){
+	uint16_t data_scaled = (cell_D_balancing - 0) / 1.0;
+	// Set 5-bit signal at bit offset 13
+	CAN_bms_status_payloads[4].word0 &= ~0xE000;
+	CAN_bms_status_payloads[4].word0 |= (data_scaled << 13) & 0xE000;
+	CAN_bms_status_payloads[4].word1 &= ~0x0003;
+	CAN_bms_status_payloads[4].word1 |= (data_scaled >> 3) & 0x0003;
+}
+void CAN_bms_status_cell_E_balancing_set(uint16_t cell_E_balancing){
+	uint16_t data_scaled = (cell_E_balancing - 0) / 1.0;
+	// Set 5-bit signal at bit offset 18
+	CAN_bms_status_payloads[4].word1 &= ~0x007C;
+	CAN_bms_status_payloads[4].word1 |= (data_scaled << 2) & 0x007C;
 }
 uint8_t CAN_bms_status_checkDataIsFresh(void){
 	return CAN_checkDataIsFresh(&CAN_bms_status);
 }
 uint16_t CAN_bms_status_multiplex_get(void){
-	// Extract 2-bit signal at bit offset 0
+	// Extract 3-bit signal at bit offset 0
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status.payload->word0 & 0x0003) >> 0) << 0;
+	data |= (uint16_t)((CAN_bms_status.payload->word0 & 0x0007) >> 0) << 0;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_bms_status_M0_bms_state_get(void){
-	// Extract 4-bit signal at bit offset 2
+uint16_t CAN_bms_status_bms_state_get(void){
+	// Extract 4-bit signal at bit offset 3
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[0].word0 & 0x003C) >> 2) << 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[0].word0 & 0x0078) >> 3) << 0;
 	return (data * 1.0) + 0;
 }
-float CAN_bms_status_M0_pack_voltage_get(void){
-	// Extract 16-bit signal at bit offset 6
+float CAN_bms_status_pack_voltage_get(void){
+	// Extract 16-bit signal at bit offset 7
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[0].word0 & 0xFFC0) >> 6) << 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[0].word1 & 0x003F) >> 0) << 10;
+	data |= (uint16_t)((CAN_bms_status_payloads[0].word0 & 0xFF80) >> 7) << 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[0].word1 & 0x007F) >> 0) << 9;
 	return (data * 0.01) + 0;
 }
-float CAN_bms_status_M0_pack_current_get(void){
-	// Extract 16-bit signal at bit offset 22
+float CAN_bms_status_pack_current_get(void){
+	// Extract 16-bit signal at bit offset 23
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[0].word1 & 0xFFC0) >> 6) << 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[0].word2 & 0x003F) >> 0) << 10;
+	data |= (uint16_t)((CAN_bms_status_payloads[0].word1 & 0xFF80) >> 7) << 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[0].word2 & 0x007F) >> 0) << 9;
 	return (data * 0.01) + -320;
 }
-float CAN_bms_status_M0_soc_percent_get(void){
-	// Extract 8-bit signal at bit offset 38
+float CAN_bms_status_soc_percent_get(void){
+	// Extract 8-bit signal at bit offset 39
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[0].word2 & 0x3FC0) >> 6) << 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[0].word2 & 0x7F80) >> 7) << 0;
 	return (data * 0.5) + 0;
 }
-float CAN_bms_status_M0_pack_temp_min_get(void){
-	// Extract 8-bit signal at bit offset 46
+float CAN_bms_status_pack_temp_min_get(void){
+	// Extract 8-bit signal at bit offset 47
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[0].word2 & 0xC000) >> 14) << 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[0].word3 & 0x003F) >> 0) << 2;
+	data |= (uint16_t)((CAN_bms_status_payloads[0].word2 & 0x8000) >> 15) << 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[0].word3 & 0x007F) >> 0) << 1;
 	return (data * 1.0) + -40;
 }
-float CAN_bms_status_M0_pack_temp_max_get(void){
-	// Extract 8-bit signal at bit offset 54
+float CAN_bms_status_pack_temp_max_get(void){
+	// Extract 8-bit signal at bit offset 55
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[0].word3 & 0x3FC0) >> 6) << 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[0].word3 & 0x7F80) >> 7) << 0;
 	return (data * 1.0) + -40;
 }
-float CAN_bms_status_M1_stack_voltage_1_get(void){
-	// Extract 16-bit signal at bit offset 2
+float CAN_bms_status_stack_voltage_1_get(void){
+	// Extract 16-bit signal at bit offset 3
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[1].word0 & 0xFFFC) >> 2) << 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[1].word1 & 0x0003) >> 0) << 14;
+	data |= (uint16_t)((CAN_bms_status_payloads[1].word0 & 0xFFF8) >> 3) << 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[1].word1 & 0x0007) >> 0) << 13;
 	return (data * 0.001) + 0;
 }
-float CAN_bms_status_M1_stack_voltage_2_get(void){
-	// Extract 16-bit signal at bit offset 18
+float CAN_bms_status_stack_voltage_2_get(void){
+	// Extract 16-bit signal at bit offset 19
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[1].word1 & 0xFFFC) >> 2) << 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[1].word2 & 0x0003) >> 0) << 14;
+	data |= (uint16_t)((CAN_bms_status_payloads[1].word1 & 0xFFF8) >> 3) << 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[1].word2 & 0x0007) >> 0) << 13;
 	return (data * 0.001) + 0;
 }
-float CAN_bms_status_M1_pack_voltage_sum_of_stacks_get(void){
-	// Extract 18-bit signal at bit offset 34
+float CAN_bms_status_pack_voltage_sum_of_stacks_get(void){
+	// Extract 18-bit signal at bit offset 35
 	uint32_t data = 0;
-	data |= (uint32_t)((CAN_bms_status_payloads[1].word2 & 0xFFFC) >> 2) << 0;
-	data |= (uint32_t)((CAN_bms_status_payloads[1].word3 & 0x000F) >> 0) << 14;
+	data |= (uint32_t)((CAN_bms_status_payloads[1].word2 & 0xFFF8) >> 3) << 0;
+	data |= (uint32_t)((CAN_bms_status_payloads[1].word3 & 0x001F) >> 0) << 13;
 	return (data * 0.001) + 0;
 }
-uint16_t CAN_bms_status_M1_debug_signal_1_get(void){
-	// Extract 12-bit signal at bit offset 52
+uint16_t CAN_bms_status_ltc_state_get(void){
+	// Extract 4-bit signal at bit offset 3
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[1].word3 & 0xFFF0) >> 4) << 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[2].word0 & 0x0078) >> 3) << 0;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_bms_status_M2_ltc_state_get(void){
-	// Extract 4-bit signal at bit offset 2
+uint16_t CAN_bms_status_ltc_error_count_get(void){
+	// Extract 12-bit signal at bit offset 7
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[2].word0 & 0x003C) >> 2) << 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[2].word0 & 0xFF80) >> 7) << 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[2].word1 & 0x0007) >> 0) << 9;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_bms_status_M2_ltc_error_count_get(void){
-	// Extract 12-bit signal at bit offset 6
+uint16_t CAN_bms_status_ltc_last_error_get(void){
+	// Extract 8-bit signal at bit offset 19
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[2].word0 & 0xFFC0) >> 6) << 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[2].word1 & 0x0003) >> 0) << 10;
+	data |= (uint16_t)((CAN_bms_status_payloads[2].word1 & 0x07F8) >> 3) << 0;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_bms_status_M2_ltc_last_error_get(void){
-	// Extract 8-bit signal at bit offset 18
+float CAN_bms_status_cpu_usage_percent_get(void){
+	// Extract 8-bit signal at bit offset 27
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[2].word1 & 0x03FC) >> 2) << 0;
-	return (data * 1.0) + 0;
-}
-float CAN_bms_status_M2_cpu_usage_percent_get(void){
-	// Extract 8-bit signal at bit offset 26
-	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[2].word1 & 0xFC00) >> 10) << 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[2].word2 & 0x0003) >> 0) << 6;
+	data |= (uint16_t)((CAN_bms_status_payloads[2].word1 & 0xF800) >> 11) << 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[2].word2 & 0x0007) >> 0) << 5;
 	return (data * 0.5) + 0;
 }
-float CAN_bms_status_M2_cpu_peak_percent_get(void){
-	// Extract 8-bit signal at bit offset 34
+float CAN_bms_status_cpu_peak_percent_get(void){
+	// Extract 8-bit signal at bit offset 35
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[2].word2 & 0x03FC) >> 2) << 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[2].word2 & 0x07F8) >> 3) << 0;
 	return (data * 0.5) + 0;
 }
-float CAN_bms_status_M2_vbus_voltage_get(void){
-	// Extract 10-bit signal at bit offset 42
+float CAN_bms_status_vbus_voltage_get(void){
+	// Extract 10-bit signal at bit offset 43
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[2].word2 & 0xFC00) >> 10) << 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[2].word3 & 0x000F) >> 0) << 6;
+	data |= (uint16_t)((CAN_bms_status_payloads[2].word2 & 0xF800) >> 11) << 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[2].word3 & 0x001F) >> 0) << 5;
 	return (data * 0.1) + 0;
 }
-float CAN_bms_status_M2_internal_temp_get(void){
-	// Extract 8-bit signal at bit offset 52
+float CAN_bms_status_internal_temp_get(void){
+	// Extract 8-bit signal at bit offset 53
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[2].word3 & 0x0FF0) >> 4) << 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[2].word3 & 0x1FE0) >> 5) << 0;
 	return (data * 1.0) + -40;
 }
-uint16_t CAN_bms_status_M3_max_charge_current_mA_get(void){
-	// Extract 16-bit signal at bit offset 2
+uint16_t CAN_bms_status_max_charge_current_mA_get(void){
+	// Extract 16-bit signal at bit offset 3
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[3].word0 & 0xFFFC) >> 2) << 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[3].word1 & 0x0003) >> 0) << 14;
+	data |= (uint16_t)((CAN_bms_status_payloads[3].word0 & 0xFFF8) >> 3) << 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[3].word1 & 0x0007) >> 0) << 13;
 	return (data * 1.0) + 0;
 }
-uint32_t CAN_bms_status_M3_max_charge_voltage_mV_get(void){
-	// Extract 18-bit signal at bit offset 18
+uint32_t CAN_bms_status_max_charge_voltage_mV_get(void){
+	// Extract 18-bit signal at bit offset 19
 	uint32_t data = 0;
-	data |= (uint32_t)((CAN_bms_status_payloads[3].word1 & 0xFFFC) >> 2) << 0;
-	data |= (uint32_t)((CAN_bms_status_payloads[3].word2 & 0x000F) >> 0) << 14;
+	data |= (uint32_t)((CAN_bms_status_payloads[3].word1 & 0xFFF8) >> 3) << 0;
+	data |= (uint32_t)((CAN_bms_status_payloads[3].word2 & 0x001F) >> 0) << 13;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_bms_status_M3_contactors_closed_get(void){
-	// Extract 1-bit signal at bit offset 36
-	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[3].word2 & 0x0010) >> 4) << 0;
-	return (data * 1.0) + 0;
-}
-uint16_t CAN_bms_status_M3_precharge_active_get(void){
+uint16_t CAN_bms_status_contactors_closed_get(void){
 	// Extract 1-bit signal at bit offset 37
 	uint16_t data = 0;
 	data |= (uint16_t)((CAN_bms_status_payloads[3].word2 & 0x0020) >> 5) << 0;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_bms_status_M3_charge_enabled_get(void){
+uint16_t CAN_bms_status_precharge_active_get(void){
 	// Extract 1-bit signal at bit offset 38
 	uint16_t data = 0;
 	data |= (uint16_t)((CAN_bms_status_payloads[3].word2 & 0x0040) >> 6) << 0;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_bms_status_M3_discharge_enabled_get(void){
+uint16_t CAN_bms_status_charge_enabled_get(void){
 	// Extract 1-bit signal at bit offset 39
 	uint16_t data = 0;
 	data |= (uint16_t)((CAN_bms_status_payloads[3].word2 & 0x0080) >> 7) << 0;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_bms_status_M3_fault_summary_get(void){
-	// Extract 12-bit signal at bit offset 40
+uint16_t CAN_bms_status_discharge_enabled_get(void){
+	// Extract 1-bit signal at bit offset 40
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[3].word2 & 0xFF00) >> 8) << 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[3].word3 & 0x000F) >> 0) << 8;
+	data |= (uint16_t)((CAN_bms_status_payloads[3].word2 & 0x0100) >> 8) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_status_fault_summary_get(void){
+	// Extract 12-bit signal at bit offset 41
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[3].word2 & 0xFE00) >> 9) << 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[3].word3 & 0x001F) >> 0) << 7;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_status_is_balancing_get(void){
+	// Extract 1-bit signal at bit offset 53
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[3].word3 & 0x0020) >> 5) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_status_cell_A_balancing_get(void){
+	// Extract 5-bit signal at bit offset 54
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[3].word3 & 0x07C0) >> 6) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_status_cell_B_balancing_get(void){
+	// Extract 5-bit signal at bit offset 3
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[4].word0 & 0x00F8) >> 3) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_status_cell_C_balancing_get(void){
+	// Extract 5-bit signal at bit offset 8
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[4].word0 & 0x1F00) >> 8) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_status_cell_D_balancing_get(void){
+	// Extract 5-bit signal at bit offset 13
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[4].word0 & 0xE000) >> 13) << 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[4].word1 & 0x0003) >> 0) << 3;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_status_cell_E_balancing_get(void){
+	// Extract 5-bit signal at bit offset 18
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[4].word1 & 0x007C) >> 2) << 0;
 	return (data * 1.0) + 0;
 }
 
@@ -1525,7 +1598,7 @@ static CAN_message_S CAN_bms_cell_voltages={
 #define CAN_BMS_CELL_VOLTAGES_M5_CELL_24_VOLTAGE_RANGE 15
 #define CAN_BMS_CELL_VOLTAGES_M5_CELL_24_VOLTAGE_OFFSET 48
 
-void CAN_bms_cell_voltages_M0_cell_1_voltage_set(uint16_t cell_1_voltage){
+void CAN_bms_cell_voltages_cell_1_voltage_set(uint16_t cell_1_voltage){
 	uint16_t data_scaled = (cell_1_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 3
 	CAN_bms_cell_voltages_payloads[0].word0 &= ~0xFFF8;
@@ -1533,7 +1606,7 @@ void CAN_bms_cell_voltages_M0_cell_1_voltage_set(uint16_t cell_1_voltage){
 	CAN_bms_cell_voltages_payloads[0].word1 &= ~0x0003;
 	CAN_bms_cell_voltages_payloads[0].word1 |= (data_scaled >> 13) & 0x0003;
 }
-void CAN_bms_cell_voltages_M0_cell_2_voltage_set(uint16_t cell_2_voltage){
+void CAN_bms_cell_voltages_cell_2_voltage_set(uint16_t cell_2_voltage){
 	uint16_t data_scaled = (cell_2_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 18
 	CAN_bms_cell_voltages_payloads[0].word1 &= ~0xFFFC;
@@ -1541,19 +1614,19 @@ void CAN_bms_cell_voltages_M0_cell_2_voltage_set(uint16_t cell_2_voltage){
 	CAN_bms_cell_voltages_payloads[0].word2 &= ~0x0001;
 	CAN_bms_cell_voltages_payloads[0].word2 |= (data_scaled >> 14) & 0x0001;
 }
-void CAN_bms_cell_voltages_M0_cell_3_voltage_set(uint16_t cell_3_voltage){
+void CAN_bms_cell_voltages_cell_3_voltage_set(uint16_t cell_3_voltage){
 	uint16_t data_scaled = (cell_3_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 33
 	CAN_bms_cell_voltages_payloads[0].word2 &= ~0xFFFE;
 	CAN_bms_cell_voltages_payloads[0].word2 |= (data_scaled << 1) & 0xFFFE;
 }
-void CAN_bms_cell_voltages_M0_cell_4_voltage_set(uint16_t cell_4_voltage){
+void CAN_bms_cell_voltages_cell_4_voltage_set(uint16_t cell_4_voltage){
 	uint16_t data_scaled = (cell_4_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 48
 	CAN_bms_cell_voltages_payloads[0].word3 &= ~0x7FFF;
 	CAN_bms_cell_voltages_payloads[0].word3 |= data_scaled & 0x7FFF;
 }
-void CAN_bms_cell_voltages_M1_cell_5_voltage_set(uint16_t cell_5_voltage){
+void CAN_bms_cell_voltages_cell_5_voltage_set(uint16_t cell_5_voltage){
 	uint16_t data_scaled = (cell_5_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 3
 	CAN_bms_cell_voltages_payloads[1].word0 &= ~0xFFF8;
@@ -1561,7 +1634,7 @@ void CAN_bms_cell_voltages_M1_cell_5_voltage_set(uint16_t cell_5_voltage){
 	CAN_bms_cell_voltages_payloads[1].word1 &= ~0x0003;
 	CAN_bms_cell_voltages_payloads[1].word1 |= (data_scaled >> 13) & 0x0003;
 }
-void CAN_bms_cell_voltages_M1_cell_6_voltage_set(uint16_t cell_6_voltage){
+void CAN_bms_cell_voltages_cell_6_voltage_set(uint16_t cell_6_voltage){
 	uint16_t data_scaled = (cell_6_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 18
 	CAN_bms_cell_voltages_payloads[1].word1 &= ~0xFFFC;
@@ -1569,19 +1642,19 @@ void CAN_bms_cell_voltages_M1_cell_6_voltage_set(uint16_t cell_6_voltage){
 	CAN_bms_cell_voltages_payloads[1].word2 &= ~0x0001;
 	CAN_bms_cell_voltages_payloads[1].word2 |= (data_scaled >> 14) & 0x0001;
 }
-void CAN_bms_cell_voltages_M1_cell_7_voltage_set(uint16_t cell_7_voltage){
+void CAN_bms_cell_voltages_cell_7_voltage_set(uint16_t cell_7_voltage){
 	uint16_t data_scaled = (cell_7_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 33
 	CAN_bms_cell_voltages_payloads[1].word2 &= ~0xFFFE;
 	CAN_bms_cell_voltages_payloads[1].word2 |= (data_scaled << 1) & 0xFFFE;
 }
-void CAN_bms_cell_voltages_M1_cell_8_voltage_set(uint16_t cell_8_voltage){
+void CAN_bms_cell_voltages_cell_8_voltage_set(uint16_t cell_8_voltage){
 	uint16_t data_scaled = (cell_8_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 48
 	CAN_bms_cell_voltages_payloads[1].word3 &= ~0x7FFF;
 	CAN_bms_cell_voltages_payloads[1].word3 |= data_scaled & 0x7FFF;
 }
-void CAN_bms_cell_voltages_M2_cell_9_voltage_set(uint16_t cell_9_voltage){
+void CAN_bms_cell_voltages_cell_9_voltage_set(uint16_t cell_9_voltage){
 	uint16_t data_scaled = (cell_9_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 3
 	CAN_bms_cell_voltages_payloads[2].word0 &= ~0xFFF8;
@@ -1589,7 +1662,7 @@ void CAN_bms_cell_voltages_M2_cell_9_voltage_set(uint16_t cell_9_voltage){
 	CAN_bms_cell_voltages_payloads[2].word1 &= ~0x0003;
 	CAN_bms_cell_voltages_payloads[2].word1 |= (data_scaled >> 13) & 0x0003;
 }
-void CAN_bms_cell_voltages_M2_cell_10_voltage_set(uint16_t cell_10_voltage){
+void CAN_bms_cell_voltages_cell_10_voltage_set(uint16_t cell_10_voltage){
 	uint16_t data_scaled = (cell_10_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 18
 	CAN_bms_cell_voltages_payloads[2].word1 &= ~0xFFFC;
@@ -1597,19 +1670,19 @@ void CAN_bms_cell_voltages_M2_cell_10_voltage_set(uint16_t cell_10_voltage){
 	CAN_bms_cell_voltages_payloads[2].word2 &= ~0x0001;
 	CAN_bms_cell_voltages_payloads[2].word2 |= (data_scaled >> 14) & 0x0001;
 }
-void CAN_bms_cell_voltages_M2_cell_11_voltage_set(uint16_t cell_11_voltage){
+void CAN_bms_cell_voltages_cell_11_voltage_set(uint16_t cell_11_voltage){
 	uint16_t data_scaled = (cell_11_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 33
 	CAN_bms_cell_voltages_payloads[2].word2 &= ~0xFFFE;
 	CAN_bms_cell_voltages_payloads[2].word2 |= (data_scaled << 1) & 0xFFFE;
 }
-void CAN_bms_cell_voltages_M2_cell_12_voltage_set(uint16_t cell_12_voltage){
+void CAN_bms_cell_voltages_cell_12_voltage_set(uint16_t cell_12_voltage){
 	uint16_t data_scaled = (cell_12_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 48
 	CAN_bms_cell_voltages_payloads[2].word3 &= ~0x7FFF;
 	CAN_bms_cell_voltages_payloads[2].word3 |= data_scaled & 0x7FFF;
 }
-void CAN_bms_cell_voltages_M3_cell_13_voltage_set(uint16_t cell_13_voltage){
+void CAN_bms_cell_voltages_cell_13_voltage_set(uint16_t cell_13_voltage){
 	uint16_t data_scaled = (cell_13_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 3
 	CAN_bms_cell_voltages_payloads[3].word0 &= ~0xFFF8;
@@ -1617,7 +1690,7 @@ void CAN_bms_cell_voltages_M3_cell_13_voltage_set(uint16_t cell_13_voltage){
 	CAN_bms_cell_voltages_payloads[3].word1 &= ~0x0003;
 	CAN_bms_cell_voltages_payloads[3].word1 |= (data_scaled >> 13) & 0x0003;
 }
-void CAN_bms_cell_voltages_M3_cell_14_voltage_set(uint16_t cell_14_voltage){
+void CAN_bms_cell_voltages_cell_14_voltage_set(uint16_t cell_14_voltage){
 	uint16_t data_scaled = (cell_14_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 18
 	CAN_bms_cell_voltages_payloads[3].word1 &= ~0xFFFC;
@@ -1625,19 +1698,19 @@ void CAN_bms_cell_voltages_M3_cell_14_voltage_set(uint16_t cell_14_voltage){
 	CAN_bms_cell_voltages_payloads[3].word2 &= ~0x0001;
 	CAN_bms_cell_voltages_payloads[3].word2 |= (data_scaled >> 14) & 0x0001;
 }
-void CAN_bms_cell_voltages_M3_cell_15_voltage_set(uint16_t cell_15_voltage){
+void CAN_bms_cell_voltages_cell_15_voltage_set(uint16_t cell_15_voltage){
 	uint16_t data_scaled = (cell_15_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 33
 	CAN_bms_cell_voltages_payloads[3].word2 &= ~0xFFFE;
 	CAN_bms_cell_voltages_payloads[3].word2 |= (data_scaled << 1) & 0xFFFE;
 }
-void CAN_bms_cell_voltages_M3_cell_16_voltage_set(uint16_t cell_16_voltage){
+void CAN_bms_cell_voltages_cell_16_voltage_set(uint16_t cell_16_voltage){
 	uint16_t data_scaled = (cell_16_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 48
 	CAN_bms_cell_voltages_payloads[3].word3 &= ~0x7FFF;
 	CAN_bms_cell_voltages_payloads[3].word3 |= data_scaled & 0x7FFF;
 }
-void CAN_bms_cell_voltages_M4_cell_17_voltage_set(uint16_t cell_17_voltage){
+void CAN_bms_cell_voltages_cell_17_voltage_set(uint16_t cell_17_voltage){
 	uint16_t data_scaled = (cell_17_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 3
 	CAN_bms_cell_voltages_payloads[4].word0 &= ~0xFFF8;
@@ -1645,7 +1718,7 @@ void CAN_bms_cell_voltages_M4_cell_17_voltage_set(uint16_t cell_17_voltage){
 	CAN_bms_cell_voltages_payloads[4].word1 &= ~0x0003;
 	CAN_bms_cell_voltages_payloads[4].word1 |= (data_scaled >> 13) & 0x0003;
 }
-void CAN_bms_cell_voltages_M4_cell_18_voltage_set(uint16_t cell_18_voltage){
+void CAN_bms_cell_voltages_cell_18_voltage_set(uint16_t cell_18_voltage){
 	uint16_t data_scaled = (cell_18_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 18
 	CAN_bms_cell_voltages_payloads[4].word1 &= ~0xFFFC;
@@ -1653,19 +1726,19 @@ void CAN_bms_cell_voltages_M4_cell_18_voltage_set(uint16_t cell_18_voltage){
 	CAN_bms_cell_voltages_payloads[4].word2 &= ~0x0001;
 	CAN_bms_cell_voltages_payloads[4].word2 |= (data_scaled >> 14) & 0x0001;
 }
-void CAN_bms_cell_voltages_M4_cell_19_voltage_set(uint16_t cell_19_voltage){
+void CAN_bms_cell_voltages_cell_19_voltage_set(uint16_t cell_19_voltage){
 	uint16_t data_scaled = (cell_19_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 33
 	CAN_bms_cell_voltages_payloads[4].word2 &= ~0xFFFE;
 	CAN_bms_cell_voltages_payloads[4].word2 |= (data_scaled << 1) & 0xFFFE;
 }
-void CAN_bms_cell_voltages_M4_cell_20_voltage_set(uint16_t cell_20_voltage){
+void CAN_bms_cell_voltages_cell_20_voltage_set(uint16_t cell_20_voltage){
 	uint16_t data_scaled = (cell_20_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 48
 	CAN_bms_cell_voltages_payloads[4].word3 &= ~0x7FFF;
 	CAN_bms_cell_voltages_payloads[4].word3 |= data_scaled & 0x7FFF;
 }
-void CAN_bms_cell_voltages_M5_cell_21_voltage_set(uint16_t cell_21_voltage){
+void CAN_bms_cell_voltages_cell_21_voltage_set(uint16_t cell_21_voltage){
 	uint16_t data_scaled = (cell_21_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 3
 	CAN_bms_cell_voltages_payloads[5].word0 &= ~0xFFF8;
@@ -1673,7 +1746,7 @@ void CAN_bms_cell_voltages_M5_cell_21_voltage_set(uint16_t cell_21_voltage){
 	CAN_bms_cell_voltages_payloads[5].word1 &= ~0x0003;
 	CAN_bms_cell_voltages_payloads[5].word1 |= (data_scaled >> 13) & 0x0003;
 }
-void CAN_bms_cell_voltages_M5_cell_22_voltage_set(uint16_t cell_22_voltage){
+void CAN_bms_cell_voltages_cell_22_voltage_set(uint16_t cell_22_voltage){
 	uint16_t data_scaled = (cell_22_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 18
 	CAN_bms_cell_voltages_payloads[5].word1 &= ~0xFFFC;
@@ -1681,13 +1754,13 @@ void CAN_bms_cell_voltages_M5_cell_22_voltage_set(uint16_t cell_22_voltage){
 	CAN_bms_cell_voltages_payloads[5].word2 &= ~0x0001;
 	CAN_bms_cell_voltages_payloads[5].word2 |= (data_scaled >> 14) & 0x0001;
 }
-void CAN_bms_cell_voltages_M5_cell_23_voltage_set(uint16_t cell_23_voltage){
+void CAN_bms_cell_voltages_cell_23_voltage_set(uint16_t cell_23_voltage){
 	uint16_t data_scaled = (cell_23_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 33
 	CAN_bms_cell_voltages_payloads[5].word2 &= ~0xFFFE;
 	CAN_bms_cell_voltages_payloads[5].word2 |= (data_scaled << 1) & 0xFFFE;
 }
-void CAN_bms_cell_voltages_M5_cell_24_voltage_set(uint16_t cell_24_voltage){
+void CAN_bms_cell_voltages_cell_24_voltage_set(uint16_t cell_24_voltage){
 	uint16_t data_scaled = (cell_24_voltage - 0) / 1;
 	// Set 15-bit signal at bit offset 48
 	CAN_bms_cell_voltages_payloads[5].word3 &= ~0x7FFF;
@@ -1710,7 +1783,7 @@ void CAN_bms_cell_voltages_send(void){
 	}
 }
 
-static CAN_payload_S CAN_bms_cell_temperatures_payloads[6] __attribute__((aligned(sizeof(CAN_payload_S))));
+static CAN_payload_S CAN_bms_cell_temperatures_payloads[7] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_bms_cell_temperatures_mux = 0;
 static volatile uint8_t CAN_bms_cell_temperatures_status = 0;
 #define CAN_bms_cell_temperatures_ID 0x726
@@ -1725,234 +1798,272 @@ static CAN_message_S CAN_bms_cell_temperatures={
 
 #define CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_RANGE 3
 #define CAN_BMS_CELL_TEMPERATURES_MULTIPLEX_OFFSET 0
-#define CAN_BMS_CELL_TEMPERATURES_M0_EXT_TEMP_1_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M0_EXT_TEMP_1_OFFSET 3
-#define CAN_BMS_CELL_TEMPERATURES_M0_STACK_VOLTAGE_1_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M0_STACK_VOLTAGE_1_OFFSET 15
-#define CAN_BMS_CELL_TEMPERATURES_M0_INT_VOLTAGE_1_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M0_INT_VOLTAGE_1_OFFSET 27
-#define CAN_BMS_CELL_TEMPERATURES_M0_TEMP_4_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M0_TEMP_4_OFFSET 39
-#define CAN_BMS_CELL_TEMPERATURES_M1_TEMP_5_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M1_TEMP_5_OFFSET 3
-#define CAN_BMS_CELL_TEMPERATURES_M1_TEMP_6_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M1_TEMP_6_OFFSET 15
-#define CAN_BMS_CELL_TEMPERATURES_M1_TEMP_7_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M1_TEMP_7_OFFSET 27
-#define CAN_BMS_CELL_TEMPERATURES_M1_TEMP_8_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M1_TEMP_8_OFFSET 39
-#define CAN_BMS_CELL_TEMPERATURES_M2_TEMP_9_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M2_TEMP_9_OFFSET 3
-#define CAN_BMS_CELL_TEMPERATURES_M2_TEMP_10_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M2_TEMP_10_OFFSET 15
-#define CAN_BMS_CELL_TEMPERATURES_M2_TEMP_11_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M2_TEMP_11_OFFSET 27
-#define CAN_BMS_CELL_TEMPERATURES_M2_TEMP_12_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M2_TEMP_12_OFFSET 39
-#define CAN_BMS_CELL_TEMPERATURES_M3_TEMP_13_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M3_TEMP_13_OFFSET 3
-#define CAN_BMS_CELL_TEMPERATURES_M3_TEMP_14_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M3_TEMP_14_OFFSET 15
-#define CAN_BMS_CELL_TEMPERATURES_M3_TEMP_15_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M3_TEMP_15_OFFSET 27
-#define CAN_BMS_CELL_TEMPERATURES_M3_TEMP_16_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M3_TEMP_16_OFFSET 39
-#define CAN_BMS_CELL_TEMPERATURES_M4_TEMP_17_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M4_TEMP_17_OFFSET 3
-#define CAN_BMS_CELL_TEMPERATURES_M4_TEMP_18_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M4_TEMP_18_OFFSET 15
-#define CAN_BMS_CELL_TEMPERATURES_M4_TEMP_19_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M4_TEMP_19_OFFSET 27
-#define CAN_BMS_CELL_TEMPERATURES_M4_TEMP_20_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M4_TEMP_20_OFFSET 39
-#define CAN_BMS_CELL_TEMPERATURES_M5_TEMP_21_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M5_TEMP_21_OFFSET 3
-#define CAN_BMS_CELL_TEMPERATURES_M5_TEMP_22_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M5_TEMP_22_OFFSET 15
-#define CAN_BMS_CELL_TEMPERATURES_M5_TEMP_23_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M5_TEMP_23_OFFSET 27
-#define CAN_BMS_CELL_TEMPERATURES_M5_TEMP_24_RANGE 12
-#define CAN_BMS_CELL_TEMPERATURES_M5_TEMP_24_OFFSET 39
+#define CAN_BMS_CELL_TEMPERATURES_M0_STACK_1_LTC_INTERNAL_TEMP_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M0_STACK_1_LTC_INTERNAL_TEMP_OFFSET 3
+#define CAN_BMS_CELL_TEMPERATURES_M0_STACK_1_BALANCE_TEMP_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M0_STACK_1_BALANCE_TEMP_OFFSET 15
+#define CAN_BMS_CELL_TEMPERATURES_M0_STACK_2_LTC_INTERNAL_TEMP_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M0_STACK_2_LTC_INTERNAL_TEMP_OFFSET 27
+#define CAN_BMS_CELL_TEMPERATURES_M0_STACK_2_BALANCE_TEMP_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M0_STACK_2_BALANCE_TEMP_OFFSET 39
+#define CAN_BMS_CELL_TEMPERATURES_M1_TEMP_1_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M1_TEMP_1_OFFSET 3
+#define CAN_BMS_CELL_TEMPERATURES_M1_TEMP_2_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M1_TEMP_2_OFFSET 15
+#define CAN_BMS_CELL_TEMPERATURES_M1_TEMP_3_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M1_TEMP_3_OFFSET 27
+#define CAN_BMS_CELL_TEMPERATURES_M1_TEMP_4_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M1_TEMP_4_OFFSET 39
+#define CAN_BMS_CELL_TEMPERATURES_M2_TEMP_5_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M2_TEMP_5_OFFSET 3
+#define CAN_BMS_CELL_TEMPERATURES_M2_TEMP_6_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M2_TEMP_6_OFFSET 15
+#define CAN_BMS_CELL_TEMPERATURES_M2_TEMP_7_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M2_TEMP_7_OFFSET 27
+#define CAN_BMS_CELL_TEMPERATURES_M2_TEMP_8_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M2_TEMP_8_OFFSET 39
+#define CAN_BMS_CELL_TEMPERATURES_M3_TEMP_9_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M3_TEMP_9_OFFSET 3
+#define CAN_BMS_CELL_TEMPERATURES_M3_TEMP_10_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M3_TEMP_10_OFFSET 15
+#define CAN_BMS_CELL_TEMPERATURES_M3_TEMP_11_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M3_TEMP_11_OFFSET 27
+#define CAN_BMS_CELL_TEMPERATURES_M3_TEMP_12_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M3_TEMP_12_OFFSET 39
+#define CAN_BMS_CELL_TEMPERATURES_M4_TEMP_13_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M4_TEMP_13_OFFSET 3
+#define CAN_BMS_CELL_TEMPERATURES_M4_TEMP_14_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M4_TEMP_14_OFFSET 15
+#define CAN_BMS_CELL_TEMPERATURES_M4_TEMP_15_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M4_TEMP_15_OFFSET 27
+#define CAN_BMS_CELL_TEMPERATURES_M4_TEMP_16_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M4_TEMP_16_OFFSET 39
+#define CAN_BMS_CELL_TEMPERATURES_M5_TEMP_17_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M5_TEMP_17_OFFSET 3
+#define CAN_BMS_CELL_TEMPERATURES_M5_TEMP_18_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M5_TEMP_18_OFFSET 15
+#define CAN_BMS_CELL_TEMPERATURES_M5_TEMP_19_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M5_TEMP_19_OFFSET 27
+#define CAN_BMS_CELL_TEMPERATURES_M5_TEMP_20_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M5_TEMP_20_OFFSET 39
+#define CAN_BMS_CELL_TEMPERATURES_M6_TEMP_21_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M6_TEMP_21_OFFSET 3
+#define CAN_BMS_CELL_TEMPERATURES_M6_TEMP_22_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M6_TEMP_22_OFFSET 15
+#define CAN_BMS_CELL_TEMPERATURES_M6_TEMP_23_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M6_TEMP_23_OFFSET 27
+#define CAN_BMS_CELL_TEMPERATURES_M6_TEMP_24_RANGE 12
+#define CAN_BMS_CELL_TEMPERATURES_M6_TEMP_24_OFFSET 39
 
-void CAN_bms_cell_temperatures_M0_ext_temp_1_set(float ext_temp_1){
-	uint16_t data_scaled = (uint16_t)((ext_temp_1 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_stack_1_LTC_internal_temp_set(float stack_1_LTC_internal_temp){
+	uint16_t data_scaled = (uint16_t)((stack_1_LTC_internal_temp - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 3
 	CAN_bms_cell_temperatures_payloads[0].word0 &= ~0x7FF8;
 	CAN_bms_cell_temperatures_payloads[0].word0 |= (data_scaled << 3) & 0x7FF8;
 }
-void CAN_bms_cell_temperatures_M0_stack_voltage_1_set(float stack_voltage_1){
-	uint16_t data_scaled = (uint16_t)((stack_voltage_1 - 0) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_stack_1_balance_temp_set(float stack_1_balance_temp){
+	uint16_t data_scaled = (uint16_t)((stack_1_balance_temp - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 15
 	CAN_bms_cell_temperatures_payloads[0].word0 &= ~0x8000;
 	CAN_bms_cell_temperatures_payloads[0].word0 |= (data_scaled << 15) & 0x8000;
 	CAN_bms_cell_temperatures_payloads[0].word1 &= ~0x07FF;
 	CAN_bms_cell_temperatures_payloads[0].word1 |= (data_scaled >> 1) & 0x07FF;
 }
-void CAN_bms_cell_temperatures_M0_int_voltage_1_set(float int_voltage_1){
-	uint16_t data_scaled = (uint16_t)((int_voltage_1 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_stack_2_LTC_internal_temp_set(float stack_2_LTC_internal_temp){
+	uint16_t data_scaled = (uint16_t)((stack_2_LTC_internal_temp - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 27
 	CAN_bms_cell_temperatures_payloads[0].word1 &= ~0xF800;
 	CAN_bms_cell_temperatures_payloads[0].word1 |= (data_scaled << 11) & 0xF800;
 	CAN_bms_cell_temperatures_payloads[0].word2 &= ~0x007F;
 	CAN_bms_cell_temperatures_payloads[0].word2 |= (data_scaled >> 5) & 0x007F;
 }
-void CAN_bms_cell_temperatures_M0_temp_4_set(float temp_4){
-	uint16_t data_scaled = (uint16_t)((temp_4 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_stack_2_balance_temp_set(float stack_2_balance_temp){
+	uint16_t data_scaled = (uint16_t)((stack_2_balance_temp - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 39
 	CAN_bms_cell_temperatures_payloads[0].word2 &= ~0xFF80;
 	CAN_bms_cell_temperatures_payloads[0].word2 |= (data_scaled << 7) & 0xFF80;
 	CAN_bms_cell_temperatures_payloads[0].word3 &= ~0x0007;
 	CAN_bms_cell_temperatures_payloads[0].word3 |= (data_scaled >> 9) & 0x0007;
 }
-void CAN_bms_cell_temperatures_M1_temp_5_set(float temp_5){
-	uint16_t data_scaled = (uint16_t)((temp_5 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_temp_1_set(float temp_1){
+	uint16_t data_scaled = (uint16_t)((temp_1 - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 3
 	CAN_bms_cell_temperatures_payloads[1].word0 &= ~0x7FF8;
 	CAN_bms_cell_temperatures_payloads[1].word0 |= (data_scaled << 3) & 0x7FF8;
 }
-void CAN_bms_cell_temperatures_M1_temp_6_set(float temp_6){
-	uint16_t data_scaled = (uint16_t)((temp_6 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_temp_2_set(float temp_2){
+	uint16_t data_scaled = (uint16_t)((temp_2 - 0) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 15
 	CAN_bms_cell_temperatures_payloads[1].word0 &= ~0x8000;
 	CAN_bms_cell_temperatures_payloads[1].word0 |= (data_scaled << 15) & 0x8000;
 	CAN_bms_cell_temperatures_payloads[1].word1 &= ~0x07FF;
 	CAN_bms_cell_temperatures_payloads[1].word1 |= (data_scaled >> 1) & 0x07FF;
 }
-void CAN_bms_cell_temperatures_M1_temp_7_set(float temp_7){
-	uint16_t data_scaled = (uint16_t)((temp_7 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_temp_3_set(float temp_3){
+	uint16_t data_scaled = (uint16_t)((temp_3 - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 27
 	CAN_bms_cell_temperatures_payloads[1].word1 &= ~0xF800;
 	CAN_bms_cell_temperatures_payloads[1].word1 |= (data_scaled << 11) & 0xF800;
 	CAN_bms_cell_temperatures_payloads[1].word2 &= ~0x007F;
 	CAN_bms_cell_temperatures_payloads[1].word2 |= (data_scaled >> 5) & 0x007F;
 }
-void CAN_bms_cell_temperatures_M1_temp_8_set(float temp_8){
-	uint16_t data_scaled = (uint16_t)((temp_8 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_temp_4_set(float temp_4){
+	uint16_t data_scaled = (uint16_t)((temp_4 - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 39
 	CAN_bms_cell_temperatures_payloads[1].word2 &= ~0xFF80;
 	CAN_bms_cell_temperatures_payloads[1].word2 |= (data_scaled << 7) & 0xFF80;
 	CAN_bms_cell_temperatures_payloads[1].word3 &= ~0x0007;
 	CAN_bms_cell_temperatures_payloads[1].word3 |= (data_scaled >> 9) & 0x0007;
 }
-void CAN_bms_cell_temperatures_M2_temp_9_set(float temp_9){
-	uint16_t data_scaled = (uint16_t)((temp_9 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_temp_5_set(float temp_5){
+	uint16_t data_scaled = (uint16_t)((temp_5 - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 3
 	CAN_bms_cell_temperatures_payloads[2].word0 &= ~0x7FF8;
 	CAN_bms_cell_temperatures_payloads[2].word0 |= (data_scaled << 3) & 0x7FF8;
 }
-void CAN_bms_cell_temperatures_M2_temp_10_set(float temp_10){
-	uint16_t data_scaled = (uint16_t)((temp_10 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_temp_6_set(float temp_6){
+	uint16_t data_scaled = (uint16_t)((temp_6 - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 15
 	CAN_bms_cell_temperatures_payloads[2].word0 &= ~0x8000;
 	CAN_bms_cell_temperatures_payloads[2].word0 |= (data_scaled << 15) & 0x8000;
 	CAN_bms_cell_temperatures_payloads[2].word1 &= ~0x07FF;
 	CAN_bms_cell_temperatures_payloads[2].word1 |= (data_scaled >> 1) & 0x07FF;
 }
-void CAN_bms_cell_temperatures_M2_temp_11_set(float temp_11){
-	uint16_t data_scaled = (uint16_t)((temp_11 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_temp_7_set(float temp_7){
+	uint16_t data_scaled = (uint16_t)((temp_7 - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 27
 	CAN_bms_cell_temperatures_payloads[2].word1 &= ~0xF800;
 	CAN_bms_cell_temperatures_payloads[2].word1 |= (data_scaled << 11) & 0xF800;
 	CAN_bms_cell_temperatures_payloads[2].word2 &= ~0x007F;
 	CAN_bms_cell_temperatures_payloads[2].word2 |= (data_scaled >> 5) & 0x007F;
 }
-void CAN_bms_cell_temperatures_M2_temp_12_set(float temp_12){
-	uint16_t data_scaled = (uint16_t)((temp_12 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_temp_8_set(float temp_8){
+	uint16_t data_scaled = (uint16_t)((temp_8 - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 39
 	CAN_bms_cell_temperatures_payloads[2].word2 &= ~0xFF80;
 	CAN_bms_cell_temperatures_payloads[2].word2 |= (data_scaled << 7) & 0xFF80;
 	CAN_bms_cell_temperatures_payloads[2].word3 &= ~0x0007;
 	CAN_bms_cell_temperatures_payloads[2].word3 |= (data_scaled >> 9) & 0x0007;
 }
-void CAN_bms_cell_temperatures_M3_temp_13_set(float temp_13){
-	uint16_t data_scaled = (uint16_t)((temp_13 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_temp_9_set(float temp_9){
+	uint16_t data_scaled = (uint16_t)((temp_9 - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 3
 	CAN_bms_cell_temperatures_payloads[3].word0 &= ~0x7FF8;
 	CAN_bms_cell_temperatures_payloads[3].word0 |= (data_scaled << 3) & 0x7FF8;
 }
-void CAN_bms_cell_temperatures_M3_temp_14_set(float temp_14){
-	uint16_t data_scaled = (uint16_t)((temp_14 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_temp_10_set(float temp_10){
+	uint16_t data_scaled = (uint16_t)((temp_10 - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 15
 	CAN_bms_cell_temperatures_payloads[3].word0 &= ~0x8000;
 	CAN_bms_cell_temperatures_payloads[3].word0 |= (data_scaled << 15) & 0x8000;
 	CAN_bms_cell_temperatures_payloads[3].word1 &= ~0x07FF;
 	CAN_bms_cell_temperatures_payloads[3].word1 |= (data_scaled >> 1) & 0x07FF;
 }
-void CAN_bms_cell_temperatures_M3_temp_15_set(float temp_15){
-	uint16_t data_scaled = (uint16_t)((temp_15 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_temp_11_set(float temp_11){
+	uint16_t data_scaled = (uint16_t)((temp_11 - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 27
 	CAN_bms_cell_temperatures_payloads[3].word1 &= ~0xF800;
 	CAN_bms_cell_temperatures_payloads[3].word1 |= (data_scaled << 11) & 0xF800;
 	CAN_bms_cell_temperatures_payloads[3].word2 &= ~0x007F;
 	CAN_bms_cell_temperatures_payloads[3].word2 |= (data_scaled >> 5) & 0x007F;
 }
-void CAN_bms_cell_temperatures_M3_temp_16_set(float temp_16){
-	uint16_t data_scaled = (uint16_t)((temp_16 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_temp_12_set(float temp_12){
+	uint16_t data_scaled = (uint16_t)((temp_12 - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 39
 	CAN_bms_cell_temperatures_payloads[3].word2 &= ~0xFF80;
 	CAN_bms_cell_temperatures_payloads[3].word2 |= (data_scaled << 7) & 0xFF80;
 	CAN_bms_cell_temperatures_payloads[3].word3 &= ~0x0007;
 	CAN_bms_cell_temperatures_payloads[3].word3 |= (data_scaled >> 9) & 0x0007;
 }
-void CAN_bms_cell_temperatures_M4_temp_17_set(float temp_17){
-	uint16_t data_scaled = (uint16_t)((temp_17 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_temp_13_set(float temp_13){
+	uint16_t data_scaled = (uint16_t)((temp_13 - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 3
 	CAN_bms_cell_temperatures_payloads[4].word0 &= ~0x7FF8;
 	CAN_bms_cell_temperatures_payloads[4].word0 |= (data_scaled << 3) & 0x7FF8;
 }
-void CAN_bms_cell_temperatures_M4_temp_18_set(float temp_18){
-	uint16_t data_scaled = (uint16_t)((temp_18 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_temp_14_set(float temp_14){
+	uint16_t data_scaled = (uint16_t)((temp_14 - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 15
 	CAN_bms_cell_temperatures_payloads[4].word0 &= ~0x8000;
 	CAN_bms_cell_temperatures_payloads[4].word0 |= (data_scaled << 15) & 0x8000;
 	CAN_bms_cell_temperatures_payloads[4].word1 &= ~0x07FF;
 	CAN_bms_cell_temperatures_payloads[4].word1 |= (data_scaled >> 1) & 0x07FF;
 }
-void CAN_bms_cell_temperatures_M4_temp_19_set(float temp_19){
-	uint16_t data_scaled = (uint16_t)((temp_19 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_temp_15_set(float temp_15){
+	uint16_t data_scaled = (uint16_t)((temp_15 - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 27
 	CAN_bms_cell_temperatures_payloads[4].word1 &= ~0xF800;
 	CAN_bms_cell_temperatures_payloads[4].word1 |= (data_scaled << 11) & 0xF800;
 	CAN_bms_cell_temperatures_payloads[4].word2 &= ~0x007F;
 	CAN_bms_cell_temperatures_payloads[4].word2 |= (data_scaled >> 5) & 0x007F;
 }
-void CAN_bms_cell_temperatures_M4_temp_20_set(float temp_20){
-	uint16_t data_scaled = (uint16_t)((temp_20 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_temp_16_set(float temp_16){
+	uint16_t data_scaled = (uint16_t)((temp_16 - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 39
 	CAN_bms_cell_temperatures_payloads[4].word2 &= ~0xFF80;
 	CAN_bms_cell_temperatures_payloads[4].word2 |= (data_scaled << 7) & 0xFF80;
 	CAN_bms_cell_temperatures_payloads[4].word3 &= ~0x0007;
 	CAN_bms_cell_temperatures_payloads[4].word3 |= (data_scaled >> 9) & 0x0007;
 }
-void CAN_bms_cell_temperatures_M5_temp_21_set(float temp_21){
-	uint16_t data_scaled = (uint16_t)((temp_21 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_temp_17_set(float temp_17){
+	uint16_t data_scaled = (uint16_t)((temp_17 - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 3
 	CAN_bms_cell_temperatures_payloads[5].word0 &= ~0x7FF8;
 	CAN_bms_cell_temperatures_payloads[5].word0 |= (data_scaled << 3) & 0x7FF8;
 }
-void CAN_bms_cell_temperatures_M5_temp_22_set(float temp_22){
-	uint16_t data_scaled = (uint16_t)((temp_22 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_temp_18_set(float temp_18){
+	uint16_t data_scaled = (uint16_t)((temp_18 - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 15
 	CAN_bms_cell_temperatures_payloads[5].word0 &= ~0x8000;
 	CAN_bms_cell_temperatures_payloads[5].word0 |= (data_scaled << 15) & 0x8000;
 	CAN_bms_cell_temperatures_payloads[5].word1 &= ~0x07FF;
 	CAN_bms_cell_temperatures_payloads[5].word1 |= (data_scaled >> 1) & 0x07FF;
 }
-void CAN_bms_cell_temperatures_M5_temp_23_set(float temp_23){
-	uint16_t data_scaled = (uint16_t)((temp_23 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_temp_19_set(float temp_19){
+	uint16_t data_scaled = (uint16_t)((temp_19 - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 27
 	CAN_bms_cell_temperatures_payloads[5].word1 &= ~0xF800;
 	CAN_bms_cell_temperatures_payloads[5].word1 |= (data_scaled << 11) & 0xF800;
 	CAN_bms_cell_temperatures_payloads[5].word2 &= ~0x007F;
 	CAN_bms_cell_temperatures_payloads[5].word2 |= (data_scaled >> 5) & 0x007F;
 }
-void CAN_bms_cell_temperatures_M5_temp_24_set(float temp_24){
-	uint16_t data_scaled = (uint16_t)((temp_24 - -40) / 0.1 + 0.5f);
+void CAN_bms_cell_temperatures_temp_20_set(float temp_20){
+	uint16_t data_scaled = (uint16_t)((temp_20 - -40) / 0.1 + 0.5f);
 	// Set 12-bit signal at bit offset 39
 	CAN_bms_cell_temperatures_payloads[5].word2 &= ~0xFF80;
 	CAN_bms_cell_temperatures_payloads[5].word2 |= (data_scaled << 7) & 0xFF80;
 	CAN_bms_cell_temperatures_payloads[5].word3 &= ~0x0007;
 	CAN_bms_cell_temperatures_payloads[5].word3 |= (data_scaled >> 9) & 0x0007;
+}
+void CAN_bms_cell_temperatures_temp_21_set(float temp_21){
+	uint16_t data_scaled = (uint16_t)((temp_21 - -40) / 0.1 + 0.5f);
+	// Set 12-bit signal at bit offset 3
+	CAN_bms_cell_temperatures_payloads[6].word0 &= ~0x7FF8;
+	CAN_bms_cell_temperatures_payloads[6].word0 |= (data_scaled << 3) & 0x7FF8;
+}
+void CAN_bms_cell_temperatures_temp_22_set(float temp_22){
+	uint16_t data_scaled = (uint16_t)((temp_22 - -40) / 0.1 + 0.5f);
+	// Set 12-bit signal at bit offset 15
+	CAN_bms_cell_temperatures_payloads[6].word0 &= ~0x8000;
+	CAN_bms_cell_temperatures_payloads[6].word0 |= (data_scaled << 15) & 0x8000;
+	CAN_bms_cell_temperatures_payloads[6].word1 &= ~0x07FF;
+	CAN_bms_cell_temperatures_payloads[6].word1 |= (data_scaled >> 1) & 0x07FF;
+}
+void CAN_bms_cell_temperatures_temp_23_set(float temp_23){
+	uint16_t data_scaled = (uint16_t)((temp_23 - -40) / 0.1 + 0.5f);
+	// Set 12-bit signal at bit offset 27
+	CAN_bms_cell_temperatures_payloads[6].word1 &= ~0xF800;
+	CAN_bms_cell_temperatures_payloads[6].word1 |= (data_scaled << 11) & 0xF800;
+	CAN_bms_cell_temperatures_payloads[6].word2 &= ~0x007F;
+	CAN_bms_cell_temperatures_payloads[6].word2 |= (data_scaled >> 5) & 0x007F;
+}
+void CAN_bms_cell_temperatures_temp_24_set(float temp_24){
+	uint16_t data_scaled = (uint16_t)((temp_24 - -40) / 0.1 + 0.5f);
+	// Set 12-bit signal at bit offset 39
+	CAN_bms_cell_temperatures_payloads[6].word2 &= ~0xFF80;
+	CAN_bms_cell_temperatures_payloads[6].word2 |= (data_scaled << 7) & 0xFF80;
+	CAN_bms_cell_temperatures_payloads[6].word3 &= ~0x0007;
+	CAN_bms_cell_temperatures_payloads[6].word3 |= (data_scaled >> 9) & 0x0007;
 }
 void CAN_bms_cell_temperatures_dlc_set(uint8_t dlc){
 	CAN_bms_cell_temperatures.dlc = dlc;
@@ -2175,21 +2286,25 @@ void CAN_DBC_init(void) {
 	// Initialize multiplexed message: status
 	CAN_bms_status.payload = &CAN_bms_status_payloads[0];
 	// Pre-set mux value 0 in payload 0
-	// Set 2-bit signal at bit offset 0
-	CAN_bms_status_payloads[0].word0 &= ~0x0003;
-	CAN_bms_status_payloads[0].word0 |= 0 & 0x0003;
+	// Set 3-bit signal at bit offset 0
+	CAN_bms_status_payloads[0].word0 &= ~0x0007;
+	CAN_bms_status_payloads[0].word0 |= 0 & 0x0007;
 	// Pre-set mux value 1 in payload 1
-	// Set 2-bit signal at bit offset 0
-	CAN_bms_status_payloads[1].word0 &= ~0x0003;
-	CAN_bms_status_payloads[1].word0 |= 1 & 0x0003;
+	// Set 3-bit signal at bit offset 0
+	CAN_bms_status_payloads[1].word0 &= ~0x0007;
+	CAN_bms_status_payloads[1].word0 |= 1 & 0x0007;
 	// Pre-set mux value 2 in payload 2
-	// Set 2-bit signal at bit offset 0
-	CAN_bms_status_payloads[2].word0 &= ~0x0003;
-	CAN_bms_status_payloads[2].word0 |= 2 & 0x0003;
+	// Set 3-bit signal at bit offset 0
+	CAN_bms_status_payloads[2].word0 &= ~0x0007;
+	CAN_bms_status_payloads[2].word0 |= 2 & 0x0007;
 	// Pre-set mux value 3 in payload 3
-	// Set 2-bit signal at bit offset 0
-	CAN_bms_status_payloads[3].word0 &= ~0x0003;
-	CAN_bms_status_payloads[3].word0 |= 3 & 0x0003;
+	// Set 3-bit signal at bit offset 0
+	CAN_bms_status_payloads[3].word0 &= ~0x0007;
+	CAN_bms_status_payloads[3].word0 |= 3 & 0x0007;
+	// Pre-set mux value 4 in payload 4
+	// Set 3-bit signal at bit offset 0
+	CAN_bms_status_payloads[4].word0 &= ~0x0007;
+	CAN_bms_status_payloads[4].word0 |= 4 & 0x0007;
 	// Initialize multiplexed message: cell_voltages
 	CAN_bms_cell_voltages.payload = &CAN_bms_cell_voltages_payloads[0];
 	// Pre-set mux value 0 in payload 0
@@ -2242,6 +2357,10 @@ void CAN_DBC_init(void) {
 	// Set 3-bit signal at bit offset 0
 	CAN_bms_cell_temperatures_payloads[5].word0 &= ~0x0007;
 	CAN_bms_cell_temperatures_payloads[5].word0 |= 5 & 0x0007;
+	// Pre-set mux value 6 in payload 6
+	// Set 3-bit signal at bit offset 0
+	CAN_bms_cell_temperatures_payloads[6].word0 &= ~0x0007;
+	CAN_bms_cell_temperatures_payloads[6].word0 |= 6 & 0x0007;
 	CAN_configureMailbox(&CAN_mcu_status);
 	CAN_configureMailbox(&CAN_mcu_command);
 	CAN_configureMailbox(&CAN_mcu_mcu_debug);
@@ -2260,11 +2379,10 @@ void CAN_send_10ms(void){
 }
 
 void CAN_send_100ms(void){
-	// No messages to send at this interval
+	CAN_bms_cell_voltages_send();
 }
 
 void CAN_send_1000ms(void){
 	CAN_bms_charger_request_send();
-	CAN_bms_cell_voltages_send();
 	CAN_bms_cell_temperatures_send();
 }

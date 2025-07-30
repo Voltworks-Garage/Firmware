@@ -64,12 +64,17 @@ static BMS_states_E nextState = bms_init_state;
  *******************************************************************************/
 static bool bms_balancingAllowed = false;
 NEW_TIMER(error_timer, 3000); // 3000ms timer for BMS error operation
-NEW_TIMER(balancing_timer, 1000); // 1000ms timer for balancing operations
+NEW_TIMER(balancing_timer, 10000); // 10 second timer for balancing operations
+NEW_TIMER(measuring_timer, 1000); // 1 second timer to measure relaxed voltages
 NEW_TIMER(led_timer, 500);
 static uint32_t bms_voltageTargetmV = BMS_MAX_CHARGE_VOLTAGE_ALLOWED * 1000;
 static uint32_t bms_currentTargetmA = BMS_MAX_CHARGE_CURRENT_ALLOWED * 1000;
 static uint16_t bms_highestCellVoltagemV = 0;
 static uint16_t bms_lowestCellVoltagemV = 0;
+static uint8_t bms_balance_early_hysterisis = 0;
+static uint8_t cells_to_balance[MAX_BALANCE_CELLS];
+static uint8_t num_cells_to_balance = 0;
+static uint8_t balancing_state = 0;
 
 // BMS voltage calculation variables
 static float bms_stackVoltage[LTC6802_1_NUM_STACKS] = {0.0f};
@@ -79,7 +84,7 @@ static float bms_packVoltage = 0.0f;
  * Private Function Prototypes
  *******************************************************************************/
 static void bms_taperCurrentCommandForBalancing(void);
-static uint8_t bms_calculateCellsToBalance(uint8_t* cells_to_balance);
+static uint8_t bms_calculateCellsToBalance(void);
 static void bms_calculateStackVoltages(void);
 
 
@@ -134,8 +139,8 @@ void BMS_Run_10ms(void) {
         bms_balancingAllowed = true;
     }
 
-    CAN_bms_status_M3_max_charge_current_mA_set(bms_currentTargetmA);
-    CAN_bms_status_M3_max_charge_voltage_mV_set(bms_voltageTargetmV);
+    CAN_bms_status_max_charge_current_mA_set(bms_currentTargetmA);
+    CAN_bms_status_max_charge_voltage_mV_set(bms_voltageTargetmV);
     
 
     /* This only happens during state transition
@@ -176,6 +181,7 @@ static void bms_running(BMS_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
             SysTick_TimerStart(led_timer);
+            BMS_ClearAllCellBalancing();
             break;
         case RUN:
             // Main BMS operation - process available data
@@ -185,29 +191,65 @@ static void bms_running(BMS_entry_types_E entry_type) {
             
             // Handle balancing decisions
             if (bms_balancingAllowed) {
-                // Calculate which cells need balancing
-                static uint8_t cells_to_balance[MAX_BALANCE_CELLS];
-                uint8_t num_cells = bms_calculateCellsToBalance(cells_to_balance);
-                
-                if (num_cells > 0) {
+                switch (balancing_state)
+                {
+                case 0:
                     // If balancing is not active, start it with current decisions
                     if(!LTC6802_1_IsBalancingActive()){
-                        // Set which cells to balance in the driver and start balancing
-                        LTC6802_1_SetCellsToBalance(cells_to_balance, num_cells);
-                        LTC6802_1_StartCellBalancing();
+                        // Calculate which cells need balancing
+                        uint8_t num_cells = bms_calculateCellsToBalance();
+                        // Start balancing with the selected cells
+                        LTC6802_1_StartCellBalancing(cells_to_balance, num_cells);
                         SysTick_TimerStart(balancing_timer);
+                        balancing_state++;
                     }
+                    break;
+                case 1:
+                    // After balancing, take a measurement break to allow voltages to settle
+                    if (SysTick_TimeOut(balancing_timer)){
+                        BMS_ClearAllCellBalancing();
+                        SysTick_TimerStart(measuring_timer);
+                        balancing_state++;
+                    }
+                    break;
+                case 2:
+                    // After measurement settling, go back an calculate cells to balance
+                    if (SysTick_TimeOut(measuring_timer)){
+                        balancing_state = 0;
+                    }
+                    break;
+                default:
+                    break;
                 }
-
                 // If a cell is over the balance threshold, start to taper the current
                 bms_taperCurrentCommandForBalancing();
             } else {
                 BMS_ClearAllCellBalancing();
             }
 
-            // Handle balancing timeout
-            if (SysTick_TimeOut(balancing_timer)){
-                BMS_ClearAllCellBalancing();
+            CAN_bms_status_is_balancing_set(bms_balancingAllowed);
+            // Update which cells are balancing
+            for (uint8_t i = 0; i < 5; i++) {
+                uint8_t cell_id = i < num_cells_to_balance ? cells_to_balance[i] : 0xFF;
+                switch (i) {
+                    case 0:
+                        CAN_bms_status_cell_A_balancing_set(cell_id);
+                        break;
+                    case 1:
+                        CAN_bms_status_cell_B_balancing_set(cell_id);
+                        break;
+                    case 2:
+                        CAN_bms_status_cell_C_balancing_set(cell_id);
+                        break;
+                    case 3:
+                        CAN_bms_status_cell_D_balancing_set(cell_id);
+                        break;
+                    case 4:
+                        CAN_bms_status_cell_E_balancing_set(cell_id);
+                        break;
+                    default:
+                        break;
+                }
             }
             
             // Toggle GPIO for debugging/indication
@@ -264,6 +306,7 @@ float BMS_GetTemperatureVoltage(uint8_t tempId) {
 void BMS_ClearAllCellBalancing(void) {
     // Direct pass-through to driver
     LTC6802_1_ClearAllCellBalancing();
+    num_cells_to_balance = 0;
 }
 
 void BMS_SetBalancingIsAllowed(bool allowed){
@@ -271,14 +314,14 @@ void BMS_SetBalancingIsAllowed(bool allowed){
 }
 
 
-static uint8_t bms_calculateCellsToBalance(uint8_t* cells_to_balance) {
+static uint8_t bms_calculateCellsToBalance(void) {
     uint8_t i, j;
     uint16_t cell_voltage;
     uint16_t top_voltages[MAX_BALANCE_CELLS] = {0};
     uint8_t top_indices[MAX_BALANCE_CELLS] = {0};
     uint16_t min_voltage = 0xFFFF;
     uint16_t max_voltage = 0;
-    uint8_t num_cells_to_balance = 0;
+    uint16_t cell_delta = 0;
     
     // Find min and max voltages
     for (i = 0; i < LTC6802_1_TOTAL_CELLS; i++) {
@@ -294,9 +337,11 @@ static uint8_t bms_calculateCellsToBalance(uint8_t* cells_to_balance) {
             }
         }
     }
+    cell_delta = bms_highestCellVoltagemV - bms_lowestCellVoltagemV;
+
 
     // Check if all cells are below the minimum threshold for balancing
-    if (max_voltage < MINIMUM_BALANCE_VOLTAGE_MV){
+    if (max_voltage < (MINIMUM_BALANCE_VOLTAGE_MV - cell_delta)){
         return 0;  // No balancing needed
     }
     
@@ -310,7 +355,7 @@ static uint8_t bms_calculateCellsToBalance(uint8_t* cells_to_balance) {
     
     for (i = 0; i < LTC6802_1_TOTAL_CELLS; i++) {
         cell_voltage = LTC6802_1_GetCellVoltage(i);
-        if (cell_voltage != 0 && cell_voltage > balance_threshold && cell_voltage > MINIMUM_BALANCE_VOLTAGE_MV) {
+        if (cell_voltage != 0 && cell_voltage > balance_threshold && cell_voltage > (MINIMUM_BALANCE_VOLTAGE_MV - cell_delta)) {
             // Insert into sorted top list
             if (cell_voltage > top_voltages[MAX_BALANCE_CELLS-1]) {
                 j = MAX_BALANCE_CELLS - 1;
@@ -325,6 +370,7 @@ static uint8_t bms_calculateCellsToBalance(uint8_t* cells_to_balance) {
         }
     }
     
+    num_cells_to_balance = 0;
     // Count valid entries and copy to output array
     for (i = 0; i < MAX_BALANCE_CELLS; i++) {
         if (top_voltages[i] > 0) {
@@ -338,8 +384,10 @@ static uint8_t bms_calculateCellsToBalance(uint8_t* cells_to_balance) {
 
 static void bms_taperCurrentCommandForBalancing(void){
 
+    static uint8_t cell_charge_voltage_hysterisis = 0; //50mV hyst
     // Check if the highest cell is within balancing range
-    if (bms_highestCellVoltagemV > MINIMUM_BALANCE_VOLTAGE_MV){
+    if (bms_highestCellVoltagemV > (MINIMUM_BALANCE_VOLTAGE_MV - cell_charge_voltage_hysterisis)){
+        cell_charge_voltage_hysterisis = 0;
         
         // Find the greatest cell delta.
         uint16_t cell_delta = bms_highestCellVoltagemV - bms_lowestCellVoltagemV;
@@ -350,23 +398,25 @@ static void bms_taperCurrentCommandForBalancing(void){
         } else if (cell_delta <= 100) {
             bms_currentTargetmA = 2000;
         } else if (cell_delta <= 200) {
-            bms_currentTargetmA = 500;
+            bms_currentTargetmA = 1000;
         } else {
-            bms_currentTargetmA = 100;
+            bms_currentTargetmA = 500;
         }   
 
         // As the charge voltage approaches full, decrease the charge current .
         uint16_t cellVoltageRemaining = 4200 - bms_highestCellVoltagemV;
-        if (cellVoltageRemaining <= 50) {
+        if (cellVoltageRemaining <= 25) {
             bms_currentTargetmA = bms_currentTargetmA / 10;  // 0.1 multiplier
-        } else if (cellVoltageRemaining <= 100) {
+        } else if (cellVoltageRemaining <= 50) {
             bms_currentTargetmA = bms_currentTargetmA / 4;  // 0.25 multiplier
-        } else if (cellVoltageRemaining <= 200) {
+        } else if (cellVoltageRemaining <= 75) {
             bms_currentTargetmA = bms_currentTargetmA / 2;  // 0.5 multiplier
         }
 
         // Round up to nearest 100mA because that is the minimum resolution of the charger.
         bms_currentTargetmA = ((bms_currentTargetmA + 99) / 100) * 100;
+    } else {
+        cell_charge_voltage_hysterisis = 50;
     }
 }
 

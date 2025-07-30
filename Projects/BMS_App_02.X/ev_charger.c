@@ -78,6 +78,7 @@ static uint16_t chargeVoltageTarget = 24 * 4.2 * CHARGER_VOLTAGE_SCALING; //24 c
 static uint16_t chargeCurrentTarget = 5 * CHARGER_CURRENT_SCALING;
 
 NEW_LOW_PASS_FILTER(charger_voltage, 10.0, 100.0);
+NEW_LOW_PASS_FILTER(charger_current, 10.0, 100.0);
 NEW_LOW_PASS_FILTER(vbus_voltage, 10.0, 100.0);
 
 /******************************************************************************
@@ -99,6 +100,7 @@ void EV_CHARGER_Run_10ms(void) {
 
     takeLowPassFilter(vbus_voltage, IO_GET_VBUS_VOLTAGE());
     takeLowPassFilter(charger_voltage, IO_GET_EV_CHARGER_VOLTAGE());
+    takeLowPassFilter(charger_current, IO_GET_EV_CHARGER_CURRENT());
 
     chargeRequestFromMCU = CAN_mcu_command_ev_charger_enable_get();// && checkHeartBeat();
 
@@ -204,7 +206,7 @@ void charging(EV_CHARGER_entry_types_E entry_type) {
             if (!chargeRequestFromMCU) {
                 nextState = stopping_state;
             }
-            
+
             if (SysTick_TimeOut(chargerMiaTimer)){
                 if (CAN_charger_status_checkDataIsFresh()){
                     SysTick_TimerStart(chargerMiaTimer);
@@ -214,10 +216,11 @@ void charging(EV_CHARGER_entry_types_E entry_type) {
 
             }
             //Always set the charge request to BMS or MCU command, whichever is less.
-            // uint32_t charging_current = MIN((CAN_mcu_command_ev_charger_current_get()*1000), CAN_bms_status_M3_max_charge_current_mA_get());
-            uint32_t charging_current = MIN((CAN_mcu_command_ev_charger_current_get()*1000), 5000);
+            uint32_t charging_current = MIN((CAN_mcu_command_ev_charger_current_get()*1000),
+                                            CAN_bms_status_max_charge_current_mA_get());
+            charging_current = MIN(charging_current, 5000); //TODO delete this when ready. sets a 5A cap.
             EV_CHARGER_charge_current_mA_set(charging_current);
-            EV_CHARGER_charge_voltage_mV_set(CAN_bms_status_M3_max_charge_voltage_mV_get());
+            EV_CHARGER_charge_voltage_mV_set(CAN_bms_status_max_charge_voltage_mV_get());
 
             break;
 
@@ -318,4 +321,12 @@ uint8_t checkChargerErrors(void) {
     chargerError |= CAN_charger_status_hardware_error_get();
     chargerError |= CAN_charger_status_input_voltage_error_get();
     return chargerError;
+}
+
+
+float EV_CHARGER_current_get(void){
+    return getLowPassFilter(charger_current);
+}
+float EV_CHARGER_voltage_get(void){
+    return getLowPassFilter(charger_voltage);
 }

@@ -80,16 +80,37 @@ class CANTableView:
         if not display_signals:
             return
             
-        for signal_name, signal_value in display_signals.items():
-            if signal_name not in msg.signal_item_ids:
-                # Create new signal child only if it doesn't exist
+        # Check if we have new signals that require re-ordering
+        current_signal_names = set(display_signals.keys())
+        existing_signal_names = set(msg.signal_item_ids.keys())
+        
+        if current_signal_names != existing_signal_names:
+            # New signals detected - clear and recreate all in proper order
+            for signal_item_id in list(msg.signal_item_ids.values()):
+                try:
+                    self.tree.delete(signal_item_id)
+                except tk.TclError:
+                    pass  # Item already deleted
+            msg.signal_item_ids.clear()
+            
+            # Re-create all signal children in sorted order
+            for signal_name, signal_value in display_signals.items():
                 signal_item = self.tree.insert(msg.tree_item_id, tk.END, text="",
                                              values=("", f"  {signal_name}", "", signal_value, "", ""))
                 msg.signal_item_ids[signal_name] = signal_item
-            else:
-                # Update existing signal child value
-                self.tree.item(msg.signal_item_ids[signal_name],
-                             values=("", f"  {signal_name}", "", signal_value, "", ""))
+        else:
+            # No new signals - just update existing values
+            for signal_name, signal_value in display_signals.items():
+                if signal_name in msg.signal_item_ids:
+                    try:
+                        self.tree.item(msg.signal_item_ids[signal_name],
+                                     values=("", f"  {signal_name}", "", signal_value, "", ""))
+                    except tk.TclError:
+                        # Signal item was deleted, remove from tracking and recreate
+                        del msg.signal_item_ids[signal_name]
+                        signal_item = self.tree.insert(msg.tree_item_id, tk.END, text="",
+                                                     values=("", f"  {signal_name}", "", signal_value, "", ""))
+                        msg.signal_item_ids[signal_name] = signal_item
     
     def _update_signal_children(self, msg: CANMessage, display_signals: Dict[str, str]):
         """Update signal children values (only if they exist and message is expanded)"""
@@ -101,23 +122,8 @@ class CANTableView:
             self.tree.delete(msg.dummy_item_id)
             msg.dummy_item_id = None
 
-        # First, ensure all signals have tree items
+        # Ensure all signals have tree items in correct sorted order
         self._ensure_signal_children(msg, display_signals)
-
-        # Then update all signal values
-        for signal_name, signal_value in display_signals.items():
-            if signal_name in msg.signal_item_ids:
-                # Update existing signal child value
-                try:
-                    self.tree.item(msg.signal_item_ids[signal_name],
-                                 values=("", f"  {signal_name}", "", signal_value, "", ""))
-                except tk.TclError:
-                    # Signal item was deleted, remove from tracking and recreate
-                    print(f"  ERROR: Signal item {signal_name} was deleted, recreating")
-                    del msg.signal_item_ids[signal_name]
-                    signal_item = self.tree.insert(msg.tree_item_id, tk.END, text="",
-                                                 values=("", f"  {signal_name}", "", signal_value, "", ""))
-                    msg.signal_item_ids[signal_name] = signal_item
     
     def _clear_signal_children(self, msg: CANMessage):
         """Remove all signal children (used only when clearing entire table)"""

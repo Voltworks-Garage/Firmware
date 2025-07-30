@@ -15,6 +15,7 @@
             <sourceRootList>
                 <sourceRootElem>.</sourceRootElem>
                 <sourceRootElem>../../Libraries/CommandService</sourceRootElem>
+                <sourceRootElem>../../Libraries/Standard</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>

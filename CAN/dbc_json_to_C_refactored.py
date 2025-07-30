@@ -387,7 +387,7 @@ def process_message_signals(dot_h: Any, dot_c: Any, node: Dict[str, Any], messag
             function_name_suffix = signal["name"]
             if signal.get("multiplex") is not None and multiplex_signal:
                 mux_value = signal["multiplex"]
-                function_name_suffix = f"M{mux_value}_{signal['name']}"
+                # function_name_suffix = f"M{mux_value}_{signal['name']}"
             
             write_setter_function(dot_h, dot_c, message_id, signal, function_name_suffix, multiplex_signal)
     
@@ -411,7 +411,7 @@ def process_message_signals(dot_h: Any, dot_c: Any, node: Dict[str, Any], messag
             
             if signal.get("multiplex") is not None and multiplex_signal:
                 mux_value = signal["multiplex"]
-                function_name_suffix = f"M{mux_value}_{signal['name']}"
+                # function_name_suffix = f"M{mux_value}_{signal['name']}"
                 signal_define_name = f"M{mux_value}_{signal['name'].upper()}"
             
             # Determine if this is a producer or consumer relationship

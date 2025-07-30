@@ -111,19 +111,23 @@ class CANMessageManager:
         if not decoded_signals:
             return
             
+        # Get signal order from DBF file for proper sorting
+        dbf_signal_order = {}
+        if msg.msg_id in self.dbf_parser.messages:
+            msg_def = self.dbf_parser.messages[msg.msg_id]
+            for i, signal in enumerate(msg_def['signals']):
+                dbf_signal_order[signal['name']] = i
+            
         # Update accumulated signals with new values
         for signal_name, signal_data in decoded_signals.items():
-            # Skip the multiplex signal itself (it's just "Mode X")
-            if 'Multiplex' in signal_name:
-                continue
-                
             # Store the signal with current timestamp and sorting info for freshness tracking
             msg.accumulated_mux_signals[signal_name] = {
                 'value': signal_data['value'],
                 'timestamp': time.time(),
                 'mux_value': signal_data['multiplex_value'],
                 'byte_pos': signal_data['byte_pos'],
-                'bit_pos': signal_data['bit_pos']
+                'bit_pos': signal_data['bit_pos'],
+                'dbf_order': dbf_signal_order.get(signal_name, 999)
             }
     
     def get_display_signals(self, msg: CANMessage) -> Dict[str, str]:
@@ -136,20 +140,12 @@ class CANMessageManager:
             current_time = time.time()
             display_signals = {}
             
-            # Add multiplex mode indicator
-            if msg.last_mux_value is not None:
-                display_signals['MultiPlex'] = f"Mode {msg.last_mux_value}"
-            
             # Show accumulated signals (mark stale ones) in sorted order
             sorted_signals = self._sort_mux_signals(msg.accumulated_mux_signals)
             
             for signal_name, signal_info in sorted_signals.items():
                 age = current_time - signal_info['timestamp']
                 value = signal_info['value']
-                
-                # Mark signals older than 5 seconds as stale
-                if age > 5.0:
-                    value += " (stale)"
                 
                 display_signals[signal_name] = value
             
@@ -165,21 +161,20 @@ class CANMessageManager:
             return display_signals
     
     def _sort_mux_signals(self, accumulated_signals: Dict[str, Dict]) -> Dict[str, Dict]:
-        """Sort multiplexed signals by mux order first, then byte order"""
+        """Sort multiplexed signals by DBF file order"""
         def signal_sort_key(item):
             signal_name = item[0]
             signal_info = item[1]
             
-            # Get sorting parameters from signal definition
-            byte_pos = signal_info.get('byte_pos', 999)  # Default to high number if no byte pos
-            bit_pos = signal_info.get('bit_pos', 999)    # Default to high number if no bit pos
-            mux_value = signal_info.get('mux_value', 999)  # Default to high number if no mux value
+            # Use DBF file order for sorting
+            dbf_order = signal_info.get('dbf_order', 999)
             
-            # Sort by: mux_value first, then byte_pos, then bit_pos, then signal name
-            return (mux_value if mux_value is not None else 999, byte_pos, bit_pos, signal_name)
+            # Sort by: DBF order first, then signal name as fallback
+            return (dbf_order, signal_name)
         
         sorted_items = sorted(accumulated_signals.items(), key=signal_sort_key)
-        return dict(sorted_items)
+        sorted_dict = dict(sorted_items)
+        return sorted_dict
     
     def toggle_expansion(self, msg_id: int) -> bool:
         """Toggle expansion state of a message. Returns new expansion state."""

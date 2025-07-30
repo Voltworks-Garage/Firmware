@@ -321,18 +321,12 @@ LTC6802_1_Error_E LTC6802_1_SetCellMonitoring(uint8_t stack_id, uint16_t monitor
 LTC6802_1_Error_E LTC6802_1_SetVoltageThresholds8(uint8_t overvoltage_threshold, uint8_t undervoltage_threshold);
 
 /**
- * @brief Start cell balancing configuration and write to hardware
- * @return ERROR_BUSY if not idle, ERROR_NONE if started successfully
- */
-LTC6802_1_Error_E LTC6802_1_StartCellBalancing(void);
-
-/**
- * @brief Set which cells should be balanced
+ * @brief Start cell balancing with specified cells
  * @param cells_to_balance Array of cell IDs to balance
  * @param num_cells Number of cells in the array
  * @return ERROR_NONE if successful
  */
-LTC6802_1_Error_E LTC6802_1_SetCellsToBalance(const uint8_t* cells_to_balance, uint8_t num_cells);
+LTC6802_1_Error_E LTC6802_1_StartCellBalancing(const uint8_t* cells_to_balance, uint8_t num_cells);
 
 /**
  * @brief Clear all cell balancing and write to hardware

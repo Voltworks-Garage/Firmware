@@ -672,7 +672,7 @@
                     "signals": [
                         {
                             "name": "multiplex",
-                            "length": 2,
+                            "length": 3,
                             "scale": 1.0,
                             "offset": 0,
                             "units": ""
@@ -747,14 +747,6 @@
                             "scale": 0.001,
                             "offset": 0,
                             "units": "V",
-                            "multiplex": 1
-                        },
-                        {
-                            "name": "debug_signal_1",
-                            "length": 12,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "",
                             "multiplex": 1
                         },
                         {
@@ -868,6 +860,54 @@
                             "offset": 0,
                             "units": "bitfield",
                             "multiplex": 3
+                        },
+                        {
+                            "name": "is_balancing",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool",
+                            "multiplex": 3
+                        },
+                        {
+                            "name": "cell_A_balancing",
+                            "length": 5,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 3
+                        },
+                        {
+                            "name": "cell_B_balancing",
+                            "length": 5,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 4
+                        },
+                        {
+                            "name": "cell_C_balancing",
+                            "length": 5,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 4
+                        },
+                        {
+                            "name": "cell_D_balancing",
+                            "length": 5,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 4
+                        },
+                        {
+                            "name": "cell_E_balancing",
+                            "length": 5,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 4
                         }
                     ]
                 },
@@ -1159,7 +1199,7 @@
                     "name": "cell_voltages",
                     "id": 1829,
                     "x_id": 0,
-                    "freq": 1000,
+                    "freq": 100,
                     "consumers": [
                         "dash",
                         "mcu"
@@ -1384,7 +1424,7 @@
                             "units": ""
                         },
                         {
-                            "name": "ext_temp_1",
+                            "name": "stack_1_LTC_internal_temp",
                             "length": 12,
                             "scale": 0.1,
                             "offset": -40,
@@ -1392,20 +1432,52 @@
                             "multiplex": 0
                         },
                         {
-                            "name": "stack_voltage_1",
+                            "name": "stack_1_balance_temp",
+                            "length": 12,
+                            "scale": 0.1,
+                            "offset": -40,
+                            "units": "degC",
+                            "multiplex": 0
+                        },
+                        {
+                            "name": "stack_2_LTC_internal_temp",
+                            "length": 12,
+                            "scale": 0.1,
+                            "offset": -40,
+                            "units": "degC",
+                            "multiplex": 0
+                        },
+                        {
+                            "name": "stack_2_balance_temp",
+                            "length": 12,
+                            "scale": 0.1,
+                            "offset": -40,
+                            "units": "degC",
+                            "multiplex": 0
+                        },
+                        {
+                            "name": "temp_1",
+                            "length": 12,
+                            "scale": 0.1,
+                            "offset": -40,
+                            "units": "degC",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "temp_2",
                             "length": 12,
                             "scale": 0.1,
                             "offset": 0,
-                            "units": "V",
-                            "multiplex": 0
+                            "units": "degC",
+                            "multiplex": 1
                         },
                         {
-                            "name": "int_voltage_1",
+                            "name": "temp_3",
                             "length": 12,
                             "scale": 0.1,
                             "offset": -40,
                             "units": "degC",
-                            "multiplex": 0
+                            "multiplex": 1
                         },
                         {
                             "name": "temp_4",
@@ -1413,7 +1485,7 @@
                             "scale": 0.1,
                             "offset": -40,
                             "units": "degC",
-                            "multiplex": 0
+                            "multiplex": 1
                         },
                         {
                             "name": "temp_5",
@@ -1421,7 +1493,7 @@
                             "scale": 0.1,
                             "offset": -40,
                             "units": "degC",
-                            "multiplex": 1
+                            "multiplex": 2
                         },
                         {
                             "name": "temp_6",
@@ -1429,7 +1501,7 @@
                             "scale": 0.1,
                             "offset": -40,
                             "units": "degC",
-                            "multiplex": 1
+                            "multiplex": 2
                         },
                         {
                             "name": "temp_7",
@@ -1437,7 +1509,7 @@
                             "scale": 0.1,
                             "offset": -40,
                             "units": "degC",
-                            "multiplex": 1
+                            "multiplex": 2
                         },
                         {
                             "name": "temp_8",
@@ -1445,7 +1517,7 @@
                             "scale": 0.1,
                             "offset": -40,
                             "units": "degC",
-                            "multiplex": 1
+                            "multiplex": 2
                         },
                         {
                             "name": "temp_9",
@@ -1453,7 +1525,7 @@
                             "scale": 0.1,
                             "offset": -40,
                             "units": "degC",
-                            "multiplex": 2
+                            "multiplex": 3
                         },
                         {
                             "name": "temp_10",
@@ -1461,7 +1533,7 @@
                             "scale": 0.1,
                             "offset": -40,
                             "units": "degC",
-                            "multiplex": 2
+                            "multiplex": 3
                         },
                         {
                             "name": "temp_11",
@@ -1469,7 +1541,7 @@
                             "scale": 0.1,
                             "offset": -40,
                             "units": "degC",
-                            "multiplex": 2
+                            "multiplex": 3
                         },
                         {
                             "name": "temp_12",
@@ -1477,7 +1549,7 @@
                             "scale": 0.1,
                             "offset": -40,
                             "units": "degC",
-                            "multiplex": 2
+                            "multiplex": 3
                         },
                         {
                             "name": "temp_13",
@@ -1485,7 +1557,7 @@
                             "scale": 0.1,
                             "offset": -40,
                             "units": "degC",
-                            "multiplex": 3
+                            "multiplex": 4
                         },
                         {
                             "name": "temp_14",
@@ -1493,7 +1565,7 @@
                             "scale": 0.1,
                             "offset": -40,
                             "units": "degC",
-                            "multiplex": 3
+                            "multiplex": 4
                         },
                         {
                             "name": "temp_15",
@@ -1501,7 +1573,7 @@
                             "scale": 0.1,
                             "offset": -40,
                             "units": "degC",
-                            "multiplex": 3
+                            "multiplex": 4
                         },
                         {
                             "name": "temp_16",
@@ -1509,7 +1581,7 @@
                             "scale": 0.1,
                             "offset": -40,
                             "units": "degC",
-                            "multiplex": 3
+                            "multiplex": 4
                         },
                         {
                             "name": "temp_17",
@@ -1517,7 +1589,7 @@
                             "scale": 0.1,
                             "offset": -40,
                             "units": "degC",
-                            "multiplex": 4
+                            "multiplex": 5
                         },
                         {
                             "name": "temp_18",
@@ -1525,7 +1597,7 @@
                             "scale": 0.1,
                             "offset": -40,
                             "units": "degC",
-                            "multiplex": 4
+                            "multiplex": 5
                         },
                         {
                             "name": "temp_19",
@@ -1533,7 +1605,7 @@
                             "scale": 0.1,
                             "offset": -40,
                             "units": "degC",
-                            "multiplex": 4
+                            "multiplex": 5
                         },
                         {
                             "name": "temp_20",
@@ -1541,7 +1613,7 @@
                             "scale": 0.1,
                             "offset": -40,
                             "units": "degC",
-                            "multiplex": 4
+                            "multiplex": 5
                         },
                         {
                             "name": "temp_21",
@@ -1549,7 +1621,7 @@
                             "scale": 0.1,
                             "offset": -40,
                             "units": "degC",
-                            "multiplex": 5
+                            "multiplex": 6
                         },
                         {
                             "name": "temp_22",
@@ -1557,7 +1629,7 @@
                             "scale": 0.1,
                             "offset": -40,
                             "units": "degC",
-                            "multiplex": 5
+                            "multiplex": 6
                         },
                         {
                             "name": "temp_23",
@@ -1565,7 +1637,7 @@
                             "scale": 0.1,
                             "offset": -40,
                             "units": "degC",
-                            "multiplex": 5
+                            "multiplex": 6
                         },
                         {
                             "name": "temp_24",
@@ -1573,7 +1645,7 @@
                             "scale": 0.1,
                             "offset": -40,
                             "units": "degC",
-                            "multiplex": 5
+                            "multiplex": 6
                         }
                     ]
                 }

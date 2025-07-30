@@ -130,6 +130,7 @@
   <sourceRootList>
     <Elem>.</Elem>
     <Elem>../../Libraries/CommandService</Elem>
+    <Elem>../../Libraries/Standard</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
