@@ -436,6 +436,10 @@ Plugins:
         try:
             self.bus = can.interface.Bus(channel=channel, bustype='pcan', bitrate=int(baud))
             self.running = True
+            
+            # Set bitrate for bus utilization calculations
+            self.message_manager.set_bitrate(int(baud))
+            
             self.rx_thread = threading.Thread(target=self.read_messages, daemon=True)
             self.rx_thread.start()
             self.log(f"✅ Connected to {channel} at {baud} bps.")

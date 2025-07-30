@@ -49,6 +49,13 @@ class CANMessageManager:
         """Initialize with a DBF parser instance"""
         self.dbf_parser = dbf_parser
         self.messages: Dict[int, CANMessage] = {}
+        self.bus_utilization_data = {
+            'total_bits_per_second': 0,
+            'bitrate': 500000,  # Default bitrate
+            'utilization_percent': 0.0,
+            'last_calculation_time': time.time(),
+            'message_rates': {}  # msg_id -> bits/second
+        }
     
     def update_message(self, msg_id: int, dlc: int, data: bytes) -> CANMessage:
         """Update or create a CAN message"""
@@ -103,6 +110,10 @@ class CANMessageManager:
             # For multiplexed messages, initialize accumulation
             if is_multiplexed and decoded_signals:
                 self._accumulate_mux_signals(msg, decoded_signals, multiplex_value)
+        
+        # Trigger bus utilization calculation periodically
+        if now - self.bus_utilization_data['last_calculation_time'] > 1.0:
+            self._calculate_bus_utilization()
         
         return msg
     
@@ -198,3 +209,77 @@ class CANMessageManager:
     def clear_all(self):
         """Clear all messages"""
         self.messages.clear()
+        self.bus_utilization_data['message_rates'].clear()
+        self.bus_utilization_data['total_bits_per_second'] = 0
+        self.bus_utilization_data['utilization_percent'] = 0.0
+    
+    def set_bitrate(self, bitrate: int):
+        """Set the bus bitrate for utilization calculations"""
+        self.bus_utilization_data['bitrate'] = bitrate
+        self._calculate_bus_utilization()
+    
+    def _calculate_can_frame_bits(self, dlc: int) -> int:
+        """Calculate the number of bits for a CAN frame including overhead"""
+        # CAN 2.0 frame structure:
+        # SOF (1) + ID (11) + RTR (1) + IDE (1) + r0 (1) + DLC (4) + Data (0-64) + CRC (15) + CRC_DEL (1) + ACK (1) + ACK_DEL (1) + EOF (7) + IFS (3)
+        # Total overhead: 47 bits + data bits
+        data_bits = dlc * 8
+        total_bits = 47 + data_bits
+        
+        # Add bit stuffing overhead (approximately 20% worst case)
+        stuffing_overhead = int(total_bits * 0.2)
+        return total_bits + stuffing_overhead
+    
+    def _calculate_bus_utilization(self):
+        """Calculate current bus utilization percentage"""
+        now = time.time()
+        
+        # Calculate message rates and total bits per second
+        total_bits_per_second = 0
+        
+        for msg_id, msg in self.messages.items():
+            if hasattr(msg, '_prev_msg_time') and msg._prev_msg_time is not None and msg.count > 1:
+                # Calculate frequency from cycle time
+                if hasattr(msg, 'cycle_time_str') and msg.cycle_time_str != "-":
+                    try:
+                        cycle_ms = float(msg.cycle_time_str.replace(' ms', ''))
+                        if cycle_ms > 0:
+                            frequency_hz = 1000.0 / cycle_ms
+                            frame_bits = self._calculate_can_frame_bits(msg.dlc)
+                            bits_per_second = frequency_hz * frame_bits
+                            
+                            self.bus_utilization_data['message_rates'][msg_id] = {
+                                'frequency_hz': frequency_hz,
+                                'frame_bits': frame_bits,
+                                'bits_per_second': bits_per_second
+                            }
+                            total_bits_per_second += bits_per_second
+                    except (ValueError, AttributeError):
+                        pass
+        
+        self.bus_utilization_data['total_bits_per_second'] = total_bits_per_second
+        
+        # Calculate utilization percentage
+        bitrate = self.bus_utilization_data['bitrate']
+        if bitrate > 0:
+            utilization = (total_bits_per_second / bitrate) * 100
+            self.bus_utilization_data['utilization_percent'] = min(utilization, 100.0)
+        else:
+            self.bus_utilization_data['utilization_percent'] = 0.0
+        
+        self.bus_utilization_data['last_calculation_time'] = now
+    
+    def get_bus_utilization(self) -> dict:
+        """Get current bus utilization data"""
+        # Recalculate if it's been more than 1 second
+        now = time.time()
+        if now - self.bus_utilization_data['last_calculation_time'] > 1.0:
+            self._calculate_bus_utilization()
+        
+        return {
+            'utilization_percent': self.bus_utilization_data['utilization_percent'],
+            'total_bits_per_second': self.bus_utilization_data['total_bits_per_second'],
+            'bitrate': self.bus_utilization_data['bitrate'],
+            'message_count': len([msg for msg in self.messages.values() if msg.count > 0]),
+            'active_message_count': len(self.bus_utilization_data['message_rates'])
+        }
