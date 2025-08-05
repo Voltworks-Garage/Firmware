@@ -107,10 +107,10 @@ uint32_t CAN_RxDataIsReady();
 
 /**
  * Writes a message to the CANbus.
- * parmas: Data is a CAN_message_S object
+ * parmas: Data is a pointer to a CAN_message_S object
  * @return 
  */
-uint8_t CAN_write(CAN_message_S data);
+uint8_t CAN_write(CAN_message_S *data);
 
 
 /**

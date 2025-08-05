@@ -65,7 +65,7 @@ uint16_t CAN_DASH_status_selectButton_get(void){
 }
 
 void CAN_DASH_status_send(void){
-	CAN_write(CAN_DASH_status.txM);
+	CAN_write(&CAN_DASH_status.txM);
 }
 
 static CAN_message_TX_S CAN_DASH_command={
@@ -105,7 +105,7 @@ uint16_t CAN_DASH_command_dothat_get(void){
 }
 
 void CAN_DASH_command_send(void){
-	CAN_write(CAN_DASH_command.txM);
+	CAN_write(&CAN_DASH_command.txM);
 }
 
 
@@ -145,7 +145,7 @@ uint16_t CAN_BODYCONTROLLER_status_state_get(void){
 }
 
 void CAN_BODYCONTROLLER_status_send(void){
-	CAN_write(CAN_BODYCONTROLLER_status.txM);
+	CAN_write(&CAN_BODYCONTROLLER_status.txM);
 }
 
 static CAN_message_TX_S CAN_BODYCONTROLLER_command={
@@ -179,7 +179,7 @@ uint16_t CAN_BODYCONTROLLER_command_doSomthingElse_get(void){
 }
 
 void CAN_BODYCONTROLLER_command_send(void){
-	CAN_write(CAN_BODYCONTROLLER_command.txM);
+	CAN_write(&CAN_BODYCONTROLLER_command.txM);
 }
 
 
@@ -249,7 +249,7 @@ uint16_t CAN_BMS_status_maxTemp_get(void){
 }
 
 void CAN_BMS_status_send(void){
-	CAN_write(CAN_BMS_status.txM);
+	CAN_write(&CAN_BMS_status.txM);
 }
 
 static CAN_message_TX_S CAN_BMS_cellVoltages={
@@ -313,7 +313,7 @@ uint16_t CAN_BMS_cellVoltages_cell5_get(void){
 }
 
 void CAN_BMS_cellVoltages_send(void){
-	CAN_write(CAN_BMS_cellVoltages.txM);
+	CAN_write(&CAN_BMS_cellVoltages.txM);
 }
 
 void_DBC_init() {

@@ -455,7 +455,7 @@ void CAN_mcu_status_dlc_set(uint8_t dlc){
 void CAN_mcu_status_send(void){
 	// Update message status for self-consumption
 	*CAN_mcu_status.canMessageStatus = 1;
-	CAN_write(CAN_mcu_status);
+	CAN_write(&CAN_mcu_status);
 }
 
 static CAN_payload_S CAN_mcu_command_payload __attribute__((aligned(sizeof(CAN_payload_S))));
@@ -517,7 +517,7 @@ void CAN_mcu_command_dlc_set(uint8_t dlc){
 void CAN_mcu_command_send(void){
 	// Update message status for self-consumption
 	*CAN_mcu_command.canMessageStatus = 1;
-	CAN_write(CAN_mcu_command);
+	CAN_write(&CAN_mcu_command);
 }
 
 static CAN_payload_S CAN_mcu_motorControllerRequest_payload __attribute__((aligned(sizeof(CAN_payload_S))));
@@ -547,7 +547,7 @@ void CAN_mcu_motorControllerRequest_dlc_set(uint8_t dlc){
 void CAN_mcu_motorControllerRequest_send(void){
 	// Update message status for self-consumption
 	*CAN_mcu_motorControllerRequest.canMessageStatus = 1;
-	CAN_write(CAN_mcu_motorControllerRequest);
+	CAN_write(&CAN_mcu_motorControllerRequest);
 }
 
 static CAN_payload_S CAN_mcu_boot_response_payload __attribute__((aligned(sizeof(CAN_payload_S))));
@@ -641,7 +641,7 @@ void CAN_mcu_boot_response_dlc_set(uint8_t dlc){
 void CAN_mcu_boot_response_send(void){
 	// Update message status for self-consumption
 	*CAN_mcu_boot_response.canMessageStatus = 1;
-	CAN_write(CAN_mcu_boot_response);
+	CAN_write(&CAN_mcu_boot_response);
 }
 
 static CAN_payload_S CAN_mcu_mcu_debug_payloads[4] __attribute__((aligned(sizeof(CAN_payload_S))));
@@ -813,7 +813,7 @@ void CAN_mcu_mcu_debug_send(void){
 	// Auto-select current mux payload
 	CAN_mcu_mcu_debug.payload = &CAN_mcu_mcu_debug_payloads[CAN_mcu_mcu_debug_mux];
 	// Send the message
-	CAN_write(CAN_mcu_mcu_debug);
+	CAN_write(&CAN_mcu_mcu_debug);
 	// Increment mux counter for next time
 	CAN_mcu_mcu_debug_mux++;
 	if (CAN_mcu_mcu_debug_mux >= CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {

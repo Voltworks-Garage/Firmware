@@ -334,7 +334,7 @@ void CAN_charger_status_dlc_set(uint8_t dlc){
 void CAN_charger_status_send(void){
 	// Update message status for self-consumption
 	*CAN_charger_status.canMessageStatus = 1;
-	CAN_write(CAN_charger_status);
+	CAN_write(&CAN_charger_status);
 }
 
 /**********************************************************

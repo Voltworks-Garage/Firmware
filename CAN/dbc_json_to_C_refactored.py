@@ -547,7 +547,7 @@ def write_send_functions(dot_h: Any, dot_c: Any, node: Dict[str, Any], message: 
         dot_c.write(f"\t// Auto-select current mux payload\n")
         dot_c.write(f"\tCAN_{node_name}_{message_name}.payload = &CAN_{node_name}_{message_name}_payloads[CAN_{node_name}_{message_name}_mux];\n")
         dot_c.write(f"\t// Send the message\n")
-        dot_c.write(f"\tCAN_write(CAN_{node_name}_{message_name});\n")
+        dot_c.write(f"\tCAN_write(&CAN_{node_name}_{message_name});\n")
         dot_c.write(f"\t// Increment mux counter for next time\n")
         dot_c.write(f"\tCAN_{node_name}_{message_name}_mux++;\n")
         dot_c.write(f"\tif (CAN_{node_name}_{message_name}_mux >= {message_id.upper()}_NUM_MUX_VALUES) {{\n")
@@ -558,7 +558,7 @@ def write_send_functions(dot_h: Any, dot_c: Any, node: Dict[str, Any], message: 
         dot_c.write(f"void CAN_{node_name}_{message_name}_send(void){{\n")
         dot_c.write(f"\t// Update message status for self-consumption\n")
         dot_c.write(f"\t*CAN_{node_name}_{message_name}.canMessageStatus = 1;\n")
-        dot_c.write(f"\tCAN_write(CAN_{node_name}_{message_name});\n}}\n\n")
+        dot_c.write(f"\tCAN_write(&CAN_{node_name}_{message_name});\n}}\n\n")
 
 
 def process_node_messages(dot_h: Any, dot_c: Any, nodes: List[Dict[str, Any]], current_node_idx: int) -> Dict[str, List[str]]:

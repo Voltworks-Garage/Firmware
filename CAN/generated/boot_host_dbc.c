@@ -411,7 +411,7 @@ void CAN_boot_host_bms_dlc_set(uint8_t dlc){
 void CAN_boot_host_bms_send(void){
 	// Update message status for self-consumption
 	*CAN_boot_host_bms.canMessageStatus = 1;
-	CAN_write(CAN_boot_host_bms);
+	CAN_write(&CAN_boot_host_bms);
 }
 
 static CAN_payload_S CAN_boot_host_mcu_payload __attribute__((aligned(sizeof(CAN_payload_S))));
@@ -505,7 +505,7 @@ void CAN_boot_host_mcu_dlc_set(uint8_t dlc){
 void CAN_boot_host_mcu_send(void){
 	// Update message status for self-consumption
 	*CAN_boot_host_mcu.canMessageStatus = 1;
-	CAN_write(CAN_boot_host_mcu);
+	CAN_write(&CAN_boot_host_mcu);
 }
 
 static CAN_payload_S CAN_boot_host_dash_payload __attribute__((aligned(sizeof(CAN_payload_S))));
@@ -599,7 +599,7 @@ void CAN_boot_host_dash_dlc_set(uint8_t dlc){
 void CAN_boot_host_dash_send(void){
 	// Update message status for self-consumption
 	*CAN_boot_host_dash.canMessageStatus = 1;
-	CAN_write(CAN_boot_host_dash);
+	CAN_write(&CAN_boot_host_dash);
 }
 
 void CAN_DBC_init(void) {

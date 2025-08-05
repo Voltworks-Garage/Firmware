@@ -1114,7 +1114,7 @@ void CAN_bms_status_send(void){
 	// Auto-select current mux payload
 	CAN_bms_status.payload = &CAN_bms_status_payloads[CAN_bms_status_mux];
 	// Send the message
-	CAN_write(CAN_bms_status);
+	CAN_write(&CAN_bms_status);
 	// Increment mux counter for next time
 	CAN_bms_status_mux++;
 	if (CAN_bms_status_mux >= CAN_BMS_STATUS_NUM_MUX_VALUES) {
@@ -1235,7 +1235,7 @@ void CAN_bms_power_systems_dlc_set(uint8_t dlc){
 void CAN_bms_power_systems_send(void){
 	// Update message status for self-consumption
 	*CAN_bms_power_systems.canMessageStatus = 1;
-	CAN_write(CAN_bms_power_systems);
+	CAN_write(&CAN_bms_power_systems);
 }
 
 static CAN_payload_S CAN_bms_debug_payload __attribute__((aligned(sizeof(CAN_payload_S))));
@@ -1311,7 +1311,7 @@ void CAN_bms_debug_dlc_set(uint8_t dlc){
 void CAN_bms_debug_send(void){
 	// Update message status for self-consumption
 	*CAN_bms_debug.canMessageStatus = 1;
-	CAN_write(CAN_bms_debug);
+	CAN_write(&CAN_bms_debug);
 }
 
 static CAN_payload_S CAN_bms_boot_response_payload __attribute__((aligned(sizeof(CAN_payload_S))));
@@ -1405,7 +1405,7 @@ void CAN_bms_boot_response_dlc_set(uint8_t dlc){
 void CAN_bms_boot_response_send(void){
 	// Update message status for self-consumption
 	*CAN_bms_boot_response.canMessageStatus = 1;
-	CAN_write(CAN_bms_boot_response);
+	CAN_write(&CAN_bms_boot_response);
 }
 
 static CAN_payload_S CAN_bms_charger_request_payload __attribute__((aligned(sizeof(CAN_payload_S))));
@@ -1546,7 +1546,7 @@ void CAN_bms_charger_request_dlc_set(uint8_t dlc){
 void CAN_bms_charger_request_send(void){
 	// Update message status for self-consumption
 	*CAN_bms_charger_request.canMessageStatus = 1;
-	CAN_write(CAN_bms_charger_request);
+	CAN_write(&CAN_bms_charger_request);
 }
 
 static CAN_payload_S CAN_bms_cell_voltages_payloads[6] __attribute__((aligned(sizeof(CAN_payload_S))));
@@ -1790,7 +1790,7 @@ void CAN_bms_cell_voltages_send(void){
 	// Auto-select current mux payload
 	CAN_bms_cell_voltages.payload = &CAN_bms_cell_voltages_payloads[CAN_bms_cell_voltages_mux];
 	// Send the message
-	CAN_write(CAN_bms_cell_voltages);
+	CAN_write(&CAN_bms_cell_voltages);
 	// Increment mux counter for next time
 	CAN_bms_cell_voltages_mux++;
 	if (CAN_bms_cell_voltages_mux >= CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES) {
@@ -2089,7 +2089,7 @@ void CAN_bms_cell_temperatures_send(void){
 	// Auto-select current mux payload
 	CAN_bms_cell_temperatures.payload = &CAN_bms_cell_temperatures_payloads[CAN_bms_cell_temperatures_mux];
 	// Send the message
-	CAN_write(CAN_bms_cell_temperatures);
+	CAN_write(&CAN_bms_cell_temperatures);
 	// Increment mux counter for next time
 	CAN_bms_cell_temperatures_mux++;
 	if (CAN_bms_cell_temperatures_mux >= CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES) {

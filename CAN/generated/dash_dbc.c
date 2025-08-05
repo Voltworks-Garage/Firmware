@@ -81,7 +81,7 @@ void CAN_dash_status_dlc_set(uint8_t dlc){
 void CAN_dash_status_send(void){
 	// Update message status for self-consumption
 	*CAN_dash_status.canMessageStatus = 1;
-	CAN_write(CAN_dash_status);
+	CAN_write(&CAN_dash_status);
 }
 
 static CAN_payload_S CAN_dash_command_payload __attribute__((aligned(sizeof(CAN_payload_S))));
@@ -143,7 +143,7 @@ void CAN_dash_command_dlc_set(uint8_t dlc){
 void CAN_dash_command_send(void){
 	// Update message status for self-consumption
 	*CAN_dash_command.canMessageStatus = 1;
-	CAN_write(CAN_dash_command);
+	CAN_write(&CAN_dash_command);
 }
 
 static CAN_payload_S CAN_dash_data1_payload __attribute__((aligned(sizeof(CAN_payload_S))));
@@ -197,7 +197,7 @@ void CAN_dash_data1_dlc_set(uint8_t dlc){
 void CAN_dash_data1_send(void){
 	// Update message status for self-consumption
 	*CAN_dash_data1.canMessageStatus = 1;
-	CAN_write(CAN_dash_data1);
+	CAN_write(&CAN_dash_data1);
 }
 
 static CAN_payload_S CAN_dash_data2_payload __attribute__((aligned(sizeof(CAN_payload_S))));
@@ -251,7 +251,7 @@ void CAN_dash_data2_dlc_set(uint8_t dlc){
 void CAN_dash_data2_send(void){
 	// Update message status for self-consumption
 	*CAN_dash_data2.canMessageStatus = 1;
-	CAN_write(CAN_dash_data2);
+	CAN_write(&CAN_dash_data2);
 }
 
 /**********************************************************

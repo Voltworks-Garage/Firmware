@@ -249,7 +249,7 @@ void CAN_motorcontroller_motorStatus_dlc_set(uint8_t dlc){
 void CAN_motorcontroller_motorStatus_send(void){
 	// Update message status for self-consumption
 	*CAN_motorcontroller_motorStatus.canMessageStatus = 1;
-	CAN_write(CAN_motorcontroller_motorStatus);
+	CAN_write(&CAN_motorcontroller_motorStatus);
 }
 
 static CAN_payload_S CAN_motorcontroller_response_payload __attribute__((aligned(sizeof(CAN_payload_S))));
@@ -335,7 +335,7 @@ void CAN_motorcontroller_response_dlc_set(uint8_t dlc){
 void CAN_motorcontroller_response_send(void){
 	// Update message status for self-consumption
 	*CAN_motorcontroller_response.canMessageStatus = 1;
-	CAN_write(CAN_motorcontroller_response);
+	CAN_write(&CAN_motorcontroller_response);
 }
 
 /**********************************************************

@@ -376,7 +376,7 @@ for node in range(0,numberOfNodes):
                     dot_c.write("\t// Auto-select current mux payload\n")
                     dot_c.write("\tCAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + ".payload = &CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + "_payloads[CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + "_mux];\n")
                     dot_c.write("\t// Send the message\n")
-                    dot_c.write("\tCAN_write(CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + ");\n")
+                    dot_c.write("\tCAN_write(&CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + ");\n")
                     dot_c.write("\t// Increment mux counter for next time\n")
                     dot_c.write("\tCAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + "_mux++;\n")
                     dot_c.write("\tif (CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + "_mux >= " + ID_name.upper() + "_NUM_MUX_VALUES) {\n")
@@ -387,7 +387,7 @@ for node in range(0,numberOfNodes):
                     dot_c.write("void CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + "_send(void){\n")
                     dot_c.write("\t// Update message status for self-consumption\n")
                     dot_c.write("\t*CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + ".canMessageStatus = 1;\n")
-                    dot_c.write("\tCAN_write(CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + ");\n}\n\n")
+                    dot_c.write("\tCAN_write(&CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + ");\n}\n\n")
 
     #write the initializer function and close header guards
     dot_h.write("void CAN_DBC_init();\n\n")

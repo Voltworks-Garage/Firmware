@@ -30,6 +30,7 @@ static uint8_t debugEnable = 1;
 #define NUM_OF_ECAN_BUFFERS 32
 #define CAN_TX_FIFO_BUFFER_SIZE 8
 #define NUM_OF_SW_CAN_BUFFERS NUM_OF_ECAN_BUFFERS-CAN_TX_FIFO_BUFFER_SIZE
+#define CAN_TX_QUEUE_SIZE 16
 
 /* ECAN message buffer declaration, with buffer alignment */
 #if defined(__dsPIC33EP512MU810__)
@@ -46,7 +47,7 @@ volatile uint16_t ecanRXMsgBuf[NUM_OF_SW_CAN_BUFFERS][8] __attribute__((aligned(
 
 /* Rx data ready flag */
 static volatile uint32_t CAN_RXdataReady = 0;
-static uint8_t ThisTXBuffer = 0;
+static volatile uint8_t ThisTXBuffer = 0;
 static uint8_t mBoxNumber = 0;
 static uint8_t currentOpMode = CAN_NORMAL;
 
@@ -54,8 +55,135 @@ static uint8_t currentOpMode = CAN_NORMAL;
 static CAN_GetTimestamp_t CAN_GetTimestamp = NULL;
 static CAN_message_S* CAN_mailbox_lookup[NUM_OF_SW_CAN_BUFFERS] = {NULL};
 
+/* TX queue for overflow handling */
+static CAN_message_S* tx_queue[CAN_TX_QUEUE_SIZE];
+static volatile uint8_t tx_queue_head = 0;
+static volatile uint8_t tx_queue_tail = 0;
+static volatile uint8_t tx_queue_count = 0;
+
+/* Private Function Prototypes */
+static uint8_t can_isTxBufferBusy(uint8_t buffer);
+static uint8_t can_txQueueIsFull(void);
+static uint8_t can_txQueueIsEmpty(void);
+static uint8_t can_txQueueEnqueue(CAN_message_S* msg);
+static CAN_message_S* can_txQueueDequeue(void);
+static uint8_t can_sendMessageToBuffer(CAN_message_S *data, uint8_t buffer);
+
+static uint8_t can_isTxBufferBusy(uint8_t buffer) {
+    switch (buffer) {
+        case 0: return C1TR01CONbits.TXREQ0;
+        case 1: return C1TR01CONbits.TXREQ1;
+        case 2: return C1TR23CONbits.TXREQ2;
+        case 3: return C1TR23CONbits.TXREQ3;
+        case 4: return C1TR45CONbits.TXREQ4;
+        case 5: return C1TR45CONbits.TXREQ5;
+        case 6: return C1TR67CONbits.TXREQ6;
+        case 7: return C1TR67CONbits.TXREQ7;
+        default: return 1; // Assume busy for invalid buffer
+    }
+}
+
+static uint8_t can_txQueueIsFull(void) {
+    return tx_queue_count >= CAN_TX_QUEUE_SIZE;
+}
+
+static uint8_t can_txQueueIsEmpty(void) {
+    return tx_queue_count == 0;
+}
+
+static uint8_t can_txQueueEnqueue(CAN_message_S* msg) {
+    if (can_txQueueIsFull()) {
+        return 0; // Queue full, message lost
+    }
+    
+    tx_queue[tx_queue_tail] = msg;
+    tx_queue_tail = (tx_queue_tail + 1) % CAN_TX_QUEUE_SIZE;
+    tx_queue_count++;
+    return 1; // Success
+}
+
+static CAN_message_S* can_txQueueDequeue(void) {
+    if (can_txQueueIsEmpty()) {
+        return NULL;
+    }
+    
+    CAN_message_S* msg = tx_queue[tx_queue_head];
+    tx_queue_head = (tx_queue_head + 1) % CAN_TX_QUEUE_SIZE;
+    tx_queue_count--;
+    return msg;
+}
+
+static uint8_t can_sendMessageToBuffer(CAN_message_S *data, uint8_t buffer) {
+    uint16_t SID;
+    uint32_t XID_upper = 0;
+    uint32_t XID_lower = 0;
+    
+    if (data->canXID) {
+        SID = data->canID >> 18;
+        XID_upper = (data->canID & 0x0003FFFF) >> 6;
+        XID_lower = data->canID & 0x3F;
+    } else {
+        SID = data->canID;
+    }
+
+    /* Here we write the standard ID to the buffer, plus bits for remote request
+     * (off) and extended ID (off). We write frequency to <10:8>, then a Node ID 
+     * to <7:4>, then a message ID code to <3:0> */
+    ecanMsgBuf[buffer][0] = SID << 2;
+    ecanMsgBuf[buffer][0] |= data->canXID << 1;
+    ecanMsgBuf[buffer][0] |= data->canXID;
+
+    /* This is extended ID upper bits*/
+    ecanMsgBuf[buffer][1] = XID_upper;
+
+    /* No remote transmit, data length = 8 bytes */
+    ecanMsgBuf[buffer][2] = data->dlc | (XID_lower << 10);
+
+    /* write message to the data bytes */
+    ecanMsgBuf[buffer][3] = data->payload->word0;
+    ecanMsgBuf[buffer][4] = data->payload->word1;
+    ecanMsgBuf[buffer][5] = data->payload->word2;
+    ecanMsgBuf[buffer][6] = data->payload->word3;
+
+    /* Request message buffer transmission */
+    switch (buffer) {
+        case 0:
+            C1TR01CONbits.TXREQ0 = 0x1;
+            break;
+        case 1:
+            C1TR01CONbits.TXREQ1 = 0x1;
+            break;
+        case 2:
+            C1TR23CONbits.TXREQ2 = 0x1;
+            break;
+        case 3:
+            C1TR23CONbits.TXREQ3 = 0x1;
+            break;
+        case 4:
+            C1TR45CONbits.TXREQ4 = 0x1;
+            break;
+        case 5:
+            C1TR45CONbits.TXREQ5 = 0x1;
+            break;
+        case 6:
+            C1TR67CONbits.TXREQ6 = 0x1;
+            break;
+        case 7:
+            C1TR67CONbits.TXREQ7 = 0x1;
+            break;
+        default:
+            return 0; // Invalid buffer
+    }
+    return 1; // Success
+}
+
 uint8_t CAN_init(uint32_t baud, uint8_t mode, uint32_t system_freq) {
     currentOpMode = mode;
+    
+    // Initialize TX queue
+    tx_queue_head = 0;
+    tx_queue_tail = 0;
+    tx_queue_count = 0;
     
     PMD1bits.C1MD = 1;
     PMD1bits.C1MD = 0;
@@ -498,90 +626,35 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
     return returnVal;
 }
 
-uint8_t CAN_write(CAN_message_S data) {
-    if (C1CTRL1bits.OPMODE == CAN_NORMAL && currentOpMode != CAN_LISTEN) {
-        /* write to message buffer 0-7 */
-        //can_print("sendingCAN\n");
-        uint8_t thisBuffer = ThisTXBuffer++;
-        if (ThisTXBuffer == CAN_TX_FIFO_BUFFER_SIZE) {
-            ThisTXBuffer = 0;
-        }
-        uint16_t SID;
-        uint32_t XID_upper = 0;
-        uint32_t XID_lower = 0;
-        if (data.canXID) {
-            SID = data.canID >> 18;
-            XID_upper = (data.canID & 0x0003FFFF) >> 6;
-            XID_lower = data.canID & 0x3F;
+uint8_t CAN_write(CAN_message_S *data) {
+    // Update timestamp for TX message (for self-consumption)
+    if (CAN_GetTimestamp != NULL) {
+        data->last_received_timestamp = CAN_GetTimestamp();
+    }
+    
+    if (C1CTRL1bits.OPMODE != CAN_NORMAL || currentOpMode == CAN_LISTEN) {
+        return 0; // Not in transmission mode
+    }
+    
+    // Check if current buffer is busy - if so, try to queue the message
+    if (can_isTxBufferBusy(ThisTXBuffer)) {
+        if (can_txQueueEnqueue(data)) {
+            return 1; // Successfully queued
         } else {
-            SID = data.canID;
-        }
-
-        /* Here we right the standard ID to the buffer, plus bits for remote request
-         * (off) and extended ID (off). We write frequency to <10:8>, then a Node ID 
-         * to <7:4>, then a message ID code to <3:0> */
-        ecanMsgBuf[thisBuffer][0] = SID << 2;
-        ecanMsgBuf[thisBuffer][0] |= data.canXID << 1;
-        ecanMsgBuf[thisBuffer][0] |= data.canXID;
-
-        /* This is extended ID upper bits*/
-        /* C1TRBnEID = 0bxxxx 0000 0000 0000
-         EID<17:6> = 0b0000 0000 0000 */
-        ecanMsgBuf[thisBuffer][1] = XID_upper;
-
-        /* No remote transmit, data length = 8 bytes */
-        /* RTR = 0b0
-         * RB1 = 0b0
-         * RB0 = 0b0
-         * DLC = 0b1000 */
-        ecanMsgBuf[thisBuffer][2] = data.dlc | (XID_lower << 10);
-
-        /* write message to the data bytes */
-
-        ecanMsgBuf[thisBuffer][3] = data.payload->word0;
-        ecanMsgBuf[thisBuffer][4] = data.payload->word1;
-        ecanMsgBuf[thisBuffer][5] = data.payload->word2;
-        ecanMsgBuf[thisBuffer][6] = data.payload->word3;
-
-        /* Request message buffer 0 transmission */
-        switch (thisBuffer) {
-            case 0:
-                //            while(C1TR01CONbits.TXREQ0);
-                C1TR01CONbits.TXREQ0 = 0x1;
-                break;
-            case 1:
-                //            while(C1TR01CONbits.TXREQ1);
-                C1TR01CONbits.TXREQ1 = 0x1;
-                break;
-            case 2:
-                //            while(C1TR23CONbits.TXREQ2);
-                C1TR23CONbits.TXREQ2 = 0x1;
-                break;
-            case 3:
-                //            while(C1TR23CONbits.TXREQ3);
-                C1TR23CONbits.TXREQ3 = 0x1;
-                break;
-            case 4:
-                //            while(C1TR45CONbits.TXREQ4);
-                C1TR45CONbits.TXREQ4 = 0x1;
-                break;
-            case 5:
-                //            while(C1TR45CONbits.TXREQ5);
-                C1TR45CONbits.TXREQ5 = 0x1;
-                break;
-            case 6:
-                //            while(C1TR67CONbits.TXREQ6);
-                C1TR67CONbits.TXREQ6 = 0x1;
-                break;
-            case 7:
-                //            while(C1TR67CONbits.TXREQ7);
-                C1TR67CONbits.TXREQ7 = 0x1;
-                break;
-            default:
-                break;
+            return 0; // Queue full, message lost
         }
     }
-    return 0; /*message placed successfully on the bus */
+    
+    // Buffer is free, send immediately to current buffer
+    uint8_t thisBuffer = ThisTXBuffer;
+    
+    // Increment pointer to next buffer
+    ThisTXBuffer++;
+    if (ThisTXBuffer == CAN_TX_FIFO_BUFFER_SIZE) {
+        ThisTXBuffer = 0;
+    }
+    
+    return can_sendMessageToBuffer(data, thisBuffer);
 }
 
 uint8_t CAN_checkDataIsUnread(CAN_message_S * data) {
@@ -664,7 +737,29 @@ void __attribute__((__interrupt__, auto_psv)) _C1Interrupt(void) {
         uint16_t temp __attribute__((unused)) = C1VECbits.ICODE;
         C1INTFbits.TBIF = 0;
         //can_print("TX_INT %d\n", temp);
-        /*do something here...*/
+        
+        /* Process TX queue - send pending messages if buffers are available */
+        while (!can_txQueueIsEmpty()) {
+            // Find a free buffer
+            uint8_t free_buffer = 0xFF;
+            for (uint8_t i = 0; i < CAN_TX_FIFO_BUFFER_SIZE; i++) {
+                if (!can_isTxBufferBusy(i)) {
+                    free_buffer = i;
+                    break;
+                }
+            }
+            
+            if (free_buffer == 0xFF) {
+                // No free buffers available, stop processing queue
+                break;
+            }
+            
+            // Dequeue message and send it
+            CAN_message_S* msg = can_txQueueDequeue();
+            if (msg != NULL) {
+                can_sendMessageToBuffer(msg, free_buffer);
+            }
+        }
     }
 
     /*If Receive Buffer Interrupt, copy messages to static buffer.*/
