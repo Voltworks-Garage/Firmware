@@ -45,21 +45,21 @@ volatile uint16_t ecanMsgBuf[32][8] __attribute__((aligned(NUM_OF_ECAN_BUFFERS *
 /* ECAN SW message buffer declaration*/
 volatile uint16_t ecanRXMsgBuf[NUM_OF_SW_CAN_BUFFERS][8] __attribute__((aligned(NUM_OF_ECAN_BUFFERS * 16)));
 
-/* Rx data ready flag */
-static volatile uint32_t CAN_RXdataReady = 0;
-static volatile uint8_t ThisTXBuffer = 0;
-static uint8_t mBoxNumber = 0;
-static uint8_t currentOpMode = CAN_NORMAL;
+/* Private Variables */
+static volatile uint32_t can_rxDataReady = 0;
+static volatile uint8_t can_thisTxBuffer = 0;
+static uint8_t can_mailboxNumber = 0;
+static uint8_t can_currentOpMode = CAN_NORMAL;
 
 /* Timestamp callback and lookup table for staleness detection */
-static CAN_GetTimestamp_t CAN_GetTimestamp = NULL;
-static CAN_message_S* CAN_mailbox_lookup[NUM_OF_SW_CAN_BUFFERS] = {NULL};
+static CAN_GetTimestamp_t can_getTimestamp = NULL;
+static CAN_message_S* can_mailboxLookup[NUM_OF_SW_CAN_BUFFERS] = {NULL};
 
 /* TX queue for overflow handling */
-static CAN_message_S* tx_queue[CAN_TX_QUEUE_SIZE];
-static volatile uint8_t tx_queue_head = 0;
-static volatile uint8_t tx_queue_tail = 0;
-static volatile uint8_t tx_queue_count = 0;
+static CAN_message_S* can_txQueue[CAN_TX_QUEUE_SIZE];
+static volatile uint8_t can_txQueueHead = 0;
+static volatile uint8_t can_txQueueTail = 0;
+static volatile uint8_t can_txQueueCount = 0;
 
 /* Private Function Prototypes */
 static uint8_t can_isTxBufferBusy(uint8_t buffer);
@@ -84,11 +84,11 @@ static uint8_t can_isTxBufferBusy(uint8_t buffer) {
 }
 
 static uint8_t can_txQueueIsFull(void) {
-    return tx_queue_count >= CAN_TX_QUEUE_SIZE;
+    return can_txQueueCount >= CAN_TX_QUEUE_SIZE;
 }
 
 static uint8_t can_txQueueIsEmpty(void) {
-    return tx_queue_count == 0;
+    return can_txQueueCount == 0;
 }
 
 static uint8_t can_txQueueEnqueue(CAN_message_S* msg) {
@@ -96,9 +96,9 @@ static uint8_t can_txQueueEnqueue(CAN_message_S* msg) {
         return 0; // Queue full, message lost
     }
     
-    tx_queue[tx_queue_tail] = msg;
-    tx_queue_tail = (tx_queue_tail + 1) % CAN_TX_QUEUE_SIZE;
-    tx_queue_count++;
+    can_txQueue[can_txQueueTail] = msg;
+    can_txQueueTail = (can_txQueueTail + 1) % CAN_TX_QUEUE_SIZE;
+    can_txQueueCount++;
     return 1; // Success
 }
 
@@ -107,9 +107,9 @@ static CAN_message_S* can_txQueueDequeue(void) {
         return NULL;
     }
     
-    CAN_message_S* msg = tx_queue[tx_queue_head];
-    tx_queue_head = (tx_queue_head + 1) % CAN_TX_QUEUE_SIZE;
-    tx_queue_count--;
+    CAN_message_S* msg = can_txQueue[can_txQueueHead];
+    can_txQueueHead = (can_txQueueHead + 1) % CAN_TX_QUEUE_SIZE;
+    can_txQueueCount--;
     return msg;
 }
 
@@ -178,12 +178,12 @@ static uint8_t can_sendMessageToBuffer(CAN_message_S *data, uint8_t buffer) {
 }
 
 uint8_t CAN_init(uint32_t baud, uint8_t mode, uint32_t system_freq) {
-    currentOpMode = mode;
+    can_currentOpMode = mode;
     
     // Initialize TX queue
-    tx_queue_head = 0;
-    tx_queue_tail = 0;
-    tx_queue_count = 0;
+    can_txQueueHead = 0;
+    can_txQueueTail = 0;
+    can_txQueueCount = 0;
     
     PMD1bits.C1MD = 1;
     PMD1bits.C1MD = 0;
@@ -340,8 +340,8 @@ uint8_t CAN_init(uint32_t baud, uint8_t mode, uint32_t system_freq) {
     C1INTF = 0x0000;
 
     /* CAN is ready for transmit / receive, place in normal or loopback mode */
-    C1CTRL1bits.REQOP = currentOpMode;
-    while (C1CTRL1bits.OPMODE != currentOpMode) {
+    C1CTRL1bits.REQOP = can_currentOpMode;
+    while (C1CTRL1bits.OPMODE != can_currentOpMode) {
         ;
     }
     /* Enable CAN1 Interrupt */
@@ -364,7 +364,7 @@ uint8_t CAN_changeOpMode(uint8_t opMode) {
     while (C1CTRL1bits.OPMODE != tempMode) {
         ;
     }
-    currentOpMode = opMode;
+    can_currentOpMode = opMode;
     return 0;
 }
 
@@ -373,7 +373,7 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
     uint16_t SID;
     uint32_t XID_upper = 0;
     uint32_t XID_lower = 0;
-    if (mBoxNumber > 15) {
+    if (can_mailboxNumber > 15) {
         returnVal = 0;
     } else {
         C1CTRL1bits.REQOP = CAN_CONFIG;
@@ -387,7 +387,7 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
         } else {
             SID = newMessage->canID;
         }
-        switch (mBoxNumber) {
+        switch (can_mailboxNumber) {
             case 0:
                 /*FILTERS*/
                 /*Filter 0*/
@@ -401,7 +401,7 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[0][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[0][7];
                 newMessage->last_received_timestamp = 0;
-                CAN_mailbox_lookup[0] = newMessage;
+                can_mailboxLookup[0] = newMessage;
                 break;
             case 1:
                 /*Filter 1*/
@@ -415,7 +415,7 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[1][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[1][7];
                 newMessage->last_received_timestamp = 0;
-                CAN_mailbox_lookup[1] = newMessage;
+                can_mailboxLookup[1] = newMessage;
                 break;
             case 2:
                 /*Filter 2*/
@@ -429,7 +429,7 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[2][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[2][7];
                 newMessage->last_received_timestamp = 0;
-                CAN_mailbox_lookup[2] = newMessage;
+                can_mailboxLookup[2] = newMessage;
                 break;
             case 3:
                 /*Filter 3*/
@@ -443,7 +443,7 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[3][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[3][7];
                 newMessage->last_received_timestamp = 0;
-                CAN_mailbox_lookup[3] = newMessage;
+                can_mailboxLookup[3] = newMessage;
                 break;
             case 4:
                 /*Filter 4*/
@@ -457,7 +457,7 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[4][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[4][7];
                 newMessage->last_received_timestamp = 0;
-                CAN_mailbox_lookup[4] = newMessage;
+                can_mailboxLookup[4] = newMessage;
                 break;
             case 5:
                 /*Filter 5*/
@@ -471,7 +471,7 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[5][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[5][7];
                 newMessage->last_received_timestamp = 0;
-                CAN_mailbox_lookup[5] = newMessage;
+                can_mailboxLookup[5] = newMessage;
                 break;
             case 6:
                 /*Filter 6*/
@@ -485,7 +485,7 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[6][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[6][7];
                 newMessage->last_received_timestamp = 0;
-                CAN_mailbox_lookup[6] = newMessage;
+                can_mailboxLookup[6] = newMessage;
                 break;
             case 7:
                 /*Filter 7*/
@@ -499,7 +499,7 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[7][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[7][7];
                 newMessage->last_received_timestamp = 0;
-                CAN_mailbox_lookup[7] = newMessage;
+                can_mailboxLookup[7] = newMessage;
                 break;
             case 8:
                 /*Filter 8*/
@@ -513,7 +513,7 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[8][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[8][7];
                 newMessage->last_received_timestamp = 0;
-                CAN_mailbox_lookup[8] = newMessage;
+                can_mailboxLookup[8] = newMessage;
                 break;
             case 9:
                 /*Filter 9*/
@@ -527,7 +527,7 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[9][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[9][7];
                 newMessage->last_received_timestamp = 0;
-                CAN_mailbox_lookup[9] = newMessage;
+                can_mailboxLookup[9] = newMessage;
                 break;
             case 10:
                 /*Filter 10*/
@@ -541,7 +541,7 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[10][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[10][7];
                 newMessage->last_received_timestamp = 0;
-                CAN_mailbox_lookup[10] = newMessage;
+                can_mailboxLookup[10] = newMessage;
                 break;
             case 11:
                 /*Filter 11*/
@@ -555,7 +555,7 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[11][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[11][7];
                 newMessage->last_received_timestamp = 0;
-                CAN_mailbox_lookup[11] = newMessage;
+                can_mailboxLookup[11] = newMessage;
                 break;
             case 12:
                 /*Filter 12*/
@@ -569,7 +569,7 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[12][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[12][7];
                 newMessage->last_received_timestamp = 0;
-                CAN_mailbox_lookup[12] = newMessage;
+                can_mailboxLookup[12] = newMessage;
                 break;
             case 13:
                 /*Filter 13*/
@@ -583,7 +583,7 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[13][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[13][7];
                 newMessage->last_received_timestamp = 0;
-                CAN_mailbox_lookup[13] = newMessage;
+                can_mailboxLookup[13] = newMessage;
                 break;
             case 14:
                 /*Filter 14*/
@@ -597,7 +597,7 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[14][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[14][7];
                 newMessage->last_received_timestamp = 0;
-                CAN_mailbox_lookup[14] = newMessage;
+                can_mailboxLookup[14] = newMessage;
                 break;
             case 15:
                 /*Filter 15*/
@@ -611,33 +611,33 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[15][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[15][7];
                 newMessage->last_received_timestamp = 0;
-                CAN_mailbox_lookup[15] = newMessage;
+                can_mailboxLookup[15] = newMessage;
                 break;
             default:
                 break;
         }
         C1CTRL1bits.WIN = 0; /* clear window bit*/
-        C1CTRL1bits.REQOP = currentOpMode;
-        while (C1CTRL1bits.OPMODE != currentOpMode) {
+        C1CTRL1bits.REQOP = can_currentOpMode;
+        while (C1CTRL1bits.OPMODE != can_currentOpMode) {
             ;
         }
-        mBoxNumber++; /*RX mailboxe added*/
+        can_mailboxNumber++; /*RX mailboxe added*/
     }
     return returnVal;
 }
 
 uint8_t CAN_write(CAN_message_S *data) {
     // Update timestamp for TX message (for self-consumption)
-    if (CAN_GetTimestamp != NULL) {
-        data->last_received_timestamp = CAN_GetTimestamp();
+    if (can_getTimestamp != NULL) {
+        data->last_received_timestamp = can_getTimestamp();
     }
     
-    if (C1CTRL1bits.OPMODE != CAN_NORMAL || currentOpMode == CAN_LISTEN) {
+    if (C1CTRL1bits.OPMODE != CAN_NORMAL || can_currentOpMode == CAN_LISTEN) {
         return 0; // Not in transmission mode
     }
     
     // Check if current buffer is busy - if so, try to queue the message
-    if (can_isTxBufferBusy(ThisTXBuffer)) {
+    if (can_isTxBufferBusy(can_thisTxBuffer)) {
         if (can_txQueueEnqueue(data)) {
             return 1; // Successfully queued
         } else {
@@ -646,12 +646,12 @@ uint8_t CAN_write(CAN_message_S *data) {
     }
     
     // Buffer is free, send immediately to current buffer
-    uint8_t thisBuffer = ThisTXBuffer;
+    uint8_t thisBuffer = can_thisTxBuffer;
     
     // Increment pointer to next buffer
-    ThisTXBuffer++;
-    if (ThisTXBuffer == CAN_TX_FIFO_BUFFER_SIZE) {
-        ThisTXBuffer = 0;
+    can_thisTxBuffer++;
+    if (can_thisTxBuffer == CAN_TX_FIFO_BUFFER_SIZE) {
+        can_thisTxBuffer = 0;
     }
     
     return can_sendMessageToBuffer(data, thisBuffer);
@@ -663,24 +663,24 @@ uint8_t CAN_checkDataIsUnread(CAN_message_S * data) {
     return ret;
 }
 
-void CAN_timeStampFunc(CAN_GetTimestamp_t timestamp_func) {
-    CAN_GetTimestamp = timestamp_func;
+void CAN_timeStampFunc(CAN_GetTimestamp_t timestampFunc) {
+    can_getTimestamp = timestampFunc;
 }
 
 uint8_t CAN_checkDataIsStale(CAN_message_S * data, uint32_t timeout_ms) {
-    if (CAN_GetTimestamp == NULL) return 0;
-    uint32_t current_time = CAN_GetTimestamp();
+    if (can_getTimestamp == NULL) return 0;
+    uint32_t current_time = can_getTimestamp();
     return (current_time - data->last_received_timestamp) > timeout_ms;
 }
 
 uint32_t CAN_getTimeSinceLastReceived(CAN_message_S * data) {
-    if (CAN_GetTimestamp == NULL) return 0;
-    return CAN_GetTimestamp() - data->last_received_timestamp;
+    if (can_getTimestamp == NULL) return 0;
+    return can_getTimestamp() - data->last_received_timestamp;
 }
 
 uint32_t CAN_RxDataIsReady() {
-    uint32_t retVal = CAN_RXdataReady;
-    CAN_RXdataReady = 0;
+    uint32_t retVal = can_rxDataReady;
+    can_rxDataReady = 0;
     return retVal;
 }
 
@@ -765,7 +765,7 @@ void __attribute__((__interrupt__, auto_psv)) _C1Interrupt(void) {
     /*If Receive Buffer Interrupt, copy messages to static buffer.*/
     if (C1INTFbits.RBIF) {
         uint16_t temp = C1VECbits.ICODE;
-        CAN_RXdataReady |= 1 << (temp-8);
+        can_rxDataReady |= 1 << (temp-8);
         C1INTFbits.RBIF = 0;
         if (temp < 15) {/*if RX event was to a static buffer*/
             uint8_t sw_buffer_index = temp - CAN_TX_FIFO_BUFFER_SIZE;
@@ -777,8 +777,8 @@ void __attribute__((__interrupt__, auto_psv)) _C1Interrupt(void) {
             ecanRXMsgBuf[sw_buffer_index][7] |= 0x01;
             
             // Update timestamp if callback available and message configured
-            if (CAN_GetTimestamp && CAN_mailbox_lookup[sw_buffer_index]) {
-                CAN_mailbox_lookup[sw_buffer_index]->last_received_timestamp = CAN_GetTimestamp();
+            if (can_getTimestamp && can_mailboxLookup[sw_buffer_index]) {
+                can_mailboxLookup[sw_buffer_index]->last_received_timestamp = can_getTimestamp();
             }
         } else {/*if RX event was in the FIFO*/
             uint16_t thisBuff = C1FIFObits.FNRB;
@@ -795,8 +795,8 @@ void __attribute__((__interrupt__, auto_psv)) _C1Interrupt(void) {
             ecanRXMsgBuf[filterHit][7] |= 0x01; /*set fresh message flag*/
             
             // Update timestamp if callback available and message configured
-            if (CAN_GetTimestamp && CAN_mailbox_lookup[filterHit]) {
-                CAN_mailbox_lookup[filterHit]->last_received_timestamp = CAN_GetTimestamp();
+            if (can_getTimestamp && can_mailboxLookup[filterHit]) {
+                can_mailboxLookup[filterHit]->last_received_timestamp = can_getTimestamp();
             }
         }
         can_print("RX_INT %d\n", temp);
