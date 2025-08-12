@@ -76,6 +76,9 @@ static STATE_MACHINE_states_E sm_nextState = idle_state; /* initialize next stat
 
 uint8_t sm_keepAwakeFlag = 0;
 
+NEW_TIMER(idleTimer, 10000);
+NEW_TIMER(SwEnTimer, 1);
+
 /******************************************************************************
  * Function Prototypes
  *******************************************************************************/
@@ -89,26 +92,26 @@ void StateMachine_Init(void) {
 
 void StateMachine_Run(void) {
     
-    switch(isoTP_getCommand().command){
-        case ISO_TP_NONE:
-            sm_keepAwakeFlag = 0;
-            break;
-        case ISO_TP_RESET:
-            CAN_changeOpMode(CAN_DISABLE);
-            asm ("reset");
-            break;
-        case ISO_TP_SLEEP:
-            sm_nextState = standby_state;
-            break;
-        case ISO_TP_IO_CONTROL:
-            sm_keepAwakeFlag = 1;
-            break;
-        case ISO_TP_TESTER_PRESENT:
-            sm_keepAwakeFlag = 1;
-            break;
-        default:
-            break;
-    }
+    // switch(isoTP_getCommand().command){
+    //     case ISO_TP_NONE:
+    //         sm_keepAwakeFlag = 0;
+    //         break;
+    //     case ISO_TP_RESET:
+    //         CAN_changeOpMode(CAN_DISABLE);
+    //         asm ("reset");
+    //         break;
+    //     case ISO_TP_SLEEP:
+    //         sm_nextState = standby_state;
+    //         break;
+    //     case ISO_TP_IO_CONTROL:
+    //         sm_keepAwakeFlag = 1;
+    //         break;
+    //     case ISO_TP_TESTER_PRESENT:
+    //         sm_keepAwakeFlag = 1;
+    //         break;
+    //     default:
+    //         break;
+    // }
     
     //If the kill switch is pressed, go straight to sleep. Regardless of state.
 //    switch(IgnitionControl_GetKillStatus()){
@@ -133,8 +136,7 @@ void StateMachine_Run(void) {
 }
 
 void idle(STATE_MACHINE_entry_types_E entry_type) {
-    NEW_TIMER(idleTimer, 120000);
-    NEW_TIMER(SwEnTimer, 1);
+
 
     switch (entry_type) {
         case ENTRY:
@@ -164,6 +166,8 @@ void idle(STATE_MACHINE_entry_types_E entry_type) {
             break;
 
         case RUN:
+
+            // TODO: why is this here?
             if (SysTick_TimeOut(SwEnTimer)) {
                 IO_SET_BATT_EN(HIGH); //TODO: check this enable sequence
                 IO_SET_DCDC_EN(HIGH);
@@ -347,6 +351,7 @@ void sleep(STATE_MACHINE_entry_types_E entry_type) {
             SysTick_Stop();
             RCONbits.SWDTEN = 0;
             SleepNow(); //Go to sleep
+            asm ("reset");
             RCONbits.SWDTEN = 1;
             SysTick_Resume();
             if (RCONbits.WDTO) {

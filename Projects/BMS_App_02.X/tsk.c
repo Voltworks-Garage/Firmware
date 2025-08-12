@@ -27,6 +27,7 @@
 #include "SerialDebugger.h"
 #include "IO.h"
 #include "bms_dbc.h"
+#include "CAN.h"
 #include "can_iso_tp_lite.h"
 #include "can_populate.h"
 #include "ev_charger.h"
@@ -84,7 +85,7 @@ void Tsk_init(void) {
     /*Init each module once*/
     PinSetup_Init(); // Pin setup should be first
     CAN_DBC_init(); // Initialize the CAN mailboxes
-    CAN_timeStampFunc(SysTick_Get);
+    CAN_timeStampFunc(SysTick_Get); // enable CAN message time-stamping
     StateMachine_Init();
     IO_SET_DEBUG_LED_EN(HIGH);
     BMS_Init();

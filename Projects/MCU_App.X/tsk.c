@@ -25,7 +25,7 @@
 #include "can_iso_tp_lite.h"
 #include "canPopulate.h"
 #include "pinSetup.h"
-#include "SerialDebugger.h"
+// #include "SerialDebugger.h"
 #include "LightsControl.h"
 #include "IgnitionControl.h"
 #include "HornControl.h"
@@ -33,6 +33,7 @@
 #include "j1772.h"
 #include "IO.h"
 #include "MCU_dbc.h"
+#include "mcc_generated_files/watchdog.h"
 #include "StateMachine.h"
 #include "commandService.h"
 
@@ -43,7 +44,7 @@
 /******************************************************************************
  * Macros
  *******************************************************************************/
-#define TSK_DEBUG_ENABLE 1
+#define TSK_DEBUG_ENABLE 0
 #if TSK_DEBUG_ENABLE
 #include <stdio.h>
 #include "uart.h"
@@ -112,6 +113,7 @@ void Tsk_1ms(void) {
    
     CAN_populate_1ms();
     CAN_send_1ms();
+    WATCHDOG_TimerClear();
 }
 
 
@@ -133,7 +135,7 @@ void Tsk_10ms(void) {
  */
 void Tsk_100ms(void) {
     WATCHDOG_TimerClear();
-    SerialConsole_Run_100ms(); //Debug Serial Terminal Emulation
+    // SerialConsole_Run_100ms(); //Debug Serial Terminal Emulation
     LightsControl_Run_100ms(); //Run the System Lights layer (Responds to button presses, controls, etc...)
     HeatedGripControl_Run_100ms(); //Run Heated Grips. Currently activated by spare sw 2
     j1772Control_Run_100ms(); //Run j1772 Proximity and Pilot Signal Control.

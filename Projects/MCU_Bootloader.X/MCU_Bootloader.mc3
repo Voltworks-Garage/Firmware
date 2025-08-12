@@ -21929,162 +21929,166 @@
          <value>disabled</value>
       </entry>
    </tokenMap>
-   <generatedFileHashHistoryMap class="java.util.HashMap">
+   <generatedFileHashHistoryMap class="java.util.TreeMap">
       <entry>
-         <file>mcc_generated_files\dma.c</file>
-         <hash>49bbf00b23f5f6a99bbfe4753be3e441adf6444bc9a317dc3ca6c00bf18fa5d7</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\boot\boot_demo.h</file>
-         <hash>f7a6dbdccea16314179e388c3d747e179f7e90065fc81fc8728a30e4e08a3d5b</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\interrupt_manager.h</file>
-         <hash>466304edd16ba03b87c5bc563d667ebf2b20ef4bac7ef0d3e203ca12f8b7a436</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\boot\com_adaptor_uart.c</file>
-         <hash>c6fe6e2bdd8ed89a85f1c3a72291586f974656c4004c0123c73e132cde0e0418</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\boot\boot_demo.c</file>
-         <hash>98009fefd1a8f23076240657834c9bf757c8477de77d224b6e5fac23aa0bdb16</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\boot\hardware_interrupt_table.S</file>
-         <hash>10a66ccef617d63804a4ce7d708f27a249d7656ade8a7bf0a69ab44999f22202</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\dma.h</file>
-         <hash>b6da4bd21e70e88960402e39cb7c7e304578ca3cafa663dec1bf89dce0244786</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\can1.h</file>
-         <hash>dbdfa0a6fd58a44ee7bee17fbc0e364285faf2ebf81380b23f3b7a5b1d7418aa</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\system_types.h</file>
-         <hash>51a10b1b69bc7f6010d6170350cb4308d96d707430aa15de06dac3628926221e</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\system.h</file>
-         <hash>396ef24d76b7798d93583834d7d4cb579d9b4ebb592963b798378358738f2ce5</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\boot\boot_process.c</file>
-         <hash>2a3e313e282b24110750b4d3c02621b7a2b1ad1494c3a388e80095d6b519e348</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\can_module_features.h</file>
-         <hash>3f71353efd95e13f8f2afa26af1602ade0c8f5fc2041e2a9bd7e3d048aca40a6</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\system.c</file>
-         <hash>2b9cec1361d8f208f7a5c663e2a098d6b4d53f49ec6bbffd4bc2e8ca1bde0c83</hash>
+         <file>main.c</file>
+         <hash>3a1132a7035cb677a5061e92d72bb7d4371c1feff073534c3a7dbbf5be326957</hash>
       </entry>
       <entry>
          <file>mcc_generated_files\boot\boot_application_header.c</file>
          <hash>a348b40754f8cd06118760b771d6479c9bb37297cd3ff589391a1346410b0506</hash>
       </entry>
       <entry>
-         <file>mcc_generated_files\boot\boot_process.h</file>
-         <hash>6f6804d4a2de4db4116ff40d0c4580be91e290cb0f02028e89ff5465e15a5271</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\clock.h</file>
-         <hash>db5949ccea7efe4d54d13033a904cec2e2651a0e6d640c07eefa5d3b4b7ac96c</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\memory\flash.h</file>
-         <hash>616619ae879dc9a5e5fe8a20c1828f3f463d5ef16dd860e34dddf7ecc4fe36d4</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\boot\interrupts.S</file>
-         <hash>b35300f56d80dbbe5af679d2686f992de3cbc19409d4cad85a5efe74e3d602a0</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\mcc.c</file>
-         <hash>3c4a92d4e025f4852efc92cb47ee1637a068fa8b561e3b6664ecdae6add8294e</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\reset.h</file>
-         <hash>fa77f908eac53e69aa7de869306e5033a0163e2ff67f0ae10a1e4a7799a19116</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\mcc.h</file>
-         <hash>198ff3162a0d70cd3dda44296af421abf748e564e30dc509705af6da1a49a649</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\uart1.h</file>
-         <hash>81e2089508494a7cb88ec33b384c4675e08ce1d68c17a2cde85d24c28bb95ecd</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\boot\contract.json</file>
-         <hash>3e2ea777e136c4aabac861f5b7fa3033b68fc76f5eceb68ce7c8e56986ff0d0d</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\reset.c</file>
-         <hash>a411b08a763957daa1d78caab8b74229739de465be9cf422732d1377e788f749</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\uart1.c</file>
-         <hash>de72db3f8ccf37f1627dd9f9c6a27606266da94735fbea105d96570071db3bee</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\tmr1.h</file>
-         <hash>537ed47f81a3835f0c631c8602f271525da156ccd08825d933fe1f9710acd888</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\boot\boot_verify_not_blank.c</file>
-         <hash>7f154f5dc6c58e9fd9e3e7e602a42dbd0c6d7cc3b201fef9e5b6d43d2e90fe58</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\boot\boot_private.h</file>
-         <hash>e3663d1e05ec8490bb10f00cb515fb0c743a9b22646a858180d5aec98c46ab23</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\clock.c</file>
-         <hash>0620858af08ea93ad8fc086d3e6c26e17e5e639c3254159d1ef0de7e8056c8aa</hash>
-      </entry>
-      <entry>
-         <file>main.c</file>
-         <hash>3a1132a7035cb677a5061e92d72bb7d4371c1feff073534c3a7dbbf5be326957</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\can_types.h</file>
-         <hash>d497bcc8fc35747a00099ffc8c6727966694d1cef631827896cdc7a2d1e567bf</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\pin_manager.h</file>
-         <hash>bba329788c0dff75a4e608de718211e218fe4094291767e45ac7c74f6052ec6c</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\tmr1.c</file>
-         <hash>879c31d7196b5f5c19ee07ea4d03e645b6180a5be737fc3618ec63ea897ef8c1</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\memory\flash.s</file>
-         <hash>771b31972f82c911c21dc3f56abe1c7db5da76a6028aa6e739870a44ed1bcd3c</hash>
-      </entry>
-      <entry>
          <file>mcc_generated_files\boot\boot_application_header.h</file>
          <hash>5448ed478d4696094122839aada4eaa60316effb951811bae1c12b096dde028d</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\pin_manager.c</file>
-         <hash>a4ff18d0fa4bb221bc9bac5b02c0b49aa91ef4aeeb23a1f1c65bf8f93aaa62d4</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\boot\com_adaptor.h</file>
-         <hash>94bdf3edc04eb4dd9b95129a453cb2fdcd10c8325667b26b76db9e58109451bf</hash>
       </entry>
       <entry>
          <file>mcc_generated_files\boot\boot_config.h</file>
          <hash>8c80e9e3a56055789217f19b35b1c40c899c690efecbf08b628c63189bf7f41e</hash>
       </entry>
       <entry>
+         <file>mcc_generated_files\boot\boot_demo.c</file>
+         <hash>98009fefd1a8f23076240657834c9bf757c8477de77d224b6e5fac23aa0bdb16</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\boot\boot_demo.h</file>
+         <hash>f7a6dbdccea16314179e388c3d747e179f7e90065fc81fc8728a30e4e08a3d5b</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\boot\boot_private.h</file>
+         <hash>e3663d1e05ec8490bb10f00cb515fb0c743a9b22646a858180d5aec98c46ab23</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\boot\boot_process.c</file>
+         <hash>2a3e313e282b24110750b4d3c02621b7a2b1ad1494c3a388e80095d6b519e348</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\boot\boot_process.h</file>
+         <hash>6f6804d4a2de4db4116ff40d0c4580be91e290cb0f02028e89ff5465e15a5271</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\boot\boot_verify_not_blank.c</file>
+         <hash>7f154f5dc6c58e9fd9e3e7e602a42dbd0c6d7cc3b201fef9e5b6d43d2e90fe58</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\boot\com_adaptor.h</file>
+         <hash>94bdf3edc04eb4dd9b95129a453cb2fdcd10c8325667b26b76db9e58109451bf</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\boot\com_adaptor_uart.c</file>
+         <hash>c6fe6e2bdd8ed89a85f1c3a72291586f974656c4004c0123c73e132cde0e0418</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\boot\contract.json</file>
+         <hash>3e2ea777e136c4aabac861f5b7fa3033b68fc76f5eceb68ce7c8e56986ff0d0d</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\boot\hardware_interrupt_table.S</file>
+         <hash>10a66ccef617d63804a4ce7d708f27a249d7656ade8a7bf0a69ab44999f22202</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\boot\interrupts.S</file>
+         <hash>b35300f56d80dbbe5af679d2686f992de3cbc19409d4cad85a5efe74e3d602a0</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\boot\memory_partition.S</file>
+         <hash>fe53c953b5d432ac44899ef180182b5f6d82482a5be037dad3f4bee1b5331856</hash>
+      </entry>
+      <entry>
          <file>mcc_generated_files\can1.c</file>
          <hash>4e4b1342095487bad46e1f39c4b8ee6c4a2e8d9a8fd37f2d8db699fc6ed8bf36</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\can1.h</file>
+         <hash>dbdfa0a6fd58a44ee7bee17fbc0e364285faf2ebf81380b23f3b7a5b1d7418aa</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\can_module_features.h</file>
+         <hash>3f71353efd95e13f8f2afa26af1602ade0c8f5fc2041e2a9bd7e3d048aca40a6</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\can_types.h</file>
+         <hash>d497bcc8fc35747a00099ffc8c6727966694d1cef631827896cdc7a2d1e567bf</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\clock.c</file>
+         <hash>0620858af08ea93ad8fc086d3e6c26e17e5e639c3254159d1ef0de7e8056c8aa</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\clock.h</file>
+         <hash>db5949ccea7efe4d54d13033a904cec2e2651a0e6d640c07eefa5d3b4b7ac96c</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\dma.c</file>
+         <hash>49bbf00b23f5f6a99bbfe4753be3e441adf6444bc9a317dc3ca6c00bf18fa5d7</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\dma.h</file>
+         <hash>b6da4bd21e70e88960402e39cb7c7e304578ca3cafa663dec1bf89dce0244786</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\interrupt_manager.c</file>
+         <hash>b4854e6ef663a8616311ba0b29d47f84db2e0391f31ba1a98dc8b906327b2b64</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\interrupt_manager.h</file>
+         <hash>466304edd16ba03b87c5bc563d667ebf2b20ef4bac7ef0d3e203ca12f8b7a436</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\mcc.c</file>
+         <hash>3c4a92d4e025f4852efc92cb47ee1637a068fa8b561e3b6664ecdae6add8294e</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\mcc.h</file>
+         <hash>198ff3162a0d70cd3dda44296af421abf748e564e30dc509705af6da1a49a649</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\memory\flash.h</file>
+         <hash>616619ae879dc9a5e5fe8a20c1828f3f463d5ef16dd860e34dddf7ecc4fe36d4</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\memory\flash.s</file>
+         <hash>771b31972f82c911c21dc3f56abe1c7db5da76a6028aa6e739870a44ed1bcd3c</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\pin_manager.c</file>
+         <hash>a4ff18d0fa4bb221bc9bac5b02c0b49aa91ef4aeeb23a1f1c65bf8f93aaa62d4</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\pin_manager.h</file>
+         <hash>bba329788c0dff75a4e608de718211e218fe4094291767e45ac7c74f6052ec6c</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\reset.c</file>
+         <hash>a411b08a763957daa1d78caab8b74229739de465be9cf422732d1377e788f749</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\reset.h</file>
+         <hash>fa77f908eac53e69aa7de869306e5033a0163e2ff67f0ae10a1e4a7799a19116</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\reset_types.h</file>
+         <hash>3d4041a7303ff579b914eef1fe43b422a5233d0e08abd1a8d88ff2780c0b1a5f</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\system.c</file>
+         <hash>2b9cec1361d8f208f7a5c663e2a098d6b4d53f49ec6bbffd4bc2e8ca1bde0c83</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\system.h</file>
+         <hash>396ef24d76b7798d93583834d7d4cb579d9b4ebb592963b798378358738f2ce5</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\system_types.h</file>
+         <hash>51a10b1b69bc7f6010d6170350cb4308d96d707430aa15de06dac3628926221e</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\tmr1.c</file>
+         <hash>879c31d7196b5f5c19ee07ea4d03e645b6180a5be737fc3618ec63ea897ef8c1</hash>
+      </entry>
+      <entry>
+         <file>mcc_generated_files\tmr1.h</file>
+         <hash>537ed47f81a3835f0c631c8602f271525da156ccd08825d933fe1f9710acd888</hash>
       </entry>
       <entry>
          <file>mcc_generated_files\traps.c</file>
@@ -22095,20 +22099,16 @@
          <hash>0e8549666788ec260bf52686b0b8cff02ef7a4164fb5a6dcd2a257777e8ffa26</hash>
       </entry>
       <entry>
-         <file>mcc_generated_files\boot\memory_partition.S</file>
-         <hash>fe53c953b5d432ac44899ef180182b5f6d82482a5be037dad3f4bee1b5331856</hash>
+         <file>mcc_generated_files\uart1.c</file>
+         <hash>de72db3f8ccf37f1627dd9f9c6a27606266da94735fbea105d96570071db3bee</hash>
       </entry>
       <entry>
-         <file>mcc_generated_files\interrupt_manager.c</file>
-         <hash>b4854e6ef663a8616311ba0b29d47f84db2e0391f31ba1a98dc8b906327b2b64</hash>
+         <file>mcc_generated_files\uart1.h</file>
+         <hash>81e2089508494a7cb88ec33b384c4675e08ce1d68c17a2cde85d24c28bb95ecd</hash>
       </entry>
       <entry>
          <file>mcc_generated_files\watchdog.h</file>
          <hash>e0eba31f51dd48cc2c046ced665acd0ba4395aba2add1430bb7a4efb43e4a287</hash>
-      </entry>
-      <entry>
-         <file>mcc_generated_files\reset_types.h</file>
-         <hash>3d4041a7303ff579b914eef1fe43b422a5233d0e08abd1a8d88ff2780c0b1a5f</hash>
       </entry>
    </generatedFileHashHistoryMap>
 </config>

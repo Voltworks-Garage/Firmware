@@ -102,6 +102,7 @@ void EV_CHARGER_Run_10ms(void) {
     takeLowPassFilter(charger_voltage, IO_GET_EV_CHARGER_VOLTAGE());
     takeLowPassFilter(charger_current, IO_GET_EV_CHARGER_CURRENT());
 
+    // Always check if this data is stale.
     if (!CAN_mcu_command_checkDataIsStale()){
         chargeRequestFromMCU = CAN_mcu_command_ev_charger_enable_get();// && checkHeartBeat();
     } else {
@@ -226,6 +227,15 @@ void charging(EV_CHARGER_entry_types_E entry_type) {
             EV_CHARGER_charge_current_mA_set(charging_current);
             EV_CHARGER_charge_voltage_mV_set(CAN_bms_status_max_charge_voltage_mV_get());
 
+            // If the BMS is requesting 0 current, it means we just want to balance cells
+            // for a while without charging due to high cell imbalance
+            // TODO: Think of a more elegant way to acheive this
+            if (charging_current <= 0) {
+                EV_CHARGER_charge_request_set(0);
+            } else {
+                EV_CHARGER_charge_request_set(1);
+            }
+
             break;
 
         case EXIT:
@@ -239,7 +249,7 @@ void charging(EV_CHARGER_entry_types_E entry_type) {
 void stopping(EV_CHARGER_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
-            CAN_bms_charger_request_start_charge_not_request_set(1);//inverted logic. 1 means stop charging
+            EV_CHARGER_charge_request_set(0);
             IO_SET_EV_CHARGER_EN(LOW);
             break;
         case RUN:
