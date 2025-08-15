@@ -230,11 +230,19 @@ def write_setter_function(dot_h: Any, dot_c: Any, message_id: str, signal: Dict[
     # Function definition
     dot_c.write(f"void {message_id}_{function_name_suffix}_set({datatype} {signal_name}){{\n")
     
-    # Data scaling
+    # Data scaling - multiply by reciprocal instead of dividing
     if datatype == "float":
-        dot_c.write(f"\t{internal_datatype} data_scaled = ({internal_datatype})(({signal_name} - {signal['offset']}) / {signal['scale']} + 0.5f);\n")
+        scale_reciprocal = 1.0 / signal['scale']
+        if signal['offset'] == 0:
+            dot_c.write(f"\t{internal_datatype} data_scaled = ({internal_datatype})({signal_name} * {scale_reciprocal}f + 0.5f);\n")
+        else:
+            dot_c.write(f"\t{internal_datatype} data_scaled = ({internal_datatype})(({signal_name} - {signal['offset']}) * {scale_reciprocal}f + 0.5f);\n")
     else:
-        dot_c.write(f"\t{internal_datatype} data_scaled = ({signal_name} - {signal['offset']}) / {signal['scale']};\n")
+        scale_reciprocal = 1.0 / signal['scale']
+        if signal['offset'] == 0:
+            dot_c.write(f"\t{internal_datatype} data_scaled = {signal_name} * {scale_reciprocal};\n")
+        else:
+            dot_c.write(f"\t{internal_datatype} data_scaled = ({signal_name} - {signal['offset']}) * {scale_reciprocal};\n")
     
     # Determine payload target
     if signal.get("multiplex") is not None and multiplex_signal:

@@ -80,7 +80,7 @@ void resume_all_tasks(void);
  * Function Definitions
  *******************************************************************************/
 void StateMachine_Init(void) {
-    Nop();
+    state_functions[sm_curState](ENTRY);
 }
 
 

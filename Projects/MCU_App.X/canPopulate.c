@@ -9,19 +9,15 @@
 #include "IO.h"
 #include "movingAverage.h"
 
+NEW_LOW_PASS_FILTER(battery_current, 0.3, 10.0);
+NEW_LOW_PASS_FILTER(dcdc_current, 0.3, 10.0);
 
 void CAN_populate_1ms(void) {
     Nop();
 }
 
 void CAN_populate_10ms(void) {
-    static uint8_t heartbeat = 0;
-    CAN_mcu_status_heartbeat_set(heartbeat++);
-    if (heartbeat >= 16) {
-        heartbeat = 0;
-    }
-    
-    CAN_mcu_command_DCDC_enable_set(1);
+    Nop();
 }
 
 void CAN_populate_100ms(void) {
@@ -43,8 +39,7 @@ void CAN_populate_100ms(void) {
     CAN_mcu_status_assSwitch_set(IO_GET_SPARE_SWITCH_2_IN());
     CAN_mcu_status_hornSwitch_set(IO_GET_HORN_SWITCH_IN());
     CAN_mcu_status_batt_voltage_set(IO_GET_VOLTAGE_VBAT());
-    NEW_LOW_PASS_FILTER(battery_current, 0.3, 10.0);
-    NEW_LOW_PASS_FILTER(dcdc_current, 0.3, 10.0);
+
     CAN_mcu_status_batt_current_set(takeLowPassFilter(battery_current, IO_GET_CURRENT_BATT()));
     CAN_mcu_status_dcdc_current_set(takeLowPassFilter(dcdc_current, IO_GET_CURRENT_DCDC()));
     CAN_mcu_status_dcdc_fault_set(IO_GET_DCDC_FAULT());

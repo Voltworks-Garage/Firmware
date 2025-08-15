@@ -4,6 +4,8 @@
 #include "IO.h"
 #include "pinSetup.h"
 #include "ADC.h"
+#include "movingAverage.h"
+#include "mcu_dbc.h"
 
 
 /******************************************************************************
@@ -20,7 +22,12 @@
 #define PILOT_VOLTAGE_CONVERSION 4.6
 #define PROXIMITY_VOLTAGE_CONVERSION 1
 #define VBAT_CURRENT_CONVERSION 20.0
-#define DCDC_CURRENT_CONVERSION 20.0
+#define DCDC_CURRENT_CONVERSION 33.33
+
+// Fixed-point arithmetic constants (scaled by 1024)
+#define FIXED_POINT_SCALE 1024
+#define FIXED_POINT_SHIFT 10
+#define ADC_TO_VOLTAGE_SCALE_FIXED 3317  // (3.3V * 1024) / 1023 ≈ 3.317, then * 1024
 /******************************************************************************
  * Configuration
  *******************************************************************************/
@@ -68,13 +75,30 @@ static uint16_t MOTOR_CONTROLLER_current = 0;
 static uint16_t BMS_CONTROLLER_current = 0;
 static uint16_t SPARE_1_CONTROLLER_current = 0;
 
+NEW_LOW_PASS_FILTER(FAN_current_filter, 3, 10.0);
+NEW_LOW_PASS_FILTER(PUMP_current_filter, 3, 10.0);
+NEW_LOW_PASS_FILTER(TAILLIGHT_current_filter, 3, 10.0);
+NEW_LOW_PASS_FILTER(BRAKELIGHT_current_filter, 3, 10.0);
+NEW_LOW_PASS_FILTER(LOWBEAM_current_filter, 3, 10.0);
+NEW_LOW_PASS_FILTER(HIGHBEAM_current_filter, 3, 10.0);
+NEW_LOW_PASS_FILTER(HORN_current_filter, 3, 10.0);
+NEW_LOW_PASS_FILTER(AUX_PORT_current_filter, 3, 10.0);
+NEW_LOW_PASS_FILTER(HEATED_GRIPS_current_filter, 3, 10.0);
+NEW_LOW_PASS_FILTER(HEATED_SEAT_current_filter, 3, 10.0);
+NEW_LOW_PASS_FILTER(CHARGE_CONTROLLER_current_filter, 3, 10.0);
+NEW_LOW_PASS_FILTER(MOTOR_CONTROLLER_current_filter, 3, 10.0);
+NEW_LOW_PASS_FILTER(BMS_CONTROLLER_current_filter, 3, 10.0);
+NEW_LOW_PASS_FILTER(SPARE_1_CONTROLLER_current_filter, 3, 10.0);
+
 static uint8_t efuse_run = 1;
 
 
 /******************************************************************************
  * Function Prototypes
  *******************************************************************************/
-
+void IO_PopulateCANFaultBits(void);
+void IO_PopulateCANCurrentBits(void);
+float convertADCToCurrent(uint16_t adcValue, uint16_t dkillis, uint16_t rsense);
 /******************************************************************************
  * Function Definitions
  *******************************************************************************/
@@ -82,97 +106,118 @@ void IO_Efuse_Init(void) {
     IO_SET_DIAG_SELECT_EN(LOW);
     IO_SET_DIAG_EN(HIGH);
     efuse_run = 1;
+
+    FAN_fault = 0;
+    PUMP_fault = 0;
+    TAILLIGHT_fault = 0;
+    BRAKELIGHT_fault = 0;
+    LOWBEAM_fault = 0;
+    HIGHBEAM_fault = 0;
+    HORN_fault = 0;
+    AUX_PORT_fault = 0;
+    HEATED_GRIPS_fault = 0;
+    HEATED_SEAT_fault = 0;
+    CHARGE_CONTROLLER_fault = 0;
+    MOTOR_CONTROLLER_fault = 0;
+    BMS_CONTROLLER_fault = 0;
+    SPARE_1_CONTROLLER_fault = 0;
+    BATT_fault = 0;
+    DCDC_fault = 0;
+    IC_CONTROLLER_fault = 0;
 }
 
 void IO_Efuse_Run_10ms(void) {
+
+    IO_PopulateCANFaultBits();
+    IO_PopulateCANCurrentBits();
     if(efuse_run){
         /*Check value of Diag pin to select which HSDs are being read out*/
         uint8_t diagSelect = IO_GET_DIAG_SELECT_EN();
 
         if (diagSelect == 1) {
 
-            PUMP_current = ADC_GetValue(FAN_ISENSE_AI);
-            if (PUMP_current >= 1000) {
+            takeLowPassFilter(PUMP_current_filter, ADC_GetValue(FAN_ISENSE_AI));
+            if (getLowPassFilter(PUMP_current_filter) >= 1000) {
                 PUMP_fault = 1;
                 IO_SET_PUMP_1_EN(LOW);
             }
 
-            BRAKELIGHT_current = ADC_GetValue(TAILLIGHT_ISENSE_AI);
-            if (BRAKELIGHT_current >= 1000) {
+            takeLowPassFilter(BRAKELIGHT_current_filter, ADC_GetValue(TAILLIGHT_ISENSE_AI));
+            if (getLowPassFilter(BRAKELIGHT_current_filter) >= 1000) {
                 BRAKELIGHT_fault = 1;
                 IO_SET_BRAKE_LIGHT_EN(LOW);
             }
 
-            HIGHBEAM_current = ADC_GetValue(HEADLIGHT_ISENSE_AI);
-            if (HIGHBEAM_current >= ADC_BIT_DEPTH) {
-                HIGHBEAM_fault = 1;
-                IO_SET_HEADLIGHT_HI_EN(LOW);
+            takeLowPassFilter(LOWBEAM_current_filter, ADC_GetValue(HEADLIGHT_ISENSE_AI));
+            if (getLowPassFilter(LOWBEAM_current_filter) >= 1000) {
+                LOWBEAM_fault = 1;
+                IO_SET_HEADLIGHT_LO_EN(LOW);
             }
 
-            HEATED_SEAT_current = ADC_GetValue(HEATER_ISENSE_AI);
-            if (HEATED_SEAT_current >= 1000) {
+            takeLowPassFilter(HEATED_SEAT_current_filter, ADC_GetValue(HEATER_ISENSE_AI));
+            if (getLowPassFilter(HEATED_SEAT_current_filter) >= 1000) {
                 HEATED_SEAT_fault = 1;
                 IO_SET_HEATED_SEAT_EN(LOW);
             }
 
-            CHARGE_CONTROLLER_current = ADC_GetValue(ECU_2_ISENSE_AI);
-            if (CHARGE_CONTROLLER_current >= 1000) {
+            takeLowPassFilter(CHARGE_CONTROLLER_current_filter, ADC_GetValue(ECU_2_ISENSE_AI));
+            if (getLowPassFilter(CHARGE_CONTROLLER_current_filter) >= 1000) {
                 CHARGE_CONTROLLER_fault = 1;
                 IO_SET_CHARGE_CONTROLLER_EN(LOW);
             }
 
-            SPARE_1_CONTROLLER_current = ADC_GetValue(ECU_1_ISENSE_AI);
-            if (SPARE_1_CONTROLLER_current >= 1000) {
+            takeLowPassFilter(SPARE_1_CONTROLLER_current_filter, ADC_GetValue(ECU_1_ISENSE_AI));
+            if (getLowPassFilter(SPARE_1_CONTROLLER_current_filter) >= 1000) {
                 SPARE_1_CONTROLLER_fault = 1;
                 IO_SET_J1772_CONTROLLER_EN(LOW);
             }
 
         } else {
-            FAN_current = ADC_GetValue(FAN_ISENSE_AI);
-            if (FAN_current >= 1000) {
+            takeLowPassFilter(FAN_current_filter, ADC_GetValue(FAN_ISENSE_AI));
+            if (getLowPassFilter(FAN_current_filter) >= 1000) {
                 FAN_fault = 1;
                 IO_SET_FAN_1_EN(LOW);
             }
 
-            TAILLIGHT_current = ADC_GetValue(TAILLIGHT_ISENSE_AI);
-            if (TAILLIGHT_current >= 1000) {
+            takeLowPassFilter(TAILLIGHT_current_filter, ADC_GetValue(TAILLIGHT_ISENSE_AI));
+            if (getLowPassFilter(TAILLIGHT_current_filter) >= 1000) {
                 TAILLIGHT_fault = 1;
                 IO_SET_TAILLIGHT_EN(LOW);
             }
 
-            LOWBEAM_current = ADC_GetValue(HEADLIGHT_ISENSE_AI);
-            if (LOWBEAM_current >= ADC_BIT_DEPTH) {
-                LOWBEAM_fault = 1;
-                IO_SET_HEADLIGHT_LO_EN(LOW);
+            takeLowPassFilter(HIGHBEAM_current_filter, ADC_GetValue(HEADLIGHT_ISENSE_AI));
+            if (getLowPassFilter(HIGHBEAM_current_filter) >= ADC_BIT_DEPTH) {
+                HIGHBEAM_fault = 1;
+                IO_SET_HEADLIGHT_HI_EN(LOW);
             }
 
-            HEATED_GRIPS_current = ADC_GetValue(HEATER_ISENSE_AI);
-            if (HEATED_GRIPS_current >= 1000) {
+            takeLowPassFilter(HEATED_GRIPS_current_filter, ADC_GetValue(HEATER_ISENSE_AI));
+            if (getLowPassFilter(HEATED_GRIPS_current_filter) >= 1000) {
                 HEATED_GRIPS_fault = 1;
                 IO_SET_HEATED_GRIPS_EN(LOW);
             }
 
-            MOTOR_CONTROLLER_current = ADC_GetValue(ECU_2_ISENSE_AI);
-            if (MOTOR_CONTROLLER_current >= 1000) {
+            takeLowPassFilter(MOTOR_CONTROLLER_current_filter, ADC_GetValue(ECU_2_ISENSE_AI));
+            if (getLowPassFilter(MOTOR_CONTROLLER_current_filter) >= 1000) {
                 MOTOR_CONTROLLER_fault = 1;
                 IO_SET_MOTOR_CONTROLLER_EN(LOW);
             }
 
-            BMS_CONTROLLER_current = ADC_GetValue(ECU_1_ISENSE_AI);
-            if (BMS_CONTROLLER_current >= 1000) {
+            takeLowPassFilter(BMS_CONTROLLER_current_filter, ADC_GetValue(ECU_1_ISENSE_AI));
+            if (getLowPassFilter(BMS_CONTROLLER_current_filter) >= 1000) {
                 BMS_CONTROLLER_fault = 1;
                 IO_SET_BMS_CONTROLLER_EN(LOW);
             }
         }
 
-        HORN_current = IO_GET_CURRENT_HORN();
-        if (HORN_current >= 1000) {
+        takeLowPassFilter(HORN_current_filter, IO_GET_CURRENT_HORN());
+        if (getLowPassFilter(HORN_current_filter) >= 1000) {
             HORN_fault = 1;
             IO_SET_HORN_EN(LOW);
         }
 
-        AUX_PORT_current = IO_GET_CURRENT_AUX_PORT();
-        if (AUX_PORT_current >= 1000) {
+        takeLowPassFilter(AUX_PORT_current_filter, IO_GET_CURRENT_AUX_PORT());
+        if (getLowPassFilter(AUX_PORT_current_filter) >= 1000) {
             AUX_PORT_fault = 1;
             IO_SET_AUX_PORT_EN(LOW);
         }
@@ -544,7 +589,7 @@ uint8_t IO_GET_TURN_RIGHT_SWITCH_IN(void) {
 }
 
 uint8_t IO_GET_BRIGHTS_SWITCH_IN(void) {
-    return PINS_read(BRIGHTS_SWITCH_IN) ? 0 : 1;
+    return PINS_read(BRIGHTS_SWITCH_IN) ? 1 : 0;
 }
 
 uint8_t IO_GET_HORN_SWITCH_IN(void) {
@@ -558,59 +603,59 @@ uint8_t IO_GET_KICKSTAND_SWITCH_IN(void) {
 /*ANALOG*/
 
 uint16_t IO_GET_CURRENT_FAN() {
-    return FAN_current;
+    return convertADCToCurrent(getLowPassFilter(FAN_current_filter), 3000, 4700);
 }
 
 uint16_t IO_GET_CURRENT_PUMP() {
-    return PUMP_current;
+    return convertADCToCurrent(getLowPassFilter(PUMP_current_filter), 3000, 4700);
 }
 
 uint16_t IO_GET_CURRENT_TAILLIGHT() {
-    return TAILLIGHT_current;
+    return convertADCToCurrent(getLowPassFilter(TAILLIGHT_current_filter), 3000, 4700);
 }
 
 uint16_t IO_GET_CURRENT_BRAKELIGHT() {
-    return BRAKELIGHT_current;
+    return convertADCToCurrent(getLowPassFilter(BRAKELIGHT_current_filter), 3000, 4700);
 }
 
 uint16_t IO_GET_CURRENT_LOWBEAM() {
-    return LOWBEAM_current;
+    return convertADCToCurrent(getLowPassFilter(LOWBEAM_current_filter), 3000, 1500);
 }
 
 uint16_t IO_GET_CURRENT_HIGHBEAM() {
-    return HIGHBEAM_current;
+    return convertADCToCurrent(getLowPassFilter(HIGHBEAM_current_filter), 3000, 1500);
 }
 
 uint16_t IO_GET_CURRENT_HORN() {
-    return ADC_GetValue(HORN_ISENSE_AI);
+    return convertADCToCurrent(getLowPassFilter(HORN_current_filter), 12500, 4700);
 }
 
 uint16_t IO_GET_CURRENT_AUX_PORT() {
-    return ADC_GetValue(AUX_PORT_ISENSE_AI);
+    return convertADCToCurrent(getLowPassFilter(AUX_PORT_current_filter), 12500, 4700);
 }
 
 uint16_t IO_GET_CURRENT_HEATED_GRIPS() {
-    return HEATED_GRIPS_current;
+    return convertADCToCurrent(getLowPassFilter(HEATED_GRIPS_current_filter), 3000, 4700);
 }
 
 uint16_t IO_GET_CURRENT_HEATED_SEAT() {
-    return HEATED_SEAT_current;
+    return convertADCToCurrent(getLowPassFilter(HEATED_SEAT_current_filter), 3000, 4700);
 }
 
 uint16_t IO_GET_CURRENT_CHARGE_CONTROLLER() {
-    return CHARGE_CONTROLLER_current;
+    return convertADCToCurrent(getLowPassFilter(CHARGE_CONTROLLER_current_filter), 3000, 4700);
 }
 
 uint16_t IO_GET_CURRENT_MOTOR_CONTROLLER() {
-    return MOTOR_CONTROLLER_current;
+    return convertADCToCurrent(getLowPassFilter(MOTOR_CONTROLLER_current_filter), 3000, 4700);
 }
 
 uint16_t IO_GET_CURRENT_BMS_CONTROLLER() {
-    return BMS_CONTROLLER_current;
+    return convertADCToCurrent(getLowPassFilter(BMS_CONTROLLER_current_filter), 3000, 4700);
 }
 
 uint16_t IO_GET_CURRENT_SPARE_1_CONTROLLER() {
-    return SPARE_1_CONTROLLER_current;
+    return convertADCToCurrent(getLowPassFilter(SPARE_1_CONTROLLER_current_filter), 3000, 4700);
 }
 
 float IO_GET_CURRENT_BATT() {
@@ -698,6 +743,71 @@ uint8_t IO_GET_BMS_CONTROLLER_FAULT(void) {
 
 uint8_t IO_GET_SPARE_1_CONTROLLER_FAULT(void) {
     return SPARE_1_CONTROLLER_fault;
+}
+
+void IO_PopulateCANFaultBits(void) {
+    CAN_mcu_status_batt_fault_set(BATT_fault);
+    CAN_mcu_status_dcdc_fault_set(DCDC_fault);
+    CAN_mcu_status_fan_fault_set(FAN_fault);
+    CAN_mcu_status_pump_fault_set(PUMP_fault);
+    CAN_mcu_status_taillight_fault_set(TAILLIGHT_fault);
+    CAN_mcu_status_brakelight_fault_set(BRAKELIGHT_fault);
+    CAN_mcu_status_lowbeam_fault_set(LOWBEAM_fault);
+    CAN_mcu_status_highbeam_fault_set(HIGHBEAM_fault);
+    CAN_mcu_status_horn_fault_set(HORN_fault);
+    CAN_mcu_status_aux_port_fault_set(AUX_PORT_fault);
+    CAN_mcu_status_heated_grips_fault_set(HEATED_GRIPS_fault);
+    CAN_mcu_status_heated_seat_fault_set(HEATED_SEAT_fault);
+    CAN_mcu_status_charge_controller_fault_set(CHARGE_CONTROLLER_fault);
+    CAN_mcu_status_motor_controller_fault_set(MOTOR_CONTROLLER_fault);
+    CAN_mcu_status_bms_controller_fault_set(BMS_CONTROLLER_fault);
+    CAN_mcu_status_spare_1_controller_fault_set(SPARE_1_CONTROLLER_fault);
+    CAN_mcu_status_ic_controller_fault_set(IC_CONTROLLER_fault);
+}
+
+void IO_PopulateCANCurrentBits(void) {
+    // CAN_mcu_status_fan_current_set(IO_GET_CURRENT_FAN());
+    // CAN_mcu_status_pump_current_set(IO_GET_CURRENT_PUMP());
+    // CAN_mcu_status_taillight_current_set(IO_GET_CURRENT_TAILLIGHT());
+    // CAN_mcu_status_brakelight_current_set(IO_GET_CURRENT_BRAKELIGHT());
+    CAN_mcu_status_lowbeam_current_set(IO_GET_CURRENT_LOWBEAM());
+    CAN_mcu_status_highbeam_current_set(IO_GET_CURRENT_HIGHBEAM());
+    CAN_mcu_status_horn_current_set(IO_GET_CURRENT_HORN());
+    CAN_mcu_status_aux_port_current_set(IO_GET_CURRENT_AUX_PORT());
+    CAN_mcu_status_heated_grips_current_set(IO_GET_CURRENT_HEATED_GRIPS());
+    CAN_mcu_status_heated_seat_current_set(IO_GET_CURRENT_HEATED_SEAT());
+    // CAN_mcu_status_charge_controller_current_set(IO_GET_CURRENT_CHARGE_CONTROLLER());
+    // CAN_mcu_status_motor_controller_current_set(IO_GET_CURRENT_MOTOR_CONTROLLER());
+    // CAN_mcu_status_bms_controller_current_set(IO_GET_CURRENT_BMS_CONTROLLER());
+    // CAN_mcu_status_spare_1_controller_current_set(IO_GET_CURRENT_SPARE_1_CONTROLLER());
+}
+
+// Fixed-point version: returns current scaled by 1024 (much faster!)
+uint32_t convertADCToCurrentFixed(uint16_t adcValue, uint16_t dkillis, uint16_t rsense) {
+    // Convert ADC to voltage (scaled by 1024)
+    // adcValue * 3317 gives us voltage * 1024 * 1024
+    uint32_t voltage_scaled = ((uint32_t)adcValue * ADC_TO_VOLTAGE_SCALE_FIXED) >> FIXED_POINT_SHIFT;
+    
+    // Calculate current: (voltage * dkillis) / rsense, result scaled by 1024
+    // Use 64-bit intermediate to prevent overflow
+    uint64_t current_temp = ((uint64_t)voltage_scaled * dkillis) / rsense;
+    
+    // Clamp to 32-bit max to prevent overflow
+    if (current_temp > UINT32_MAX) {
+        return UINT32_MAX;
+    }
+    
+    return (uint32_t)current_temp;
+}
+
+// Convert fixed-point result to float (only when needed for display/CAN)
+float fixedToFloat(uint32_t fixed_value) {
+    return (float)fixed_value / FIXED_POINT_SCALE;
+}
+
+// Legacy float version (kept for compatibility)
+float convertADCToCurrent(uint16_t adcValue, uint16_t dkillis, uint16_t rsense) {
+    return fixedToFloat(convertADCToCurrentFixed(adcValue, dkillis, rsense));
 }
 
 

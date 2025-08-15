@@ -54,7 +54,7 @@ uint16_t CAN_dash_data2_tripB_get(void);
  * mcu NODE MESSAGES
  */
 #define CAN_mcu_status_interval() 10
-void CAN_mcu_status_heartbeat_set(uint16_t heartbeat);
+void CAN_mcu_status_vehicleState_set(uint16_t vehicleState);
 void CAN_mcu_status_highBeam_set(uint16_t highBeam);
 void CAN_mcu_status_lowBeam_set(uint16_t lowBeam);
 void CAN_mcu_status_brakeLight_set(uint16_t brakeLight);
@@ -78,12 +78,42 @@ void CAN_mcu_status_batt_current_set(float batt_current);
 void CAN_mcu_status_dcdc_current_set(float dcdc_current);
 void CAN_mcu_status_batt_fault_set(uint16_t batt_fault);
 void CAN_mcu_status_dcdc_fault_set(uint16_t dcdc_fault);
+void CAN_mcu_status_fan_fault_set(uint16_t fan_fault);
+void CAN_mcu_status_pump_fault_set(uint16_t pump_fault);
+void CAN_mcu_status_taillight_fault_set(uint16_t taillight_fault);
+void CAN_mcu_status_brakelight_fault_set(uint16_t brakelight_fault);
+void CAN_mcu_status_lowbeam_fault_set(uint16_t lowbeam_fault);
+void CAN_mcu_status_highbeam_fault_set(uint16_t highbeam_fault);
+void CAN_mcu_status_horn_fault_set(uint16_t horn_fault);
+void CAN_mcu_status_aux_port_fault_set(uint16_t aux_port_fault);
+void CAN_mcu_status_heated_grips_fault_set(uint16_t heated_grips_fault);
+void CAN_mcu_status_heated_seat_fault_set(uint16_t heated_seat_fault);
+void CAN_mcu_status_charge_controller_fault_set(uint16_t charge_controller_fault);
+void CAN_mcu_status_motor_controller_fault_set(uint16_t motor_controller_fault);
+void CAN_mcu_status_bms_controller_fault_set(uint16_t bms_controller_fault);
+void CAN_mcu_status_spare_1_controller_fault_set(uint16_t spare_1_controller_fault);
+void CAN_mcu_status_ic_controller_fault_set(uint16_t ic_controller_fault);
+void CAN_mcu_status_fan_current_set(float fan_current);
+void CAN_mcu_status_pump_current_set(float pump_current);
+void CAN_mcu_status_taillight_current_set(float taillight_current);
+void CAN_mcu_status_brakelight_current_set(float brakelight_current);
+void CAN_mcu_status_lowbeam_current_set(float lowbeam_current);
+void CAN_mcu_status_highbeam_current_set(float highbeam_current);
+void CAN_mcu_status_horn_current_set(float horn_current);
+void CAN_mcu_status_aux_port_current_set(float aux_port_current);
+void CAN_mcu_status_heated_grips_current_set(float heated_grips_current);
+void CAN_mcu_status_heated_seat_current_set(float heated_seat_current);
+void CAN_mcu_status_charge_controller_current_set(float charge_controller_current);
+void CAN_mcu_status_motor_controller_current_set(float motor_controller_current);
+void CAN_mcu_status_bms_controller_current_set(float bms_controller_current);
+void CAN_mcu_status_spare_1_controller_current_set(float spare_1_controller_current);
 void CAN_mcu_status_dlc_set(uint8_t dlc);
 
 
 void CAN_mcu_status_send(void);
 
 
+#define CAN_MCU_STATUS_NUM_MUX_VALUES 5
 #define CAN_mcu_command_interval() 100
 void CAN_mcu_command_DCDC_enable_set(uint16_t DCDC_enable);
 void CAN_mcu_command_ev_charger_enable_set(uint16_t ev_charger_enable);
@@ -120,8 +150,8 @@ void CAN_mcu_boot_response_send(void);
 
 
 #define CAN_mcu_mcu_debug_interval() 10
-void CAN_mcu_mcu_debug_debug_value_1_set(uint16_t debug_value_1);
-void CAN_mcu_mcu_debug_debug_value_2_set(uint16_t debug_value_2);
+void CAN_mcu_mcu_debug_cpu_usage_percent_set(float cpu_usage_percent);
+void CAN_mcu_mcu_debug_cpu_peak_percent_set(float cpu_peak_percent);
 void CAN_mcu_mcu_debug_debug_value_3_set(uint16_t debug_value_3);
 void CAN_mcu_mcu_debug_debug_value_4_set(uint16_t debug_value_4);
 void CAN_mcu_mcu_debug_debug_value_5_set(uint16_t debug_value_5);

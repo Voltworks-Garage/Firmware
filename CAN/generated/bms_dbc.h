@@ -18,9 +18,11 @@ typedef enum{
  * mcu NODE MESSAGES
  */
 #define CAN_mcu_status_interval() 10
+#define CAN_MCU_STATUS_NUM_MUX_VALUES 5
 uint8_t CAN_mcu_status_checkDataIsUnread(void);
 uint8_t CAN_mcu_status_checkDataIsStale(void);
-uint16_t CAN_mcu_status_heartbeat_get(void);
+uint16_t CAN_mcu_status_multiplex_get(void);
+uint16_t CAN_mcu_status_vehicleState_get(void);
 uint16_t CAN_mcu_status_highBeam_get(void);
 uint16_t CAN_mcu_status_lowBeam_get(void);
 uint16_t CAN_mcu_status_brakeLight_get(void);
@@ -44,6 +46,35 @@ float CAN_mcu_status_batt_current_get(void);
 float CAN_mcu_status_dcdc_current_get(void);
 uint16_t CAN_mcu_status_batt_fault_get(void);
 uint16_t CAN_mcu_status_dcdc_fault_get(void);
+uint16_t CAN_mcu_status_fan_fault_get(void);
+uint16_t CAN_mcu_status_pump_fault_get(void);
+uint16_t CAN_mcu_status_taillight_fault_get(void);
+uint16_t CAN_mcu_status_brakelight_fault_get(void);
+uint16_t CAN_mcu_status_lowbeam_fault_get(void);
+uint16_t CAN_mcu_status_highbeam_fault_get(void);
+uint16_t CAN_mcu_status_horn_fault_get(void);
+uint16_t CAN_mcu_status_aux_port_fault_get(void);
+uint16_t CAN_mcu_status_heated_grips_fault_get(void);
+uint16_t CAN_mcu_status_heated_seat_fault_get(void);
+uint16_t CAN_mcu_status_charge_controller_fault_get(void);
+uint16_t CAN_mcu_status_motor_controller_fault_get(void);
+uint16_t CAN_mcu_status_bms_controller_fault_get(void);
+uint16_t CAN_mcu_status_spare_1_controller_fault_get(void);
+uint16_t CAN_mcu_status_ic_controller_fault_get(void);
+float CAN_mcu_status_fan_current_get(void);
+float CAN_mcu_status_pump_current_get(void);
+float CAN_mcu_status_taillight_current_get(void);
+float CAN_mcu_status_brakelight_current_get(void);
+float CAN_mcu_status_lowbeam_current_get(void);
+float CAN_mcu_status_highbeam_current_get(void);
+float CAN_mcu_status_horn_current_get(void);
+float CAN_mcu_status_aux_port_current_get(void);
+float CAN_mcu_status_heated_grips_current_get(void);
+float CAN_mcu_status_heated_seat_current_get(void);
+float CAN_mcu_status_charge_controller_current_get(void);
+float CAN_mcu_status_motor_controller_current_get(void);
+float CAN_mcu_status_bms_controller_current_get(void);
+float CAN_mcu_status_spare_1_controller_current_get(void);
 
 #define CAN_mcu_command_interval() 100
 uint8_t CAN_mcu_command_checkDataIsUnread(void);
@@ -59,8 +90,8 @@ uint16_t CAN_mcu_command_motor_controller_enable_get(void);
 uint8_t CAN_mcu_mcu_debug_checkDataIsUnread(void);
 uint8_t CAN_mcu_mcu_debug_checkDataIsStale(void);
 uint16_t CAN_mcu_mcu_debug_Multiplex_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_1_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_2_get(void);
+float CAN_mcu_mcu_debug_cpu_usage_percent_get(void);
+float CAN_mcu_mcu_debug_cpu_peak_percent_get(void);
 uint16_t CAN_mcu_mcu_debug_debug_value_3_get(void);
 uint16_t CAN_mcu_mcu_debug_debug_value_4_get(void);
 uint16_t CAN_mcu_mcu_debug_debug_value_5_get(void);

@@ -75,10 +75,10 @@
           <itemPath>mcc_generated_files/boot/boot_process.c</itemPath>
           <itemPath>mcc_generated_files/boot/interrupts.S</itemPath>
           <itemPath>mcc_generated_files/boot/boot_demo.c</itemPath>
-          <itemPath>mcc_generated_files/boot/boot_verify_not_blank.c</itemPath>
           <itemPath>mcc_generated_files/boot/hardware_interrupt_table.S</itemPath>
           <itemPath>../../Libraries/can_bootloader/com_adaptor_can.c</itemPath>
           <itemPath>mcc_generated_files/boot/boot_application_header.c</itemPath>
+          <itemPath>mcc_generated_files/boot/boot_verify_not_blank.c</itemPath>
         </logicalFolder>
         <logicalFolder name="memory" displayName="memory" projectFiles="true">
           <itemPath>mcc_generated_files/memory/flash.s</itemPath>
@@ -147,6 +147,7 @@
         <makeCustomizationNormalizeHexFile>false</makeCustomizationNormalizeHexFile>
       </makeCustomizationType>
       <C30>
+        <property key="appendMe" value=""/>
         <property key="cast-align" value="false"/>
         <property key="code-model" value="default"/>
         <property key="const-model" value="default"/>
@@ -217,6 +218,7 @@
       </C30-CO>
       <C30-LD>
         <property key="additional-options-use-response-files" value="false"/>
+        <property key="appendMe" value=""/>
         <property key="boot-eeprom" value="no_eeprom"/>
         <property key="boot-flash" value="no_flash"/>
         <property key="boot-ram" value="no_ram"/>

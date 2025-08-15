@@ -105,15 +105,10 @@ class ConfigParser:
     
     def _extract_can_ids(self, content: str, device_name: str) -> Tuple[int, int]:
         """Extract CAN IDs from config content or use defaults"""
-        # Try to find CAN ID definitions in comments or code
-        # For now, use predefined mappings based on device name
-        id_mappings = {
-            'BMS': (0x7A1, 0x7A2),
-            'MCU': (0x7A3, 0x7A4),
-            'Dash': (0x7A5, 0x7A6)
-        }
-        
-        return id_mappings.get(device_name, (0x7A1, 0x7A2))
+        # Since we're using TX_ID dropdown for addressing, 
+        # these values are only used for internal organization
+        # Return placeholder values as they're not used for actual communication
+        return (0x000, 0x000)
     
     def _parse_io_h_file(self, io_h_path: str) -> Dict[str, CommandDefinition]:
         """Parse IO.h file to extract function pointer arrays and generate commands"""

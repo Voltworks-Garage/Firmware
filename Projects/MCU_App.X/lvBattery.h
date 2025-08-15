@@ -9,28 +9,7 @@
 // more than once.  
 #ifndef LV_BATTERY_H
 #define	LV_BATTERY_H
-
-#include <stdint.h>
-
-typedef enum {
-    LV_BATTERY_NOMINAL,
-    LV_BATTERY_CHARGED,
-    LV_BATTERY_CHARGING,
-    LV_BATTERY_CHARGE_NEEDED,
-} lvBatteryState_E;
-
-typedef enum {
-    LV_BATTERY_CHARGE_STATE_CHARGE_NEEDED,
-    LV_BATTERY_CHARGE_STATE_CHARGING,
-    LV_BATTERY_CHARGE_STATE_CHARGED
-} lvBatteryChargeState_E;
-
-typedef enum {
-    LV_BATTERY_HEALTH_STATE_DISCHARGED,
-    LV_BATTERY_HEALTH_STATE_NOMINAL,
-    LV_BATTERY_HEALTH_STATE_CHARGED
-} lvBatteryHealthState_E;
-
+#include <stdbool.h>
 
 void LvBattery_Init(void);
 
@@ -38,7 +17,7 @@ void LvBattery_Run_10ms(void);
 
 void LvBattery_Halt(void);
 
-lvBatteryState_E LvBattery_GetState(void);
+bool LvBattery_HasDCDCSupport(void);
 
 
 #endif	/* LV_BATTERY_H */

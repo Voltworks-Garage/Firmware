@@ -203,172 +203,435 @@
                     ],
                     "signals": [
                         {
-                            "name": "heartbeat",
-                            "length": 4,
+                            "name": "multiplex",
+                            "length": 3,
                             "scale": 1.0,
                             "offset": 0,
                             "units": ""
+                        },
+                        {
+                            "name": "vehicleState",
+                            "length": 3,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "",
+                            "multiplex": 0
                         },
                         {
                             "name": "highBeam",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "bool"
+                            "units": "bool",
+                            "multiplex": 0
                         },
                         {
                             "name": "lowBeam",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "bool"
+                            "units": "bool",
+                            "multiplex": 0
                         },
                         {
                             "name": "brakeLight",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "bool"
+                            "units": "bool",
+                            "multiplex": 0
                         },
                         {
                             "name": "tailLight",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "bool"
+                            "units": "bool",
+                            "multiplex": 0
                         },
                         {
                             "name": "horn",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "bool"
+                            "units": "bool",
+                            "multiplex": 0
                         },
                         {
                             "name": "turnSignalFR",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "bool"
+                            "units": "bool",
+                            "multiplex": 0
                         },
                         {
                             "name": "turnSignalFL",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "bool"
+                            "units": "bool",
+                            "multiplex": 0
                         },
                         {
                             "name": "turnSignalRR",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "bool"
+                            "units": "bool",
+                            "multiplex": 0
                         },
                         {
                             "name": "turnSignalRL",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "bool"
+                            "units": "bool",
+                            "multiplex": 0
                         },
                         {
                             "name": "brakeSwitchFront",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "bool"
+                            "units": "bool",
+                            "multiplex": 0
                         },
                         {
                             "name": "brakeSwitchRear",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "bool"
+                            "units": "bool",
+                            "multiplex": 0
                         },
                         {
                             "name": "killSwitch",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "bool"
+                            "units": "bool",
+                            "multiplex": 0
                         },
                         {
                             "name": "ignitionSwitch",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "bool"
+                            "units": "bool",
+                            "multiplex": 0
                         },
                         {
                             "name": "leftTurnSwitch",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "bool"
+                            "units": "bool",
+                            "multiplex": 0
                         },
                         {
                             "name": "rightTurnSwitch",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "bool"
+                            "units": "bool",
+                            "multiplex": 0
                         },
                         {
                             "name": "lightSwitch",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "bool"
+                            "units": "bool",
+                            "multiplex": 0
                         },
                         {
                             "name": "assSwitch",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "bool"
+                            "units": "bool",
+                            "multiplex": 0
                         },
                         {
                             "name": "hornSwitch",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "bool"
+                            "units": "bool",
+                            "multiplex": 0
                         },
                         {
                             "name": "batt_voltage",
                             "length": 8,
                             "scale": 0.1,
                             "offset": 0,
-                            "units": "V"
+                            "units": "V",
+                            "multiplex": 1
                         },
                         {
                             "name": "batt_current",
                             "length": 16,
                             "scale": 0.001,
                             "offset": -33,
-                            "units": "A"
+                            "units": "A",
+                            "multiplex": 1
                         },
                         {
                             "name": "dcdc_current",
                             "length": 16,
                             "scale": 0.001,
                             "offset": -33,
-                            "units": "A"
+                            "units": "A",
+                            "multiplex": 1
                         },
                         {
                             "name": "batt_fault",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "bool"
+                            "units": "bool",
+                            "multiplex": 1
                         },
                         {
                             "name": "dcdc_fault",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "bool"
+                            "units": "bool",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "fan_fault",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "pump_fault",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "taillight_fault",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "brakelight_fault",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "lowbeam_fault",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "highbeam_fault",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "horn_fault",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "aux_port_fault",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "heated_grips_fault",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "heated_seat_fault",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "charge_controller_fault",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "motor_controller_fault",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "bms_controller_fault",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "spare_1_controller_fault",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "ic_controller_fault",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "fan_current",
+                            "length": 10,
+                            "scale": 0.01,
+                            "offset": 0,
+                            "units": "A",
+                            "multiplex": 2
+                        },
+                        {
+                            "name": "pump_current",
+                            "length": 10,
+                            "scale": 0.01,
+                            "offset": 0,
+                            "units": "A",
+                            "multiplex": 2
+                        },
+                        {
+                            "name": "taillight_current",
+                            "length": 10,
+                            "scale": 0.01,
+                            "offset": 0,
+                            "units": "A",
+                            "multiplex": 2
+                        },
+                        {
+                            "name": "brakelight_current",
+                            "length": 10,
+                            "scale": 0.01,
+                            "offset": 0,
+                            "units": "A",
+                            "multiplex": 2
+                        },
+                        {
+                            "name": "lowbeam_current",
+                            "length": 10,
+                            "scale": 0.01,
+                            "offset": 0,
+                            "units": "A",
+                            "multiplex": 2
+                        },
+                        {
+                            "name": "highbeam_current",
+                            "length": 10,
+                            "scale": 0.01,
+                            "offset": 0,
+                            "units": "A",
+                            "multiplex": 2
+                        },
+                        {
+                            "name": "horn_current",
+                            "length": 10,
+                            "scale": 0.01,
+                            "offset": 0,
+                            "units": "A",
+                            "multiplex": 3
+                        },
+                        {
+                            "name": "aux_port_current",
+                            "length": 10,
+                            "scale": 0.01,
+                            "offset": 0,
+                            "units": "A",
+                            "multiplex": 3
+                        },
+                        {
+                            "name": "heated_grips_current",
+                            "length": 10,
+                            "scale": 0.01,
+                            "offset": 0,
+                            "units": "A",
+                            "multiplex": 3
+                        },
+                        {
+                            "name": "heated_seat_current",
+                            "length": 10,
+                            "scale": 0.01,
+                            "offset": 0,
+                            "units": "A",
+                            "multiplex": 3
+                        },
+                        {
+                            "name": "charge_controller_current",
+                            "length": 10,
+                            "scale": 0.01,
+                            "offset": 0,
+                            "units": "A",
+                            "multiplex": 3
+                        },
+                        {
+                            "name": "motor_controller_current",
+                            "length": 10,
+                            "scale": 0.01,
+                            "offset": 0,
+                            "units": "A",
+                            "multiplex": 3
+                        },
+                        {
+                            "name": "bms_controller_current",
+                            "length": 10,
+                            "scale": 0.01,
+                            "offset": 0,
+                            "units": "A",
+                            "multiplex": 4
+                        },
+                        {
+                            "name": "spare_1_controller_current",
+                            "length": 10,
+                            "scale": 0.01,
+                            "offset": 0,
+                            "units": "A",
+                            "multiplex": 4
                         }
                     ]
                 },
@@ -525,20 +788,20 @@
                             "units": ""
                         },
                         {
-                            "name": "debug_value_1",
+                            "name": "cpu_usage_percent",
                             "length": 8,
-                            "scale": 1.0,
+                            "scale": 0.5,
                             "offset": 0,
-                            "units": "",
-                            "multiplex": 0
+                            "units": "%",
+                            "multiplex": 2
                         },
                         {
-                            "name": "debug_value_2",
+                            "name": "cpu_peak_percent",
                             "length": 8,
-                            "scale": 1.0,
+                            "scale": 0.5,
                             "offset": 0,
-                            "units": "",
-                            "multiplex": 0
+                            "units": "%",
+                            "multiplex": 2
                         },
                         {
                             "name": "debug_value_3",

@@ -32,6 +32,7 @@
 #include "HeatedGrips.h"
 #include "j1772.h"
 #include "IO.h"
+#include "LvBattery.h"
 #include "MCU_dbc.h"
 #include "mcc_generated_files/watchdog.h"
 #include "StateMachine.h"
@@ -89,10 +90,6 @@ void Tsk_init(void) {
     CommandService_Init();
     WATCHDOG_TimerClear();
     WATCHDOG_TimerSoftwareEnable();
-
-    tskService_print("Hello World, Task Init Done.\n"); //hi
-    tskService_print("Reset Reason: %x %x\n",(uint8_t)(RCON>>8), (uint8_t)RCON); 
-
 }
 
 /**
@@ -108,11 +105,12 @@ void Tsk(void) {
 void Tsk_1ms(void) {
     run_iso_tp_1ms();
     CommandService_Run();
-    
-    StateMachine_Run();
+
+    IgnitionControl_Run_1ms();
    
     CAN_populate_1ms();
     CAN_send_1ms();
+
     WATCHDOG_TimerClear();
 }
 
@@ -121,10 +119,14 @@ void Tsk_1ms(void) {
  * Runs every 10ms
  */
 void Tsk_10ms(void) {
+    CAN_mcu_mcu_debug_cpu_usage_percent_set(SysTick_GetCPUPercentage());
+    CAN_mcu_mcu_debug_cpu_peak_percent_set(SysTick_GetCPUPeak());
     IO_Efuse_Run_10ms(); //Run the Efuse System
-    IgnitionControl_Run_10ms();
+
     HornControl_Run_10ms(); //Run Horn. Horn is disabled if button is held for too long.
     LvBattery_Run_10ms();
+    LightsControl_Run_10ms(); //Run the System Lights layer (Responds to button presses, controls, etc...)
+
     
     CAN_populate_10ms();
     CAN_send_10ms();
@@ -134,9 +136,6 @@ void Tsk_10ms(void) {
  * Runs every 100ms
  */
 void Tsk_100ms(void) {
-    WATCHDOG_TimerClear();
-    // SerialConsole_Run_100ms(); //Debug Serial Terminal Emulation
-    LightsControl_Run_100ms(); //Run the System Lights layer (Responds to button presses, controls, etc...)
     HeatedGripControl_Run_100ms(); //Run Heated Grips. Currently activated by spare sw 2
     j1772Control_Run_100ms(); //Run j1772 Proximity and Pilot Signal Control.
     
@@ -149,6 +148,9 @@ void Tsk_100ms(void) {
  */
 void Tsk_1000ms(void) {
     IO_SET_DEBUG_LED_EN(TOGGLE); //Toggle Debug LED at 1Hz for scheduler running status
+
+    CAN_populate_1000ms();
+    CAN_send_1000ms();
 }
 
 //TODO: Delete this.
@@ -163,34 +165,48 @@ void Tsk_Sleep(void){
 void Tsk_Run(uint32_t SystemClock) {
 
     static uint32_t tick = 0; // System tick
-    static TaskType *Task_ptr; // Task pointer
-    static uint8_t TaskIndex = 0; // Task index
+    static uint32_t lastTick = 0; //System last tick
+    static TaskType *tsk_configPtr; // Task pointer
+    static uint8_t tsk_currentIndex = 0; // Task index
     const uint8_t NumTasks = Tsk_GetNumTasks(); // Number of tasks
 
     SysTick_Init(SystemClock);
 
-    Task_ptr = Tsk_GetConfig(); // Get a pointer to the task configuration
+    tsk_configPtr = Tsk_GetConfig(); // Get a pointer to the task configuration
+    
+    SysTick_Set(tsk_configPtr[0].LastTick);// Set the Tick to the first task to allow for the phase offset
 
     Tsk_init();
     // The main while loop.  This while loop will run the program forever
     while (1) {
-        tick = SysTick_Get(); // Get current system tick
+        
+         // Get current system tick. If a single tick has occurred, run the tasks.
+        tick = SysTick_Get();
 
-        // Loop through all tasks.  First, run all continuous tasks.  Then,
-        // if the number of ticks since the last time the task was run is
-        // greater than or equal to the task interval, execute the task.
-        for (TaskIndex = 0; TaskIndex < NumTasks; TaskIndex++) {
-            if (Task_ptr[TaskIndex].Interval == 0) {
-                // Run continuous tasks.
-                (*Task_ptr[TaskIndex].Func)();
-            } else if ((tick - Task_ptr[TaskIndex].LastTick) >= Task_ptr[TaskIndex].Interval) {
-                (*Task_ptr[TaskIndex].Func)(); // Execute Task
+        //Run the continuous taks
+        Tsk();
+        
+        if (tick != lastTick){
+            lastTick = tick;
+            
+            // Loop through all tasks. If the number of ticks since the last time the task was run is
+            // greater than or equal to the task interval, execute the task.
+            SysTick_CPUTimerStart();
 
-                Task_ptr[TaskIndex].LastTick = tick; // Save last tick the task was ran.
-            }
-        }// end for
+            for (tsk_currentIndex = 0; tsk_currentIndex < NumTasks; tsk_currentIndex++) {
 
+                if ((tick - tsk_configPtr[tsk_currentIndex].LastTick) >= tsk_configPtr[tsk_currentIndex].Interval) {
+                    (*tsk_configPtr[tsk_currentIndex].Func)(); // Execute Task
 
+                    tsk_configPtr[tsk_currentIndex].LastTick = tick; // Save last tick the task was ran.
+                }
+            }// end for
+            
+            StateMachine_Run();
+            SysTick_CPUTimerEnd();
+
+        }
+        
     }// end while(1)
 }
 

@@ -261,67 +261,67 @@ static CAN_message_S CAN_charger_status={
 #define CAN_CHARGER_STATUS_BYTE8_OFFSET 45
 
 void CAN_charger_status_output_voltage_high_byte_set(uint16_t output_voltage_high_byte){
-	uint16_t data_scaled = (output_voltage_high_byte - 0) / 1.0;
+	uint16_t data_scaled = output_voltage_high_byte * 1.0;
 	// Set 8-bit signal at bit offset 0
 	CAN_charger_status.payload->word0 &= ~0x00FF;
 	CAN_charger_status.payload->word0 |= data_scaled & 0x00FF;
 }
 void CAN_charger_status_output_voltage_low_byte_set(uint16_t output_voltage_low_byte){
-	uint16_t data_scaled = (output_voltage_low_byte - 0) / 1.0;
+	uint16_t data_scaled = output_voltage_low_byte * 1.0;
 	// Set 8-bit signal at bit offset 8
 	CAN_charger_status.payload->word0 &= ~0xFF00;
 	CAN_charger_status.payload->word0 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_charger_status_output_current_high_byte_set(uint16_t output_current_high_byte){
-	uint16_t data_scaled = (output_current_high_byte - 0) / 1.0;
+	uint16_t data_scaled = output_current_high_byte * 1.0;
 	// Set 8-bit signal at bit offset 16
 	CAN_charger_status.payload->word1 &= ~0x00FF;
 	CAN_charger_status.payload->word1 |= data_scaled & 0x00FF;
 }
 void CAN_charger_status_output_current_low_byte_set(uint16_t output_current_low_byte){
-	uint16_t data_scaled = (output_current_low_byte - 0) / 1.0;
+	uint16_t data_scaled = output_current_low_byte * 1.0;
 	// Set 8-bit signal at bit offset 24
 	CAN_charger_status.payload->word1 &= ~0xFF00;
 	CAN_charger_status.payload->word1 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_charger_status_hardware_error_set(uint16_t hardware_error){
-	uint16_t data_scaled = (hardware_error - 0) / 1.0;
+	uint16_t data_scaled = hardware_error * 1.0;
 	// Set 1-bit signal at bit offset 32
 	CAN_charger_status.payload->word2 &= ~0x0001;
 	CAN_charger_status.payload->word2 |= data_scaled & 0x0001;
 }
 void CAN_charger_status_charger_overtemp_error_set(uint16_t charger_overtemp_error){
-	uint16_t data_scaled = (charger_overtemp_error - 0) / 1.0;
+	uint16_t data_scaled = charger_overtemp_error * 1.0;
 	// Set 1-bit signal at bit offset 33
 	CAN_charger_status.payload->word2 &= ~0x0002;
 	CAN_charger_status.payload->word2 |= (data_scaled << 1) & 0x0002;
 }
 void CAN_charger_status_input_voltage_error_set(uint16_t input_voltage_error){
-	uint16_t data_scaled = (input_voltage_error - 0) / 1.0;
+	uint16_t data_scaled = input_voltage_error * 1.0;
 	// Set 1-bit signal at bit offset 34
 	CAN_charger_status.payload->word2 &= ~0x0004;
 	CAN_charger_status.payload->word2 |= (data_scaled << 2) & 0x0004;
 }
 void CAN_charger_status_battery_detect_error_set(uint16_t battery_detect_error){
-	uint16_t data_scaled = (battery_detect_error - 0) / 1.0;
+	uint16_t data_scaled = battery_detect_error * 1.0;
 	// Set 1-bit signal at bit offset 35
 	CAN_charger_status.payload->word2 &= ~0x0008;
 	CAN_charger_status.payload->word2 |= (data_scaled << 3) & 0x0008;
 }
 void CAN_charger_status_communication_error_set(uint16_t communication_error){
-	uint16_t data_scaled = (communication_error - 0) / 1.0;
+	uint16_t data_scaled = communication_error * 1.0;
 	// Set 1-bit signal at bit offset 36
 	CAN_charger_status.payload->word2 &= ~0x0010;
 	CAN_charger_status.payload->word2 |= (data_scaled << 4) & 0x0010;
 }
 void CAN_charger_status_byte7_set(uint16_t byte7){
-	uint16_t data_scaled = (byte7 - 0) / 1.0;
+	uint16_t data_scaled = byte7 * 1.0;
 	// Set 8-bit signal at bit offset 37
 	CAN_charger_status.payload->word2 &= ~0x1FE0;
 	CAN_charger_status.payload->word2 |= (data_scaled << 5) & 0x1FE0;
 }
 void CAN_charger_status_byte8_set(uint16_t byte8){
-	uint16_t data_scaled = (byte8 - 0) / 1.0;
+	uint16_t data_scaled = byte8 * 1.0;
 	// Set 8-bit signal at bit offset 45
 	CAN_charger_status.payload->word2 &= ~0xE000;
 	CAN_charger_status.payload->word2 |= (data_scaled << 13) & 0xE000;

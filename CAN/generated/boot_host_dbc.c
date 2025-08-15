@@ -352,55 +352,55 @@ static CAN_message_S CAN_boot_host_bms={
 #define CAN_BOOT_HOST_BMS_BYTE7_OFFSET 56
 
 void CAN_boot_host_bms_type_set(uint16_t type){
-	uint16_t data_scaled = (type - 0) / 1.0;
+	uint16_t data_scaled = type * 1.0;
 	// Set 4-bit signal at bit offset 0
 	CAN_boot_host_bms.payload->word0 &= ~0x000F;
 	CAN_boot_host_bms.payload->word0 |= data_scaled & 0x000F;
 }
 void CAN_boot_host_bms_code_set(uint16_t code){
-	uint16_t data_scaled = (code - 0) / 1.0;
+	uint16_t data_scaled = code * 1.0;
 	// Set 4-bit signal at bit offset 4
 	CAN_boot_host_bms.payload->word0 &= ~0x00F0;
 	CAN_boot_host_bms.payload->word0 |= (data_scaled << 4) & 0x00F0;
 }
 void CAN_boot_host_bms_byte1_set(uint16_t byte1){
-	uint16_t data_scaled = (byte1 - 0) / 1.0;
+	uint16_t data_scaled = byte1 * 1.0;
 	// Set 8-bit signal at bit offset 8
 	CAN_boot_host_bms.payload->word0 &= ~0xFF00;
 	CAN_boot_host_bms.payload->word0 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_boot_host_bms_byte2_set(uint16_t byte2){
-	uint16_t data_scaled = (byte2 - 0) / 1.0;
+	uint16_t data_scaled = byte2 * 1.0;
 	// Set 8-bit signal at bit offset 16
 	CAN_boot_host_bms.payload->word1 &= ~0x00FF;
 	CAN_boot_host_bms.payload->word1 |= data_scaled & 0x00FF;
 }
 void CAN_boot_host_bms_byte3_set(uint16_t byte3){
-	uint16_t data_scaled = (byte3 - 0) / 1.0;
+	uint16_t data_scaled = byte3 * 1.0;
 	// Set 8-bit signal at bit offset 24
 	CAN_boot_host_bms.payload->word1 &= ~0xFF00;
 	CAN_boot_host_bms.payload->word1 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_boot_host_bms_byte4_set(uint16_t byte4){
-	uint16_t data_scaled = (byte4 - 0) / 1.0;
+	uint16_t data_scaled = byte4 * 1.0;
 	// Set 8-bit signal at bit offset 32
 	CAN_boot_host_bms.payload->word2 &= ~0x00FF;
 	CAN_boot_host_bms.payload->word2 |= data_scaled & 0x00FF;
 }
 void CAN_boot_host_bms_byte5_set(uint16_t byte5){
-	uint16_t data_scaled = (byte5 - 0) / 1.0;
+	uint16_t data_scaled = byte5 * 1.0;
 	// Set 8-bit signal at bit offset 40
 	CAN_boot_host_bms.payload->word2 &= ~0xFF00;
 	CAN_boot_host_bms.payload->word2 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_boot_host_bms_byte6_set(uint16_t byte6){
-	uint16_t data_scaled = (byte6 - 0) / 1.0;
+	uint16_t data_scaled = byte6 * 1.0;
 	// Set 8-bit signal at bit offset 48
 	CAN_boot_host_bms.payload->word3 &= ~0x00FF;
 	CAN_boot_host_bms.payload->word3 |= data_scaled & 0x00FF;
 }
 void CAN_boot_host_bms_byte7_set(uint16_t byte7){
-	uint16_t data_scaled = (byte7 - 0) / 1.0;
+	uint16_t data_scaled = byte7 * 1.0;
 	// Set 8-bit signal at bit offset 56
 	CAN_boot_host_bms.payload->word3 &= ~0xFF00;
 	CAN_boot_host_bms.payload->word3 |= (data_scaled << 8) & 0xFF00;
@@ -446,55 +446,55 @@ static CAN_message_S CAN_boot_host_mcu={
 #define CAN_BOOT_HOST_MCU_BYTE7_OFFSET 56
 
 void CAN_boot_host_mcu_type_set(uint16_t type){
-	uint16_t data_scaled = (type - 0) / 1.0;
+	uint16_t data_scaled = type * 1.0;
 	// Set 4-bit signal at bit offset 0
 	CAN_boot_host_mcu.payload->word0 &= ~0x000F;
 	CAN_boot_host_mcu.payload->word0 |= data_scaled & 0x000F;
 }
 void CAN_boot_host_mcu_code_set(uint16_t code){
-	uint16_t data_scaled = (code - 0) / 1.0;
+	uint16_t data_scaled = code * 1.0;
 	// Set 4-bit signal at bit offset 4
 	CAN_boot_host_mcu.payload->word0 &= ~0x00F0;
 	CAN_boot_host_mcu.payload->word0 |= (data_scaled << 4) & 0x00F0;
 }
 void CAN_boot_host_mcu_byte1_set(uint16_t byte1){
-	uint16_t data_scaled = (byte1 - 0) / 1.0;
+	uint16_t data_scaled = byte1 * 1.0;
 	// Set 8-bit signal at bit offset 8
 	CAN_boot_host_mcu.payload->word0 &= ~0xFF00;
 	CAN_boot_host_mcu.payload->word0 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_boot_host_mcu_byte2_set(uint16_t byte2){
-	uint16_t data_scaled = (byte2 - 0) / 1.0;
+	uint16_t data_scaled = byte2 * 1.0;
 	// Set 8-bit signal at bit offset 16
 	CAN_boot_host_mcu.payload->word1 &= ~0x00FF;
 	CAN_boot_host_mcu.payload->word1 |= data_scaled & 0x00FF;
 }
 void CAN_boot_host_mcu_byte3_set(uint16_t byte3){
-	uint16_t data_scaled = (byte3 - 0) / 1.0;
+	uint16_t data_scaled = byte3 * 1.0;
 	// Set 8-bit signal at bit offset 24
 	CAN_boot_host_mcu.payload->word1 &= ~0xFF00;
 	CAN_boot_host_mcu.payload->word1 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_boot_host_mcu_byte4_set(uint16_t byte4){
-	uint16_t data_scaled = (byte4 - 0) / 1.0;
+	uint16_t data_scaled = byte4 * 1.0;
 	// Set 8-bit signal at bit offset 32
 	CAN_boot_host_mcu.payload->word2 &= ~0x00FF;
 	CAN_boot_host_mcu.payload->word2 |= data_scaled & 0x00FF;
 }
 void CAN_boot_host_mcu_byte5_set(uint16_t byte5){
-	uint16_t data_scaled = (byte5 - 0) / 1.0;
+	uint16_t data_scaled = byte5 * 1.0;
 	// Set 8-bit signal at bit offset 40
 	CAN_boot_host_mcu.payload->word2 &= ~0xFF00;
 	CAN_boot_host_mcu.payload->word2 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_boot_host_mcu_byte6_set(uint16_t byte6){
-	uint16_t data_scaled = (byte6 - 0) / 1.0;
+	uint16_t data_scaled = byte6 * 1.0;
 	// Set 8-bit signal at bit offset 48
 	CAN_boot_host_mcu.payload->word3 &= ~0x00FF;
 	CAN_boot_host_mcu.payload->word3 |= data_scaled & 0x00FF;
 }
 void CAN_boot_host_mcu_byte7_set(uint16_t byte7){
-	uint16_t data_scaled = (byte7 - 0) / 1.0;
+	uint16_t data_scaled = byte7 * 1.0;
 	// Set 8-bit signal at bit offset 56
 	CAN_boot_host_mcu.payload->word3 &= ~0xFF00;
 	CAN_boot_host_mcu.payload->word3 |= (data_scaled << 8) & 0xFF00;
@@ -540,55 +540,55 @@ static CAN_message_S CAN_boot_host_dash={
 #define CAN_BOOT_HOST_DASH_BYTE7_OFFSET 56
 
 void CAN_boot_host_dash_type_set(uint16_t type){
-	uint16_t data_scaled = (type - 0) / 1.0;
+	uint16_t data_scaled = type * 1.0;
 	// Set 4-bit signal at bit offset 0
 	CAN_boot_host_dash.payload->word0 &= ~0x000F;
 	CAN_boot_host_dash.payload->word0 |= data_scaled & 0x000F;
 }
 void CAN_boot_host_dash_code_set(uint16_t code){
-	uint16_t data_scaled = (code - 0) / 1.0;
+	uint16_t data_scaled = code * 1.0;
 	// Set 4-bit signal at bit offset 4
 	CAN_boot_host_dash.payload->word0 &= ~0x00F0;
 	CAN_boot_host_dash.payload->word0 |= (data_scaled << 4) & 0x00F0;
 }
 void CAN_boot_host_dash_byte1_set(uint16_t byte1){
-	uint16_t data_scaled = (byte1 - 0) / 1.0;
+	uint16_t data_scaled = byte1 * 1.0;
 	// Set 8-bit signal at bit offset 8
 	CAN_boot_host_dash.payload->word0 &= ~0xFF00;
 	CAN_boot_host_dash.payload->word0 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_boot_host_dash_byte2_set(uint16_t byte2){
-	uint16_t data_scaled = (byte2 - 0) / 1.0;
+	uint16_t data_scaled = byte2 * 1.0;
 	// Set 8-bit signal at bit offset 16
 	CAN_boot_host_dash.payload->word1 &= ~0x00FF;
 	CAN_boot_host_dash.payload->word1 |= data_scaled & 0x00FF;
 }
 void CAN_boot_host_dash_byte3_set(uint16_t byte3){
-	uint16_t data_scaled = (byte3 - 0) / 1.0;
+	uint16_t data_scaled = byte3 * 1.0;
 	// Set 8-bit signal at bit offset 24
 	CAN_boot_host_dash.payload->word1 &= ~0xFF00;
 	CAN_boot_host_dash.payload->word1 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_boot_host_dash_byte4_set(uint16_t byte4){
-	uint16_t data_scaled = (byte4 - 0) / 1.0;
+	uint16_t data_scaled = byte4 * 1.0;
 	// Set 8-bit signal at bit offset 32
 	CAN_boot_host_dash.payload->word2 &= ~0x00FF;
 	CAN_boot_host_dash.payload->word2 |= data_scaled & 0x00FF;
 }
 void CAN_boot_host_dash_byte5_set(uint16_t byte5){
-	uint16_t data_scaled = (byte5 - 0) / 1.0;
+	uint16_t data_scaled = byte5 * 1.0;
 	// Set 8-bit signal at bit offset 40
 	CAN_boot_host_dash.payload->word2 &= ~0xFF00;
 	CAN_boot_host_dash.payload->word2 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_boot_host_dash_byte6_set(uint16_t byte6){
-	uint16_t data_scaled = (byte6 - 0) / 1.0;
+	uint16_t data_scaled = byte6 * 1.0;
 	// Set 8-bit signal at bit offset 48
 	CAN_boot_host_dash.payload->word3 &= ~0x00FF;
 	CAN_boot_host_dash.payload->word3 |= data_scaled & 0x00FF;
 }
 void CAN_boot_host_dash_byte7_set(uint16_t byte7){
-	uint16_t data_scaled = (byte7 - 0) / 1.0;
+	uint16_t data_scaled = byte7 * 1.0;
 	// Set 8-bit signal at bit offset 56
 	CAN_boot_host_dash.payload->word3 &= ~0xFF00;
 	CAN_boot_host_dash.payload->word3 |= (data_scaled << 8) & 0xFF00;

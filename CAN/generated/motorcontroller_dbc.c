@@ -196,49 +196,49 @@ static CAN_message_S CAN_motorcontroller_motorStatus={
 #define CAN_MOTORCONTROLLER_MOTORSTATUS_VPHASEC_OFFSET 56
 
 void CAN_motorcontroller_motorStatus_motorSpeed_set(uint16_t motorSpeed){
-	uint16_t data_scaled = (motorSpeed - 0) / 1.0;
+	uint16_t data_scaled = motorSpeed * 1.0;
 	// Set 8-bit signal at bit offset 0
 	CAN_motorcontroller_motorStatus.payload->word0 &= ~0x00FF;
 	CAN_motorcontroller_motorStatus.payload->word0 |= data_scaled & 0x00FF;
 }
 void CAN_motorcontroller_motorStatus_motorCurrent_set(float motorCurrent){
-	uint16_t data_scaled = (uint16_t)((motorCurrent - 0) / 0.01 + 0.5f);
+	uint16_t data_scaled = (uint16_t)(motorCurrent * 100.0f + 0.5f);
 	// Set 8-bit signal at bit offset 8
 	CAN_motorcontroller_motorStatus.payload->word0 &= ~0xFF00;
 	CAN_motorcontroller_motorStatus.payload->word0 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_motorcontroller_motorStatus_IphaseA_set(uint16_t IphaseA){
-	uint16_t data_scaled = (IphaseA - 0) / 1.0;
+	uint16_t data_scaled = IphaseA * 1.0;
 	// Set 8-bit signal at bit offset 16
 	CAN_motorcontroller_motorStatus.payload->word1 &= ~0x00FF;
 	CAN_motorcontroller_motorStatus.payload->word1 |= data_scaled & 0x00FF;
 }
 void CAN_motorcontroller_motorStatus_IphaseB_set(uint16_t IphaseB){
-	uint16_t data_scaled = (IphaseB - 0) / 1.0;
+	uint16_t data_scaled = IphaseB * 1.0;
 	// Set 8-bit signal at bit offset 24
 	CAN_motorcontroller_motorStatus.payload->word1 &= ~0xFF00;
 	CAN_motorcontroller_motorStatus.payload->word1 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_motorcontroller_motorStatus_IphaseC_set(uint16_t IphaseC){
-	uint16_t data_scaled = (IphaseC - 0) / 1.0;
+	uint16_t data_scaled = IphaseC * 1.0;
 	// Set 8-bit signal at bit offset 32
 	CAN_motorcontroller_motorStatus.payload->word2 &= ~0x00FF;
 	CAN_motorcontroller_motorStatus.payload->word2 |= data_scaled & 0x00FF;
 }
 void CAN_motorcontroller_motorStatus_VphaseA_set(uint16_t VphaseA){
-	uint16_t data_scaled = (VphaseA - 0) / 1.0;
+	uint16_t data_scaled = VphaseA * 1.0;
 	// Set 8-bit signal at bit offset 40
 	CAN_motorcontroller_motorStatus.payload->word2 &= ~0xFF00;
 	CAN_motorcontroller_motorStatus.payload->word2 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_motorcontroller_motorStatus_VphaseB_set(uint16_t VphaseB){
-	uint16_t data_scaled = (VphaseB - 0) / 1.0;
+	uint16_t data_scaled = VphaseB * 1.0;
 	// Set 8-bit signal at bit offset 48
 	CAN_motorcontroller_motorStatus.payload->word3 &= ~0x00FF;
 	CAN_motorcontroller_motorStatus.payload->word3 |= data_scaled & 0x00FF;
 }
 void CAN_motorcontroller_motorStatus_VphaseC_set(uint16_t VphaseC){
-	uint16_t data_scaled = (VphaseC - 0) / 1.0;
+	uint16_t data_scaled = VphaseC * 1.0;
 	// Set 8-bit signal at bit offset 56
 	CAN_motorcontroller_motorStatus.payload->word3 &= ~0xFF00;
 	CAN_motorcontroller_motorStatus.payload->word3 |= (data_scaled << 8) & 0xFF00;
@@ -282,49 +282,49 @@ static CAN_message_S CAN_motorcontroller_response={
 #define CAN_MOTORCONTROLLER_RESPONSE_BYTE8_OFFSET 56
 
 void CAN_motorcontroller_response_byte1_set(uint16_t byte1){
-	uint16_t data_scaled = (byte1 - 0) / 1.0;
+	uint16_t data_scaled = byte1 * 1.0;
 	// Set 8-bit signal at bit offset 0
 	CAN_motorcontroller_response.payload->word0 &= ~0x00FF;
 	CAN_motorcontroller_response.payload->word0 |= data_scaled & 0x00FF;
 }
 void CAN_motorcontroller_response_byte2_set(uint16_t byte2){
-	uint16_t data_scaled = (byte2 - 0) / 1.0;
+	uint16_t data_scaled = byte2 * 1.0;
 	// Set 8-bit signal at bit offset 8
 	CAN_motorcontroller_response.payload->word0 &= ~0xFF00;
 	CAN_motorcontroller_response.payload->word0 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_motorcontroller_response_byte3_set(uint16_t byte3){
-	uint16_t data_scaled = (byte3 - 0) / 1.0;
+	uint16_t data_scaled = byte3 * 1.0;
 	// Set 8-bit signal at bit offset 16
 	CAN_motorcontroller_response.payload->word1 &= ~0x00FF;
 	CAN_motorcontroller_response.payload->word1 |= data_scaled & 0x00FF;
 }
 void CAN_motorcontroller_response_byte4_set(uint16_t byte4){
-	uint16_t data_scaled = (byte4 - 0) / 1.0;
+	uint16_t data_scaled = byte4 * 1.0;
 	// Set 8-bit signal at bit offset 24
 	CAN_motorcontroller_response.payload->word1 &= ~0xFF00;
 	CAN_motorcontroller_response.payload->word1 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_motorcontroller_response_byte5_set(uint16_t byte5){
-	uint16_t data_scaled = (byte5 - 0) / 1.0;
+	uint16_t data_scaled = byte5 * 1.0;
 	// Set 8-bit signal at bit offset 32
 	CAN_motorcontroller_response.payload->word2 &= ~0x00FF;
 	CAN_motorcontroller_response.payload->word2 |= data_scaled & 0x00FF;
 }
 void CAN_motorcontroller_response_byte6_set(uint16_t byte6){
-	uint16_t data_scaled = (byte6 - 0) / 1.0;
+	uint16_t data_scaled = byte6 * 1.0;
 	// Set 8-bit signal at bit offset 40
 	CAN_motorcontroller_response.payload->word2 &= ~0xFF00;
 	CAN_motorcontroller_response.payload->word2 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_motorcontroller_response_byte7_set(uint16_t byte7){
-	uint16_t data_scaled = (byte7 - 0) / 1.0;
+	uint16_t data_scaled = byte7 * 1.0;
 	// Set 8-bit signal at bit offset 48
 	CAN_motorcontroller_response.payload->word3 &= ~0x00FF;
 	CAN_motorcontroller_response.payload->word3 |= data_scaled & 0x00FF;
 }
 void CAN_motorcontroller_response_byte8_set(uint16_t byte8){
-	uint16_t data_scaled = (byte8 - 0) / 1.0;
+	uint16_t data_scaled = byte8 * 1.0;
 	// Set 8-bit signal at bit offset 56
 	CAN_motorcontroller_response.payload->word3 &= ~0xFF00;
 	CAN_motorcontroller_response.payload->word3 |= (data_scaled << 8) & 0xFF00;

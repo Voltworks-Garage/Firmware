@@ -84,7 +84,6 @@ NEW_LOW_PASS_FILTER(vbus_voltage, 10.0, 100.0);
 /******************************************************************************
  * Function Prototypes
  *******************************************************************************/
-uint8_t checkHeartBeat(void);
 uint8_t checkChargerErrors(void);
 void EV_CHARGER_charge_voltage_mV_set(uint32_t volts);
 void EV_CHARGER_charge_current_mA_set(uint32_t current);
@@ -104,7 +103,7 @@ void EV_CHARGER_Run_10ms(void) {
 
     // Always check if this data is stale.
     if (!CAN_mcu_command_checkDataIsStale()){
-        chargeRequestFromMCU = CAN_mcu_command_ev_charger_enable_get();// && checkHeartBeat();
+        chargeRequestFromMCU = CAN_mcu_command_ev_charger_enable_get();
     } else {
         chargeRequestFromMCU = 0;
     }
@@ -306,25 +305,6 @@ void EV_CHARGER_charge_request_set(bool request) {
 
 uint8_t EV_CHARGER_is_charging(void) {
     return (curState == charging_state);
-}
-
-uint8_t checkHeartBeat(void) {
-    static uint8_t lastHeartBeat = 0;
-    static uint32_t lastTime = 0;
-
-    /*Check if heartbeat is within interval and updating*/
-    uint8_t heartBeat = CAN_mcu_status_heartbeat_get();
-
-    if (heartBeat != lastHeartBeat) {
-        lastHeartBeat = heartBeat;
-        lastTime = SysTick_Get();
-        return 1;
-    } else if ((SysTick_Get() - lastTime) < 4 * CAN_mcu_status_interval()) {
-        return 1;
-    } else {
-        return 0;
-    }
-
 }
 
 uint8_t checkChargerErrors(void) {

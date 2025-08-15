@@ -71,14 +71,14 @@
       </entry>
    </usedClasses>
    <usedLibraries class="java.util.ArrayList">
-      <ILibraryFile class="com.microchip.mcc.core.library.BaseLibraryFile" libraryClass="com.microchip.mcc.mcu16.Mcu16PeripheralLibrary" version="1.171.1"/>
       <ILibraryFile class="com.microchip.mcc.core.library.BaseLibraryFile" libraryClass="com.microchip.mcc.boardsupportlibrary.BoardSuppportLibrary" version="1.12.0"/>
+      <ILibraryFile class="com.microchip.mcc.core.library.BaseLibraryFile" libraryClass="com.microchip.mcc.mcu16.Mcu16PeripheralLibrary" version="1.171.1"/>
       <ILibraryFile class="com.microchip.mcc.core.library.BaseLibraryFile" libraryClass="com.microchip.bootloader16.mcc.Library" version="1.19.1"/>
    </usedLibraries>
    <tokenMap class="java.util.TreeMap">
       <entry>
          <key class="com.microchip.mcc.core.tokenManager.CustomKey" moduleName="16-bit Bootloader" name="state"/>
-         <value>{&quot;bootloaderEndAddress&quot;:12288,&quot;commProtocol&quot;:{&quot;name&quot;:&quot;UART1&quot;,&quot;libraryName&quot;:&quot;PIC24 / dsPIC33 / PIC32MM MCUs&quot;},&quot;feature&quot;:{},&quot;interrupts&quot;:{&quot;software&quot;:[{&quot;vectorNumber&quot;:3,&quot;mappingOption&quot;:&quot;KEEP_IN_BOOTLOADER&quot;,&quot;name&quot;:&quot;T1Interrupt&quot;,&quot;isTrap&quot;:false,&quot;isImplemented&quot;:true}],&quot;traps&quot;:[]},&quot;applicationImageConfiguration&quot;:{&quot;imageCount&quot;:1,&quot;downloadImage&quot;:0},&quot;demoOptions&quot;:{&quot;antiRollBack&quot;:true}}</value>
+         <value>{&quot;bootloaderEndAddress&quot;:12288,&quot;commProtocol&quot;:{&quot;name&quot;:&quot;UART1&quot;,&quot;libraryName&quot;:&quot;PIC24 / dsPIC33 / PIC32MM MCUs&quot;},&quot;verificationSchemeName&quot;:&quot;Not Blank&quot;,&quot;feature&quot;:{},&quot;interrupts&quot;:{&quot;software&quot;:[{&quot;vectorNumber&quot;:3,&quot;mappingOption&quot;:&quot;KEEP_IN_BOOTLOADER&quot;,&quot;name&quot;:&quot;T1Interrupt&quot;,&quot;isTrap&quot;:false,&quot;isImplemented&quot;:true}],&quot;traps&quot;:[]},&quot;applicationImageConfiguration&quot;:{&quot;imageCount&quot;:1,&quot;downloadImage&quot;:0},&quot;demoOptions&quot;:{&quot;antiRollBack&quot;:true}}</value>
       </entry>
       <entry>
          <key class="com.microchip.mcc.core.tokenManager.CustomKey" moduleName="DMA" name="DMA_DMA0IISRFunction"/>
@@ -12204,7 +12204,7 @@
       </entry>
       <entry>
          <file>mcc_generated_files\mcc.h</file>
-         <hash>3be0e190137f892cc6e80ba687d09d7976c82615b550fa21af8622d1c05b8ff6</hash>
+         <hash>856d217c8423deda1fb8a1535ddb785b5b8bf4c19bb64cf4bd392dd8cc48f7b9</hash>
       </entry>
       <entry>
          <file>mcc_generated_files\memory\flash.h</file>
@@ -12216,7 +12216,7 @@
       </entry>
       <entry>
          <file>mcc_generated_files\pin_manager.c</file>
-         <hash>cf5f198bebef508c541aaa4a4ab16c5ef606c8e81c09979c777c803aca6f350f</hash>
+         <hash>6f4b323a2f117b386e7b49225b20ac4c711611af29f38be50b4153416530a0d7</hash>
       </entry>
       <entry>
          <file>mcc_generated_files\pin_manager.h</file>
@@ -12236,7 +12236,7 @@
       </entry>
       <entry>
          <file>mcc_generated_files\system.c</file>
-         <hash>017d9d326fd29e66b177c0d141a71a051940b0e761a45c2c3b63785111b52d5a</hash>
+         <hash>50120d48ed7c44e647b73ab988b8358f9c3f96963dccfb97fc76570729a3aef9</hash>
       </entry>
       <entry>
          <file>mcc_generated_files\system.h</file>

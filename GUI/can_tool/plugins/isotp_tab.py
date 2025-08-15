@@ -75,6 +75,22 @@ class ISOTPTab(BaseTab):
         cmd_frame = ttk.LabelFrame(isotp_frame, text="Command Selection")
         cmd_frame.pack(fill=tk.X, padx=5, pady=5)
         
+        # ECU selection (simple dropdown)
+        ecu_frame = ttk.Frame(cmd_frame)
+        ecu_frame.pack(fill=tk.X, padx=5, pady=2)
+        
+        ttk.Label(ecu_frame, text="Target ECU:").pack(side=tk.LEFT)
+        self.ecu_var = tk.StringVar()
+        self.ecu_combo = ttk.Combobox(ecu_frame, textvariable=self.ecu_var, 
+                                     state="readonly", width=10)
+        ecu_options = ["BMS", "MCU", "Dash"]
+        self.ecu_combo.config(values=ecu_options)
+        self.ecu_combo.set("MCU")  # Default selection
+        self.ecu_combo.pack(side=tk.LEFT, padx=(5, 20))
+        
+        # Bind ECU selection changes to update device config
+        self.ecu_combo.bind("<<ComboboxSelected>>", self.on_ecu_selection_changed)
+        
         # Transmission ID selection (from DBF file)
         tx_frame = ttk.Frame(cmd_frame)
         tx_frame.pack(fill=tk.X, padx=5, pady=2)
@@ -95,9 +111,7 @@ class ISOTPTab(BaseTab):
         # Populate both dropdowns with message IDs from DBF parser
         self.populate_message_ids()
         
-        # Bind ID selection changes to update device config
-        self.target_combo.bind("<<ComboboxSelected>>", self.on_id_selection_changed)
-        self.response_combo.bind("<<ComboboxSelected>>", self.on_id_selection_changed)
+        # Note: TX/RX ID selections no longer change device config - ECU dropdown controls that
         
         # Single row layout for Message Type, Command Type, Command, and Parameters
         self.command_row_frame = ttk.Frame(cmd_frame)
@@ -134,8 +148,8 @@ class ISOTPTab(BaseTab):
         # Parameters container (will be populated dynamically)
         self.param_widgets = []
 
-        # Initialize device configuration based on default selection
-        self.on_id_selection_changed()
+        # Initialize device configuration based on default ECU selection
+        self.on_ecu_selection_changed()
         
         # Initialize conditional UI visibility
         self.on_message_type_change()  # Set initial state
@@ -322,6 +336,36 @@ class ISOTPTab(BaseTab):
                 self.isotp_cmd_combo.config(values=[])
                 print(f"⚠️  No device configs loaded at all!")
     
+    def on_ecu_selection_changed(self, event=None):
+        """Called when ECU selection changes - update device config and commands"""
+        selected_ecu = self.ecu_var.get()
+        print(f"🔧 ECU selection changed to: {selected_ecu}")
+        
+        if selected_ecu:
+            # Load device config directly by ECU name
+            self.current_device_config = self.config_parser.get_config_for_device(selected_ecu)
+            self.available_commands = self.config_parser.get_commands_for_device(selected_ecu)
+            
+            if self.available_commands:
+                # Update command type dropdown with available types for this ECU
+                available_types = set()
+                for cmd_def in self.available_commands.values():
+                    available_types.add(cmd_def.cmd_type_name)
+                
+                available_type_names = [t.replace('CMD_TYPE_', '') for t in available_types]
+                self.cmd_type_combo.config(values=available_type_names)
+                
+                if available_type_names:
+                    self.cmd_type_combo.set(available_type_names[0])
+                    self.on_command_type_change()
+                    
+                print(f"🔧 Loaded {len(self.available_commands)} commands for {selected_ecu}")
+            else:
+                # No commands found for this ECU
+                self.cmd_type_combo.config(values=[])
+                self.isotp_cmd_combo.config(values=[])
+                print(f"⚠️  No commands found for ECU: {selected_ecu}")
+    
     def on_command_type_change(self, event=None):
         """Called when command type selection changes - update command dropdown"""
         if not self.available_commands:
@@ -412,11 +456,12 @@ class ISOTPTab(BaseTab):
 
     def send_isotp_command(self):
         """Send an ISO-TP command to the target device"""
+        # Always use TX_ID dropdown for the actual CAN address
         target_msg_id = self.get_selected_message_id()
         msg_type_name = self.isotp_msg_type_var.get()
         
         if not target_msg_id or not msg_type_name:
-            messagebox.showwarning("Invalid Selection", "Please select a message ID and message type.")
+            messagebox.showwarning("Invalid Selection", "Please select a TX ID and message type.")
             return
         
         if not self.app.running or not self.app.bus:
@@ -512,7 +557,14 @@ class ISOTPTab(BaseTab):
                     param_values = [f"{k}={v.get()}" for k, v in self.isotp_param_vars.items()]
                     param_str = f" ({', '.join(param_values)})" if param_values else ""
                 
-                target_name = self.isotp_target_var.get().split(" - ")[1] if " - " in self.isotp_target_var.get() else f"0x{tx_id:03X}"
+                # Show both ECU name and actual CAN ID used
+                selected_ecu = self.ecu_var.get()
+                can_id_name = self.isotp_target_var.get().split(" - ")[1] if " - " in self.isotp_target_var.get() else f"0x{tx_id:03X}"
+                
+                if selected_ecu:
+                    target_name = f"{selected_ecu} ({can_id_name})"
+                else:
+                    target_name = can_id_name
                 
                 if msg_type_name == "ISO-TP_IO_CONTROL":
                     self.isotp_log.insert(tk.END, f"📤 SENT: {target_name} - {msg_type_name} - {cmd_type_name} - {display_command}{param_str}\n")

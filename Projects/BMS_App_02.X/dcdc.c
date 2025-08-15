@@ -46,6 +46,7 @@ NEW_LOW_PASS_FILTER(dcdc_voltage, 10.0, 1000.0);
 NEW_LOW_PASS_FILTER(dcdc_current, 10.0, 1000.0);
 NEW_LOW_PASS_FILTER(vbus_voltage, 10.0, 1000.0);
 NEW_TIMER(precharge_timer,3000);
+NEW_TIMER(gateDriveChargeTimer, 400);
 
 /******************************************************************************
  * Internal Variables
@@ -64,8 +65,7 @@ void DCDC_Init(void) {
 
 void DCDC_Run_1ms(void) {
     if (dcdcRun) {
-        float myval = IO_GET_DCDC_OUTPUT_VOLTAGE();
-        takeLowPassFilter(dcdc_voltage, myval);
+        takeLowPassFilter(dcdc_voltage, IO_GET_DCDC_OUTPUT_VOLTAGE());
         takeLowPassFilter(dcdc_current, IO_GET_DCDC_CURRENT());
         takeLowPassFilter(vbus_voltage, IO_GET_VBUS_VOLTAGE());
     }
@@ -99,6 +99,9 @@ void DCDC_Halt(void) {
     prevState = off_state;
     IO_SET_DCDC_EN(LOW);
     IO_SET_PRE_CHARGE_EN(LOW);
+    clearLowPassFilter(dcdc_voltage);
+    clearLowPassFilter(dcdc_current);
+    clearLowPassFilter(vbus_voltage);
 }
 
 void DCDC_Run(void){
@@ -129,7 +132,7 @@ static void off(DCDC_entry_types_E entry_type) {
             break;
             
         case RUN:
-            if (dcdcCommandFromMcu) {
+            if ((dcdcCommandFromMcu == true) && (IO_GET_SW_EN() == true)) {
                 nextState = precharge_state;
             }
             break;
@@ -148,10 +151,12 @@ static void precharge(DCDC_entry_types_E entry_type) {
         case ENTRY:
             IO_SET_PRE_CHARGE_EN(HIGH);
             SysTick_TimerStart(precharge_timer);
+            SysTick_TimerStart(gateDriveChargeTimer);
             break;
             
         case RUN:
-            if (getLowPassFilter(dcdc_voltage) > getLowPassFilter(vbus_voltage) * 0.90) {
+            if ((getLowPassFilter(dcdc_voltage) > getLowPassFilter(vbus_voltage) * 0.90)
+                && (SysTick_TimeOut(gateDriveChargeTimer))) {
                 nextState = enable_state;
             }
             else if (dcdcCommandFromMcu == 0) {
@@ -208,9 +213,10 @@ static void fault(DCDC_entry_types_E entry_type) {
             break;
             
         case RUN:
-            if (dcdcCommandFromMcu == 0) {
-                nextState = off_state;
-            }
+                CAN_bms_debug_bool0_set(1);
+            // if (dcdcCommandFromMcu == 0) {
+            //     nextState = off_state;
+            // }
             break;
             
         case EXIT:

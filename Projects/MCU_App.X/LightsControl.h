@@ -10,7 +10,7 @@
 
 void LightsControl_Init(void);
 
-void LightsControl_Run_100ms(void);
+void LightsControl_Run_10ms(void);
 
 void LightsControl_Halt(void);
 #endif	/* LIGHTSCONTROL_H */
