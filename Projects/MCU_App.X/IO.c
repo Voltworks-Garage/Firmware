@@ -533,11 +533,17 @@ uint8_t IO_GET_IC_CONTROLLER_FAULT(void) {
 }
 
 uint8_t IO_GET_DCDC_FAULT(void) {
-    return PINS_read(DCDC_nFAULT) ? 0 : 1;
+    if(IO_GET_SW_EN() == 1) {
+        return PINS_read(DCDC_nFAULT) ? 0 : 1;
+    }
+    return 0;
 }
 
 uint8_t IO_GET_BATT_FAULT(void) {
-    return PINS_read(BATT_nFAULT) ? 0 : 1;
+    if(IO_GET_SW_EN() == 1) {
+        return PINS_read(BATT_nFAULT) ? 0 : 1;
+    }
+    return 0;
 }
 
 uint8_t IO_GET_TURN_SIGNAL_L_STATUS(void) {
@@ -778,7 +784,7 @@ void IO_PopulateCANCurrentBits(void) {
     CAN_mcu_status_heated_seat_current_set(IO_GET_CURRENT_HEATED_SEAT());
     // CAN_mcu_status_charge_controller_current_set(IO_GET_CURRENT_CHARGE_CONTROLLER());
     // CAN_mcu_status_motor_controller_current_set(IO_GET_CURRENT_MOTOR_CONTROLLER());
-    // CAN_mcu_status_bms_controller_current_set(IO_GET_CURRENT_BMS_CONTROLLER());
+    CAN_mcu_status_bms_controller_current_set(IO_GET_CURRENT_BMS_CONTROLLER());
     // CAN_mcu_status_spare_1_controller_current_set(IO_GET_CURRENT_SPARE_1_CONTROLLER());
 }
 

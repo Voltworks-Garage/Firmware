@@ -32,27 +32,35 @@ void IgnitionControl_Run_1ms(void);
 ButtonStatus_E IgnitionControl_GetKillSwitchStatus(void);
 bool IgnitionControl_GetKillSwitchIsHeld(bool clearFlag);
 ButtonEvent_E IgnitionControl_GetKillSwitchEvent(void);
+
 ButtonStatus_E IgnitionControl_GetStartButtonStatus(void);
 bool IgnitionControl_GetStartButtonIsHeld(bool clearFlag);
 ButtonEvent_E IgnitionControl_GetStartButtonEvent(void);
+
 ButtonStatus_E IgnitionControl_GetLeftTurnButtonStatus(void);
 bool IgnitionControl_GetLeftTurnButtonIsHeld(bool clearFlag);
 ButtonEvent_E IgnitionControl_GetLeftTurnButtonEvent(void);
+
 ButtonStatus_E IgnitionControl_GetRightTurnButtonStatus(void);
 bool IgnitionControl_GetRightTurnButtonIsHeld(bool clearFlag);
 ButtonEvent_E IgnitionControl_GetRightTurnButtonEvent(void);
+
 ButtonStatus_E IgnitionControl_GetHornButtonStatus(void);
 bool IgnitionControl_GetHornButtonIsHeld(bool clearFlag);
 ButtonEvent_E IgnitionControl_GetHornButtonEvent(void);
+
 ButtonStatus_E IgnitionControl_GetAssButtonStatus(void);
 bool IgnitionControl_GetAssButtonIsHeld(bool clearFlag);
 ButtonEvent_E IgnitionControl_GetAssButtonEvent(void);
+
 ButtonStatus_E IgnitionControl_GetLeftBrakeButtonStatus(void);
 bool IgnitionControl_GetLeftBrakeButtonIsHeld(bool clearFlag);
 ButtonEvent_E IgnitionControl_GetLeftBrakeButtonEvent(void);
+
 ButtonStatus_E IgnitionControl_GetRightBrakeButtonStatus(void);
 bool IgnitionControl_GetRightBrakeButtonIsHeld(bool clearFlag);
 ButtonEvent_E IgnitionControl_GetRightBrakeButtonEvent(void);
+
 ButtonStatus_E IgnitionControl_GetHighBeamButtonStatus(void);
 bool IgnitionControl_GetHighBeamButtonIsHeld(bool clearFlag);
 ButtonEvent_E IgnitionControl_GetHighBeamButtonEvent(void);

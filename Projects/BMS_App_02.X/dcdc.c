@@ -184,15 +184,19 @@ static void enable(DCDC_entry_types_E entry_type) {
             break;
             
         case RUN:
+            CAN_bms_debug_bool0_set(0);
+            if (dcdcCommandFromMcu == 0) {
+                nextState = off_state;
+            }
+
             if (IO_GET_DCDC_FAULT()) {
                 nextState = fault_state;
             }
-            else if (getLowPassFilter(dcdc_voltage) < getLowPassFilter(vbus_voltage) * 0.90) {
+
+            if (getLowPassFilter(dcdc_voltage) < getLowPassFilter(vbus_voltage) * 0.90) {
                 nextState = fault_state;
             }
-            else if (dcdcCommandFromMcu == 0) {
-                nextState = off_state;
-            }
+
             break;
             
         case EXIT:

@@ -59,6 +59,13 @@ void SysTick_TimerStart(SysTick_Timer_S *timer);
 uint8_t SysTick_TimeOut(SysTick_Timer_S *timer);
 
 /**
+ * @brief SysTick_TimerUpdate will update the timer with a new time
+ * @param timer
+ * @param time new time in milliseconds 
+ */
+void SysTick_TimerUpdate(SysTick_Timer_S *timer, uint32_t time);
+
+/**
  * @brief SysTick_CPUTimerStart will grab the value of Timer 5
  */
 void SysTick_CPUTimerStart(void);

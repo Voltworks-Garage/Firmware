@@ -39,11 +39,17 @@ static uint8_t commandService_handleGetCurrent(uint8_t arrayIndex, uint8_t* payl
 //Timers for callback actions
 NEW_TIMER(sleep_timer, 200);
 
+//Event handling
+static CommandService_Type_E currentEvent = COMMAND_SERVICE_TYPE_NONE;
+
 void CommandService_Init(void) {
     isoTP_init();
 }
 
 void CommandService_Run(void) {
+
+    run_iso_tp_1ms();
+
     if (isoTP_peekCommand() != ISO_TP_NONE) {
         isoTP_command_S command = isoTP_getCommand();
         
@@ -51,28 +57,33 @@ void CommandService_Run(void) {
             case ISO_TP_IO_CONTROL:
                 // Process IO control command, send payload minus the first byte (command ID)
                 commandService_processIoCommand(&command.payload[1], command.payloadLength - 1);
+                currentEvent = COMMAND_SERVICE_TYPE_IO_CONTROL;
                 break;
                 
             case ISO_TP_RESET:
                 // Handle reset command - typically resets the system
                 //CommandService_SendResponse(CMD_SUCCESS, NULL, 0);
                 SysTick_TimerStart(sleep_timer);
+                currentEvent = COMMAND_SERVICE_TYPE_RESET;
                 break;
                 
             case ISO_TP_SLEEP:
                 // Handle sleep command - puts system into low power mode
                 CommandService_SendResponse(CMD_SUCCESS, NULL, 0);
                 // TODO: Implement sleep/low power mode functionality
+                currentEvent = COMMAND_SERVICE_TYPE_SLEEP;
                 break;
                 
             case ISO_TP_TESTER_PRESENT:
                 // Handle tester present - keeps communication alive
                 CommandService_SendResponse(CMD_SUCCESS, NULL, 0);
+                currentEvent = COMMAND_SERVICE_TYPE_TESTER_PRESENT;
                 break;
                 
             case ISO_TP_NONE:
             default:
                 // Should not reach here, but handle gracefully
+                currentEvent = COMMAND_SERVICE_TYPE_NONE;
                 break;
         }
     }
@@ -249,4 +260,10 @@ void CommandService_SendResponse(uint8_t responseCode, uint8_t* data, uint8_t da
     }
     isoTP_SendData(responsePacket, dataLength + 1);
 
+}
+
+CommandService_Type_E CommandService_GetEvent(void) {
+    CommandService_Type_E thisEvent = currentEvent;
+    currentEvent = COMMAND_SERVICE_TYPE_NONE;
+    return thisEvent;
 }

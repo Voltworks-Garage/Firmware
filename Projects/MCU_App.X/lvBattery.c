@@ -5,6 +5,7 @@
 #include "IO.h"
 #include "movingAverage.h"
 #include "SysTick.h"
+#include "mcu_dbc.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -70,7 +71,7 @@ NEW_LOW_PASS_FILTER(lvBatteryCurrent, 1.0, 100.0);
 
 #define CHARGE_MONITOR_TIME 30000  // 30 seconds
 NEW_TIMER(chargeMonitorTimer, CHARGE_MONITOR_TIME);
-NEW_TIMER(dcdcReadyTimer, 3000);
+NEW_TIMER(dcdcReadyTimer, 2000); // 2 seconds for DCDC to start up
 NEW_TIMER(faultTimer, 10000);
 
 /******************************************************************************
@@ -148,11 +149,12 @@ void dcdc_support_request(LV_BATTERY_entry_types_E entry_type) {
         case EXIT:
             break;
         case RUN:
-            if ((CAN_bms_power_systems_DCDC_state_get() == true) && (IO_GET_DCDC_FAULT() == false)) {
-                lv_battery_nextState = battery_and_dcdc_on_state;
-            }
             if(SysTick_TimeOut(dcdcReadyTimer)) {
-                lv_battery_nextState = faulted_state;
+                if ((CAN_bms_power_systems_DCDC_state_get() == true) && (IO_GET_DCDC_FAULT() == false)) {
+                    lv_battery_nextState = battery_and_dcdc_on_state;
+                } else {
+                    lv_battery_nextState = faulted_state;
+                }
             }
             break;
         default:
@@ -161,20 +163,25 @@ void dcdc_support_request(LV_BATTERY_entry_types_E entry_type) {
 }
 
 void battery_and_dcdc_on(LV_BATTERY_entry_types_E entry_type) {
+    
+    static uint16_t faultCount = 0;
+                
     switch (entry_type) {
         case ENTRY:
             CAN_mcu_command_DCDC_enable_set(1);
             IO_SET_BATT_EN(HIGH);
             IO_SET_DCDC_EN(HIGH);
+            CAN_mcu_mcu_debug_debug_value_3_set(0);
             break;
         case EXIT:
             CAN_mcu_command_DCDC_enable_set(0);
             IO_SET_DCDC_EN(LOW);
             break;
         case RUN:
+            faultCount++;
             if ((IO_GET_DCDC_FAULT() == true)){// || (CAN_bms_power_systems_DCDC_state_get() == false)) {
                 lv_battery_nextState = faulted_state;
-                CAN_mcu_mcu_debug_debug_value_3_set(1);
+                CAN_mcu_mcu_debug_debug_value_3_set(faultCount);
             }
             break;
         default:

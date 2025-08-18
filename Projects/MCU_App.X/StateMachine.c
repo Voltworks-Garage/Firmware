@@ -19,6 +19,7 @@
 #include "lvBattery.h"
 #include "can_iso_tp_lite.h"
 #include "mcc_generated_files/watchdog.h"
+#include "CommandService.h"
 
 
 /******************************************************************************
@@ -37,6 +38,7 @@ state(running)\
 state(charging)\
 state(goingToSleep)\
 state(sleep)\
+state(diag)\
 
 /*Creates an enum of states suffixed with _state*/
 #define STATE_FORM(WORD) WORD##_state,
@@ -80,11 +82,13 @@ uint8_t sm_keepAwakeFlag = 0;
 
 NEW_TIMER(idleTimer, 60000);
 NEW_TIMER(SwEnTimer, 1);
+NEW_TIMER(diagTimer, 60000);
 
 /******************************************************************************
  * Function Prototypes
  *******************************************************************************/
-
+void halt_all_tasks(void);
+void resume_all_tasks(void);
 /******************************************************************************
  * Function Definitions
  *******************************************************************************/
@@ -165,6 +169,17 @@ void idle(STATE_MACHINE_entry_types_E entry_type) {
             if (j1772getProxState() == J1772_CONNECTED) {
                 sm_nextState = charging_state;
             }
+            switch (CommandService_GetEvent()) {
+                case COMMAND_SERVICE_TYPE_TESTER_PRESENT:
+                case COMMAND_SERVICE_TYPE_IO_CONTROL:
+                    sm_nextState = diag_state;
+                    break;
+                case COMMAND_SERVICE_TYPE_SLEEP:
+                    sm_nextState = goingToSleep_state;
+                    break;
+                default:
+                    break;
+            }
 
             // // If the kill switch is pressed, go to goingToSleep and prepare for sleep.
             // if (IgnitionControl_GetKillSwitchStatus() == BUTTON_PRESSED) {
@@ -206,9 +221,11 @@ void running(STATE_MACHINE_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
             IO_SET_HEADLIGHT_HI_EN(HIGH);
+            CAN_mcu_command_motor_controller_enable_set(1);
             break;
         case EXIT:
             IO_SET_HEADLIGHT_HI_EN(LOW);
+            CAN_mcu_command_motor_controller_enable_set(0);
             break;
         case RUN:
             // If the start button is held, go to idle state.
@@ -323,8 +340,52 @@ void sleep(STATE_MACHINE_entry_types_E entry_type) {
     }
 }
 
-/****Helpers*******************************************************************/
+void diag(STATE_MACHINE_entry_types_E entry_type) {
+    switch (entry_type) {
+        case ENTRY:
+            SysTick_TimerStart(diagTimer);
+            halt_all_tasks();
+            break;
+        case EXIT:
+            resume_all_tasks();
+            break;
+        case RUN:
+            if (SysTick_TimeOut(diagTimer)) {
+                sm_nextState = boot_state;
+            }
+            switch (CommandService_GetEvent()) {
+                case COMMAND_SERVICE_TYPE_TESTER_PRESENT:
+                    sm_nextState = boot_state;
+                    break;
+                case COMMAND_SERVICE_TYPE_IO_CONTROL:
+                    SysTick_TimerStart(diagTimer);
+                    break;
+                default:
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
+}
 
+/****Helpers*******************************************************************/
+void halt_all_tasks(void) {
+    LightsControl_Halt();
+    HeatedGripControl_Halt();
+    HornControl_Halt();
+    j1772Control_Halt();
+    IgnitionControl_Halt();
+    LvBattery_Halt();
+}
+void resume_all_tasks(void) {
+    LightsControl_Init();
+    HeatedGripControl_Init();
+    HornControl_Init();
+    j1772Control_Init();
+    IgnitionControl_Init();
+    LvBattery_Init();
+}
 
 /*** End of File **************************************************************/
 

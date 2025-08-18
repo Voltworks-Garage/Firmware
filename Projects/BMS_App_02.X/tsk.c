@@ -28,11 +28,11 @@
 #include "IO.h"
 #include "bms_dbc.h"
 #include "CAN.h"
-#include "can_iso_tp_lite.h"
 #include "can_populate.h"
 #include "ev_charger.h"
 #include "bms.h"
 #include "dcdc.h"
+#include "contactorControl.h"
 #include "mcc_generated_files/watchdog.h"
 #include "../../Libraries/CommandService/commandService.h"
 
@@ -86,12 +86,18 @@ void Tsk_init(void) {
     PinSetup_Init(); // Pin setup should be first
     CAN_DBC_init(); // Initialize the CAN mailboxes
     CAN_timeStampFunc(SysTick_Get); // enable CAN message time-stamping
-    StateMachine_Init();
+    
     IO_SET_DEBUG_LED_EN(HIGH);
-    BMS_Init();
-    isoTP_init();
-    DCDC_Init();
+
+    // enable apps
+    StateMachine_Init();
     CommandService_Init();
+    BMS_Init();
+    DCDC_Init();
+    EV_Charger_Init();
+    CONTACTOR_Init();
+
+    // Initialize the watchdog timer
     WATCHDOG_TimerClear();
     WATCHDOG_TimerSoftwareEnable();
 
@@ -104,13 +110,14 @@ void Tsk_init(void) {
  * Runs every 1ms
  */
 void Tsk_1ms(void) {
-    run_iso_tp_1ms();
+
     DCDC_Run_1ms();
     CommandService_Run();
     BMS_Run_1ms();
+    CONTACTOR_Run_1ms();
     
     CAN_populate_1ms();
-    //CAN_send_1ms();
+    CAN_send_1ms();
 }
 
 /**
@@ -139,6 +146,7 @@ void Tsk_10ms(void) {
 void Tsk_100ms(void) {
     WATCHDOG_TimerClear();
     DCDC_Run_100ms();
+    CONTACTOR_Run_100ms();
     IO_SET_DEBUG_LED_EN(TOGGLE); //Toggle Debug LED at 10Hz for scheduler running status
 
     CAN_send_100ms();

@@ -74,6 +74,9 @@ uint8_t SysTick_TimeOut(SysTick_Timer_S *timer){
     }
     return 0;
 }
+void SysTick_TimerUpdate(SysTick_Timer_S *timer, uint32_t time){
+    timer->end_value = time;
+}
 
 void SysTick_CPUTimerStart(void){
     CPU_Timer = TMR5;

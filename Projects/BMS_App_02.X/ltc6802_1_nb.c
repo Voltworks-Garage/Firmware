@@ -502,6 +502,7 @@ void faulted(LTC6802_1_entry_types_E entry_type) {
         case RUN:
             // Stay in faulted state until explicit reset
             // Could add timeout recovery logic here if desired
+            LTC6802_1_Resume();
             break;
         case EXIT:
             break;

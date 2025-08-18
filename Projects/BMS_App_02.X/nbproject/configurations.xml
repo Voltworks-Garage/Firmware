@@ -54,6 +54,7 @@
         <itemPath>j1772.h</itemPath>
         <itemPath>ltc6802_1_nb.h</itemPath>
         <itemPath>commandService_config.h</itemPath>
+        <itemPath>contactorControl.h</itemPath>
       </logicalFolder>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
@@ -127,6 +128,7 @@
         <itemPath>dcdc.c</itemPath>
         <itemPath>j1772.c</itemPath>
         <itemPath>ltc6802_1_nb.c</itemPath>
+        <itemPath>contactorControl.c</itemPath>
       </logicalFolder>
     </logicalFolder>
   </logicalFolder>

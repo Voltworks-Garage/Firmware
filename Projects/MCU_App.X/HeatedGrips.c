@@ -64,9 +64,14 @@ static bool heatedGripsEnabled = false;
 #define HEATED_GRIPS_HIGH_PWM_DUTY 100
 
 static uint32_t pwmDutyCycle = 0;
+
+#define PWM_PERIOD_MS 3000
+NEW_TIMER(pwmPeriod, PWM_PERIOD_MS);
+NEW_TIMER(pwmDuty, 0);
 /******************************************************************************
  * Function Prototypes
  *******************************************************************************/
+static void updateHeatedGripsPWM(void);
 
 /******************************************************************************
  * Function Definitions
@@ -80,6 +85,7 @@ void HeatedGripControl_Init(void) {
     heated_grips_prevState = heated_grips_idle_state;
     heated_grips_nextState = heated_grips_idle_state;
     heated_grips_state_functions[heated_grips_curState](ENTRY);
+    SysTick_TimerStart(pwmPeriod);
 }
 
 void HeatedGripControl_Run_100ms(void) {
@@ -95,6 +101,8 @@ void HeatedGripControl_Run_100ms(void) {
     }
     
     heated_grips_state_functions[heated_grips_curState](RUN);
+    
+    updateHeatedGripsPWM();
 }
 
 void HeatedGripControl_Halt(void) {
@@ -107,17 +115,14 @@ void HeatedGripControl_Halt(void) {
 void heated_grips_idle(HEATED_GRIPS_CONTROL_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
-            IO_SET_HEATED_GRIPS_EN(LOW);
-            IO_SET_HEATED_SEAT_EN(LOW);
             pwmDutyCycle = 0;
             break;
         case EXIT:
             break;
         case RUN:
-            if (IgnitionControl_GetAssButtonEvent() == BUTTON_WAS_RELEASED) {
-                if (!IgnitionControl_GetAssButtonIsHeld(false)) {
-                    heated_grips_nextState = heated_grips_low_state;
-                }
+            CAN_mcu_mcu_debug_debug_value_4_set(0);
+            if (IgnitionControl_GetAssButtonEvent() == BUTTON_WAS_PRESSED) {
+                heated_grips_nextState = heated_grips_low_state;
             }
             break;
         default:
@@ -128,19 +133,14 @@ void heated_grips_idle(HEATED_GRIPS_CONTROL_entry_types_E entry_type) {
 void heated_grips_low(HEATED_GRIPS_CONTROL_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
-            IO_SET_HEATED_GRIPS_EN(HIGH);
-            IO_SET_HEATED_SEAT_EN(HIGH);
             pwmDutyCycle = HEATED_GRIPS_LOW_PWM_DUTY;
             break;
         case EXIT:
             break;
         case RUN:
-            if (IgnitionControl_GetAssButtonEvent() == BUTTON_WAS_RELEASED) {
-                if (IgnitionControl_GetAssButtonIsHeld(false)) {
-                    heated_grips_nextState = heated_grips_idle_state;
-                } else {
-                    heated_grips_nextState = heated_grips_medium_state;
-                }
+            CAN_mcu_mcu_debug_debug_value_4_set(1);
+            if (IgnitionControl_GetAssButtonEvent() == BUTTON_WAS_PRESSED) {
+                 heated_grips_nextState = heated_grips_medium_state;
             }
             break;
         default:
@@ -151,19 +151,14 @@ void heated_grips_low(HEATED_GRIPS_CONTROL_entry_types_E entry_type) {
 void heated_grips_medium(HEATED_GRIPS_CONTROL_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
-            IO_SET_HEATED_GRIPS_EN(HIGH);
-            IO_SET_HEATED_SEAT_EN(HIGH);
             pwmDutyCycle = HEATED_GRIPS_MEDIUM_PWM_DUTY;
             break;
         case EXIT:
             break;
         case RUN:
-            if (IgnitionControl_GetAssButtonEvent() == BUTTON_WAS_RELEASED) {
-                if (IgnitionControl_GetAssButtonIsHeld(false)) {
-                    heated_grips_nextState = heated_grips_idle_state;
-                } else {
-                    heated_grips_nextState = heated_grips_high_state;
-                }
+            CAN_mcu_mcu_debug_debug_value_4_set(3);
+            if (IgnitionControl_GetAssButtonEvent() == BUTTON_WAS_PRESSED) {
+                heated_grips_nextState = heated_grips_high_state;
             }
             break;
         default:
@@ -174,13 +169,12 @@ void heated_grips_medium(HEATED_GRIPS_CONTROL_entry_types_E entry_type) {
 void heated_grips_high(HEATED_GRIPS_CONTROL_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
-            IO_SET_HEATED_GRIPS_EN(HIGH);
-            IO_SET_HEATED_SEAT_EN(HIGH);
             pwmDutyCycle = HEATED_GRIPS_HIGH_PWM_DUTY;
             break;
         case EXIT:
             break;
         case RUN:
+        CAN_mcu_mcu_debug_debug_value_4_set(4);
             if (IgnitionControl_GetAssButtonEvent() == BUTTON_WAS_RELEASED) {
                 heated_grips_nextState = heated_grips_idle_state;
             }
@@ -188,6 +182,22 @@ void heated_grips_high(HEATED_GRIPS_CONTROL_entry_types_E entry_type) {
         default:
             break;
     }
+}
+
+static void updateHeatedGripsPWM(void) {
+    if(SysTick_TimeOut(pwmPeriod)){
+        SysTick_TimerUpdate(pwmDuty, pwmDutyCycle * PWM_PERIOD_MS / 100);
+        SysTick_TimerStart(pwmDuty);
+        SysTick_TimerStart(pwmPeriod);
+        if(pwmDutyCycle > 0){
+            IO_SET_HEATED_GRIPS_EN(HIGH);
+            IO_SET_HEATED_SEAT_EN(HIGH);
+        }
+    } else if (SysTick_TimeOut(pwmDuty)) {
+        IO_SET_HEATED_GRIPS_EN(LOW);
+        IO_SET_HEATED_SEAT_EN(LOW);
+    }
+
 }
 
 /*** End of File **************************************************************/

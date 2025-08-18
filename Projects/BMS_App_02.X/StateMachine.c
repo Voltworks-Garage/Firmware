@@ -11,6 +11,7 @@
 #include "can_iso_tp_lite.h"
 #include "watchdog.h"
 #include "Events.h"
+#include "../../Libraries/CommandService/commandService.h"
 
 
 /******************************************************************************
@@ -110,11 +111,14 @@ void idle(STATE_MACHINE_entry_types_E entry_type) {
         case EXIT:
             break;
         case RUN:
-            if (isoTP_peekCommand() == ISO_TP_TESTER_PRESENT){
+            if (CommandService_GetEvent() == COMMAND_SERVICE_TYPE_TESTER_PRESENT) {
                 sm_nextState = diag_state;
             }
-            if (isoTP_peekCommand() == ISO_TP_IO_CONTROL){
+            if (CommandService_GetEvent() == COMMAND_SERVICE_TYPE_IO_CONTROL) {
                 sm_nextState = diag_state;
+            }
+            if (CommandService_GetEvent() == COMMAND_SERVICE_TYPE_SLEEP) {
+                sm_nextState = sleep_state;
             }
             if (IO_GET_V12_POWER_STATUS() == 0) {
                 sm_nextState = standby_state;
@@ -226,6 +230,7 @@ void halt_all_tasks(void){
 
 void resume_all_tasks(void){
     DCDC_Run();
+    BMS_Init();
 }
 
 /*** End of File **************************************************************/
