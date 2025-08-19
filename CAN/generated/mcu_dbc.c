@@ -4,7 +4,7 @@
 /**********************************************************
  * dash NODE MESSAGES
  */
-#define CAN_dash_status_ID 0x701
+#define CAN_dash_status_ID 0x705
 
 static CAN_message_S CAN_dash_status={
 	.canID = CAN_dash_status_ID,
@@ -137,7 +137,7 @@ uint16_t CAN_dash_command_hornRequest_get(void){
 	return (data * 1.0) + 0;
 }
 
-#define CAN_dash_data1_ID 0x1806e5f5
+#define CAN_dash_data1_ID 0x18005075
 
 static CAN_message_S CAN_dash_data1={
 	.canID = CAN_dash_data1_ID,
@@ -809,7 +809,7 @@ void CAN_mcu_motorControllerRequest_send(void){
 
 static CAN_payload_S CAN_mcu_boot_response_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 static volatile uint8_t CAN_mcu_boot_response_status = 0;
-#define CAN_mcu_boot_response_ID 0xa2
+#define CAN_mcu_boot_response_ID 0xA2
 
 static CAN_message_S CAN_mcu_boot_response={
 	.canID = CAN_mcu_boot_response_ID,
@@ -2964,6 +2964,84 @@ float CAN_bms_cell_temperatures_temp_24_get(void){
 /**********************************************************
  * motorcontroller NODE MESSAGES
  */
+#define CAN_motorcontroller_heartbeat_ID 0x701
+
+static CAN_message_S CAN_motorcontroller_heartbeat={
+	.canID = CAN_motorcontroller_heartbeat_ID,
+	.canXID = 0,
+	.dlc = 8,
+	.payload = 0,
+	.canMessageStatus = 0
+};
+
+#define CAN_MOTORCONTROLLER_HEARTBEAT_HEARTBEAT_RANGE 16
+#define CAN_MOTORCONTROLLER_HEARTBEAT_HEARTBEAT_OFFSET 0
+
+uint8_t CAN_motorcontroller_heartbeat_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_motorcontroller_heartbeat);
+}
+uint8_t CAN_motorcontroller_heartbeat_checkDataIsStale(void){
+	return CAN_checkDataIsStale(&CAN_motorcontroller_heartbeat, 60);
+}
+uint16_t CAN_motorcontroller_heartbeat_heartbeat_get(void){
+	// Extract 16-bit signal at bit offset 0
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_motorcontroller_heartbeat.payload->word0 & 0xFFFF) >> 0) << 0;
+	return (data * 1.0) + 0;
+}
+
+#define CAN_motorcontroller_SYNC_ID 0x80
+
+static CAN_message_S CAN_motorcontroller_SYNC={
+	.canID = CAN_motorcontroller_SYNC_ID,
+	.canXID = 0,
+	.dlc = 8,
+	.payload = 0,
+	.canMessageStatus = 0
+};
+
+#define CAN_MOTORCONTROLLER_SYNC_SYNC_DUMMY_RANGE 16
+#define CAN_MOTORCONTROLLER_SYNC_SYNC_DUMMY_OFFSET 0
+
+uint8_t CAN_motorcontroller_SYNC_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_motorcontroller_SYNC);
+}
+uint8_t CAN_motorcontroller_SYNC_checkDataIsStale(void){
+	return CAN_checkDataIsStale(&CAN_motorcontroller_SYNC, 60);
+}
+uint16_t CAN_motorcontroller_SYNC_SYNC_dummy_get(void){
+	// Extract 16-bit signal at bit offset 0
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_motorcontroller_SYNC.payload->word0 & 0xFFFF) >> 0) << 0;
+	return (data * 1.0) + 0;
+}
+
+#define CAN_motorcontroller_Emergency_ID 0x81
+
+static CAN_message_S CAN_motorcontroller_Emergency={
+	.canID = CAN_motorcontroller_Emergency_ID,
+	.canXID = 0,
+	.dlc = 8,
+	.payload = 0,
+	.canMessageStatus = 0
+};
+
+#define CAN_MOTORCONTROLLER_EMERGENCY_EMCY_RANGE 16
+#define CAN_MOTORCONTROLLER_EMERGENCY_EMCY_OFFSET 0
+
+uint8_t CAN_motorcontroller_Emergency_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_motorcontroller_Emergency);
+}
+uint8_t CAN_motorcontroller_Emergency_checkDataIsStale(void){
+	return CAN_checkDataIsStale(&CAN_motorcontroller_Emergency, 60);
+}
+uint16_t CAN_motorcontroller_Emergency_EMCY_get(void){
+	// Extract 16-bit signal at bit offset 0
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_motorcontroller_Emergency.payload->word0 & 0xFFFF) >> 0) << 0;
+	return (data * 1.0) + 0;
+}
+
 #define CAN_motorcontroller_motorStatus_ID 0x731
 
 static CAN_message_S CAN_motorcontroller_motorStatus={
@@ -3046,7 +3124,7 @@ uint16_t CAN_motorcontroller_motorStatus_VphaseC_get(void){
 	return (data * 1.0) + 0;
 }
 
-#define CAN_motorcontroller_response_ID 0x6ff
+#define CAN_motorcontroller_response_ID 0x6FF
 
 static CAN_message_S CAN_motorcontroller_response={
 	.canID = CAN_motorcontroller_response_ID,
@@ -3131,7 +3209,7 @@ uint16_t CAN_motorcontroller_response_byte8_get(void){
 /**********************************************************
  * boot_host NODE MESSAGES
  */
-#define CAN_boot_host_mcu_ID 0xa3
+#define CAN_boot_host_mcu_ID 0xA3
 
 static CAN_message_S CAN_boot_host_mcu={
 	.canID = CAN_boot_host_mcu_ID,
@@ -3271,6 +3349,9 @@ void CAN_DBC_init(void) {
 	CAN_configureMailbox(&CAN_bms_debug);
 	CAN_configureMailbox(&CAN_bms_cell_voltages);
 	CAN_configureMailbox(&CAN_bms_cell_temperatures);
+	CAN_configureMailbox(&CAN_motorcontroller_heartbeat);
+	CAN_configureMailbox(&CAN_motorcontroller_SYNC);
+	CAN_configureMailbox(&CAN_motorcontroller_Emergency);
 	CAN_configureMailbox(&CAN_motorcontroller_motorStatus);
 	CAN_configureMailbox(&CAN_motorcontroller_response);
 	CAN_configureMailbox(&CAN_boot_host_mcu);

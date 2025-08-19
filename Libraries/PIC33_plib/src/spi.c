@@ -200,7 +200,7 @@ uint8_t spi2Ready(void) {
     return spi2Status;
 }
 
-void __attribute__((__interrupt__, auto_psv)) _SPI1Interrupt(void) {
+void __attribute__((__interrupt__, auto_psv, shadow)) _SPI1Interrupt(void) {
     _SPI1IF = 0; /* Clear the Interrupt flag*/
     
     // Handle buffered transactions

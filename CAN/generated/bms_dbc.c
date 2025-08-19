@@ -2159,7 +2159,7 @@ void CAN_bms_debug_send(void){
 
 static CAN_payload_S CAN_bms_boot_response_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 static volatile uint8_t CAN_bms_boot_response_status = 0;
-#define CAN_bms_boot_response_ID 0xa2
+#define CAN_bms_boot_response_ID 0xA2
 
 static CAN_message_S CAN_bms_boot_response={
 	.canID = CAN_bms_boot_response_ID,
@@ -2253,7 +2253,7 @@ void CAN_bms_boot_response_send(void){
 
 static CAN_payload_S CAN_bms_charger_request_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 static volatile uint8_t CAN_bms_charger_request_status = 0;
-#define CAN_bms_charger_request_ID 0x1806e5f4
+#define CAN_bms_charger_request_ID 0x18005074
 
 static CAN_message_S CAN_bms_charger_request={
 	.canID = CAN_bms_charger_request_ID,
@@ -2946,7 +2946,7 @@ void CAN_bms_cell_temperatures_send(void){
 /**********************************************************
  * charger NODE MESSAGES
  */
-#define CAN_charger_status_ID 0x18ff50e5
+#define CAN_charger_status_ID 0x19005075
 
 static CAN_message_S CAN_charger_status={
 	.canID = CAN_charger_status_ID,
@@ -3056,7 +3056,7 @@ uint16_t CAN_charger_status_byte8_get(void){
 /**********************************************************
  * boot_host NODE MESSAGES
  */
-#define CAN_boot_host_bms_ID 0xa1
+#define CAN_boot_host_bms_ID 0xA1
 
 static CAN_message_S CAN_boot_host_bms={
 	.canID = CAN_boot_host_bms_ID,

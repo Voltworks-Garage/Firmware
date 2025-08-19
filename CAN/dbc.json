@@ -5,7 +5,7 @@
             "messages": [
                 {
                     "name": "status",
-                    "id": 1793,
+                    "id": "0x705",
                     "x_id": 0,
                     "freq": 10,
                     "consumers": [
@@ -65,7 +65,7 @@
                 },
                 {
                     "name": "command",
-                    "id": 1794,
+                    "id": "0x702",
                     "x_id": 0,
                     "freq": 10,
                     "consumers": [
@@ -111,7 +111,7 @@
                 },
                 {
                     "name": "data1",
-                    "id": 403105269,
+                    "id": "0x18005075",
                     "x_id": 1,
                     "freq": 10,
                     "consumers": [
@@ -150,7 +150,7 @@
                 },
                 {
                     "name": "data2",
-                    "id": 1796,
+                    "id": "0x704",
                     "x_id": 0,
                     "freq": 10,
                     "consumers": [
@@ -194,7 +194,7 @@
             "messages": [
                 {
                     "name": "status",
-                    "id": 1809,
+                    "id": "0x711",
                     "x_id": 0,
                     "freq": 10,
                     "consumers": [
@@ -637,7 +637,7 @@
                 },
                 {
                     "name": "command",
-                    "id": 1810,
+                    "id": "0x712",
                     "x_id": 0,
                     "freq": 100,
                     "signals": [
@@ -680,7 +680,7 @@
                 },
                 {
                     "name": "motorControllerRequest",
-                    "id": 1792,
+                    "id": "0x700",
                     "x_id": 0,
                     "freq": 1,
                     "consumers": [
@@ -698,7 +698,7 @@
                 },
                 {
                     "name": "boot_response",
-                    "id": 162,
+                    "id": "0xA2",
                     "x_id": 0,
                     "freq": "",
                     "consumers": [
@@ -772,7 +772,7 @@
                 },
                 {
                     "name": "mcu_debug",
-                    "id": 1811,
+                    "id": "0x713",
                     "x_id": 0,
                     "freq": 10,
                     "consumers": [
@@ -924,7 +924,7 @@
             "messages": [
                 {
                     "name": "status",
-                    "id": 1825,
+                    "id": "0x721",
                     "x_id": 0,
                     "freq": 10,
                     "consumers": [
@@ -1176,7 +1176,7 @@
                 },
                 {
                     "name": "power_systems",
-                    "id": 1826,
+                    "id": "0x722",
                     "x_id": 0,
                     "freq": 10,
                     "consumers": [
@@ -1265,7 +1265,7 @@
                 },
                 {
                     "name": "debug",
-                    "id": 1827,
+                    "id": "0x723",
                     "x_id": 0,
                     "freq": 10,
                     "consumers": [
@@ -1317,7 +1317,7 @@
                 },
                 {
                     "name": "boot_response",
-                    "id": 162,
+                    "id": "0xA2",
                     "x_id": 0,
                     "freq": "",
                     "consumers": [
@@ -1391,7 +1391,7 @@
                 },
                 {
                     "name": "charger_request",
-                    "id": 403105268,
+                    "id": "0x18005074",
                     "x_id": 1,
                     "freq": 1000,
                     "consumers": [
@@ -1460,7 +1460,7 @@
                 },
                 {
                     "name": "cell_voltages",
-                    "id": 1829,
+                    "id": "0x725",
                     "x_id": 0,
                     "freq": 100,
                     "consumers": [
@@ -1671,7 +1671,7 @@
                 },
                 {
                     "name": "cell_temperatures",
-                    "id": 1830,
+                    "id": "0x726",
                     "x_id": 0,
                     "freq": 1000,
                     "consumers": [
@@ -1918,8 +1918,62 @@
             "name": "motorcontroller",
             "messages": [
                 {
+                    "name": "heartbeat",
+                    "id": "0x701",
+                    "x_id": 0,
+                    "freq": 30,
+                    "consumers": [
+                        "mcu"
+                    ],
+                    "signals": [
+                        {
+                            "name": "heartbeat",
+                            "length": 16,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "SYNC",
+                    "id": "0x80",
+                    "x_id": 0,
+                    "freq": 30,
+                    "consumers": [
+                        "mcu"
+                    ],
+                    "signals": [                        
+                        {
+                            "name": "SYNC_dummy",
+                            "length": 16,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": ""
+                        }
+                    ]
+                },
+                                {
+                    "name": "Emergency",
+                    "id": "0x81",
+                    "x_id": 0,
+                    "freq": 30,
+                    "consumers": [
+                        "mcu"
+                    ],
+                    "signals": [
+                        {
+                            "name": "EMCY",
+                            "length": 16,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": ""
+                        }
+                    ]
+                },
+                {
                     "name": "motorStatus",
-                    "id": 1841,
+                    "id": "0x731",
                     "x_id": 0,
                     "freq": 10,
                     "consumers": [
@@ -1986,7 +2040,7 @@
                 },
                 {
                     "name": "response",
-                    "id": 1791,
+                    "id": "0x6FF",
                     "x_id": 0,
                     "freq": null,
                     "consumers": [
@@ -2058,7 +2112,7 @@
             "messages": [
                 {
                     "name": "status",
-                    "id": 419385573,
+                    "id": "0x19005075",
                     "x_id": 1,
                     "freq": 1000,
                     "consumers": [
@@ -2151,7 +2205,7 @@
             "messages": [
                 {
                     "name": "bms",
-                    "id": 161,
+                    "id": "0xA1",
                     "x_id": 0,
                     "freq": 1,
                     "consumers": [
@@ -2225,7 +2279,7 @@
                 },
                 {
                     "name": "mcu",
-                    "id": 163,
+                    "id": "0xA3",
                     "x_id": 0,
                     "freq": 1,
                     "consumers": [
@@ -2299,7 +2353,7 @@
                 },
                 {
                     "name": "dash",
-                    "id": 165,
+                    "id": "0xA5",
                     "x_id": 0,
                     "freq": 1,
                     "consumers": [

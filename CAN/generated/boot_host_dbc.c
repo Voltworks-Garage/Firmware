@@ -65,7 +65,7 @@ uint16_t CAN_mcu_command_motor_controller_enable_get(void){
 	return (data * 1.0) + 0;
 }
 
-#define CAN_mcu_boot_response_ID 0xa2
+#define CAN_mcu_boot_response_ID 0xA2
 
 static CAN_message_S CAN_mcu_boot_response={
 	.canID = CAN_mcu_boot_response_ID,
@@ -224,7 +224,7 @@ uint16_t CAN_bms_debug_byte1_get(void){
 	return (data * 1) + 0;
 }
 
-#define CAN_bms_boot_response_ID 0xa2
+#define CAN_bms_boot_response_ID 0xA2
 
 static CAN_message_S CAN_bms_boot_response={
 	.canID = CAN_bms_boot_response_ID,
@@ -322,7 +322,7 @@ uint16_t CAN_bms_boot_response_byte7_get(void){
  */
 static CAN_payload_S CAN_boot_host_bms_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 static volatile uint8_t CAN_boot_host_bms_status = 0;
-#define CAN_boot_host_bms_ID 0xa1
+#define CAN_boot_host_bms_ID 0xA1
 
 static CAN_message_S CAN_boot_host_bms={
 	.canID = CAN_boot_host_bms_ID,
@@ -416,7 +416,7 @@ void CAN_boot_host_bms_send(void){
 
 static CAN_payload_S CAN_boot_host_mcu_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 static volatile uint8_t CAN_boot_host_mcu_status = 0;
-#define CAN_boot_host_mcu_ID 0xa3
+#define CAN_boot_host_mcu_ID 0xA3
 
 static CAN_message_S CAN_boot_host_mcu={
 	.canID = CAN_boot_host_mcu_ID,
@@ -510,7 +510,7 @@ void CAN_boot_host_mcu_send(void){
 
 static CAN_payload_S CAN_boot_host_dash_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 static volatile uint8_t CAN_boot_host_dash_status = 0;
-#define CAN_boot_host_dash_ID 0xa5
+#define CAN_boot_host_dash_ID 0xA5
 
 static CAN_message_S CAN_boot_host_dash={
 	.canID = CAN_boot_host_dash_ID,

@@ -47,6 +47,30 @@ uint16_t CAN_bms_debug_byte1_get(void);
 /**********************************************************
  * motorcontroller NODE MESSAGES
  */
+#define CAN_motorcontroller_heartbeat_interval() 30
+void CAN_motorcontroller_heartbeat_heartbeat_set(uint16_t heartbeat);
+void CAN_motorcontroller_heartbeat_dlc_set(uint8_t dlc);
+
+
+void CAN_motorcontroller_heartbeat_send(void);
+
+
+#define CAN_motorcontroller_SYNC_interval() 30
+void CAN_motorcontroller_SYNC_SYNC_dummy_set(uint16_t SYNC_dummy);
+void CAN_motorcontroller_SYNC_dlc_set(uint8_t dlc);
+
+
+void CAN_motorcontroller_SYNC_send(void);
+
+
+#define CAN_motorcontroller_Emergency_interval() 30
+void CAN_motorcontroller_Emergency_EMCY_set(uint16_t EMCY);
+void CAN_motorcontroller_Emergency_dlc_set(uint8_t dlc);
+
+
+void CAN_motorcontroller_Emergency_send(void);
+
+
 #define CAN_motorcontroller_motorStatus_interval() 10
 void CAN_motorcontroller_motorStatus_motorSpeed_set(uint16_t motorSpeed);
 void CAN_motorcontroller_motorStatus_motorCurrent_set(float motorCurrent);
@@ -88,6 +112,7 @@ void CAN_send_1ms(void);
 void CAN_send_10ms(void);
 void CAN_send_100ms(void);
 void CAN_send_1000ms(void);
+void CAN_send_30ms(void);
 
 
 #endif /*motorcontroller_DBC_H*/

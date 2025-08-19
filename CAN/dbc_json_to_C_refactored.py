@@ -499,7 +499,14 @@ def setup_tx_message_payload(dot_c: Any, message_id: str, message: Dict[str, Any
 
 def write_message_structure(dot_c: Any, _: Any, message_id: str, message: Dict[str, Any], payload_init: str, is_tx: bool = False) -> None:
     """Write the CAN message structure definition."""
-    message_id_hex = hex(message["id"])
+    # Handle both integer and hex string IDs
+    message_id_value = message["id"]
+    if isinstance(message_id_value, str):
+        # Already a hex string, use as-is
+        message_id_hex = message_id_value
+    else:
+        # Convert integer to hex string
+        message_id_hex = hex(message_id_value)
     can_xid = message.get("x_id", 0)
     
     # Write message ID define

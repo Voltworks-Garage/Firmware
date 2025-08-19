@@ -137,7 +137,7 @@ uint16_t CAN_bms_debug_byte1_get(void){
 	return (data * 1) + 0;
 }
 
-#define CAN_bms_charger_request_ID 0x1806e5f4
+#define CAN_bms_charger_request_ID 0x18005074
 
 static CAN_message_S CAN_bms_charger_request={
 	.canID = CAN_bms_charger_request_ID,
@@ -227,7 +227,7 @@ uint16_t CAN_bms_charger_request_byte_8_get(void){
  */
 static CAN_payload_S CAN_charger_status_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 static volatile uint8_t CAN_charger_status_status = 0;
-#define CAN_charger_status_ID 0x18ff50e5
+#define CAN_charger_status_ID 0x19005075
 
 static CAN_message_S CAN_charger_status={
 	.canID = CAN_charger_status_ID,

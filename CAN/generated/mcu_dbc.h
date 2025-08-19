@@ -303,6 +303,21 @@ float CAN_bms_cell_temperatures_temp_24_get(void);
 /**********************************************************
  * motorcontroller NODE MESSAGES
  */
+#define CAN_motorcontroller_heartbeat_interval() 30
+uint8_t CAN_motorcontroller_heartbeat_checkDataIsUnread(void);
+uint8_t CAN_motorcontroller_heartbeat_checkDataIsStale(void);
+uint16_t CAN_motorcontroller_heartbeat_heartbeat_get(void);
+
+#define CAN_motorcontroller_SYNC_interval() 30
+uint8_t CAN_motorcontroller_SYNC_checkDataIsUnread(void);
+uint8_t CAN_motorcontroller_SYNC_checkDataIsStale(void);
+uint16_t CAN_motorcontroller_SYNC_SYNC_dummy_get(void);
+
+#define CAN_motorcontroller_Emergency_interval() 30
+uint8_t CAN_motorcontroller_Emergency_checkDataIsUnread(void);
+uint8_t CAN_motorcontroller_Emergency_checkDataIsStale(void);
+uint16_t CAN_motorcontroller_Emergency_EMCY_get(void);
+
 #define CAN_motorcontroller_motorStatus_interval() 10
 uint8_t CAN_motorcontroller_motorStatus_checkDataIsUnread(void);
 uint8_t CAN_motorcontroller_motorStatus_checkDataIsStale(void);

@@ -6,7 +6,7 @@
  */
 static CAN_payload_S CAN_dash_status_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 static volatile uint8_t CAN_dash_status_status = 0;
-#define CAN_dash_status_ID 0x701
+#define CAN_dash_status_ID 0x705
 
 static CAN_message_S CAN_dash_status={
 	.canID = CAN_dash_status_ID,
@@ -148,7 +148,7 @@ void CAN_dash_command_send(void){
 
 static CAN_payload_S CAN_dash_data1_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 static volatile uint8_t CAN_dash_data1_status = 0;
-#define CAN_dash_data1_ID 0x1806e5f5
+#define CAN_dash_data1_ID 0x18005075
 
 static CAN_message_S CAN_dash_data1={
 	.canID = CAN_dash_data1_ID,
@@ -2505,7 +2505,7 @@ uint16_t CAN_bms_debug_byte1_get(void){
 	return (data * 1) + 0;
 }
 
-#define CAN_bms_charger_request_ID 0x1806e5f4
+#define CAN_bms_charger_request_ID 0x18005074
 
 static CAN_message_S CAN_bms_charger_request={
 	.canID = CAN_bms_charger_request_ID,
@@ -3695,7 +3695,7 @@ float CAN_bms_cell_temperatures_temp_24_get(void){
 /**********************************************************
  * boot_host NODE MESSAGES
  */
-#define CAN_boot_host_dash_ID 0xa5
+#define CAN_boot_host_dash_ID 0xA5
 
 static CAN_message_S CAN_boot_host_dash={
 	.canID = CAN_boot_host_dash_ID,

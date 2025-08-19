@@ -166,6 +166,96 @@ uint16_t CAN_bms_debug_byte1_get(void){
 /**********************************************************
  * motorcontroller NODE MESSAGES
  */
+static CAN_payload_S CAN_motorcontroller_heartbeat_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_motorcontroller_heartbeat_status = 0;
+#define CAN_motorcontroller_heartbeat_ID 0x701
+
+static CAN_message_S CAN_motorcontroller_heartbeat={
+	.canID = CAN_motorcontroller_heartbeat_ID,
+	.canXID = 0,
+	.dlc = 8,
+	.payload = &CAN_motorcontroller_heartbeat_payload,
+	.canMessageStatus = &CAN_motorcontroller_heartbeat_status
+};
+
+#define CAN_MOTORCONTROLLER_HEARTBEAT_HEARTBEAT_RANGE 16
+#define CAN_MOTORCONTROLLER_HEARTBEAT_HEARTBEAT_OFFSET 0
+
+void CAN_motorcontroller_heartbeat_heartbeat_set(uint16_t heartbeat){
+	uint16_t data_scaled = heartbeat * 1.0;
+	// Set 16-bit signal at bit offset 0
+	CAN_motorcontroller_heartbeat.payload->word0 &= ~0xFFFF;
+	CAN_motorcontroller_heartbeat.payload->word0 |= data_scaled & 0xFFFF;
+}
+void CAN_motorcontroller_heartbeat_dlc_set(uint8_t dlc){
+	CAN_motorcontroller_heartbeat.dlc = dlc;
+}
+void CAN_motorcontroller_heartbeat_send(void){
+	// Update message status for self-consumption
+	*CAN_motorcontroller_heartbeat.canMessageStatus = 1;
+	CAN_write(&CAN_motorcontroller_heartbeat);
+}
+
+static CAN_payload_S CAN_motorcontroller_SYNC_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_motorcontroller_SYNC_status = 0;
+#define CAN_motorcontroller_SYNC_ID 0x80
+
+static CAN_message_S CAN_motorcontroller_SYNC={
+	.canID = CAN_motorcontroller_SYNC_ID,
+	.canXID = 0,
+	.dlc = 8,
+	.payload = &CAN_motorcontroller_SYNC_payload,
+	.canMessageStatus = &CAN_motorcontroller_SYNC_status
+};
+
+#define CAN_MOTORCONTROLLER_SYNC_SYNC_DUMMY_RANGE 16
+#define CAN_MOTORCONTROLLER_SYNC_SYNC_DUMMY_OFFSET 0
+
+void CAN_motorcontroller_SYNC_SYNC_dummy_set(uint16_t SYNC_dummy){
+	uint16_t data_scaled = SYNC_dummy * 1.0;
+	// Set 16-bit signal at bit offset 0
+	CAN_motorcontroller_SYNC.payload->word0 &= ~0xFFFF;
+	CAN_motorcontroller_SYNC.payload->word0 |= data_scaled & 0xFFFF;
+}
+void CAN_motorcontroller_SYNC_dlc_set(uint8_t dlc){
+	CAN_motorcontroller_SYNC.dlc = dlc;
+}
+void CAN_motorcontroller_SYNC_send(void){
+	// Update message status for self-consumption
+	*CAN_motorcontroller_SYNC.canMessageStatus = 1;
+	CAN_write(&CAN_motorcontroller_SYNC);
+}
+
+static CAN_payload_S CAN_motorcontroller_Emergency_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_motorcontroller_Emergency_status = 0;
+#define CAN_motorcontroller_Emergency_ID 0x81
+
+static CAN_message_S CAN_motorcontroller_Emergency={
+	.canID = CAN_motorcontroller_Emergency_ID,
+	.canXID = 0,
+	.dlc = 8,
+	.payload = &CAN_motorcontroller_Emergency_payload,
+	.canMessageStatus = &CAN_motorcontroller_Emergency_status
+};
+
+#define CAN_MOTORCONTROLLER_EMERGENCY_EMCY_RANGE 16
+#define CAN_MOTORCONTROLLER_EMERGENCY_EMCY_OFFSET 0
+
+void CAN_motorcontroller_Emergency_EMCY_set(uint16_t EMCY){
+	uint16_t data_scaled = EMCY * 1.0;
+	// Set 16-bit signal at bit offset 0
+	CAN_motorcontroller_Emergency.payload->word0 &= ~0xFFFF;
+	CAN_motorcontroller_Emergency.payload->word0 |= data_scaled & 0xFFFF;
+}
+void CAN_motorcontroller_Emergency_dlc_set(uint8_t dlc){
+	CAN_motorcontroller_Emergency.dlc = dlc;
+}
+void CAN_motorcontroller_Emergency_send(void){
+	// Update message status for self-consumption
+	*CAN_motorcontroller_Emergency.canMessageStatus = 1;
+	CAN_write(&CAN_motorcontroller_Emergency);
+}
+
 static CAN_payload_S CAN_motorcontroller_motorStatus_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 static volatile uint8_t CAN_motorcontroller_motorStatus_status = 0;
 #define CAN_motorcontroller_motorStatus_ID 0x731
@@ -254,7 +344,7 @@ void CAN_motorcontroller_motorStatus_send(void){
 
 static CAN_payload_S CAN_motorcontroller_response_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 static volatile uint8_t CAN_motorcontroller_response_status = 0;
-#define CAN_motorcontroller_response_ID 0x6ff
+#define CAN_motorcontroller_response_ID 0x6FF
 
 static CAN_message_S CAN_motorcontroller_response={
 	.canID = CAN_motorcontroller_response_ID,
@@ -364,4 +454,10 @@ void CAN_send_100ms(void){
 
 void CAN_send_1000ms(void){
 	// No messages to send at this interval
+}
+
+void CAN_send_30ms(void){
+	CAN_motorcontroller_heartbeat_send();
+	CAN_motorcontroller_SYNC_send();
+	CAN_motorcontroller_Emergency_send();
 }

@@ -26,6 +26,12 @@ for node in dbc_dict["NODE"]:
         if id is None:
             id = base_address
             base_address +=1
+        else:
+            # Handle both hex string and integer IDs
+            if isinstance(id, str):
+                # Convert hex string to integer
+                id = int(id, 16)
+            # id is already an integer if not a string
         f_DBF.write("[START_MSG] {}_{},{},{},{},{},{}\n".format(node['name'], message['name'], id, "8", len(message['signals']), 1, "X" if message.get("x_id") else "S"))
         offset = 0
         multiplex_offsets = {}  # Track offset for each multiplex group
