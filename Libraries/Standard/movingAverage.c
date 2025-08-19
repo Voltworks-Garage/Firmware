@@ -1,4 +1,5 @@
 #include "movingAverage.h"
+#include <string.h>
 
 float takeMovingAverage(movingAverage_S *x, float value){
     x->sum-=(x->buffer[x->index]);
@@ -11,7 +12,7 @@ float takeMovingAverage(movingAverage_S *x, float value){
 }
 
 void clearMovingAverage(movingAverage_S *x){
-    x->buffer = 0;
+    memset(x->buffer, 0, x->windowSize * sizeof(float));
     x->index = 0;
     x->sum = 0;
 }

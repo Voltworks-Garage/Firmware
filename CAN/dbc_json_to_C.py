@@ -108,12 +108,23 @@ for node in range(0,numberOfNodes):
                     # Non-multiplexed message uses single payload as before
                     dot_c.write("static CAN_payload_S " + ID_name + "_payload __attribute__((aligned(sizeof(CAN_payload_S))));\n")
                     payload_init = ".payload = &" + ID_name + "_payload"
+                
+                # Generate static status variable for TX messages
+                dot_c.write("static volatile uint8_t " + ID_name + "_status = 0;\n")
 
+            # Set canMessageStatus based on whether this is a TX or RX message
+            if i == thisNode:
+                # TX message - point to the static status variable
+                status_init = ".canMessageStatus = &" + ID_name + "_status"
+            else:
+                # RX message - initialize to 0 (will be set by CAN driver)
+                status_init = ".canMessageStatus = 0"
+            
             dot_c.write("static CAN_message_S " + ID_name + "={\n")
             dot_c.write("\t.canID = " + ID_name + "_ID" + ",\n\t.canXID = " + str(canXID) + ",\n\t.dlc = 8,\n\t" + payload_init
-                        + ",\n\t.canMessageStatus = 0\n};\n\n")
+                        + ",\n\t" + status_init + "\n};\n\n")
             if i != thisNode:
-                dot_c.write("uint8_t " + ID_name + "_checkDataIsFresh(void){\n\treturn CAN_checkDataIsFresh(&" + ID_name + ");\n}\n")
+                dot_c.write("uint8_t " + ID_name + "_checkDataIsUnread(void){\n\treturn CAN_checkDataIsUnread(&" + ID_name + ");\n}\n")
 
 
             #loop through each signal and parse the data
@@ -310,7 +321,7 @@ for node in range(0,numberOfNodes):
                     send_message_dict[str(this_message_freq)].append("CAN_" + this_node_name + "_" + this_message_name + "_send")
             else:
                 #loop through signals again and create retrieve functions
-                dot_h.write("uint8_t " + ID_name + "_checkDataIsFresh(void);\n")
+                dot_h.write("uint8_t " + ID_name + "_checkDataIsUnread(void);\n")
                 for k in range(0, numberOfSignals):
                     this_signal_name = data["NODE"][i]["messages"][j]["signals"][k]["name"]
                     this_signal_scale = data["NODE"][i]["messages"][j]["signals"][k]["scale"]
@@ -360,10 +371,12 @@ for node in range(0,numberOfNodes):
                 if has_multiplex and multiplex_signal_found:
                     # Multiplexed message - auto-cycle through mux values
                     dot_c.write("void CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + "_send(void){\n")
+                    dot_c.write("\t// Update message status for self-consumption\n")
+                    dot_c.write("\t*CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + ".canMessageStatus = 1;\n")
                     dot_c.write("\t// Auto-select current mux payload\n")
                     dot_c.write("\tCAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + ".payload = &CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + "_payloads[CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + "_mux];\n")
                     dot_c.write("\t// Send the message\n")
-                    dot_c.write("\tCAN_write(CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + ");\n")
+                    dot_c.write("\tCAN_write(&CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + ");\n")
                     dot_c.write("\t// Increment mux counter for next time\n")
                     dot_c.write("\tCAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + "_mux++;\n")
                     dot_c.write("\tif (CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + "_mux >= " + ID_name.upper() + "_NUM_MUX_VALUES) {\n")
@@ -372,7 +385,9 @@ for node in range(0,numberOfNodes):
                 else:
                     # Non-multiplexed message - standard send
                     dot_c.write("void CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + "_send(void){\n")
-                    dot_c.write("\tCAN_write(CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + ");\n}\n\n")
+                    dot_c.write("\t// Update message status for self-consumption\n")
+                    dot_c.write("\t*CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + ".canMessageStatus = 1;\n")
+                    dot_c.write("\tCAN_write(&CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + ");\n}\n\n")
 
     #write the initializer function and close header guards
     dot_h.write("void CAN_DBC_init();\n\n")
@@ -435,12 +450,28 @@ for node in range(0,numberOfNodes):
                     continue
                 dot_c.write("\tCAN_configureMailbox(&CAN_" + str(data["NODE"][i]["name"]) + "_" + str(data["NODE"][i]["messages"][j]["name"]) + ");\n")
     dot_c.write("}\n")
-    for send_message_freq in send_message_dict:
-        dot_h.write("void CAN_send_" + send_message_freq + "ms(void);\n")
-        dot_c.write("\nvoid CAN_send_" + send_message_freq + "ms(void){\n")
-        for message in send_message_dict[send_message_freq]:
-            dot_c.write("\t{}();\n".format(message))
+    
+    # Always generate send functions for standard intervals, even if empty
+    standard_intervals = ["1", "10", "100", "1000"]
+    
+    for interval in standard_intervals:
+        dot_h.write("void CAN_send_" + interval + "ms(void);\n")
+        dot_c.write("\nvoid CAN_send_" + interval + "ms(void){\n")
+        if interval in send_message_dict:
+            for message in send_message_dict[interval]:
+                dot_c.write("\t{}();\n".format(message))
+        else:
+            dot_c.write("\t// No messages to send at this interval\n")
         dot_c.write("}\n")
+    
+    # Generate any additional non-standard intervals that exist in the data
+    for send_message_freq in send_message_dict:
+        if send_message_freq not in standard_intervals:
+            dot_h.write("void CAN_send_" + send_message_freq + "ms(void);\n")
+            dot_c.write("\nvoid CAN_send_" + send_message_freq + "ms(void){\n")
+            for message in send_message_dict[send_message_freq]:
+                dot_c.write("\t{}();\n".format(message))
+            dot_c.write("}\n")
     dot_h.write("\n\n#endif /*" + str(data["NODE"][node]["name"]) + "_DBC_H*/\n")
     dot_h.close
     dot_c.close

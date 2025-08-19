@@ -64,6 +64,8 @@ Copyright (c) [2012-2022] Microchip Technology Inc.
 #include "mcc_generated_files/can1.h"
 #include "mcc_generated_files/pin_manager.h"
 #include "mcc_generated_files/uart1.h"
+#include "reset_control.h"
+#include "mcc_generated_files/reset_types.h"
 
 #define DOWNLOADED_IMAGE    0u
 #define EXECUTION_IMAGE     0u
@@ -76,36 +78,39 @@ void BOOT_DEMO_Initialize(void)
 {    
     TMR1_SoftwareCounterClear();
     bootloadLastTime = 0;
-    if(RCONbits.SWR == 1 || RCONbits.WDTO == 1 || RCONbits.TRAPR || RCONbits.EXTR){
+    ResetReason thisReason = GetAndClearResetReasons();
+    if ((thisReason & RESET_POR) || (thisReason & RESET_BOR)){
+        bootloadTimeOutTime = 250;
+    }
+    else if ((thisReason & RESET_SWR) || (thisReason & RESET_EXTR) || (thisReason & RESET_WDTO)){
         bootloadTimeOutTime = 5000;
     } else {
         bootloadTimeOutTime = 250;
     }
     
-    char hello[] = "Reset Reason: ";
-    uint8_t i = 0;
-    for (i=0;i<sizeof(hello);i++){
-        UART1_Write(hello[i]);
-    }
-    
-    uint8_t low = (uint8_t)RCON;
-    uint8_t high = (uint8_t)(RCON>>8);
-    
-    for (i=0;i<8;i++){
-        UART1_Write(((high >> (7-i)) & 0x01)+48);
-    }
-        for (i=0;i<8;i++){
-        UART1_Write(((low >> (7-i)) & 0x01)+48);
-    }
-    UART1_Write(0xA);//newline
+//    char hello[] = "Reset Reason: ";
+//    uint8_t i = 0;
+//    for (i=0;i<sizeof(hello);i++){
+//        UART1_Write(hello[i]);
+//    }
+//    
+//    uint8_t low = (uint8_t)thisReason;
+//    uint8_t high = (uint8_t)(thisReason>>8);
+//    
+//    for (i=0;i<8;i++){
+//        UART1_Write(((high >> (7-i)) & 0x01)+48);
+//    }
+//        for (i=0;i<8;i++){
+//        UART1_Write(((low >> (7-i)) & 0x01)+48);
+//    }
+//    UART1_Write(0xA);//newline
 }
 
 
 void BOOT_DEMO_Tasks(void)
 {
-    enum BOOT_COMMAND_RESULT res = BOOT_ProcessCommand();
-    //UART1_Write(res+);//newline
-    if (res == BOOT_COMMAND_SUCCESS){
+    
+    if (BOOT_ProcessCommand() != BOOT_COMMAND_NONE){
         bootloadLastTime = TMR1_SoftwareCounterGet();
     }
 
@@ -119,8 +124,7 @@ void BOOT_DEMO_Tasks(void)
 
             TMR1_Stop();
             CAN_SLEEP_SetHigh();
-            CAN1_OperationModeSet(CAN_CONFIGURATION_MODE);
-            CAN1_OperationModeSet(CAN_DISABLE_MODE);
+            CAN1_Sleep();
             BOOT_StartApplication();
         }
     }

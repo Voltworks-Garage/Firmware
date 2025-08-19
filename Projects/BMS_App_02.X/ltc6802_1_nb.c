@@ -18,30 +18,41 @@
  * Internal Type Definitions
  *******************************************************************************/
 
+/******************************************************************************
+ * State Machine Definition
+ *******************************************************************************/
+#define LTC6802_1_STATES(state)\
+state(idle) /* init state for startup code */ \
+state(config_write)\
+state(config_readback)\
+state(cell_read)\
+state(cell_data)\
+state(temp_read)\
+state(temp_data)\
+state(flag_data)\
+state(faulted)\
+state(halted)\
+
+/*Creates an enum of states suffixed with _state*/
+#define STATE_FORM(WORD) WORD##_state,
+#define FUNCTION_FORM(WORD) static void WORD(LTC6802_1_entry_types_E entry_type);
+#define FUNC_PTR_FORM(WORD) WORD,
+
 /**
- * @brief Operation states for non-blocking state machine
- * Each state reflects the actual operation being performed
+ * @brief Operation states for non-blocking state machine using ENTRY/EXIT/RUN paradigm
  */
 typedef enum {
-    LTC6802_1_STATE_IDLE = 0,
-    LTC6802_1_STATE_ADC_CELL_START_READ,
-    LTC6802_1_STATE_ADC_CELL_WAITING,
-    LTC6802_1_STATE_ADC_CELL_READ,
-    LTC6802_1_STATE_ADC_CELL_READ_WAITING,
-    LTC6802_1_STATE_TEMP_START_READ,
-    LTC6802_1_STATE_TEMP_WAITING,
-    LTC6802_1_STATE_TEMP_READ,
-    LTC6802_1_STATE_TEMP_READ_WAITING,
-    LTC6802_1_STATE_CONFIG_WRITE,
-    LTC6802_1_STATE_CONFIG_WAIT,
-    LTC6802_1_STATE_CONFIG_READBACK,
-    LTC6802_1_STATE_CONFIG_READBACK_WAIT,
-    LTC6802_1_STATE_DISCHARGE_WRITE,
-    LTC6802_1_STATE_DISCHARGE_WAIT,
-    LTC6802_1_STATE_DISCHARGE_READBACK,
-    LTC6802_1_STATE_DISCHARGE_READBACK_WAIT,
-    LTC6802_1_STATE_FAULTED
+    LTC6802_1_STATES(STATE_FORM)
+    NUMBER_OF_LTC6802_1_STATES
 } LTC6802_1_State_E;
+
+typedef enum {
+    ENTRY,
+    EXIT,
+    RUN
+} LTC6802_1_entry_types_E;
+
+typedef void(*ltcStatePtr)(LTC6802_1_entry_types_E);
 
 /******************************************************************************
  * LTC6802-1 Command Definitions
@@ -79,15 +90,17 @@ typedef enum {
 // Invalid data return value
 #define LTC6802_1_INVALID_DATA      0
 
+
+
 /******************************************************************************
  * Internal State Structure
  *******************************************************************************/
 typedef struct {
-    // State machine variables
-    LTC6802_1_State_E state;
-    uint8_t current_stack_index;
-    uint32_t state_timestamp;
-    uint8_t retry_count;
+    // State machine variables - using new paradigm
+    LTC6802_1_State_E prevState;
+    LTC6802_1_State_E curState;
+    LTC6802_1_State_E nextState;
+    // SPI timeout timer removed - now using NEW_TIMER system
     
     // Debug information
     LTC6802_1_State_E last_successful_state;
@@ -103,12 +116,11 @@ typedef struct {
     // Configuration data
     LTC6802_1_Config_S config;
     uint8_t config_data[LTC6802_1_NUM_STACKS * LTC6802_1_CONFIG_REG_SIZE];
+    uint8_t config_data_saved[LTC6802_1_NUM_STACKS * LTC6802_1_CONFIG_REG_SIZE];
     
-    // Measurement data and timestamps
+    // Measurement data (staleness tracked by NEW_TIMER system)
     uint16_t voltage_data[LTC6802_1_TOTAL_CELLS];
     uint16_t temp_data[LTC6802_1_TOTAL_TEMPS];
-    uint32_t voltage_data_timestamp;
-    uint32_t temp_data_timestamp;
     bool voltage_data_valid;
     bool temp_data_valid;
     
@@ -116,24 +128,50 @@ typedef struct {
     uint8_t rev_number[LTC6802_1_NUM_STACKS];
     bool thsd_flag[LTC6802_1_NUM_STACKS];
     
-    // Calculated voltage values
-    float stack_voltage[LTC6802_1_NUM_STACKS];
-    float pack_voltage;
+    // Calculated voltage values removed - now handled by BMS layer
     
-    // Error tracking
-    LTC6802_1_Error_E last_error[LTC6802_1_NUM_STACKS];
+    // Simple error logging
+    LTC6802_1_Error_Entry_S error_buffer[16];
+    
+    uint8_t error_write_index;
+    uint16_t total_error_count;
     
     // Statistics
     uint32_t total_transactions;
     uint32_t failed_transactions;
     uint32_t total_retries;
     
+    // Cell balancing data
+    uint16_t min_voltage;
+    uint8_t min_cell_number;
+    uint16_t max_voltage;
+    uint8_t max_cell_number;
+    uint8_t cells_to_balance[MAX_BALANCE_CELLS];
+    uint8_t num_cells_to_balance;
+    bool balancing_active;
+    
 } LTC6802_1_Module_S;
+
+/******************************************************************************
+ * State Functions and Variables
+ *******************************************************************************/
+LTC6802_1_STATES(FUNCTION_FORM)
+static ltcStatePtr ltc6802_1_state_functions[] = {LTC6802_1_STATES(FUNC_PTR_FORM)};
 
 /******************************************************************************
  * Static Variables
  *******************************************************************************/
 static LTC6802_1_Module_S ltc_module;
+
+// SPI timeout timer
+NEW_TIMER(ltc6802_spiTimer, 2);
+// ADC Conversion Timer
+NEW_TIMER(adc_conversion_timer,13*LTC6802_1_CELLS_PER_STACK);
+NEW_TIMER(temp_conversion_timer,13*LTC6802_1_TEMPS_PER_STACK);
+// Data staleness timers
+NEW_TIMER(voltage_data_timer, LTC6802_1_DATA_STALE_TIME_MS);
+NEW_TIMER(temp_data_timer, LTC6802_1_DATA_STALE_TIME_MS);
+
 
 /******************************************************************************
  * Internal Function Prototypes
@@ -141,16 +179,18 @@ static LTC6802_1_Module_S ltc_module;
 static LTC6802_1_Error_E StartSPITransaction(uint8_t command, 
                                             const uint8_t* tx_data, uint8_t data_len,
                                             bool expect_response, uint8_t response_len);
-static bool IsTimeout(uint32_t start_time, uint32_t timeout_ms);
-static bool IsDataStale(uint32_t timestamp);
-static void SetError(uint8_t stack_id, LTC6802_1_Error_E error);
 static void TransitionToIdle(void);
 static void TransitionToFaulted(LTC6802_1_Error_E error);
+
+// Simplified error handling functions
+static void LogError(LTC6802_1_Error_E error_type);
 static void ProcessVoltageData(void);
 static void ProcessTemperatureData(void);
+static void ProcessFlagData(void);
 static void ProcessConfigData(void);
 static void BuildConfigData(void);
-static void CalculateStackVoltages(void);
+static void SaveConfigMSG(void);
+// CalculateStackVoltages moved to BMS layer
 static uint8_t CalculateCRC(const uint8_t* data, uint8_t length);
 static bool ValidateCRC(const uint8_t* data, uint8_t length, uint8_t received_crc);
 
@@ -167,7 +207,9 @@ LTC6802_1_Error_E LTC6802_1_Init(void) {
     spi1Init();
     
     // Set initial state
-    ltc_module.state = LTC6802_1_STATE_IDLE;
+    ltc_module.nextState = idle_state;
+    ltc_module.curState = idle_state;
+    ltc_module.prevState = idle_state;
     
     // Initialize default configuration
     for (uint8_t i = 0; i < LTC6802_1_NUM_STACKS; i++) {
@@ -192,6 +234,7 @@ LTC6802_1_Error_E LTC6802_1_Init(void) {
 }
 
 void LTC6802_1_Run(void) {
+
     // Check if SPI transaction is complete
     if (ltc_module.spi_transaction_active) {
         if (spi1IsBufferedTransactionComplete()) {
@@ -204,12 +247,16 @@ void LTC6802_1_Run(void) {
         }
         
         // Check for SPI timeout
-        else if (IsTimeout(ltc_module.state_timestamp, LTC6802_1_SPI_TIMEOUT_MS)) {
+        else if (SysTick_TimeOut(ltc6802_spiTimer)) {
             
-            SetError(0, LTC6802_1_ERROR_SPI_TIMEOUT);  // Set error for stack 0 as representative error
-            TransitionToFaulted(LTC6802_1_ERROR_SPI_TIMEOUT);
+            LogError(LTC6802_1_ERROR_SPI_TIMEOUT);
             ltc_module.spi_transaction_active = false;
             IO_SET_SPI_CS(HIGH);
+            uint8_t tx_index, rx_index;
+            // Get current transaction indices
+            spi1GetTransactionIndices(&tx_index, &rx_index);
+            CAN_bms_debug_word1_set(tx_index);
+            CAN_bms_debug_byte1_set(rx_index);
             
             // Reset the SPI buffered transaction state machine to recover from stuck state
             spi1ResetBufferedTransaction();
@@ -217,289 +264,339 @@ void LTC6802_1_Run(void) {
         
         return; // Wait for SPI transaction to complete
     }
-    
-    // Process main state machine
-    switch (ltc_module.state) {
-        case LTC6802_1_STATE_IDLE:
+
+    /* This only happens during state transition
+     * State transitions thus have priority over posting new events
+     * State transitions always consist of an exit event to curState and entry event to nextState */
+    if (ltc_module.nextState != ltc_module.curState) {
+        ltc6802_1_state_functions[ltc_module.curState](EXIT);
+        ltc_module.prevState = ltc_module.curState;
+        ltc_module.curState = ltc_module.nextState;
+        ltc6802_1_state_functions[ltc_module.curState](ENTRY);
+    } else {
+        ltc6802_1_state_functions[ltc_module.curState](RUN);
+    }
+}
+
+/******************************************************************************
+ * State Functions Implementation - using ENTRY/EXIT/RUN paradigm
+ *******************************************************************************/
+
+void idle(LTC6802_1_entry_types_E entry_type) {
+    switch (entry_type) {
+        case ENTRY:
+            break;
+        case RUN:
             // Nothing to do in idle state
+            ltc_module.nextState = cell_read_state;
             break;
+        case EXIT:
+            break;
+        default:
+            break;
+    }
+}
+
+void config_write(LTC6802_1_entry_types_E entry_type) {
+    switch (entry_type) {
+        case ENTRY:
+            // Build fresh configuration data right before sending
+            BuildConfigData();
             
-        case LTC6802_1_STATE_ADC_CELL_START_READ:
+            // Write configuration to entire daisy chain
+            if (StartSPITransaction(LTC6802_1_CMD_WRCFG,
+                                   ltc_module.config_data, // Configuration data
+                                   LTC6802_1_NUM_STACKS * LTC6802_1_CONFIG_REG_SIZE, // Data length
+                                   false, // No response expected
+                                   0) != LTC6802_1_ERROR_NONE) {
+                ltc_module.nextState = faulted_state;
+            }
+            // save this message in case config data gets changed between states.
+            SaveConfigMSG();
+            break;
+        case RUN:
+            // Configuration write completed, move to readback
+            ltc_module.nextState = config_readback_state;
+            SysTick_TimerStart(ltc6802_spiTimer);
+            break;
+        case EXIT:
+            break;
+        default:
+            break;
+    }
+}
+
+void config_readback(LTC6802_1_entry_types_E entry_type) {
+    switch (entry_type) {
+        case ENTRY:
+            // Read back configuration from entire daisy chain to verify
+            if (StartSPITransaction(LTC6802_1_CMD_RDCFG,
+                                   NULL, // No TX data, just read
+                                   0, // No TX data length
+                                   true, // Expect response
+                                   LTC6802_1_NUM_STACKS * (LTC6802_1_CONFIG_REG_SIZE + LTC6802_1_PEC_SIZE) // Length of response data
+                                ) != LTC6802_1_ERROR_NONE) {
+                ltc_module.nextState = faulted_state;
+            }
+            break;
+        case RUN:
+            // Configuration readback completed, restart autonomous cycle
+            ProcessConfigData();
+            ltc_module.nextState = cell_read_state;
+            break;
+        case EXIT:
+            break;
+        default:
+            break;
+    }
+}
+
+void cell_read(LTC6802_1_entry_types_E entry_type) {
+    uint8_t command = LTC6802_1_CMD_STCVAD;
+    if(ltc_module.balancing_active) {
+        command = LTC6802_1_CMD_STCVDC; // Use discharge command if balancing is active
+    }
+    switch (entry_type) {
+        case ENTRY:
             // Start cell voltage ADC for entire daisy chain
-            if (StartSPITransaction(LTC6802_1_CMD_STCVAD, 
-                                   NULL, 0, false, 0) == LTC6802_1_ERROR_NONE) {
-                ltc_module.state = LTC6802_1_STATE_ADC_CELL_WAITING;
-                ltc_module.state_timestamp = SysTick_Get();
-            } else {
-                TransitionToFaulted(LTC6802_1_ERROR_SPI_TIMEOUT);
+            if (StartSPITransaction(command, // Start Cell Voltage ADC
+                                   NULL, // No TX data, just start
+                                   0, // No TX data length
+                                   false, // No response expected
+                                   0 // No response length
+                                ) != LTC6802_1_ERROR_NONE) {
+                ltc_module.nextState = faulted_state;
             }
+            SysTick_TimerStart(adc_conversion_timer);
             break;
-            
-        case LTC6802_1_STATE_ADC_CELL_WAITING:
+        case RUN:
             // Wait for ADC conversion to complete
-            if (IO_GET_SPI_SDI() == HIGH) { // Check if conversion is complete
-                ltc_module.state = LTC6802_1_STATE_ADC_CELL_READ;
-                ltc_module.state_timestamp = SysTick_Get();
+            //if (IO_GET_SPI_SDI() == HIGH) { // Check if conversion is complete
+            if ( SysTick_TimeOut(adc_conversion_timer)) {// Check if conversion is complete
+                ltc_module.nextState = cell_data_state;
             }
             break;
-            
-        case LTC6802_1_STATE_ADC_CELL_READ:
+        case EXIT:
+            break;
+        default:
+            break;
+    }
+}
+
+void cell_data(LTC6802_1_entry_types_E entry_type) {
+    switch (entry_type) {
+        case ENTRY:
             // Read cell voltage data from entire daisy chain in single transaction
             if (StartSPITransaction(LTC6802_1_CMD_RDCV, // Read Cell Voltages
                                    NULL, // No TX data, just read
                                    0, // No TX data length
                                    true, // Expect response
                                    LTC6802_1_NUM_STACKS * (LTC6802_1_VOLTAGE_REG_SIZE + LTC6802_1_PEC_SIZE) // Length of response data
-                                ) == LTC6802_1_ERROR_NONE) {
-                ltc_module.state_timestamp = SysTick_Get();
-                ltc_module.state = LTC6802_1_STATE_ADC_CELL_READ_WAITING;
-
-            } else {
-                TransitionToFaulted(LTC6802_1_ERROR_SPI_TIMEOUT);
+                                ) != LTC6802_1_ERROR_NONE) {
+                ltc_module.nextState = faulted_state;
             }
             break;
-
-        case LTC6802_1_STATE_ADC_CELL_READ_WAITING:
-            // Process data from entire daisy chain and complete
+        case RUN:
+            // Process data from entire daisy chain and continue to temperature
             ProcessVoltageData();
-            ltc_module.voltage_data_timestamp = SysTick_Get();
-            TransitionToIdle();
+            SysTick_TimerStart(voltage_data_timer);
+            ltc_module.nextState = temp_read_state;
             break;
+        case EXIT:
+            break;
+        default:
+            break;
+    }
+}
 
-            
-        case LTC6802_1_STATE_TEMP_START_READ:
+void temp_read(LTC6802_1_entry_types_E entry_type) {
+    switch (entry_type) {
+        case ENTRY:
             // Start temperature ADC for entire daisy chain
-            if (StartSPITransaction(LTC6802_1_CMD_STTMPAD, 
-                                   NULL, 0, false, 0) == LTC6802_1_ERROR_NONE) {
-                ltc_module.state = LTC6802_1_STATE_TEMP_WAITING;
-                ltc_module.state_timestamp = SysTick_Get();
-            } else {
-                TransitionToFaulted(LTC6802_1_ERROR_SPI_TIMEOUT);
+            if (StartSPITransaction(LTC6802_1_CMD_STTMPAD, // Start Temperature ADC
+                                   NULL, // No TX data, just start
+                                   0, // No TX data length
+                                   false, // No response expected
+                                   0    // No response length
+                                ) != LTC6802_1_ERROR_NONE) {
+                ltc_module.nextState = faulted_state;
             }
+            SysTick_TimerStart(temp_conversion_timer);
             break;
-            
-        case LTC6802_1_STATE_TEMP_WAITING:
+        case RUN:
             // Wait for ADC conversion to complete
-            if (IO_GET_SPI_SDI() == HIGH) { // Check if conversion is complete
-                ltc_module.state = LTC6802_1_STATE_TEMP_READ;
-                ltc_module.state_timestamp = SysTick_Get();
+            // if (IO_GET_SPI_SDI() == HIGH) { // Check if conversion is complete
+            if ( SysTick_TimeOut(temp_conversion_timer)) {// Check if conversion is complete
+                ltc_module.nextState = temp_data_state;
             }
             break;
-            
-        case LTC6802_1_STATE_TEMP_READ:
+        case EXIT:
+            break;
+        default:
+            break;
+    }
+}
+
+void temp_data(LTC6802_1_entry_types_E entry_type) {
+    switch (entry_type) {
+        case ENTRY:
             // Read temperature data from entire daisy chain in single transaction
             if (StartSPITransaction(LTC6802_1_CMD_RDTMP, // Read Temperature
                                    NULL, // No TX data, just read
                                    0, // No TX data length
                                    true, // Expect response
-                                   LTC6802_1_NUM_STACKS * (LTC6802_1_TEMP_REG_SIZE + LTC6802_1_PEC_SIZE)// Length of response data
-                                ) == LTC6802_1_ERROR_NONE) {
-                ltc_module.state_timestamp = SysTick_Get();
-                ltc_module.state = LTC6802_1_STATE_TEMP_READ_WAITING;
-            } else {
-                TransitionToFaulted(LTC6802_1_ERROR_SPI_TIMEOUT);
+                                   LTC6802_1_NUM_STACKS * (LTC6802_1_TEMP_REG_SIZE + LTC6802_1_PEC_SIZE) // Length of response data
+                                ) != LTC6802_1_ERROR_NONE) {
+                ltc_module.nextState = faulted_state;
             }
             break;
+        case RUN:
+            // Process data from entire daisy chain and continue to flags
+            ProcessTemperatureData();
+            SysTick_TimerStart(temp_data_timer);
+            ltc_module.nextState = flag_data_state;
+            break;
+        case EXIT:
+            break;
+        default:
+            break;
+    }
+}
 
-        case LTC6802_1_STATE_TEMP_READ_WAITING:
-            // Process data from entire daisy chain and complete
-            if (IsTimeout(ltc_module.state_timestamp, LTC6802_1_ADC_CONVERSION_TIME_MS)) {
-                ProcessTemperatureData();
-                ltc_module.temp_data_timestamp = SysTick_Get();
-                TransitionToIdle();
-            }
-            break;
-
-        case LTC6802_1_STATE_CONFIG_WRITE:
-            // Write configuration to entire daisy chain in single transaction
-            if (StartSPITransaction(LTC6802_1_CMD_WRCFG, // Write Configuration
-                                   ltc_module.config_data, // Pointer to config data
-                                   LTC6802_1_NUM_STACKS * LTC6802_1_CONFIG_REG_SIZE, // Length of config data
-                                   false, // No response expected
-                                   0 // No response length
-                                ) == LTC6802_1_ERROR_NONE) {
-                ltc_module.state = LTC6802_1_STATE_CONFIG_WAIT;
-                ltc_module.state_timestamp = SysTick_Get();
-                ltc_module.debug_failure_point = 1; // Config write started
-            } else {
-                TransitionToFaulted(LTC6802_1_ERROR_SPI_TIMEOUT);
-            }
-            break;
-            
-        case LTC6802_1_STATE_CONFIG_WAIT:
-            // Configuration write completed, move to readback
-            ltc_module.state = LTC6802_1_STATE_CONFIG_READBACK;
-            ltc_module.state_timestamp = SysTick_Get();
-            break;
-            
-        case LTC6802_1_STATE_CONFIG_READBACK:
-            // Read back configuration from entire daisy chain in single transaction
-            if (StartSPITransaction(LTC6802_1_CMD_RDCFG, // Read Configuration
+void flag_data(LTC6802_1_entry_types_E entry_type) {
+    switch (entry_type) {
+        case ENTRY:
+            // Read flag data from entire daisy chain in single transaction
+            if (StartSPITransaction(LTC6802_1_CMD_RDFLG, // Read Flags
                                    NULL, // No TX data, just read
                                    0, // No TX data length
                                    true, // Expect response
-                                   LTC6802_1_NUM_STACKS * (LTC6802_1_CONFIG_REG_SIZE + LTC6802_1_PEC_SIZE) // Length of response data
-                                ) == LTC6802_1_ERROR_NONE) {
-                ltc_module.state = LTC6802_1_STATE_CONFIG_READBACK_WAIT;
-                ltc_module.state_timestamp = SysTick_Get();
-                ltc_module.debug_failure_point = 2; // Config write started
-            } else {
-                TransitionToFaulted(LTC6802_1_ERROR_SPI_TIMEOUT);
+                                   LTC6802_1_NUM_STACKS * (LTC6802_1_FLAG_REG_SIZE + LTC6802_1_PEC_SIZE) // Length of response data
+                                ) != LTC6802_1_ERROR_NONE) {
+                ltc_module.nextState = faulted_state;
             }
             break;
-            
-        case LTC6802_1_STATE_CONFIG_READBACK_WAIT:
-            // Configuration readback completed for entire daisy chain
-            // Validate that readback matches what we wrote
-            ProcessConfigData();
-
-            TransitionToIdle();
+        case RUN:
+            // Process flag data from entire daisy chain and continue to config write
+            ProcessFlagData();
+            ltc_module.nextState = config_write_state;
             break;
-            
-        case LTC6802_1_STATE_DISCHARGE_WRITE:
-            // Write discharge configuration to entire daisy chain in single transaction
-            if (StartSPITransaction(LTC6802_1_CMD_WRCFG, 
-                                   ltc_module.config_data, 
-                                   LTC6802_1_NUM_STACKS * LTC6802_1_CONFIG_REG_SIZE, 
-                                   false, 0) == LTC6802_1_ERROR_NONE) {
-                ltc_module.state = LTC6802_1_STATE_DISCHARGE_WAIT;
-                ltc_module.state_timestamp = SysTick_Get();
-            } else {
-                TransitionToFaulted(LTC6802_1_ERROR_SPI_TIMEOUT);
-            }
+        case EXIT:
             break;
-            
-        case LTC6802_1_STATE_DISCHARGE_WAIT:
-            // Discharge write completed, move to readback
-            ltc_module.state = LTC6802_1_STATE_DISCHARGE_READBACK;
-            ltc_module.state_timestamp = SysTick_Get();
-            break;
-            
-        case LTC6802_1_STATE_DISCHARGE_READBACK:
-            // Read back configuration from entire daisy chain in single transaction
-            if (StartSPITransaction(LTC6802_1_CMD_RDCFG, 
-                                   NULL, 0, true, 
-                                   LTC6802_1_NUM_STACKS * LTC6802_1_CONFIG_REG_SIZE + 1) == LTC6802_1_ERROR_NONE) {
-                ltc_module.state = LTC6802_1_STATE_DISCHARGE_READBACK_WAIT;
-                ltc_module.state_timestamp = SysTick_Get();
-            } else {
-                TransitionToFaulted(LTC6802_1_ERROR_SPI_TIMEOUT);
-            }
-            break;
-            
-        case LTC6802_1_STATE_DISCHARGE_READBACK_WAIT:
-            // Discharge readback completed for entire daisy chain
-            TransitionToIdle();
-            break;
-            
-        case LTC6802_1_STATE_FAULTED:
-            // Stay in faulted state until explicit reset
-//            TransitionToIdle();
-            break;
-            
         default:
-            TransitionToFaulted(LTC6802_1_ERROR_MAX_RETRIES);
+            break;
+    }
+}
+
+void faulted(LTC6802_1_entry_types_E entry_type) {
+    switch (entry_type) {
+        case ENTRY:
+            break;
+        case RUN:
+            // Stay in faulted state until explicit reset
+            // Could add timeout recovery logic here if desired
+            LTC6802_1_Resume();
+            break;
+        case EXIT:
+            break;
+        default:
+            break;
+    }
+}
+
+void halted(LTC6802_1_entry_types_E entry_type) {
+    switch (entry_type) {
+        case ENTRY:
+            break;
+        case RUN:
+            // Stay halted until explicitly resumed
+            break;
+        case EXIT:
+            break;
+        default:
             break;
     }
 }
 
 bool LTC6802_1_IsBusy(void) {
-    return (ltc_module.state != LTC6802_1_STATE_IDLE);
+    return (ltc_module.curState != idle_state && ltc_module.curState != halted_state);
 }
 
-LTC6802_1_Error_E LTC6802_1_StartCellVoltageADC(void) {
-    if (LTC6802_1_IsBusy()) {
-        return LTC6802_1_ERROR_BUSY;
+LTC6802_1_Error_E LTC6802_1_Halt(void) {
+    // Transition to halted state from any state (except faulted)
+    if (ltc_module.curState != faulted_state) {
+        ltc_module.nextState = halted_state;
     }
-    
-    // Start cell voltage ADC and read sequence
-    ltc_module.state = LTC6802_1_STATE_ADC_CELL_START_READ;
-    ltc_module.retry_count = 0;
-    ltc_module.state_timestamp = SysTick_Get();
-    
     return LTC6802_1_ERROR_NONE;
 }
 
-LTC6802_1_Error_E LTC6802_1_StartTemperatureADC(void) {
-    if (LTC6802_1_IsBusy()) {
-        return LTC6802_1_ERROR_BUSY;
-    }
-    
-    // Start temperature ADC and read sequence
-    ltc_module.state = LTC6802_1_STATE_TEMP_START_READ;
-    ltc_module.retry_count = 0;
-    ltc_module.state_timestamp = SysTick_Get();
-    
-    return LTC6802_1_ERROR_NONE;
-}
-
-LTC6802_1_Error_E LTC6802_1_WriteConfig(void) {
-    if (LTC6802_1_IsBusy()) {
-        return LTC6802_1_ERROR_BUSY;
-    }
-    
-    // Build config data
-    BuildConfigData();
-    
-    // Start configuration write sequence
-    ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
-    ltc_module.current_stack_index = 0;
-    ltc_module.retry_count = 0;
-    ltc_module.state_timestamp = SysTick_Get();
-    
-    return LTC6802_1_ERROR_NONE;
-}
-
-LTC6802_1_Error_E LTC6802_1_SetCellBalancing(uint8_t cell_id, bool enable, bool send_immediately) {
-    if (send_immediately && LTC6802_1_IsBusy()) {
-        return LTC6802_1_ERROR_BUSY;
-    }
-    
-    if (cell_id >= LTC6802_1_TOTAL_CELLS) {
-        return LTC6802_1_ERROR_INVALID_STACK; // Reuse for invalid parameter
-    }
-    
-    // Convert global cell ID to stack and local cell ID
-    // Each stack handles 12 cells (0-11), so we need to map:
-    // Global cells 0-11 → Stack 0, local cells 0-11
-    // Global cells 12-23 → Stack 1, local cells 0-11
-    uint8_t stack_id = cell_id / LTC6802_1_CELLS_PER_STACK;       // Which stack (0 or 1)
-    uint8_t local_cell_id = cell_id % LTC6802_1_CELLS_PER_STACK;  // Cell within stack (0-11)
-    
-    // Set or clear the bit for this cell in the appropriate stack
-    if (enable) {
-        ltc_module.config.discharge_cells[stack_id] |= (1U << local_cell_id);
+LTC6802_1_Error_E LTC6802_1_Resume(void) {
+    // Resume autonomous operation by starting measurement cycle
+    if (ltc_module.curState == halted_state) {
+        ltc_module.nextState = cell_read_state;
+        SysTick_TimerStart(ltc6802_spiTimer);
+        return LTC6802_1_ERROR_NONE;
+    } else if (ltc_module.curState == idle_state) {
+        // If idle, start autonomous cycle
+        ltc_module.nextState = cell_read_state;
+        SysTick_TimerStart(ltc6802_spiTimer);
+        return LTC6802_1_ERROR_NONE;
     } else {
-        ltc_module.config.discharge_cells[stack_id] &= ~(1U << local_cell_id);
+        // Already running
+        return LTC6802_1_ERROR_ALREADY_RUNNING;
+    }
+}
+
+
+
+LTC6802_1_Error_E LTC6802_1_StartCellBalancing(const uint8_t* cells_to_balance, uint8_t num_cells) {
+    // Validate inputs
+    if (num_cells > MAX_BALANCE_CELLS) {
+        num_cells = MAX_BALANCE_CELLS; // Limit to maximum
     }
     
-    if (send_immediately) {
-        BuildConfigData();
+    // Copy the cell list to internal storage
+    ltc_module.num_cells_to_balance = num_cells;
+    for (uint8_t i = 0; i < num_cells; i++) {
+        ltc_module.cells_to_balance[i] = cells_to_balance[i];
+    }
+    
+    // Clear all discharge cells first
+    for (uint8_t i = 0; i < LTC6802_1_NUM_STACKS; i++) {
+        ltc_module.config.discharge_cells[i] = 0;
+    }
+    
+    // Set balancing for cells identified in cells_to_balance array
+    for (uint8_t i = 0; i < ltc_module.num_cells_to_balance; i++) {
+        uint8_t cell_id = ltc_module.cells_to_balance[i];
         
-        // Start discharge configuration write sequence
-        ltc_module.state = LTC6802_1_STATE_DISCHARGE_WRITE;
-        ltc_module.retry_count = 0;
-        ltc_module.state_timestamp = SysTick_Get();
+        if (cell_id >= LTC6802_1_TOTAL_CELLS) {
+            continue; // Skip invalid cell IDs
+        }
+        
+        // Convert global cell ID to stack and local cell ID
+        // Each stack handles 12 cells (0-11), so we need to map:
+        // Global cells 0-11 → Stack 0, local cells 0-11
+        // Global cells 12-23 → Stack 1, local cells 0-11
+        uint8_t stack_id = cell_id / LTC6802_1_CELLS_PER_STACK;       // Which stack (0 or 1)
+        uint8_t local_cell_id = cell_id % LTC6802_1_CELLS_PER_STACK;  // Cell within stack (0-11)
+        
+        // Set the bit for this cell in the appropriate stack
+        ltc_module.config.discharge_cells[stack_id] |= (1U << local_cell_id);
     }
-    
+
     return LTC6802_1_ERROR_NONE;
+}
+
+bool LTC6802_1_IsBalancingActive(void) {
+    return ltc_module.balancing_active;
 }
 
 LTC6802_1_Error_E LTC6802_1_ClearAllCellBalancing(void) {
-    if (LTC6802_1_IsBusy()) {
-        return LTC6802_1_ERROR_BUSY;
-    }
-    
     // Clear all cell balancing for all stacks
     for (uint8_t i = 0; i < LTC6802_1_NUM_STACKS; i++) {
         ltc_module.config.discharge_cells[i] = 0;
     }
-    BuildConfigData();
-    
-    // Start discharge configuration write sequence
-    ltc_module.state = LTC6802_1_STATE_DISCHARGE_WRITE;
-    ltc_module.retry_count = 0;
-    ltc_module.state_timestamp = SysTick_Get();
     
     return LTC6802_1_ERROR_NONE;
 }
@@ -509,7 +606,7 @@ uint16_t LTC6802_1_GetCellVoltage(uint8_t cell_id) {
         return LTC6802_1_INVALID_DATA;
     }
     
-    if (!ltc_module.voltage_data_valid || IsDataStale(ltc_module.voltage_data_timestamp)) {
+    if (!ltc_module.voltage_data_valid || SysTick_TimeOut(voltage_data_timer)) {
         return LTC6802_1_INVALID_DATA;
     }
     
@@ -529,7 +626,7 @@ float LTC6802_1_GetTemperatureVoltage(uint8_t temp_id) {
         return LTC6802_1_INVALID_DATA;
     }
     
-    if (!ltc_module.temp_data_valid || IsDataStale(ltc_module.temp_data_timestamp)) {
+    if (!ltc_module.temp_data_valid || SysTick_TimeOut(temp_data_timer)) {
         return LTC6802_1_INVALID_DATA;
     }
     
@@ -541,32 +638,22 @@ float LTC6802_1_GetTemperatureVoltage(uint8_t temp_id) {
     return (float)ltc_module.temp_data[temp_id] * LTC6802_1_VOLTAGE_SCALE_FACTOR;
 }
 
-LTC6802_1_Error_E LTC6802_1_GetLastError(uint8_t stack_id) {
-    if (stack_id >= LTC6802_1_NUM_STACKS) {
-        return LTC6802_1_ERROR_INVALID_STACK;
+LTC6802_1_Error_Entry_S LTC6802_1_GetLastError(void) {
+    LTC6802_1_Error_Entry_S empty_error = {LTC6802_1_ERROR_NONE, 0, 0};
+    
+    // Return empty error if no errors logged
+    if (ltc_module.total_error_count == 0) {
+        return empty_error;
     }
     
-    return ltc_module.last_error[stack_id];
+    // Get last error from circular buffer
+    uint8_t last_index = (ltc_module.error_write_index - 1 + 16) % 16;
+    return ltc_module.error_buffer[last_index];
 }
 
-void LTC6802_1_ClearError(uint8_t stack_id) {
-    if (stack_id < LTC6802_1_NUM_STACKS) {
-        ltc_module.last_error[stack_id] = LTC6802_1_ERROR_NONE;
-    }
-    
-    // If all errors cleared, exit faulted state
-    if (ltc_module.state == LTC6802_1_STATE_FAULTED) {
-        bool all_clear = true;
-        for (uint8_t i = 0; i < LTC6802_1_NUM_STACKS; i++) {
-            if (ltc_module.last_error[i] != LTC6802_1_ERROR_NONE) {
-                all_clear = false;
-                break;
-            }
-        }
-        if (all_clear) {
-            TransitionToIdle();
-        }
-    }
+void LTC6802_1_ClearError(void) {
+    // Use the main clear function
+    LTC6802_1_ClearAllErrors();
 }
 
 void LTC6802_1_GetStats(uint32_t* total_transactions, 
@@ -591,6 +678,7 @@ static LTC6802_1_Error_E StartSPITransaction(uint8_t command,
                                             const uint8_t* tx_data, uint8_t data_len,
                                             bool expect_response, uint8_t response_len) {
     if (ltc_module.spi_transaction_active) {
+        LogError(LTC6802_1_ERROR_BUSY);
         return LTC6802_1_ERROR_BUSY;
     }
     
@@ -611,7 +699,7 @@ static LTC6802_1_Error_E StartSPITransaction(uint8_t command,
     uint8_t* rx_buffer = expect_response ? ltc_module.spi_rx_buffer : NULL;
     
     // Start transaction
-    ltc_module.state_timestamp = SysTick_Get();
+    SysTick_TimerStart(ltc6802_spiTimer);
     IO_SET_SPI_CS(LOW);
     
     bool result = spi1StartBufferedTransaction(ltc_module.spi_tx_buffer, ltc_module.spi_tx_length, 
@@ -624,32 +712,20 @@ static LTC6802_1_Error_E StartSPITransaction(uint8_t command,
     } else {
         IO_SET_SPI_CS(HIGH);
         ltc_module.failed_transactions++;
-        return LTC6802_1_ERROR_SPI_TIMEOUT;
+        LogError(LTC6802_1_ERROR_SPI_BUSY);
+        return LTC6802_1_ERROR_SPI_BUSY;
     }
 }
 
-static bool IsTimeout(uint32_t start_time, uint32_t timeout_ms) {
-    return (SysTick_Get() - start_time) >= timeout_ms;
-}
 
-static bool IsDataStale(uint32_t timestamp) {
-    return IsTimeout(timestamp, LTC6802_1_DATA_STALE_TIME_MS);
-}
-
-static void SetError(uint8_t stack_id, LTC6802_1_Error_E error) {
-    if (stack_id < LTC6802_1_NUM_STACKS) {
-        ltc_module.last_error[stack_id] = error;
-    }
-}
 
 static void TransitionToIdle(void) {
-    ltc_module.state = LTC6802_1_STATE_IDLE;
-    ltc_module.retry_count = 0;
+    ltc_module.nextState = idle_state;
 }
 
 static void TransitionToFaulted(LTC6802_1_Error_E error) {
-    ltc_module.state = LTC6802_1_STATE_FAULTED;
-    SetError(0, error);  // Set error for stack 0 as representative error
+    ltc_module.nextState = faulted_state;
+    // Error already handled by HandleError function
     ltc_module.failed_transactions++;
 }
 
@@ -709,58 +785,21 @@ static void ProcessVoltageData(void) {
             }
         } else {
             // PEC failed - mark cells for this stack as invalid
-            for (cell_index; cell_index < LTC6802_1_CELLS_PER_STACK * (stack + 1); cell_index++) {
+            for (; cell_index < LTC6802_1_CELLS_PER_STACK * (stack + 1); cell_index++) {
                 ltc_module.voltage_data[cell_index] = 0xFFFF; // Invalid marker
                 ltc_module.voltage_data_valid = false; // Mark voltage data as invalid
             }
             // Set error for this stack
-            SetError(stack, LTC6802_1_ERROR_CRC_FAIL);
-
-            static uint8_t ticker = 0;
-            CAN_bms_debug_float1_set(ticker++);
+            LogError(LTC6802_1_ERROR_CRC_FAIL);
 
         }
     }
     
-    // Calculate stack and pack voltages
-    CalculateStackVoltages();
+    // Voltage calculations moved to BMS layer
 }
 
-static void CalculateStackVoltages(void) {
-    // Calculate stack voltages and pack voltage using integer arithmetic
+// CalculateStackVoltages function moved to BMS layer
 
-    // if (ltc_module.voltage_data_valid == false) {
-    //     CAN_bms_debug_bool0_set(1);
-    //     // If voltage data is invalid, set all voltages to 0
-    //     for (uint8_t stack = 0; stack < LTC6802_1_NUM_STACKS; stack++) {
-    //         ltc_module.stack_voltage[stack] = 0.0f;
-    //     }
-    //     ltc_module.pack_voltage = 0.0f;
-    //     return;
-    // }
-
-    uint32_t pack_voltage_raw = 0;
-    
-    for (uint8_t stack = 0; stack < LTC6802_1_NUM_STACKS; stack++) {
-        uint32_t stack_voltage_raw = 0;
-        
-        // Sum all valid cell voltages for this stack (raw ADC counts)
-        for (uint8_t cell = 0; cell < LTC6802_1_CELLS_PER_STACK; cell++) {
-            uint8_t cell_index = stack * LTC6802_1_CELLS_PER_STACK + cell;
-            stack_voltage_raw += ltc_module.voltage_data[cell_index];
-        }
-        
-        // Apply scaling factor at the end and store result
-        ltc_module.stack_voltage[stack] = (float)stack_voltage_raw * LTC6802_1_VOLTAGE_SCALE_FACTOR;
-        
-        // Add this stack's raw voltage to total pack voltage
-        pack_voltage_raw += stack_voltage_raw;
-    }
-    
-    // Apply scaling factor to pack voltage at the end
-    ltc_module.pack_voltage = (float)pack_voltage_raw * LTC6802_1_VOLTAGE_SCALE_FACTOR;
-    
-}
 
 static void ProcessTemperatureData(void) {
     // Parse temperature data from SPI buffer into temp array
@@ -770,7 +809,7 @@ static void ProcessTemperatureData(void) {
     // - Next 5 bytes received are from Stack 1 (top of chain), then PEC byte
     // 
     // Received data: [Stack0_5bytes][Stack0_PEC][Stack1_5bytes][Stack1_PEC] (12 bytes total)
-    
+
     uint8_t stack, temp_index = 0;
     uint8_t stack_data_start, pec_byte;
     bool pec_valid;
@@ -836,7 +875,45 @@ static void ProcessTemperatureData(void) {
             // Mark temperature data as invalid
             ltc_module.temp_data_valid = false;
             // Set error for this stack
-            SetError(stack, LTC6802_1_ERROR_CRC_FAIL);
+            LogError(LTC6802_1_ERROR_CRC_FAIL);
+        }
+    }
+}
+
+static void ProcessFlagData(void) {
+    // Parse flag data from SPI buffer
+    // 
+    // CRITICAL: For daisy chain reads, data comes out in reverse order:
+    // - First 3 bytes received are from Stack 0 (bottom of chain), then PEC byte
+    // - Next 3 bytes received are from Stack 1 (top of chain), then PEC byte
+    // 
+    // Received data: [Stack0_3bytes][Stack0_PEC][Stack1_3bytes][Stack1_PEC] (8 bytes total)
+    
+    uint8_t stack;
+    uint8_t stack_data_start, pec_byte;
+    bool pec_valid;
+    
+    for (stack = 0; stack < LTC6802_1_NUM_STACKS; stack++) {
+        // Calculate start of this stack's data block
+        stack_data_start = stack * (LTC6802_1_FLAG_REG_SIZE + LTC6802_1_PEC_SIZE) + 1; // +1 for CMD byte
+        
+        // Extract PEC byte for this stack (comes after the 3 data bytes)
+        pec_byte = ltc_module.spi_rx_buffer[stack_data_start + LTC6802_1_FLAG_REG_SIZE];
+        
+        // Validate PEC for this stack's data
+        pec_valid = ValidateCRC(&ltc_module.spi_rx_buffer[stack_data_start], 
+                               LTC6802_1_FLAG_REG_SIZE, pec_byte);
+        
+        if (pec_valid) {
+            // PEC valid - process flag data for this stack
+            // LTC6802-1 flag register layout: FLGR0, FLGR1, FLGR2 (3 bytes per stack)
+            // For now, we just store the raw flag data in the module
+            // TODO: Add flag data storage to ltc_module structure if needed
+            
+        } else {
+            // PEC failed - flag data corrupted
+            // Set error for this stack
+            LogError(LTC6802_1_ERROR_CRC_FAIL);
         }
     }
 }
@@ -867,29 +944,32 @@ static void ProcessConfigData(void) {
         if (!pec_valid) {
             // PEC failed - configuration data corrupted
             ltc_module.debug_failure_point = 1; // PEC validation failed
-            SetError(stack, LTC6802_1_ERROR_CRC_FAIL);
-            TransitionToFaulted(LTC6802_1_ERROR_CRC_FAIL);
+            LogError(LTC6802_1_ERROR_CRC_FAIL);
             return;
         }
         
         // PEC valid - now compare readback data with what we wrote
         config_valid = (memcmp(&ltc_module.spi_rx_buffer[readback_start+1], 
-                              &ltc_module.config_data[written_start+1], 
+                              &ltc_module.config_data_saved[written_start+1], 
                               LTC6802_1_CONFIG_REG_SIZE -1) == 0);
         
         if (!config_valid) {
             // Configuration mismatch - hardware didn't accept our config
             ltc_module.debug_failure_point = 2; // Config data mismatch
-            SetError(stack, LTC6802_1_ERROR_CRC_FAIL);
-            // For safety, transition to faulted state if any config mismatch
-            TransitionToFaulted(LTC6802_1_ERROR_CRC_FAIL);
+            LogError(LTC6802_1_ERROR_CONFIG_MISMATCH);
             return;
         }
 
     }
     
     // All PEC and config validation passed - hardware config is correct
-    ltc_module.debug_failure_point = 0; // Success
+    // Check if any cells are discharging
+    bool anyCellsDischarging = false;
+    for (uint8_t i = 0; i < LTC6802_1_NUM_STACKS; i++) {
+        // Check if any cells are discharging
+        anyCellsDischarging = anyCellsDischarging || ltc_module.config.discharge_cells[i];
+    }
+    ltc_module.balancing_active = anyCellsDischarging;
 }
 
 static void BuildConfigData(void) {
@@ -966,6 +1046,13 @@ static bool ValidateCRC(const uint8_t* data, uint8_t length, uint8_t received_cr
     return (calculated_crc == received_crc);
 }
 
+static void SaveConfigMSG(void){
+    memcpy(ltc_module.config_data_saved,
+        ltc_module.config_data,
+        LTC6802_1_NUM_STACKS * LTC6802_1_CONFIG_REG_SIZE
+    );
+}
+
 /******************************************************************************
  * Configuration Helper Function Implementations  
  *******************************************************************************/
@@ -977,51 +1064,23 @@ void LTC6802_1_GetConfig(LTC6802_1_Config_S* config) {
 }
 
 LTC6802_1_Error_E LTC6802_1_SetCDCMode(uint8_t cdc_mode) {
-    if (LTC6802_1_IsBusy()) {
-        return LTC6802_1_ERROR_BUSY;
-    }
-    
     // CDC mode is 3 bits (0-7)
     ltc_module.config.cdc_mode = cdc_mode & 0x07;
-    BuildConfigData();
-    
-    // Start config write sequence
-    ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
-    ltc_module.retry_count = 0;
-    ltc_module.state_timestamp = SysTick_Get();
     
     return LTC6802_1_ERROR_NONE;
 }
 
-LTC6802_1_Error_E LTC6802_1_SetVoltageThresholds8(uint8_t overvoltage_threshold, uint8_t undervoltage_threshold, bool send_immediately) {
-    if (send_immediately && LTC6802_1_IsBusy()) {
-        return LTC6802_1_ERROR_BUSY;
-    }
-    
+LTC6802_1_Error_E LTC6802_1_SetVoltageThresholds8(uint8_t overvoltage_threshold, uint8_t undervoltage_threshold) {
     // Set 8-bit thresholds directly (no conversion needed)
     ltc_module.config.overvoltage_threshold = overvoltage_threshold;
     ltc_module.config.undervoltage_threshold = undervoltage_threshold;
     
-    if (send_immediately) {
-        BuildConfigData();
-        
-        // Start config write sequence
-        ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
-        ltc_module.current_stack_index = 0;
-        ltc_module.retry_count = 0;
-        ltc_module.state_timestamp = SysTick_Get();
-    }
-    
     return LTC6802_1_ERROR_NONE;
 }
 
 
 
-LTC6802_1_Error_E LTC6802_1_ResetConfigToDefaults(bool send_immediately) {
-    if (send_immediately && LTC6802_1_IsBusy()) {
-        return LTC6802_1_ERROR_BUSY;
-    }
-    
+LTC6802_1_Error_E LTC6802_1_ResetConfigToDefaults(void) {
     // Reset to safe defaults using hardware-accurate structure
     for (uint8_t i = 0; i < LTC6802_1_NUM_STACKS; i++) {
         ltc_module.config.discharge_cells[i] = 0;              // No cell balancing initially
@@ -1038,24 +1097,10 @@ LTC6802_1_Error_E LTC6802_1_ResetConfigToDefaults(bool send_immediately) {
     ltc_module.config.cell10_enable = false;                  // Disable 10th cell (using 12-cell config)
     ltc_module.config.cdc_mode = 1;                          // Normal CDC mode (typically 1 for normal discharge)
     
-    if (send_immediately) {
-        BuildConfigData();
-        
-        // Start config write sequence
-        ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
-        ltc_module.current_stack_index = 0;
-        ltc_module.retry_count = 0;
-        ltc_module.state_timestamp = SysTick_Get();
-    }
-    
     return LTC6802_1_ERROR_NONE;
 }
 
-LTC6802_1_Error_E LTC6802_1_SetGPIO1(uint8_t stack_id, bool state, bool send_immediately) {
-    if (send_immediately && LTC6802_1_IsBusy()) {
-        return LTC6802_1_ERROR_BUSY;
-    }
-    
+LTC6802_1_Error_E LTC6802_1_SetGPIO1(uint8_t stack_id, bool state) {
     // Validate stack_id (LTC6802_1_ALL_STACKS means all stacks)
     if (stack_id != LTC6802_1_ALL_STACKS && stack_id >= LTC6802_1_NUM_STACKS) {
         return LTC6802_1_ERROR_INVALID_STACK;
@@ -1070,16 +1115,6 @@ LTC6802_1_Error_E LTC6802_1_SetGPIO1(uint8_t stack_id, bool state, bool send_imm
     } else {
         // Set for specific stack
         ltc_module.config.gpio1_state[stack_id] = !state; //Hardware signal is inverse
-    }
-    
-    if (send_immediately) {
-        BuildConfigData();
-        
-        // Start config write sequence
-        ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
-        ltc_module.current_stack_index = 0;
-        ltc_module.retry_count = 0;
-        ltc_module.state_timestamp = SysTick_Get();
     }
     
     return LTC6802_1_ERROR_NONE;
@@ -1110,20 +1145,15 @@ LTC6802_1_Error_E LTC6802_1_SetGPIO1(uint8_t stack_id, bool state, bool send_imm
 //        BuildConfigData();
 //        
 //        // Start config write sequence
-//        ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
-//        ltc_module.current_stack_index = 0;
+//        ltc_module.nextState = config_write_state;
 //        ltc_module.retry_count = 0;
-//        ltc_module.state_timestamp = SysTick_Get();
+//        SysTick_TimerStart(ltc6802_spiTimer);
 //    }
 //    
 //    return LTC6802_1_ERROR_NONE;
 //}
 
-LTC6802_1_Error_E LTC6802_1_SetCellMonitoring(uint8_t stack_id, uint16_t monitor_mask, bool send_immediately) {
-    if (send_immediately && LTC6802_1_IsBusy()) {
-        return LTC6802_1_ERROR_BUSY;
-    }
-    
+LTC6802_1_Error_E LTC6802_1_SetCellMonitoring(uint8_t stack_id, uint16_t monitor_mask) {
     // Validate stack_id (LTC6802_1_ALL_STACKS means all stacks)
     if (stack_id != LTC6802_1_ALL_STACKS && stack_id >= LTC6802_1_NUM_STACKS) {
         return LTC6802_1_ERROR_INVALID_STACK;
@@ -1143,106 +1173,34 @@ LTC6802_1_Error_E LTC6802_1_SetCellMonitoring(uint8_t stack_id, uint16_t monitor
         ltc_module.config.monitor_cells[stack_id] = masked_monitor;
     }
     
-    if (send_immediately) {
-        BuildConfigData();
-        
-        // Start config write sequence
-        ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
-        ltc_module.current_stack_index = 0;
-        ltc_module.retry_count = 0;
-        ltc_module.state_timestamp = SysTick_Get();
-    }
-    
     return LTC6802_1_ERROR_NONE;
 }
 
-LTC6802_1_Error_E LTC6802_1_SendConfig(void) {
-    if (LTC6802_1_IsBusy()) {
-        return LTC6802_1_ERROR_BUSY;
-    }
-    
-    BuildConfigData();
-    
-    // Start config write sequence
-    ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
-    ltc_module.retry_count = 0;
-    ltc_module.state_timestamp = SysTick_Get();
-    
-    return LTC6802_1_ERROR_NONE;
-}
-
-LTC6802_1_Error_E LTC6802_1_SetADCMode(LTC6802_1_ADC_Mode_E mode, bool send_immediately) {
-    if (send_immediately && LTC6802_1_IsBusy()) {
-        return LTC6802_1_ERROR_BUSY;
-    }
-    
+LTC6802_1_Error_E LTC6802_1_SetADCMode(LTC6802_1_ADC_Mode_E mode) {
     // Set CDC mode based on ADC mode (maps to CDC[2:0] bits)
     ltc_module.config.cdc_mode = (uint8_t)mode;
     
-    if (send_immediately) {
-        BuildConfigData();
-        
-        // Start config write sequence
-        ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
-        ltc_module.current_stack_index = 0;
-        ltc_module.retry_count = 0;
-        ltc_module.state_timestamp = SysTick_Get();
-    }
-    
     return LTC6802_1_ERROR_NONE;
 }
 
-LTC6802_1_Error_E LTC6802_1_SetVoltageThresholds(uint16_t overvoltage_mv, uint16_t undervoltage_mv, bool send_immediately) {
-    if (send_immediately && LTC6802_1_IsBusy()) {
-        return LTC6802_1_ERROR_BUSY;
-    }
-    
+LTC6802_1_Error_E LTC6802_1_SetVoltageThresholds(uint16_t overvoltage_mv, uint16_t undervoltage_mv) {
     // Convert millivolts to 8-bit threshold values
     // LTC6802-1 uses different scaling than stated 1.5mV per LSB
     // These are 8-bit values, so scale appropriately
     ltc_module.config.overvoltage_threshold = (uint8_t)((overvoltage_mv * 255) / 6000);   // Scale to 8-bit for ~6V max
     ltc_module.config.undervoltage_threshold = (uint8_t)((undervoltage_mv * 255) / 6000); // Scale to 8-bit for ~6V max
     
-    if (send_immediately) {
-        BuildConfigData();
-        
-        // Start config write sequence
-        ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
-        ltc_module.current_stack_index = 0;
-        ltc_module.retry_count = 0;
-        ltc_module.state_timestamp = SysTick_Get();
-    }
-    
     return LTC6802_1_ERROR_NONE;
 }
 
-LTC6802_1_Error_E LTC6802_1_EnableTemperature(bool enable, bool send_immediately) {
-    if (send_immediately && LTC6802_1_IsBusy()) {
-        return LTC6802_1_ERROR_BUSY;
-    }
-    
-    // Temperature measurement is controlled by LVLPL bit in CFGR0
-    // When LVLPL=1, level polling is enabled (includes temperature)
+LTC6802_1_Error_E LTC6802_1_SetPolling(bool enable) {
+    // When LVLPL=1, level polling is enabled, when LVLPL=0, toggle polling is enabled
     ltc_module.config.lvlpl_enable = enable;
     
-    if (send_immediately) {
-        BuildConfigData();
-        
-        // Start config write sequence
-        ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
-        ltc_module.current_stack_index = 0;
-        ltc_module.retry_count = 0;
-        ltc_module.state_timestamp = SysTick_Get();
-    }
-    
     return LTC6802_1_ERROR_NONE;
 }
 
-LTC6802_1_Error_E LTC6802_1_EnableVoltageComparison(uint8_t stack_id, bool enable, bool send_immediately) {
-    if (send_immediately && LTC6802_1_IsBusy()) {
-        return LTC6802_1_ERROR_BUSY;
-    }
-    
+LTC6802_1_Error_E LTC6802_1_EnableVoltageComparison(uint8_t stack_id, bool enable) {
     // Validate stack_id (LTC6802_1_ALL_STACKS means all stacks)
     if (stack_id != LTC6802_1_ALL_STACKS && stack_id >= LTC6802_1_NUM_STACKS) {
         return LTC6802_1_ERROR_INVALID_STACK;
@@ -1263,46 +1221,67 @@ LTC6802_1_Error_E LTC6802_1_EnableVoltageComparison(uint8_t stack_id, bool enabl
         ltc_module.config.monitor_cells[stack_id] = monitor_value;
     }
     
-    if (send_immediately) {
-        BuildConfigData();
-        
-        // Start config write sequence
-        ltc_module.state = LTC6802_1_STATE_CONFIG_WRITE;
-        ltc_module.current_stack_index = 0;
-        ltc_module.retry_count = 0;
-        ltc_module.state_timestamp = SysTick_Get();
-    }
-    
     return LTC6802_1_ERROR_NONE;
 }
 
-
 /******************************************************************************
- * Data Access Function Implementations
+ * Simplified Error Handling Implementation
  *******************************************************************************/
 
-float LTC6802_1_GetStackVoltage(uint8_t stack_id) {
-    if (stack_id >= LTC6802_1_NUM_STACKS) {
-        return LTC6802_1_INVALID_DATA;
-    }
-
-        if (!ltc_module.voltage_data_valid){
-            return LTC6802_1_INVALID_DATA;
-        }
-        if(IsDataStale(ltc_module.voltage_data_timestamp)) {
-            return LTC6802_1_INVALID_DATA;
-        }
-
-        return ltc_module.stack_voltage[stack_id];
-
+static void LogError(LTC6802_1_Error_E error_type) {
+    // Log error to circular buffer
+    ltc_module.error_buffer[ltc_module.error_write_index].error_type = error_type;
+    ltc_module.error_buffer[ltc_module.error_write_index].state_when_occurred = (uint8_t)ltc_module.curState;
+    ltc_module.error_buffer[ltc_module.error_write_index].timestamp = SysTick_Get();
+    
+    // Advance circular buffer index
+    ltc_module.error_write_index = (ltc_module.error_write_index + 1) % 16;
+    
+    // Increment total error count
+    ltc_module.total_error_count++;
+    
+    // Transition to faulted state
+    TransitionToFaulted(error_type);
 }
 
-float LTC6802_1_GetPackVoltage(void) {
-    if (!ltc_module.voltage_data_valid){
-        return LTC6802_1_INVALID_DATA;
+uint8_t LTC6802_1_GetRecentErrors(LTC6802_1_Error_Entry_S* output, uint8_t max_count) {
+    if (!output || max_count == 0) {
+        return 0;
     }
-    if(IsDataStale(ltc_module.voltage_data_timestamp)) {
-        return LTC6802_1_INVALID_DATA;
+    
+    uint8_t count = (max_count > 16) ? 16 : max_count;
+    uint8_t start_index = ltc_module.error_write_index;
+    
+    // Copy most recent errors (working backwards from write index)
+    for (uint8_t i = 0; i < count; i++) {
+        uint8_t src_index = (start_index - 1 - i + 16) % 16;
+        output[i] = ltc_module.error_buffer[src_index];
+        
+        // Stop if we hit an empty slot (error_type == 0)
+        if (ltc_module.error_buffer[src_index].error_type == LTC6802_1_ERROR_NONE) {
+            return i;
+        }
     }
-    return ltc_module.pack_voltage;// return ltc_module.pack_voltage;
+    
+    return count;
+}
+
+uint16_t LTC6802_1_GetTotalErrorCount(void) {
+    return ltc_module.total_error_count;
+}
+
+void LTC6802_1_ClearAllErrors(void) {
+    // Clear error buffer
+    memset(ltc_module.error_buffer, 0, sizeof(ltc_module.error_buffer));
+    ltc_module.error_write_index = 0;
+    ltc_module.total_error_count = 0;
+    
+    // Exit faulted state if currently faulted
+    if (ltc_module.curState == faulted_state) {
+        TransitionToIdle();
+    }
+}
+
+uint8_t LTC6802_1_GetState(void) {
+    return (uint8_t)ltc_module.curState;
 }

@@ -1,2 +1,2 @@
-python dbc_json_to_C.py
+python dbc_json_to_C_refactored.py
 python dbc_json_to_DBF.py

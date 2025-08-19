@@ -157,6 +157,13 @@ void spi1ResetBufferedTransaction(void);
  */
 void spi1GetDebugState(uint8_t* tx_idx, uint8_t* rx_idx, uint8_t* tx_len, uint8_t* rx_len);
 
+/**
+ * @function: spi1GetTransactionIndices - Get current SPI1 transaction indices
+ * @param tx_index: Pointer to store current TX index
+ * @param rx_index: Pointer to store current RX index
+ */
+void spi1GetTransactionIndices(uint8_t* tx_index, uint8_t* rx_index);
+
 #endif	/* SPI_H */
 
 

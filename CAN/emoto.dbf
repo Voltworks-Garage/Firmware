@@ -6,9 +6,9 @@
 
 [BUSMASTER_VERSION] [3.2.2]
 
-[NUMBER_OF_MESSAGES] 21
+[NUMBER_OF_MESSAGES] 25
 
-[START_MSG] dash_status,1793,8,7,1,S
+[START_MSG] dash_status,1797,8,7,1,S
 [START_SIGNALS] heartBeat,4,1,0.0,U,15,0,1,0,1.0,
 [START_SIGNALS] state,3,1,4.0,U,7,0,1,0,1.0,
 [START_SIGNALS] killButton,2,1,7.0,U,3,0,1,0,1.0,
@@ -26,7 +26,7 @@
 [START_SIGNALS] hornRequest,1,1,4.0,B,1,0,1,0,1.0,bool
 [END_MSG]
 
-[START_MSG] dash_data1,403105269,8,4,1,X
+[START_MSG] dash_data1,402673781,8,4,1,X
 [START_SIGNALS] speed,16,1,0.0,U,65535,0,1,0,1.0,
 [START_SIGNALS] odometer,16,3,0.0,U,65535,0,1,0,1.0,
 [START_SIGNALS] tripA,16,5,0.0,U,65535,0,1,0,1.0,
@@ -40,31 +40,61 @@
 [START_SIGNALS] tripB,16,7,0.0,U,65535,0,1,0,1.0,
 [END_MSG]
 
-[START_MSG] mcu_status,1809,8,24,1,S
-[START_SIGNALS] heartbeat,4,1,0.0,U,15,0,1,0,1.0,
-[START_SIGNALS] highBeam,1,1,4.0,B,1,0,1,0,1.0,bool
-[START_SIGNALS] lowBeam,1,1,5.0,B,1,0,1,0,1.0,bool
-[START_SIGNALS] brakeLight,1,1,6.0,B,1,0,1,0,1.0,bool
-[START_SIGNALS] tailLight,1,1,7.0,B,1,0,1,0,1.0,bool
-[START_SIGNALS] horn,1,2,0.0,B,1,0,1,0,1.0,bool
-[START_SIGNALS] turnSignalFR,1,2,1.0,B,1,0,1,0,1.0,bool
-[START_SIGNALS] turnSignalFL,1,2,2.0,B,1,0,1,0,1.0,bool
-[START_SIGNALS] turnSignalRR,1,2,3.0,B,1,0,1,0,1.0,bool
-[START_SIGNALS] turnSignalRL,1,2,4.0,B,1,0,1,0,1.0,bool
-[START_SIGNALS] brakeSwitchFront,1,2,5.0,B,1,0,1,0,1.0,bool
-[START_SIGNALS] brakeSwitchRear,1,2,6.0,B,1,0,1,0,1.0,bool
-[START_SIGNALS] killSwitch,1,2,7.0,B,1,0,1,0,1.0,bool
-[START_SIGNALS] ignitionSwitch,1,3,0.0,B,1,0,1,0,1.0,bool
-[START_SIGNALS] leftTurnSwitch,1,3,1.0,B,1,0,1,0,1.0,bool
-[START_SIGNALS] rightTurnSwitch,1,3,2.0,B,1,0,1,0,1.0,bool
-[START_SIGNALS] lightSwitch,1,3,3.0,B,1,0,1,0,1.0,bool
-[START_SIGNALS] assSwitch,1,3,4.0,B,1,0,1,0,1.0,bool
-[START_SIGNALS] hornSwitch,1,3,5.0,B,1,0,1,0,1.0,bool
-[START_SIGNALS] batt_voltage,8,3,6.0,U,255,0,1,0,0.1,V
-[START_SIGNALS] batt_current,16,4,6.0,U,65535,0,1,-33,0.001,A
-[START_SIGNALS] dcdc_current,16,6,6.0,U,65535,0,1,-33,0.001,A
-[START_SIGNALS] batt_fault,1,8,6.0,B,1,0,1,0,1.0,bool
-[START_SIGNALS] dcdc_fault,1,8,7.0,B,1,0,1,0,1.0,bool
+[START_MSG] mcu_status,1809,8,54,1,S
+[START_SIGNALS] multiplex,3,1,0.0,U,7,0,1,0,1.0,,m
+[START_SIGNALS] vehicleState,3,1,3.0,U,7,0,1,0,1.0,,M0
+[START_SIGNALS] highBeam,1,1,6.0,B,1,0,1,0,1.0,bool,M0
+[START_SIGNALS] lowBeam,1,1,7.0,B,1,0,1,0,1.0,bool,M0
+[START_SIGNALS] brakeLight,1,2,0.0,B,1,0,1,0,1.0,bool,M0
+[START_SIGNALS] tailLight,1,2,1.0,B,1,0,1,0,1.0,bool,M0
+[START_SIGNALS] horn,1,2,2.0,B,1,0,1,0,1.0,bool,M0
+[START_SIGNALS] turnSignalFR,1,2,3.0,B,1,0,1,0,1.0,bool,M0
+[START_SIGNALS] turnSignalFL,1,2,4.0,B,1,0,1,0,1.0,bool,M0
+[START_SIGNALS] turnSignalRR,1,2,5.0,B,1,0,1,0,1.0,bool,M0
+[START_SIGNALS] turnSignalRL,1,2,6.0,B,1,0,1,0,1.0,bool,M0
+[START_SIGNALS] brakeSwitchFront,1,2,7.0,B,1,0,1,0,1.0,bool,M0
+[START_SIGNALS] brakeSwitchRear,1,3,0.0,B,1,0,1,0,1.0,bool,M0
+[START_SIGNALS] killSwitch,1,3,1.0,B,1,0,1,0,1.0,bool,M0
+[START_SIGNALS] ignitionSwitch,1,3,2.0,B,1,0,1,0,1.0,bool,M0
+[START_SIGNALS] leftTurnSwitch,1,3,3.0,B,1,0,1,0,1.0,bool,M0
+[START_SIGNALS] rightTurnSwitch,1,3,4.0,B,1,0,1,0,1.0,bool,M0
+[START_SIGNALS] lightSwitch,1,3,5.0,B,1,0,1,0,1.0,bool,M0
+[START_SIGNALS] assSwitch,1,3,6.0,B,1,0,1,0,1.0,bool,M0
+[START_SIGNALS] hornSwitch,1,3,7.0,B,1,0,1,0,1.0,bool,M0
+[START_SIGNALS] batt_voltage,8,1,3.0,U,255,0,1,0,0.1,V,M1
+[START_SIGNALS] batt_current,16,2,3.0,U,65535,0,1,-33,0.001,A,M1
+[START_SIGNALS] dcdc_current,16,4,3.0,U,65535,0,1,-33,0.001,A,M1
+[START_SIGNALS] batt_fault,1,6,3.0,B,1,0,1,0,1.0,bool,M1
+[START_SIGNALS] dcdc_fault,1,6,4.0,B,1,0,1,0,1.0,bool,M1
+[START_SIGNALS] fan_fault,1,6,5.0,B,1,0,1,0,1.0,bool,M1
+[START_SIGNALS] pump_fault,1,6,6.0,B,1,0,1,0,1.0,bool,M1
+[START_SIGNALS] taillight_fault,1,6,7.0,B,1,0,1,0,1.0,bool,M1
+[START_SIGNALS] brakelight_fault,1,7,0.0,B,1,0,1,0,1.0,bool,M1
+[START_SIGNALS] lowbeam_fault,1,7,1.0,B,1,0,1,0,1.0,bool,M1
+[START_SIGNALS] highbeam_fault,1,7,2.0,B,1,0,1,0,1.0,bool,M1
+[START_SIGNALS] horn_fault,1,7,3.0,B,1,0,1,0,1.0,bool,M1
+[START_SIGNALS] aux_port_fault,1,7,4.0,B,1,0,1,0,1.0,bool,M1
+[START_SIGNALS] heated_grips_fault,1,7,5.0,B,1,0,1,0,1.0,bool,M1
+[START_SIGNALS] heated_seat_fault,1,7,6.0,B,1,0,1,0,1.0,bool,M1
+[START_SIGNALS] charge_controller_fault,1,7,7.0,B,1,0,1,0,1.0,bool,M1
+[START_SIGNALS] motor_controller_fault,1,8,0.0,B,1,0,1,0,1.0,bool,M1
+[START_SIGNALS] bms_controller_fault,1,8,1.0,B,1,0,1,0,1.0,bool,M1
+[START_SIGNALS] spare_1_controller_fault,1,8,2.0,B,1,0,1,0,1.0,bool,M1
+[START_SIGNALS] ic_controller_fault,1,8,3.0,B,1,0,1,0,1.0,bool,M1
+[START_SIGNALS] fan_current,10,1,3.0,U,1023,0,1,0,0.01,A,M2
+[START_SIGNALS] pump_current,10,2,5.0,U,1023,0,1,0,0.01,A,M2
+[START_SIGNALS] taillight_current,10,3,7.0,U,1023,0,1,0,0.01,A,M2
+[START_SIGNALS] brakelight_current,10,5,1.0,U,1023,0,1,0,0.01,A,M2
+[START_SIGNALS] lowbeam_current,10,6,3.0,U,1023,0,1,0,0.01,A,M2
+[START_SIGNALS] highbeam_current,10,7,5.0,U,1023,0,1,0,0.01,A,M2
+[START_SIGNALS] horn_current,10,1,3.0,U,1023,0,1,0,0.01,A,M3
+[START_SIGNALS] aux_port_current,10,2,5.0,U,1023,0,1,0,0.01,A,M3
+[START_SIGNALS] heated_grips_current,10,3,7.0,U,1023,0,1,0,0.01,A,M3
+[START_SIGNALS] heated_seat_current,10,5,1.0,U,1023,0,1,0,0.01,A,M3
+[START_SIGNALS] charge_controller_current,10,6,3.0,U,1023,0,1,0,0.01,A,M3
+[START_SIGNALS] motor_controller_current,10,7,5.0,U,1023,0,1,0,0.01,A,M3
+[START_SIGNALS] bms_controller_current,10,1,3.0,U,1023,0,1,0,0.01,A,M4
+[START_SIGNALS] spare_1_controller_current,10,2,5.0,U,1023,0,1,0,0.01,A,M4
 [END_MSG]
 
 [START_MSG] mcu_command,1810,8,5,1,S
@@ -91,29 +121,60 @@
 [START_SIGNALS] byte7,8,8,0.0,U,255,0,1,0,1.0,
 [END_MSG]
 
-[START_MSG] bms_status,1825,8,19,1,S
+[START_MSG] mcu_mcu_debug,1811,8,17,1,S
 [START_SIGNALS] Multiplex,2,1,0.0,U,3,0,1,0,1.0,,m
-[START_SIGNALS] state,3,1,2.0,U,7,0,1,0,1.0,,M0
-[START_SIGNALS] SOC,8,1,5.0,U,255,0,1,0,0.5,%,M0
-[START_SIGNALS] packVoltage,16,2,5.0,U,65535,0,1,0,0.01,V,M0
-[START_SIGNALS] packCurrent,16,4,5.0,U,65535,0,1,0,0.01,A,M0
-[START_SIGNALS] minTemp,9,6,5.0,U,511,0,1,-40,0.2,degC,M0
-[START_SIGNALS] maxTemp,10,7,6.0,U,1023,0,1,-40,0.2,degC,M0
-[START_SIGNALS] stackVoltage1,16,1,2.0,U,65535,0,1,0,0.001,V,M1
-[START_SIGNALS] stackVoltage2,16,3,2.0,U,65535,0,1,0,0.001,V,M1
-[START_SIGNALS] packVoltageSumOfStacks,18,5,2.0,U,262143,0,1,0,0.001,V,M1
-[START_SIGNALS] mux1_signal4,12,7,4.0,U,4095,0,1,0,1.0,,M1
-[START_SIGNALS] mux2_signal1,16,1,2.0,U,65535,0,1,0,1.0,,M2
-[START_SIGNALS] mux2_signal2,16,3,2.0,U,65535,0,1,0,1.0,,M2
-[START_SIGNALS] mux2_signal3,16,5,2.0,U,65535,0,1,0,1.0,,M2
-[START_SIGNALS] mux2_signal4,14,7,2.0,U,16383,0,1,0,1.0,,M2
-[START_SIGNALS] mux3_signal1,16,1,2.0,U,65535,0,1,0,1.0,,M3
-[START_SIGNALS] mux3_signal2,16,3,2.0,U,65535,0,1,0,1.0,,M3
-[START_SIGNALS] mux3_signal3,16,5,2.0,U,65535,0,1,0,1.0,,M3
-[START_SIGNALS] mux3_signal4,14,7,2.0,U,16383,0,1,0,1.0,,M3
+[START_SIGNALS] cpu_usage_percent,8,1,2.0,U,255,0,1,0,0.5,%,M2
+[START_SIGNALS] cpu_peak_percent,8,2,2.0,U,255,0,1,0,0.5,%,M2
+[START_SIGNALS] debug_value_3,8,1,2.0,U,255,0,1,0,1.0,,M0
+[START_SIGNALS] debug_value_4,8,2,2.0,U,255,0,1,0,1.0,,M0
+[START_SIGNALS] debug_value_5,8,1,2.0,U,255,0,1,0,1.0,,M1
+[START_SIGNALS] debug_value_6,8,2,2.0,U,255,0,1,0,1.0,,M1
+[START_SIGNALS] debug_value_7,8,3,2.0,U,255,0,1,0,1.0,,M1
+[START_SIGNALS] debug_value_8,8,4,2.0,U,255,0,1,0,1.0,,M1
+[START_SIGNALS] debug_value_9,8,3,2.0,U,255,0,1,0,1.0,,M2
+[START_SIGNALS] debug_value_10,8,4,2.0,U,255,0,1,0,1.0,,M2
+[START_SIGNALS] debug_value_11,8,5,2.0,U,255,0,1,0,1.0,,M2
+[START_SIGNALS] debug_value_12,8,6,2.0,U,255,0,1,0,1.0,,M2
+[START_SIGNALS] debug_value_13,8,1,2.0,U,255,0,1,0,1.0,,M3
+[START_SIGNALS] debug_value_14,8,2,2.0,U,255,0,1,0,1.0,,M3
+[START_SIGNALS] debug_value_15,8,3,2.0,U,255,0,1,0,1.0,,M3
+[START_SIGNALS] debug_value_16,8,4,2.0,U,255,0,1,0,1.0,,M3
 [END_MSG]
 
-[START_MSG] bms_status_2,1826,8,11,1,S
+[START_MSG] bms_status,1825,8,30,1,S
+[START_SIGNALS] multiplex,3,1,0.0,U,7,0,1,0,1.0,,m
+[START_SIGNALS] bms_state,4,1,3.0,U,15,0,1,0,1.0,enum,M0
+[START_SIGNALS] pack_voltage,16,1,7.0,U,65535,0,1,0,0.01,V,M0
+[START_SIGNALS] pack_current,16,3,7.0,U,65535,0,1,-320,0.01,A,M0
+[START_SIGNALS] soc_percent,8,5,7.0,U,255,0,1,0,0.5,%,M0
+[START_SIGNALS] pack_temp_min,8,6,7.0,U,255,0,1,-40,1.0,degC,M0
+[START_SIGNALS] pack_temp_max,8,7,7.0,U,255,0,1,-40,1.0,degC,M0
+[START_SIGNALS] stack_voltage_1,16,1,3.0,U,65535,0,1,0,0.001,V,M1
+[START_SIGNALS] stack_voltage_2,16,3,3.0,U,65535,0,1,0,0.001,V,M1
+[START_SIGNALS] pack_voltage_sum_of_stacks,18,5,3.0,U,262143,0,1,0,0.001,V,M1
+[START_SIGNALS] ltc_state,4,1,3.0,U,15,0,1,0,1.0,enum,M2
+[START_SIGNALS] ltc_error_count,12,1,7.0,U,4095,0,1,0,1.0,,M2
+[START_SIGNALS] ltc_last_error,8,3,3.0,U,255,0,1,0,1.0,enum,M2
+[START_SIGNALS] cpu_usage_percent,8,4,3.0,U,255,0,1,0,0.5,%,M2
+[START_SIGNALS] cpu_peak_percent,8,5,3.0,U,255,0,1,0,0.5,%,M2
+[START_SIGNALS] vbus_voltage,10,6,3.0,U,1023,0,1,0,0.1,V,M2
+[START_SIGNALS] internal_temp,8,7,5.0,U,255,0,1,-40,1.0,degC,M2
+[START_SIGNALS] max_charge_current_mA,16,1,3.0,U,65535,0,1,0,1.0,mA,M3
+[START_SIGNALS] max_charge_voltage_mV,18,3,3.0,U,262143,0,1,0,1.0,mV,M3
+[START_SIGNALS] contactors_closed,1,5,5.0,B,1,0,1,0,1.0,bool,M3
+[START_SIGNALS] precharge_active,1,5,6.0,B,1,0,1,0,1.0,bool,M3
+[START_SIGNALS] charge_enabled,1,5,7.0,B,1,0,1,0,1.0,bool,M3
+[START_SIGNALS] discharge_enabled,1,6,0.0,B,1,0,1,0,1.0,bool,M3
+[START_SIGNALS] fault_summary,12,6,1.0,U,4095,0,1,0,1.0,bitfield,M3
+[START_SIGNALS] is_balancing,1,7,5.0,B,1,0,1,0,1.0,bool,M3
+[START_SIGNALS] cell_A_balancing,5,7,6.0,U,31,0,1,0,1.0,,M3
+[START_SIGNALS] cell_B_balancing,5,1,3.0,U,31,0,1,0,1.0,,M4
+[START_SIGNALS] cell_C_balancing,5,2,0.0,U,31,0,1,0,1.0,,M4
+[START_SIGNALS] cell_D_balancing,5,2,5.0,U,31,0,1,0,1.0,,M4
+[START_SIGNALS] cell_E_balancing,5,3,2.0,U,31,0,1,0,1.0,,M4
+[END_MSG]
+
+[START_MSG] bms_power_systems,1826,8,11,1,S
 [START_SIGNALS] DCDC_state,1,1,0.0,B,1,0,1,0,1.0,bool
 [START_SIGNALS] DCDC_fault,1,1,1.0,B,1,0,1,0,1.0,bool
 [START_SIGNALS] DCDC_voltage,10,1,2.0,U,1023,0,1,0,0.1,V
@@ -121,20 +182,19 @@
 [START_SIGNALS] EV_charger_state,1,3,6.0,B,1,0,1,0,1.0,bool
 [START_SIGNALS] EV_charger_fault,1,3,7.0,B,1,0,1,0,1.0,bool
 [START_SIGNALS] EV_charger_voltage,10,4,0.0,U,1023,0,1,0,0.1,V
-[START_SIGNALS] EV_charger_current,10,5,2.0,U,1023,0,1,0,0.1,A
+[START_SIGNALS] EV_charger_current,10,5,2.0,U,1023,0,1,-50,0.1,A
 [START_SIGNALS] HV_precharge_state,1,6,4.0,B,1,0,1,0,1.0,bool
 [START_SIGNALS] HV_isolation_voltage,10,6,5.0,U,1023,0,1,0,0.1,V
 [START_SIGNALS] HV_contactor_state,1,7,7.0,B,1,0,1,0,1.0,bool
 [END_MSG]
 
-[START_MSG] bms_debug,1827,8,7,1,S
+[START_MSG] bms_debug,1827,8,6,1,S
 [START_SIGNALS] bool0,1,1,0.0,B,1,0,1,0,1.0,bool
 [START_SIGNALS] bool1,1,1,1.0,B,1,0,1,0,1.0,bool
 [START_SIGNALS] float1,16,1,2.0,U,65535,0,1,0,0.01,V
 [START_SIGNALS] float2,16,3,2.0,U,65535,0,1,0,0.01,V
-[START_SIGNALS] VBUS_Voltage,10,5,2.0,U,1023,0,1,0,0.1,V
-[START_SIGNALS] CPU_USAGE,10,6,4.0,U,1023,0,1,0,0.1,%
-[START_SIGNALS] CPU_peak,10,7,6.0,U,1023,0,1,0,0.1,%
+[START_SIGNALS] word1,16,5,2.0,U,65535,0,1,0,1,
+[START_SIGNALS] byte1,8,7,2.0,U,255,0,1,0,1,
 [END_MSG]
 
 [START_MSG] bms_boot_response,162,8,9,1,S
@@ -149,7 +209,7 @@
 [START_SIGNALS] byte7,8,8,0.0,U,255,0,1,0,1.0,
 [END_MSG]
 
-[START_MSG] bms_charger_request,403105268,8,8,1,X
+[START_MSG] bms_charger_request,402673780,8,8,1,X
 [START_SIGNALS] output_voltage_high_byte,8,1,0.0,U,255,0,1,0,1.0,
 [START_SIGNALS] output_voltage_low_byte,8,2,0.0,U,255,0,1,0,1.0,
 [START_SIGNALS] output_current_high_byte,8,3,0.0,U,255,0,1,0,1.0,
@@ -160,60 +220,76 @@
 [START_SIGNALS] byte_8,8,8,0.0,U,255,0,1,0,1.0,
 [END_MSG]
 
-[START_MSG] bms_cellVoltages,1829,8,25,1,S
-[START_SIGNALS] MultiPlex,4,1,0.0,U,15,0,1,0,1.0,,m
-[START_SIGNALS] cell_1_voltage,15,1,4.0,U,32767,0,1,0,1,mV,M0
-[START_SIGNALS] cell_2_voltage,15,3,3.0,U,32767,0,1,0,1,mV,M0
-[START_SIGNALS] cell_3_voltage,15,5,2.0,U,32767,0,1,0,1,mV,M0
-[START_SIGNALS] cell_4_voltage,15,7,1.0,U,32767,0,1,0,1,mV,M0
-[START_SIGNALS] cell_5_voltage,15,1,4.0,U,32767,0,1,0,1,mV,M1
-[START_SIGNALS] cell_6_voltage,15,3,3.0,U,32767,0,1,0,1,mV,M1
-[START_SIGNALS] cell_7_voltage,15,5,2.0,U,32767,0,1,0,1,mV,M1
-[START_SIGNALS] cell_8_voltage,15,7,1.0,U,32767,0,1,0,1,mV,M1
-[START_SIGNALS] cell_9_voltage,15,1,4.0,U,32767,0,1,0,1,mV,M2
-[START_SIGNALS] cell_10_voltage,15,3,3.0,U,32767,0,1,0,1,mV,M2
-[START_SIGNALS] cell_11_voltage,15,5,2.0,U,32767,0,1,0,1,mV,M2
-[START_SIGNALS] cell_12_voltage,15,7,1.0,U,32767,0,1,0,1,mV,M2
-[START_SIGNALS] cell_13_voltage,15,1,4.0,U,32767,0,1,0,1,mV,M3
-[START_SIGNALS] cell_14_voltage,15,3,3.0,U,32767,0,1,0,1,mV,M3
-[START_SIGNALS] cell_15_voltage,15,5,2.0,U,32767,0,1,0,1,mV,M3
-[START_SIGNALS] cell_16_voltage,15,7,1.0,U,32767,0,1,0,1,mV,M3
-[START_SIGNALS] cell_17_voltage,15,1,4.0,U,32767,0,1,0,1,mV,M4
-[START_SIGNALS] cell_18_voltage,15,3,3.0,U,32767,0,1,0,1,mV,M4
-[START_SIGNALS] cell_19_voltage,15,5,2.0,U,32767,0,1,0,1,mV,M4
-[START_SIGNALS] cell_20_voltage,15,7,1.0,U,32767,0,1,0,1,mV,M4
-[START_SIGNALS] cell_21_voltage,15,1,4.0,U,32767,0,1,0,1,mV,M5
-[START_SIGNALS] cell_22_voltage,15,3,3.0,U,32767,0,1,0,1,mV,M5
-[START_SIGNALS] cell_23_voltage,15,5,2.0,U,32767,0,1,0,1,mV,M5
-[START_SIGNALS] cell_24_voltage,15,7,1.0,U,32767,0,1,0,1,mV,M5
+[START_MSG] bms_cell_voltages,1829,8,25,1,S
+[START_SIGNALS] multiplex,3,1,0.0,U,7,0,1,0,1.0,,m
+[START_SIGNALS] cell_1_voltage,15,1,3.0,U,32767,0,1,0,1,mV,M0
+[START_SIGNALS] cell_2_voltage,15,3,2.0,U,32767,0,1,0,1,mV,M0
+[START_SIGNALS] cell_3_voltage,15,5,1.0,U,32767,0,1,0,1,mV,M0
+[START_SIGNALS] cell_4_voltage,15,7,0.0,U,32767,0,1,0,1,mV,M0
+[START_SIGNALS] cell_5_voltage,15,1,3.0,U,32767,0,1,0,1,mV,M1
+[START_SIGNALS] cell_6_voltage,15,3,2.0,U,32767,0,1,0,1,mV,M1
+[START_SIGNALS] cell_7_voltage,15,5,1.0,U,32767,0,1,0,1,mV,M1
+[START_SIGNALS] cell_8_voltage,15,7,0.0,U,32767,0,1,0,1,mV,M1
+[START_SIGNALS] cell_9_voltage,15,1,3.0,U,32767,0,1,0,1,mV,M2
+[START_SIGNALS] cell_10_voltage,15,3,2.0,U,32767,0,1,0,1,mV,M2
+[START_SIGNALS] cell_11_voltage,15,5,1.0,U,32767,0,1,0,1,mV,M2
+[START_SIGNALS] cell_12_voltage,15,7,0.0,U,32767,0,1,0,1,mV,M2
+[START_SIGNALS] cell_13_voltage,15,1,3.0,U,32767,0,1,0,1,mV,M3
+[START_SIGNALS] cell_14_voltage,15,3,2.0,U,32767,0,1,0,1,mV,M3
+[START_SIGNALS] cell_15_voltage,15,5,1.0,U,32767,0,1,0,1,mV,M3
+[START_SIGNALS] cell_16_voltage,15,7,0.0,U,32767,0,1,0,1,mV,M3
+[START_SIGNALS] cell_17_voltage,15,1,3.0,U,32767,0,1,0,1,mV,M4
+[START_SIGNALS] cell_18_voltage,15,3,2.0,U,32767,0,1,0,1,mV,M4
+[START_SIGNALS] cell_19_voltage,15,5,1.0,U,32767,0,1,0,1,mV,M4
+[START_SIGNALS] cell_20_voltage,15,7,0.0,U,32767,0,1,0,1,mV,M4
+[START_SIGNALS] cell_21_voltage,15,1,3.0,U,32767,0,1,0,1,mV,M5
+[START_SIGNALS] cell_22_voltage,15,3,2.0,U,32767,0,1,0,1,mV,M5
+[START_SIGNALS] cell_23_voltage,15,5,1.0,U,32767,0,1,0,1,mV,M5
+[START_SIGNALS] cell_24_voltage,15,7,0.0,U,32767,0,1,0,1,mV,M5
 [END_MSG]
 
-[START_MSG] bms_cellTemperaturs,1830,8,25,1,S
-[START_SIGNALS] MultiPlex,4,1,0.0,U,15,0,1,0,1.0,,m
-[START_SIGNALS] temp_1,12,1,4.0,U,4095,0,1,-40,0.1,degC,M0
-[START_SIGNALS] temp_2,12,3,0.0,U,4095,0,1,-40,0.1,degC,M0
-[START_SIGNALS] temp_3,12,4,4.0,U,4095,0,1,-40,0.1,degC,M0
-[START_SIGNALS] temp_4,12,6,0.0,U,4095,0,1,-40,0.1,degC,M0
-[START_SIGNALS] temp_5,12,1,4.0,U,4095,0,1,-40,0.1,degC,M1
-[START_SIGNALS] temp_6,12,3,0.0,U,4095,0,1,-40,0.1,degC,M1
-[START_SIGNALS] temp_7,12,4,4.0,U,4095,0,1,-40,0.1,degC,M1
-[START_SIGNALS] temp_8,12,6,0.0,U,4095,0,1,-40,0.1,degC,M1
-[START_SIGNALS] temp_9,12,1,4.0,U,4095,0,1,-40,0.1,degC,M2
-[START_SIGNALS] temp_10,12,3,0.0,U,4095,0,1,-40,0.1,degC,M2
-[START_SIGNALS] temp_11,12,4,4.0,U,4095,0,1,-40,0.1,degC,M2
-[START_SIGNALS] temp_12,12,6,0.0,U,4095,0,1,-40,0.1,degC,M2
-[START_SIGNALS] temp_13,12,1,4.0,U,4095,0,1,-40,0.1,degC,M3
-[START_SIGNALS] temp_14,12,3,0.0,U,4095,0,1,-40,0.1,degC,M3
-[START_SIGNALS] temp_15,12,4,4.0,U,4095,0,1,-40,0.1,degC,M3
-[START_SIGNALS] temp_16,12,6,0.0,U,4095,0,1,-40,0.1,degC,M3
-[START_SIGNALS] temp_17,12,1,4.0,U,4095,0,1,-40,0.1,degC,M4
-[START_SIGNALS] temp_18,12,3,0.0,U,4095,0,1,-40,0.1,degC,M4
-[START_SIGNALS] temp_19,12,4,4.0,U,4095,0,1,-40,0.1,degC,M4
-[START_SIGNALS] temp_20,12,6,0.0,U,4095,0,1,-40,0.1,degC,M4
-[START_SIGNALS] temp_21,12,1,4.0,U,4095,0,1,-40,0.1,degC,M5
-[START_SIGNALS] temp_22,12,3,0.0,U,4095,0,1,-40,0.1,degC,M5
-[START_SIGNALS] temp_23,12,4,4.0,U,4095,0,1,-40,0.1,degC,M5
-[START_SIGNALS] temp_24,12,6,0.0,U,4095,0,1,-40,0.1,degC,M5
+[START_MSG] bms_cell_temperatures,1830,8,29,1,S
+[START_SIGNALS] multiplex,3,1,0.0,U,7,0,1,0,1.0,,m
+[START_SIGNALS] stack_1_LTC_internal_temp,12,1,3.0,U,4095,0,1,-40,0.1,degC,M0
+[START_SIGNALS] stack_1_balance_temp,12,2,7.0,U,4095,0,1,-40,0.1,degC,M0
+[START_SIGNALS] stack_2_LTC_internal_temp,12,4,3.0,U,4095,0,1,-40,0.1,degC,M0
+[START_SIGNALS] stack_2_balance_temp,12,5,7.0,U,4095,0,1,-40,0.1,degC,M0
+[START_SIGNALS] temp_1,12,1,3.0,U,4095,0,1,-40,0.1,degC,M1
+[START_SIGNALS] temp_2,12,2,7.0,U,4095,0,1,0,0.1,degC,M1
+[START_SIGNALS] temp_3,12,4,3.0,U,4095,0,1,-40,0.1,degC,M1
+[START_SIGNALS] temp_4,12,5,7.0,U,4095,0,1,-40,0.1,degC,M1
+[START_SIGNALS] temp_5,12,1,3.0,U,4095,0,1,-40,0.1,degC,M2
+[START_SIGNALS] temp_6,12,2,7.0,U,4095,0,1,-40,0.1,degC,M2
+[START_SIGNALS] temp_7,12,4,3.0,U,4095,0,1,-40,0.1,degC,M2
+[START_SIGNALS] temp_8,12,5,7.0,U,4095,0,1,-40,0.1,degC,M2
+[START_SIGNALS] temp_9,12,1,3.0,U,4095,0,1,-40,0.1,degC,M3
+[START_SIGNALS] temp_10,12,2,7.0,U,4095,0,1,-40,0.1,degC,M3
+[START_SIGNALS] temp_11,12,4,3.0,U,4095,0,1,-40,0.1,degC,M3
+[START_SIGNALS] temp_12,12,5,7.0,U,4095,0,1,-40,0.1,degC,M3
+[START_SIGNALS] temp_13,12,1,3.0,U,4095,0,1,-40,0.1,degC,M4
+[START_SIGNALS] temp_14,12,2,7.0,U,4095,0,1,-40,0.1,degC,M4
+[START_SIGNALS] temp_15,12,4,3.0,U,4095,0,1,-40,0.1,degC,M4
+[START_SIGNALS] temp_16,12,5,7.0,U,4095,0,1,-40,0.1,degC,M4
+[START_SIGNALS] temp_17,12,1,3.0,U,4095,0,1,-40,0.1,degC,M5
+[START_SIGNALS] temp_18,12,2,7.0,U,4095,0,1,-40,0.1,degC,M5
+[START_SIGNALS] temp_19,12,4,3.0,U,4095,0,1,-40,0.1,degC,M5
+[START_SIGNALS] temp_20,12,5,7.0,U,4095,0,1,-40,0.1,degC,M5
+[START_SIGNALS] temp_21,12,1,3.0,U,4095,0,1,-40,0.1,degC,M6
+[START_SIGNALS] temp_22,12,2,7.0,U,4095,0,1,-40,0.1,degC,M6
+[START_SIGNALS] temp_23,12,4,3.0,U,4095,0,1,-40,0.1,degC,M6
+[START_SIGNALS] temp_24,12,5,7.0,U,4095,0,1,-40,0.1,degC,M6
+[END_MSG]
+
+[START_MSG] motorcontroller_heartbeat,1793,8,1,1,S
+[START_SIGNALS] heartbeat,16,1,0.0,U,65535,0,1,0,1.0,
+[END_MSG]
+
+[START_MSG] motorcontroller_SYNC,128,8,1,1,S
+[START_SIGNALS] SYNC_dummy,16,1,0.0,U,65535,0,1,0,1.0,
+[END_MSG]
+
+[START_MSG] motorcontroller_Emergency,129,8,1,1,S
+[START_SIGNALS] EMCY,16,1,0.0,U,65535,0,1,0,1.0,
 [END_MSG]
 
 [START_MSG] motorcontroller_motorStatus,1841,8,8,1,S
@@ -238,7 +314,7 @@
 [START_SIGNALS] byte8,8,8,0.0,U,255,0,1,0,1.0,
 [END_MSG]
 
-[START_MSG] charger_status,419385573,8,11,1,X
+[START_MSG] charger_status,419450997,8,11,1,X
 [START_SIGNALS] output_voltage_high_byte,8,1,0.0,U,255,0,1,0,1.0,
 [START_SIGNALS] output_voltage_low_byte,8,2,0.0,U,255,0,1,0,1.0,
 [START_SIGNALS] output_current_high_byte,8,3,0.0,U,255,0,1,0,1.0,

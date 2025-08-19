@@ -98,6 +98,7 @@ void PinSetup_Init(void) {
     PINS_direction(MUX_C, OUTPUT);
     PINS_direction(SPI_CS, OUTPUT);
     PINS_direction(SPI_SDI, INPUT); // SPI SDI RX
+    PINS_direction(PILOT_PWM_IN, INPUT); // PILOT PWM input
     
     PINS_direction(EV_CHARGER_nFAULT, INPUT);
     PINS_direction(DCDC_nFAULT, INPUT);
@@ -128,7 +129,18 @@ void PinSetup_Init(void) {
     pwmOCinit(CONTACTOR_2_PWM);
     pwmOCwriteFreq(CONTACTOR_2_PWM, 3000); //20kHz
     
-    ic_Init(PILOT_PWM_IN, IC_16_BIT);
+    // Configure Input Capture for PILOT PWM signal
+    IC_Config_S pilotConfig = {
+        .inputPin = PILOT_PWM_IN,
+        .digitalPin = PILOT_MONITOR_PWM_IN,  // TODO: Replace with actual PILOT_PWM_IN digital pin
+        .timerSource = IC_TIMER_SOURCE_PERIPHERAL,
+        .captureMode = IC_CAPTURE_MODE_EVERY_EDGE,
+        .triggerMode = IC_TRIGGER_INPUT_CAPTURE,  // Reset timer on each capture
+        .interruptPriority = 4,
+        .enableInterrupt = true,
+        .clockFrequency = CLOCK_PeripheralFrequencyGet()  // peripheral clock frequency
+    };
+    IC_Init(IC_MODULE_1, &pilotConfig);
     
     /*UART*/
     //Uart1INIT(UART_TX, UART_RX, UART_BAUD_115200);

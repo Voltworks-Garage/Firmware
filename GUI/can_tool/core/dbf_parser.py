@@ -248,8 +248,8 @@ class BusmasterDBFParser:
                 
                 # For multiplexed messages, create descriptive signal names
                 signal_name = signal['name']
-                if msg_def['is_multiplexed'] and multiplex_value is not None:
-                    signal_name = self._generate_mux_signal_name(signal['name'], multiplex_value)
+                # if msg_def['is_multiplexed'] and multiplex_value is not None:
+                #     signal_name = self._generate_mux_signal_name(signal['name'], multiplex_value)
                 
                 # Format the value
                 formatted_value = self._format_signal_value(signal, value)
@@ -269,28 +269,6 @@ class BusmasterDBFParser:
                 }
         
         return decoded
-    
-    def _generate_mux_signal_name(self, signal_name, multiplex_value):
-        """Generate proper signal names for multiplexed signals"""
-        # Handle cell voltages - signal name already has correct number (1-24)
-        if 'cell' in signal_name and 'voltage' in signal_name:
-            try:
-                cell_num = int(signal_name.split('_')[1])
-                return f"Cell_{cell_num:02d}_voltage"
-            except (ValueError, IndexError):
-                return f"M{multiplex_value}_{signal_name}"
-        
-        # Handle temperatures - signal name already has correct number (1-24)
-        elif 'temp' in signal_name:
-            try:
-                temp_num = int(signal_name.split('_')[1])
-                return f"Temp_{temp_num:02d}"
-            except (ValueError, IndexError):
-                return f"M{multiplex_value}_{signal_name}"
-        
-        # For other multiplexed signals, use standard prefix
-        else:
-            return f"M{multiplex_value}_{signal_name}"
     
     def _format_signal_value(self, signal, value):
         """Format signal value with appropriate precision and units"""

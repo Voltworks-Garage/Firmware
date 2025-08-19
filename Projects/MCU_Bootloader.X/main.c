@@ -54,12 +54,14 @@
 #include "mcc_generated_files/boot/boot_demo.h"
 #include "mcc_generated_files/boot/com_adaptor.h"
 #include "mcc_generated_files/uart1.h"
+#include "reset_control.h"
 
 /*
                          Main application
  */
 
 uint8_t rxBuffer[512];
+uint8_t bootByte[] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
 uint8_t dummyByte[] = {1,2,3,4,5,6,7,8};
 CAN_MSG_OBJ myMessage;
 CAN_MSG_FIELD myField;
@@ -85,7 +87,7 @@ void TMR1_CallBack(void)
     
     counter_can++;
     if (counter_can == 250){
-        //can_flag = true;
+        can_flag = true;
         counter_can = 0;
     }
 
@@ -94,9 +96,13 @@ void TMR1_CallBack(void)
 
 int main(void)
 {
+    //get and clear the reset register
+    GetAndClearResetReasons();
+    
     // initialize the device
     SYSTEM_Initialize();
     BOOT_DEMO_Initialize();
+    SW_EN_SetHigh();
     CAN_SLEEP_SetLow();
     
     CAN_TP_Initialize();
@@ -110,11 +116,11 @@ int main(void)
     
     send_boot_message();
     
-    char hello[] = "Bootloader\n";
-    uint8_t i = 0;
-    for (i=0;i<sizeof(hello);i++){
-        UART1_Write(hello[i]);
-    }
+//    char hello[] = "Bootloader\n";
+//    uint8_t i = 0;
+//    for (i=0;i<sizeof(hello);i++){
+//        UART1_Write(hello[i]);
+//    }
 
 
     while (1)
@@ -125,7 +131,6 @@ int main(void)
         if(can_flag){
             can_flag = false;
             send_boot_message();
-            
         }
 
     }
@@ -135,8 +140,8 @@ int main(void)
 
 void send_boot_message(void){
     //Send a boot ID message
-    dummyByte[0] = (uint8_t)RCON;
-    dummyByte[1] = (uint8_t)(RCON>>8);
+    dummyByte[0] = (uint8_t)GetAndClearResetReasons();
+    dummyByte[1] = (uint8_t)(GetAndClearResetReasons()>>8);
     
     myField.idType = 0;
     myField.dlc = 0b1000;

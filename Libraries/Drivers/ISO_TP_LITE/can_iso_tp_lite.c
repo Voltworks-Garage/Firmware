@@ -121,7 +121,7 @@ void run_iso_tp_1ms(void) {
         }
     }
 
-    if (CAN_boot_host_checkDataIsFresh()) {
+    if (CAN_boot_host_checkDataIsUnread()) {
         timeoutCounter = 0;
         //Switch statement based on bits 7...4 of the first byte in the CAN message
         uint16_t code = CAN_boot_host_code_get();

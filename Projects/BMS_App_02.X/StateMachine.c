@@ -11,6 +11,7 @@
 #include "can_iso_tp_lite.h"
 #include "watchdog.h"
 #include "Events.h"
+#include "../../Libraries/CommandService/commandService.h"
 
 
 /******************************************************************************
@@ -80,7 +81,7 @@ void resume_all_tasks(void);
  * Function Definitions
  *******************************************************************************/
 void StateMachine_Init(void) {
-    Nop();
+    state_functions[sm_curState](ENTRY);
 }
 
 
@@ -106,16 +107,18 @@ void idle(STATE_MACHINE_entry_types_E entry_type) {
         case ENTRY:
             IO_SET_SW_EN(HIGH);
             CAN_changeOpMode(CAN_NORMAL);
-            DCDC_init();
             break;
         case EXIT:
             break;
         case RUN:
-            if (isoTP_peekCommand() == ISO_TP_TESTER_PRESENT){
+            if (CommandService_GetEvent() == COMMAND_SERVICE_TYPE_TESTER_PRESENT) {
                 sm_nextState = diag_state;
             }
-            if (isoTP_peekCommand() == ISO_TP_IO_CONTROL){
+            if (CommandService_GetEvent() == COMMAND_SERVICE_TYPE_IO_CONTROL) {
                 sm_nextState = diag_state;
+            }
+            if (CommandService_GetEvent() == COMMAND_SERVICE_TYPE_SLEEP) {
+                sm_nextState = sleep_state;
             }
             if (IO_GET_V12_POWER_STATUS() == 0) {
                 sm_nextState = standby_state;
@@ -222,11 +225,12 @@ void diag(STATE_MACHINE_entry_types_E entry_type) {
 
 /****Helpers*******************************************************************/
 void halt_all_tasks(void){
-    DCDC_halt();
+    DCDC_Halt();
 }
 
 void resume_all_tasks(void){
-    DCDC_run();
+    DCDC_Run();
+    BMS_Init();
 }
 
 /*** End of File **************************************************************/

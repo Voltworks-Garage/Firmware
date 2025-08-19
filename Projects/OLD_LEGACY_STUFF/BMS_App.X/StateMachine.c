@@ -144,7 +144,6 @@ void standby(STATE_MACHINE_entry_types_E entry_type) {
             CAN_changeOpMode(CAN_DISABLE);
             IO_SET_SW_EN(LOW);
             PINS_pullUp(CAN_TX_PIN, LOW);
-            IO_SET_DCDC_EN(LOW);
             IO_SET_EV_CHARGER_EN(LOW);
             IO_SET_CHARGEPUMP_PWM(0);
             break;

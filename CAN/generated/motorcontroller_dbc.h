@@ -18,7 +18,8 @@ typedef enum{
  * mcu NODE MESSAGES
  */
 #define CAN_mcu_command_interval() 100
-uint8_t CAN_mcu_command_checkDataIsFresh(void);
+uint8_t CAN_mcu_command_checkDataIsUnread(void);
+uint8_t CAN_mcu_command_checkDataIsStale(void);
 uint16_t CAN_mcu_command_DCDC_enable_get(void);
 uint16_t CAN_mcu_command_ev_charger_enable_get(void);
 float CAN_mcu_command_ev_charger_current_get(void);
@@ -26,25 +27,50 @@ uint16_t CAN_mcu_command_precharge_enable_get(void);
 uint16_t CAN_mcu_command_motor_controller_enable_get(void);
 
 #define CAN_mcu_motorControllerRequest_interval() 1
-uint8_t CAN_mcu_motorControllerRequest_checkDataIsFresh(void);
+uint8_t CAN_mcu_motorControllerRequest_checkDataIsUnread(void);
+uint8_t CAN_mcu_motorControllerRequest_checkDataIsStale(void);
 uint16_t CAN_mcu_motorControllerRequest_requestType_get(void);
 
 /**********************************************************
  * bms NODE MESSAGES
  */
 #define CAN_bms_debug_interval() 10
-uint8_t CAN_bms_debug_checkDataIsFresh(void);
+uint8_t CAN_bms_debug_checkDataIsUnread(void);
+uint8_t CAN_bms_debug_checkDataIsStale(void);
 uint16_t CAN_bms_debug_bool0_get(void);
 uint16_t CAN_bms_debug_bool1_get(void);
 float CAN_bms_debug_float1_get(void);
 float CAN_bms_debug_float2_get(void);
-float CAN_bms_debug_VBUS_Voltage_get(void);
-uint16_t CAN_bms_debug_CPU_USAGE_get(void);
-uint16_t CAN_bms_debug_CPU_peak_get(void);
+uint16_t CAN_bms_debug_word1_get(void);
+uint16_t CAN_bms_debug_byte1_get(void);
 
 /**********************************************************
  * motorcontroller NODE MESSAGES
  */
+#define CAN_motorcontroller_heartbeat_interval() 30
+void CAN_motorcontroller_heartbeat_heartbeat_set(uint16_t heartbeat);
+void CAN_motorcontroller_heartbeat_dlc_set(uint8_t dlc);
+
+
+void CAN_motorcontroller_heartbeat_send(void);
+
+
+#define CAN_motorcontroller_SYNC_interval() 30
+void CAN_motorcontroller_SYNC_SYNC_dummy_set(uint16_t SYNC_dummy);
+void CAN_motorcontroller_SYNC_dlc_set(uint8_t dlc);
+
+
+void CAN_motorcontroller_SYNC_send(void);
+
+
+#define CAN_motorcontroller_Emergency_interval() 30
+void CAN_motorcontroller_Emergency_EMCY_set(uint16_t EMCY);
+void CAN_motorcontroller_Emergency_dlc_set(uint8_t dlc);
+
+
+void CAN_motorcontroller_Emergency_send(void);
+
+
 #define CAN_motorcontroller_motorStatus_interval() 10
 void CAN_motorcontroller_motorStatus_motorSpeed_set(uint16_t motorSpeed);
 void CAN_motorcontroller_motorStatus_motorCurrent_set(float motorCurrent);
@@ -60,7 +86,6 @@ void CAN_motorcontroller_motorStatus_dlc_set(uint8_t dlc);
 void CAN_motorcontroller_motorStatus_send(void);
 
 
-#define CAN_motorcontroller_response_interval() None
 void CAN_motorcontroller_response_byte1_set(uint16_t byte1);
 void CAN_motorcontroller_response_byte2_set(uint16_t byte2);
 void CAN_motorcontroller_response_byte3_set(uint16_t byte3);
@@ -83,7 +108,11 @@ void CAN_motorcontroller_response_send(void);
  */
 void CAN_DBC_init();
 
+void CAN_send_1ms(void);
 void CAN_send_10ms(void);
+void CAN_send_100ms(void);
+void CAN_send_1000ms(void);
+void CAN_send_30ms(void);
 
 
 #endif /*motorcontroller_DBC_H*/

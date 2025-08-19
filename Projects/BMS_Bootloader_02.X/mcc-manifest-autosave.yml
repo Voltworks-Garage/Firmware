@@ -2,7 +2,7 @@
 
 manifest_file_version: 1.0.0
 project: BMS_Bootloader_02
-creation_date: 2025-07-03T11:52:30.240-07:00[America/Los_Angeles]
+creation_date: 2025-08-15T13:52:52.181-07:00[America/Los_Angeles]
 operating_system: Windows 10
 mcc_mode: IDE
 mcc_mode_version: v6.20
@@ -18,7 +18,7 @@ device_library: {library_class: com.microchip.mcc.mcu16.Mcu16PeripheralLibrary, 
     / dsPIC33 / PIC32MM MCUs, version: 1.171.1}
 packs: {name: dsPIC33E-GM-GP-MC-GU-MU_DFP, version: 1.6.297}
 modules:
-- {name: com.microchip.mcc.mcu16.Mcu16PeripheralLibrary, type: CLASSIC, version: 1.171.1}
 - {name: com.microchip.mcc.boardsupportlibrary.BoardSuppportLibrary, type: CLASSIC,
   version: 1.12.0}
+- {name: com.microchip.mcc.mcu16.Mcu16PeripheralLibrary, type: CLASSIC, version: 1.171.1}
 - {name: com.microchip.bootloader16.mcc.Library, type: CLASSIC, version: 1.19.1}

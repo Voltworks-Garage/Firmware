@@ -19,6 +19,7 @@
         <itemPath>../../Libraries/Standard/ringBuffer.h</itemPath>
         <itemPath>../../Libraries/PIC33_plib/inc/ic.h</itemPath>
         <itemPath>../../Libraries/CommandService/commandService.h</itemPath>
+        <itemPath>../../Libraries/Standard/NTC.h</itemPath>
       </logicalFolder>
       <logicalFolder name="MCC Generated Files"
                      displayName="MCC Generated Files"
@@ -53,6 +54,7 @@
         <itemPath>j1772.h</itemPath>
         <itemPath>ltc6802_1_nb.h</itemPath>
         <itemPath>commandService_config.h</itemPath>
+        <itemPath>contactorControl.h</itemPath>
       </logicalFolder>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
@@ -89,6 +91,7 @@
         <itemPath>../../Libraries/Standard/ringBuffer.c</itemPath>
         <itemPath>../../Libraries/PIC33_plib/src/ic.c</itemPath>
         <itemPath>../../Libraries/CommandService/commandService.c</itemPath>
+        <itemPath>../../Libraries/Standard/NTC.c</itemPath>
       </logicalFolder>
       <logicalFolder name="MCC Generated Files"
                      displayName="MCC Generated Files"
@@ -125,6 +128,7 @@
         <itemPath>dcdc.c</itemPath>
         <itemPath>j1772.c</itemPath>
         <itemPath>ltc6802_1_nb.c</itemPath>
+        <itemPath>contactorControl.c</itemPath>
       </logicalFolder>
     </logicalFolder>
   </logicalFolder>
@@ -134,6 +138,7 @@
     <Elem>../../Libraries/PIC33_plib/inc</Elem>
     <Elem>../../Libraries/CommandHandler</Elem>
     <Elem>../../Libraries/CommandService</Elem>
+    <Elem>../../Libraries/Standard</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>

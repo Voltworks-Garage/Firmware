@@ -47,7 +47,7 @@ static volatile uint8_t spi2Status = 0;
 // Buffered transaction support for SPI1
 #define SPI1_BUFFER_SIZE 64
 static uint8_t spi1_tx_buffer[SPI1_BUFFER_SIZE];
-static uint8_t* spi1_rx_buffer_ptr = NULL;
+static volatile uint8_t* spi1_rx_buffer_ptr = NULL;
 static volatile uint8_t spi1_tx_index = 0;
 static volatile uint8_t spi1_rx_index = 0;
 static volatile uint8_t spi1_tx_length = 0;
@@ -89,10 +89,12 @@ void spi1Init(void) {
     SPI1CON1bits.SPRE = 0b100;
 
 
-    IPC2bits.SPI1EIP = 1; //priority 5
+    IPC2bits.SPI1EIP = 7; //priority 7
 
     SPI1STATbits.SPIEN = 1; // Enable SPI module
     IEC0bits.SPI1IE = 1; // Enable the interrupt
+
+    volatile uint8_t dummy = (uint8_t)SPI1BUF; // Clear RX buffer
 
 }
 
@@ -198,7 +200,7 @@ uint8_t spi2Ready(void) {
     return spi2Status;
 }
 
-void __attribute__((__interrupt__, auto_psv)) _SPI1Interrupt(void) {
+void __attribute__((__interrupt__, auto_psv, shadow)) _SPI1Interrupt(void) {
     _SPI1IF = 0; /* Clear the Interrupt flag*/
     
     // Handle buffered transactions
@@ -213,12 +215,8 @@ void __attribute__((__interrupt__, auto_psv)) _SPI1Interrupt(void) {
             }
             spi1_rx_index++;
         }
-        
-        // Fill TX FIFO with up to 4 bytes at once
-        uint8_t max_tx_buf_index = 0;
 
         while (!SPI1STATbits.SPITBF && (spi1_tx_index < spi1_tx_length)) {
-        // while (!SPI1STATbits.SPITBF && (max_tx_buf_index++ < 3) && (spi1_tx_index < spi1_tx_length)) {
             // Send actual data
             SPI1BUF = spi1_tx_buffer[spi1_tx_index];
             spi1_tx_index++;
@@ -303,18 +301,17 @@ uint8_t spi1StartBufferedTransaction(const uint8_t* tx_buffer, uint8_t tx_length
     // Start transaction
     spi1_transaction_active = 1;
     
-    // Fill TX FIFO with up to 4 bytes to start transaction
     // While there are still bytes to send or if we need to send dummy bytes
-    uint8_t max_tx_buf_index = 0;
-    while (!SPI1STATbits.SPITBF && (spi1_tx_index < spi1_tx_length)){
-    // while (!SPI1STATbits.SPITBF && (max_tx_buf_index++ < 3) && (spi1_tx_index < spi1_tx_length)){
-        if (spi1_tx_index < spi1_tx_length) {
-            // Send actual data
-            SPI1BUF = spi1_tx_buffer[spi1_tx_index];
-            spi1_tx_index++;
-        }
-    }
-    
+    // while (!SPI1STATbits.SPITBF && (spi1_tx_index < spi1_tx_length) ){
+    //     if (spi1_tx_index < spi1_tx_length) {
+    //         // Send actual data
+    //         SPI1BUF = spi1_tx_buffer[spi1_tx_index];
+    //         spi1_tx_index++;
+    //     }
+    // }
+
+    spi1_tx_index = 1; // Reset index for new transaction
+    SPI1BUF = spi1_tx_buffer[0]; // Send first byte to kick off transaction
     return 1; // Success
 }
 
@@ -367,5 +364,10 @@ void spi1GetDebugState(uint8_t* tx_idx, uint8_t* rx_idx, uint8_t* tx_len, uint8_
     if (rx_idx) *rx_idx = spi1_rx_index;
     if (tx_len) *tx_len = spi1_tx_length;
     if (rx_len) *rx_len = spi1_rx_length;
+}
+
+void spi1GetTransactionIndices(uint8_t* tx_index, uint8_t* rx_index) {
+    if (tx_index) *tx_index = spi1_tx_index;
+    if (rx_index) *rx_index = spi1_rx_index;
 }
 

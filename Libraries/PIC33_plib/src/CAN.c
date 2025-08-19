@@ -14,6 +14,7 @@
 #include "CAN.h"
 #include <math.h>
 #include <xc.h>
+#include <stdbool.h>
 
 /*DEBUGGING*/
 /*WARNING USING THIS WILL CAUSE ERRORS IF CAN BUS BECOMES DISCONNECTED. TOO MANY ERRORS TO PRINT WILL CAUSE LOCKUP*/
@@ -30,6 +31,7 @@ static uint8_t debugEnable = 1;
 #define NUM_OF_ECAN_BUFFERS 32
 #define CAN_TX_FIFO_BUFFER_SIZE 8
 #define NUM_OF_SW_CAN_BUFFERS NUM_OF_ECAN_BUFFERS-CAN_TX_FIFO_BUFFER_SIZE
+#define CAN_TX_QUEUE_SIZE 16
 
 /* ECAN message buffer declaration, with buffer alignment */
 #if defined(__dsPIC33EP512MU810__)
@@ -44,14 +46,145 @@ volatile uint16_t ecanMsgBuf[32][8] __attribute__((aligned(NUM_OF_ECAN_BUFFERS *
 /* ECAN SW message buffer declaration*/
 volatile uint16_t ecanRXMsgBuf[NUM_OF_SW_CAN_BUFFERS][8] __attribute__((aligned(NUM_OF_ECAN_BUFFERS * 16)));
 
-/* Rx data ready flag */
-static volatile uint32_t CAN_RXdataReady = 0;
-static uint8_t ThisTXBuffer = 0;
-static uint8_t mBoxNumber = 0;
-static uint8_t currentOpMode = CAN_NORMAL;
+/* Private Variables */
+static volatile uint32_t can_rxDataReady = 0;
+static volatile uint8_t can_thisTxBuffer = 0;
+static uint8_t can_mailboxNumber = 0;
+static uint8_t can_currentOpMode = CAN_NORMAL;
+
+/* Timestamp callback and lookup table for staleness detection */
+static CAN_GetTimestamp_t can_getTimestamp = NULL;
+static CAN_message_S* can_mailboxLookup[NUM_OF_SW_CAN_BUFFERS] = {NULL};
+
+/* TX queue for overflow handling */
+static CAN_message_S* can_txQueue[CAN_TX_QUEUE_SIZE];
+static volatile uint8_t can_txQueueHead = 0;
+static volatile uint8_t can_txQueueTail = 0;
+static volatile uint8_t can_txQueueCount = 0;
+
+/* Private Function Prototypes */
+static uint8_t can_isTxBufferBusy(uint8_t buffer);
+static uint8_t can_txQueueIsFull(void);
+static uint8_t can_txQueueIsEmpty(void);
+static uint8_t can_txQueueEnqueue(CAN_message_S* msg);
+static CAN_message_S* can_txQueueDequeue(void);
+static uint8_t can_sendMessageToBuffer(CAN_message_S *data, uint8_t buffer);
+
+static uint8_t can_isTxBufferBusy(uint8_t buffer) {
+    switch (buffer) {
+        case 0: return C1TR01CONbits.TXREQ0;
+        case 1: return C1TR01CONbits.TXREQ1;
+        case 2: return C1TR23CONbits.TXREQ2;
+        case 3: return C1TR23CONbits.TXREQ3;
+        case 4: return C1TR45CONbits.TXREQ4;
+        case 5: return C1TR45CONbits.TXREQ5;
+        case 6: return C1TR67CONbits.TXREQ6;
+        case 7: return C1TR67CONbits.TXREQ7;
+        default: return 1; // Assume busy for invalid buffer
+    }
+}
+
+static uint8_t can_txQueueIsFull(void) {
+    return can_txQueueCount >= CAN_TX_QUEUE_SIZE;
+}
+
+static uint8_t can_txQueueIsEmpty(void) {
+    return can_txQueueCount == 0;
+}
+
+static uint8_t can_txQueueEnqueue(CAN_message_S* msg) {
+    if (can_txQueueIsFull()) {
+        return 0; // Queue full, message lost
+    }
+    
+    can_txQueue[can_txQueueTail] = msg;
+    can_txQueueTail = (can_txQueueTail + 1) % CAN_TX_QUEUE_SIZE;
+    can_txQueueCount++;
+    return 1; // Success
+}
+
+static CAN_message_S* can_txQueueDequeue(void) {
+    if (can_txQueueIsEmpty()) {
+        return NULL;
+    }
+    
+    CAN_message_S* msg = can_txQueue[can_txQueueHead];
+    can_txQueueHead = (can_txQueueHead + 1) % CAN_TX_QUEUE_SIZE;
+    can_txQueueCount--;
+    return msg;
+}
+
+static uint8_t can_sendMessageToBuffer(CAN_message_S *data, uint8_t buffer) {
+    uint16_t SID;
+    uint32_t XID_upper = 0;
+    uint32_t XID_lower = 0;
+    
+    if (data->canXID) {
+        SID = data->canID >> 18;
+        XID_upper = (data->canID & 0x0003FFFF) >> 6;
+        XID_lower = data->canID & 0x3F;
+    } else {
+        SID = data->canID;
+    }
+
+    /* Here we write the standard ID to the buffer, plus bits for remote request
+     * (off) and extended ID (off). We write frequency to <10:8>, then a Node ID 
+     * to <7:4>, then a message ID code to <3:0> */
+    ecanMsgBuf[buffer][0] = SID << 2;
+    ecanMsgBuf[buffer][0] |= data->canXID << 1;
+    ecanMsgBuf[buffer][0] |= data->canXID;
+
+    /* This is extended ID upper bits*/
+    ecanMsgBuf[buffer][1] = XID_upper;
+
+    /* No remote transmit, data length = 8 bytes */
+    ecanMsgBuf[buffer][2] = data->dlc | (XID_lower << 10);
+
+    /* write message to the data bytes */
+    ecanMsgBuf[buffer][3] = data->payload->word0;
+    ecanMsgBuf[buffer][4] = data->payload->word1;
+    ecanMsgBuf[buffer][5] = data->payload->word2;
+    ecanMsgBuf[buffer][6] = data->payload->word3;
+
+    /* Request message buffer transmission */
+    switch (buffer) {
+        case 0:
+            C1TR01CONbits.TXREQ0 = 0x1;
+            break;
+        case 1:
+            C1TR01CONbits.TXREQ1 = 0x1;
+            break;
+        case 2:
+            C1TR23CONbits.TXREQ2 = 0x1;
+            break;
+        case 3:
+            C1TR23CONbits.TXREQ3 = 0x1;
+            break;
+        case 4:
+            C1TR45CONbits.TXREQ4 = 0x1;
+            break;
+        case 5:
+            C1TR45CONbits.TXREQ5 = 0x1;
+            break;
+        case 6:
+            C1TR67CONbits.TXREQ6 = 0x1;
+            break;
+        case 7:
+            C1TR67CONbits.TXREQ7 = 0x1;
+            break;
+        default:
+            return 0; // Invalid buffer
+    }
+    return 1; // Success
+}
 
 uint8_t CAN_init(uint32_t baud, uint8_t mode, uint32_t system_freq) {
-    currentOpMode = mode;
+    can_currentOpMode = mode;
+    
+    // Initialize TX queue
+    can_txQueueHead = 0;
+    can_txQueueTail = 0;
+    can_txQueueCount = 0;
     
     PMD1bits.C1MD = 1;
     PMD1bits.C1MD = 0;
@@ -172,7 +305,7 @@ uint8_t CAN_init(uint32_t baud, uint8_t mode, uint32_t system_freq) {
 
     /*FIFO start and end at 15-31*/
     C1FCTRLbits.FSA = 15;
-    C1FCTRLbits.DMABS = 0b111;
+    C1FCTRLbits.DMABS = 0b110;
 
     /*************************************************************************************
          INTERRUPT Configuration
@@ -208,8 +341,8 @@ uint8_t CAN_init(uint32_t baud, uint8_t mode, uint32_t system_freq) {
     C1INTF = 0x0000;
 
     /* CAN is ready for transmit / receive, place in normal or loopback mode */
-    C1CTRL1bits.REQOP = currentOpMode;
-    while (C1CTRL1bits.OPMODE != currentOpMode) {
+    C1CTRL1bits.REQOP = can_currentOpMode;
+    while (C1CTRL1bits.OPMODE != can_currentOpMode) {
         ;
     }
     /* Enable CAN1 Interrupt */
@@ -232,7 +365,7 @@ uint8_t CAN_changeOpMode(uint8_t opMode) {
     while (C1CTRL1bits.OPMODE != tempMode) {
         ;
     }
-    currentOpMode = opMode;
+    can_currentOpMode = opMode;
     return 0;
 }
 
@@ -241,7 +374,7 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
     uint16_t SID;
     uint32_t XID_upper = 0;
     uint32_t XID_lower = 0;
-    if (mBoxNumber > 15) {
+    if (can_mailboxNumber > 15) {
         returnVal = 0;
     } else {
         C1CTRL1bits.REQOP = CAN_CONFIG;
@@ -255,7 +388,7 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
         } else {
             SID = newMessage->canID;
         }
-        switch (mBoxNumber) {
+        switch (can_mailboxNumber) {
             case 0:
                 /*FILTERS*/
                 /*Filter 0*/
@@ -268,6 +401,8 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 C1FEN1bits.FLTEN0 = 0x1; /* filter 0 enabled*/
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[0][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[0][7];
+                newMessage->last_received_timestamp = 0;
+                can_mailboxLookup[0] = newMessage;
                 break;
             case 1:
                 /*Filter 1*/
@@ -280,6 +415,8 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 C1FEN1bits.FLTEN1 = 0x1; /* filter 1 enabled*/
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[1][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[1][7];
+                newMessage->last_received_timestamp = 0;
+                can_mailboxLookup[1] = newMessage;
                 break;
             case 2:
                 /*Filter 2*/
@@ -292,6 +429,8 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 C1FEN1bits.FLTEN2 = 0x1; /* filter 2 enabled*/
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[2][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[2][7];
+                newMessage->last_received_timestamp = 0;
+                can_mailboxLookup[2] = newMessage;
                 break;
             case 3:
                 /*Filter 3*/
@@ -304,6 +443,8 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 C1FEN1bits.FLTEN3 = 0x1; /* filter 3 enabled*/
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[3][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[3][7];
+                newMessage->last_received_timestamp = 0;
+                can_mailboxLookup[3] = newMessage;
                 break;
             case 4:
                 /*Filter 4*/
@@ -316,6 +457,8 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 C1FEN1bits.FLTEN4 = 0x1; /* filter 2 enabled*/
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[4][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[4][7];
+                newMessage->last_received_timestamp = 0;
+                can_mailboxLookup[4] = newMessage;
                 break;
             case 5:
                 /*Filter 5*/
@@ -328,6 +471,8 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 C1FEN1bits.FLTEN5 = 0x1; /* filter 5 enabled*/
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[5][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[5][7];
+                newMessage->last_received_timestamp = 0;
+                can_mailboxLookup[5] = newMessage;
                 break;
             case 6:
                 /*Filter 6*/
@@ -340,6 +485,8 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 C1FEN1bits.FLTEN6 = 0x1; /* filter 6 enabled*/
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[6][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[6][7];
+                newMessage->last_received_timestamp = 0;
+                can_mailboxLookup[6] = newMessage;
                 break;
             case 7:
                 /*Filter 7*/
@@ -352,6 +499,8 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 C1FEN1bits.FLTEN7 = 0x1; /* filter 7 enabled*/
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[7][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[7][7];
+                newMessage->last_received_timestamp = 0;
+                can_mailboxLookup[7] = newMessage;
                 break;
             case 8:
                 /*Filter 8*/
@@ -364,6 +513,8 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 C1FEN1bits.FLTEN8 = 0x1; /* filter 8 enabled*/
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[8][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[8][7];
+                newMessage->last_received_timestamp = 0;
+                can_mailboxLookup[8] = newMessage;
                 break;
             case 9:
                 /*Filter 9*/
@@ -376,6 +527,8 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 C1FEN1bits.FLTEN9 = 0x1; /* filter 9 enabled*/
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[9][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[9][7];
+                newMessage->last_received_timestamp = 0;
+                can_mailboxLookup[9] = newMessage;
                 break;
             case 10:
                 /*Filter 10*/
@@ -388,6 +541,8 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 C1FEN1bits.FLTEN10 = 0x1; /* filter 10 enabled*/
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[10][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[10][7];
+                newMessage->last_received_timestamp = 0;
+                can_mailboxLookup[10] = newMessage;
                 break;
             case 11:
                 /*Filter 11*/
@@ -400,6 +555,8 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 C1FEN1bits.FLTEN11 = 0x1; /* filter 11 enabled*/
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[11][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[11][7];
+                newMessage->last_received_timestamp = 0;
+                can_mailboxLookup[11] = newMessage;
                 break;
             case 12:
                 /*Filter 12*/
@@ -412,6 +569,8 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 C1FEN1bits.FLTEN12 = 0x1; /* filter 12 enabled*/
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[12][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[12][7];
+                newMessage->last_received_timestamp = 0;
+                can_mailboxLookup[12] = newMessage;
                 break;
             case 13:
                 /*Filter 13*/
@@ -424,6 +583,8 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 C1FEN1bits.FLTEN13 = 0x1; /* filter 13 enabled*/
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[13][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[13][7];
+                newMessage->last_received_timestamp = 0;
+                can_mailboxLookup[13] = newMessage;
                 break;
             case 14:
                 /*Filter 14*/
@@ -436,6 +597,8 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 C1FEN1bits.FLTEN14 = 0x1; /* filter 14 enabled*/
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[14][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[14][7];
+                newMessage->last_received_timestamp = 0;
+                can_mailboxLookup[14] = newMessage;
                 break;
             case 15:
                 /*Filter 15*/
@@ -448,115 +611,77 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
                 C1FEN1bits.FLTEN15 = 0x1; /* filter 15 enabled*/
                 newMessage->payload = (CAN_payload_S*) & ecanRXMsgBuf[15][3];
                 newMessage->canMessageStatus = (uint8_t*) & ecanRXMsgBuf[15][7];
+                newMessage->last_received_timestamp = 0;
+                can_mailboxLookup[15] = newMessage;
                 break;
             default:
                 break;
         }
         C1CTRL1bits.WIN = 0; /* clear window bit*/
-        C1CTRL1bits.REQOP = currentOpMode;
-        while (C1CTRL1bits.OPMODE != currentOpMode) {
+        C1CTRL1bits.REQOP = can_currentOpMode;
+        while (C1CTRL1bits.OPMODE != can_currentOpMode) {
             ;
         }
-        mBoxNumber++; /*RX mailboxe added*/
+        can_mailboxNumber++; /*RX mailboxe added*/
     }
     return returnVal;
 }
 
-uint8_t CAN_write(CAN_message_S data) {
-    if (C1CTRL1bits.OPMODE == CAN_NORMAL && currentOpMode != CAN_LISTEN) {
-        /* write to message buffer 0-7 */
-        //can_print("sendingCAN\n");
-        uint8_t thisBuffer = ThisTXBuffer++;
-        if (ThisTXBuffer == CAN_TX_FIFO_BUFFER_SIZE) {
-            ThisTXBuffer = 0;
-        }
-        uint16_t SID;
-        uint32_t XID_upper = 0;
-        uint32_t XID_lower = 0;
-        if (data.canXID) {
-            SID = data.canID >> 18;
-            XID_upper = (data.canID & 0x0003FFFF) >> 6;
-            XID_lower = data.canID & 0x3F;
+uint8_t CAN_write(CAN_message_S *data) {
+    // Update timestamp for TX message (for self-consumption)
+    if (can_getTimestamp != NULL) {
+        data->last_received_timestamp = can_getTimestamp();
+    }
+    
+    if (C1CTRL1bits.OPMODE != CAN_NORMAL || can_currentOpMode == CAN_LISTEN) {
+        return 0; // Not in transmission mode
+    }
+    
+    // Check if current buffer is busy - if so, try to queue the message
+    if (can_isTxBufferBusy(can_thisTxBuffer)) {
+        if (can_txQueueEnqueue(data)) {
+            return 1; // Successfully queued
         } else {
-            SID = data.canID;
-        }
-
-        /* Here we right the standard ID to the buffer, plus bits for remote request
-         * (off) and extended ID (off). We write frequency to <10:8>, then a Node ID 
-         * to <7:4>, then a message ID code to <3:0> */
-        ecanMsgBuf[thisBuffer][0] = SID << 2;
-        ecanMsgBuf[thisBuffer][0] |= data.canXID << 1;
-        ecanMsgBuf[thisBuffer][0] |= data.canXID;
-
-        /* This is extended ID upper bits*/
-        /* C1TRBnEID = 0bxxxx 0000 0000 0000
-         EID<17:6> = 0b0000 0000 0000 */
-        ecanMsgBuf[thisBuffer][1] = XID_upper;
-
-        /* No remote transmit, data length = 8 bytes */
-        /* RTR = 0b0
-         * RB1 = 0b0
-         * RB0 = 0b0
-         * DLC = 0b1000 */
-        ecanMsgBuf[thisBuffer][2] = data.dlc | (XID_lower << 10);
-
-        /* write message to the data bytes */
-
-        ecanMsgBuf[thisBuffer][3] = data.payload->word0;
-        ecanMsgBuf[thisBuffer][4] = data.payload->word1;
-        ecanMsgBuf[thisBuffer][5] = data.payload->word2;
-        ecanMsgBuf[thisBuffer][6] = data.payload->word3;
-
-        /* Request message buffer 0 transmission */
-        switch (thisBuffer) {
-            case 0:
-                //            while(C1TR01CONbits.TXREQ0);
-                C1TR01CONbits.TXREQ0 = 0x1;
-                break;
-            case 1:
-                //            while(C1TR01CONbits.TXREQ1);
-                C1TR01CONbits.TXREQ1 = 0x1;
-                break;
-            case 2:
-                //            while(C1TR23CONbits.TXREQ2);
-                C1TR23CONbits.TXREQ2 = 0x1;
-                break;
-            case 3:
-                //            while(C1TR23CONbits.TXREQ3);
-                C1TR23CONbits.TXREQ3 = 0x1;
-                break;
-            case 4:
-                //            while(C1TR45CONbits.TXREQ4);
-                C1TR45CONbits.TXREQ4 = 0x1;
-                break;
-            case 5:
-                //            while(C1TR45CONbits.TXREQ5);
-                C1TR45CONbits.TXREQ5 = 0x1;
-                break;
-            case 6:
-                //            while(C1TR67CONbits.TXREQ6);
-                C1TR67CONbits.TXREQ6 = 0x1;
-                break;
-            case 7:
-                //            while(C1TR67CONbits.TXREQ7);
-                C1TR67CONbits.TXREQ7 = 0x1;
-                break;
-            default:
-                break;
+            return 0; // Queue full, message lost
         }
     }
-    return 0; /*message placed successfully on the bus */
+    
+    // Buffer is free, send immediately to current buffer
+    uint8_t thisBuffer = can_thisTxBuffer;
+    
+    // Increment pointer to next buffer
+    can_thisTxBuffer++;
+    if (can_thisTxBuffer == CAN_TX_FIFO_BUFFER_SIZE) {
+        can_thisTxBuffer = 0;
+    }
+    
+    return can_sendMessageToBuffer(data, thisBuffer);
 }
 
-uint8_t CAN_checkDataIsFresh(CAN_message_S * data) {
+uint8_t CAN_checkDataIsUnread(CAN_message_S * data) {
     uint8_t ret = *(data->canMessageStatus);
     *(data->canMessageStatus) = 0;
     return ret;
 }
 
+void CAN_timeStampFunc(CAN_GetTimestamp_t timestampFunc) {
+    can_getTimestamp = timestampFunc;
+}
+
+uint8_t CAN_checkDataIsStale(CAN_message_S * data, uint32_t timeout_ms) {
+    if (can_getTimestamp == NULL) return 0;
+    uint32_t current_time = can_getTimestamp();
+    return (current_time - data->last_received_timestamp) > timeout_ms;
+}
+
+uint32_t CAN_getTimeSinceLastReceived(CAN_message_S * data) {
+    if (can_getTimestamp == NULL) return 0;
+    return can_getTimestamp() - data->last_received_timestamp;
+}
+
 uint32_t CAN_RxDataIsReady() {
-    uint32_t retVal = CAN_RXdataReady;
-    CAN_RXdataReady = 0;
+    uint32_t retVal = can_rxDataReady;
+    can_rxDataReady = 0;
     return retVal;
 }
 
@@ -613,45 +738,90 @@ void __attribute__((__interrupt__, auto_psv)) _C1Interrupt(void) {
         uint16_t temp __attribute__((unused)) = C1VECbits.ICODE;
         C1INTFbits.TBIF = 0;
         //can_print("TX_INT %d\n", temp);
-        /*do something here...*/
+        
+        /* Process TX queue - send pending messages if buffers are available */
+        while (!can_txQueueIsEmpty()) {
+            // Find a free buffer
+            uint8_t free_buffer = 0xFF;
+            for (uint8_t i = 0; i < CAN_TX_FIFO_BUFFER_SIZE; i++) {
+                if (!can_isTxBufferBusy(i)) {
+                    free_buffer = i;
+                    break;
+                }
+            }
+            
+            if (free_buffer == 0xFF) {
+                // No free buffers available, stop processing queue
+                break;
+            }
+            
+            // Dequeue message and send it
+            CAN_message_S* msg = can_txQueueDequeue();
+            if (msg != NULL) {
+                can_sendMessageToBuffer(msg, free_buffer);
+            }
+        }
     }
 
     /*If Receive Buffer Interrupt, copy messages to static buffer.*/
     if (C1INTFbits.RBIF) {
-        uint16_t temp = C1VECbits.ICODE;
-        CAN_RXdataReady |= 1 << (temp-8);
         C1INTFbits.RBIF = 0;
-        if (temp < 15) {/*if RX event was to a static buffer*/
-            uint8_t i = 0;
-            for (i = 0; i < 8; i++) {
-                ecanRXMsgBuf[temp - CAN_TX_FIFO_BUFFER_SIZE][i] = ecanMsgBuf[temp][i];
+        
+        /* Process all static buffers (0-14) that have messages */
+        for (uint16_t i = 0; i < 15; i++) {
+            if (C1RXFUL1 & (1 << i)) {
+                uint8_t sw_buffer_index = i - CAN_TX_FIFO_BUFFER_SIZE;
+                can_rxDataReady |= 1 << (i-8);
+                
+                /* Copy message data */
+                for (uint8_t j = 0; j < 8; j++) {
+                    ecanRXMsgBuf[sw_buffer_index][j] = ecanMsgBuf[i][j];
+                }
+                ecanRXMsgBuf[sw_buffer_index][7] |= 0x01; /* Set fresh message flag */
+                
+                /* Clear this buffer's flag */
+                C1RXFUL1 &= ~(1 << i);
+                
+                /* Update timestamp if callback available and message configured */
+                if (can_getTimestamp && can_mailboxLookup[sw_buffer_index]) {
+                    can_mailboxLookup[sw_buffer_index]->last_received_timestamp = can_getTimestamp();
+                }
+                
+                can_print("RX_INT %d\n", i);
             }
-            C1RXFUL1 &= ~(1 << temp);
-            ecanRXMsgBuf[temp - CAN_TX_FIFO_BUFFER_SIZE][7] |= 0x01;
-        } else {/*if RX event was in the FIFO*/
+        }
+        
+        /* Process all FIFO messages using FNRB pointer */
+        while (C1RXFUL1 & (1 << 15) || C1RXFUL2) {
             uint16_t thisBuff = C1FIFObits.FNRB;
+            can_rxDataReady |= 1 << (thisBuff-8);
+            
+            /* Clear the RXFUL flag for this FIFO buffer */
             if (thisBuff == 15) {
                 C1RXFUL1 &= ~(1 << 15);
             } else {
-                C1RXFUL2 &= ~(1 << (temp - 16));
+                C1RXFUL2 &= ~(1 << (thisBuff - 16));
             }
+            
+            /* Extract filter hit and copy message data */
             uint8_t filterHit = (ecanMsgBuf[thisBuff][7] >> 8);
-            int i = 0;
-            for (i = 0; i < 8; i++) {
+            for (uint8_t i = 0; i < 8; i++) {
                 ecanRXMsgBuf[filterHit][i] = ecanMsgBuf[thisBuff][i];
             }
-            ecanRXMsgBuf[filterHit][7] |= 0x01; /*set fresh message flag*/
+            ecanRXMsgBuf[filterHit][7] |= 0x01; /* Set fresh message flag */
+            
+            /* Update timestamp if callback available and message configured */
+            if (can_getTimestamp && can_mailboxLookup[filterHit]) {
+                can_mailboxLookup[filterHit]->last_received_timestamp = can_getTimestamp();
+            }
+            
+            can_print("RX_INT %d\n", thisBuff);
         }
-        can_print("RX_INT %d\n", temp);
-        /*do something here...*/
-
-        /*Clear all flags if not handled here.*/
+        
+        /* Clear overflow flags only */
         C1RXOVF1 = 0x0000;
         C1RXOVF2 = 0x0000;
-        C1RXFUL1 = 0x0000;
-        C1RXFUL2 = 0x0000;
         C1INTF = 0x0000;
-
     }
 
     /* ICODE INTERUPT SOURCES

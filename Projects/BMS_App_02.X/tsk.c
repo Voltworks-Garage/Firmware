@@ -27,11 +27,12 @@
 #include "SerialDebugger.h"
 #include "IO.h"
 #include "bms_dbc.h"
-#include "can_iso_tp_lite.h"
+#include "CAN.h"
 #include "can_populate.h"
 #include "ev_charger.h"
 #include "bms.h"
 #include "dcdc.h"
+#include "contactorControl.h"
 #include "mcc_generated_files/watchdog.h"
 #include "../../Libraries/CommandService/commandService.h"
 
@@ -84,12 +85,19 @@ void Tsk_init(void) {
     /*Init each module once*/
     PinSetup_Init(); // Pin setup should be first
     CAN_DBC_init(); // Initialize the CAN mailboxes
-    StateMachine_Init();
+    CAN_timeStampFunc(SysTick_Get); // enable CAN message time-stamping
+    
     IO_SET_DEBUG_LED_EN(HIGH);
-    BMS_Init();
-    isoTP_init();
-    DCDC_init();
+
+    // enable apps
+    StateMachine_Init();
     CommandService_Init();
+    BMS_Init();
+    DCDC_Init();
+    EV_Charger_Init();
+    CONTACTOR_Init();
+
+    // Initialize the watchdog timer
     WATCHDOG_TimerClear();
     WATCHDOG_TimerSoftwareEnable();
 
@@ -102,12 +110,14 @@ void Tsk_init(void) {
  * Runs every 1ms
  */
 void Tsk_1ms(void) {
-    run_iso_tp_1ms();
-    DCDC_run_1ms();
+
+    DCDC_Run_1ms();
     CommandService_Run();
     BMS_Run_1ms();
+    CONTACTOR_Run_1ms();
     
     CAN_populate_1ms();
+    CAN_send_1ms();
 }
 
 /**
@@ -124,8 +134,8 @@ void Tsk_10ms(void) {
     EV_CHARGER_Run_10ms();
     BMS_Run_10ms();               // Non-blocking LTC6802-1 operations
 
-    CAN_bms_debug_CPU_USAGE_set(SysTick_GetCPUPercentage());
-    CAN_bms_debug_CPU_peak_set(SysTick_GetCPUPeak());
+    CAN_bms_status_cpu_usage_percent_set(SysTick_GetCPUPercentage());
+    CAN_bms_status_cpu_peak_percent_set(SysTick_GetCPUPeak());
     CAN_populate_10ms();
     CAN_send_10ms();
 }
@@ -135,8 +145,11 @@ void Tsk_10ms(void) {
  */
 void Tsk_100ms(void) {
     WATCHDOG_TimerClear();
-    DCDC_run_100ms();
+    DCDC_Run_100ms();
+    CONTACTOR_Run_100ms();
     IO_SET_DEBUG_LED_EN(TOGGLE); //Toggle Debug LED at 10Hz for scheduler running status
+
+    CAN_send_100ms();
 }
 
 /**

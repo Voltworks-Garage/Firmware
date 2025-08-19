@@ -29,10 +29,26 @@ elif [ "$1" = "MCU_BOOT" ] || [ "$1" = "mcu_boot" ]; then
     "$MAKE_EXE" -f nbproject/Makefile-default.mk CONF=default
     echo "MCU Bootloader build complete\!"
 
+elif [ "$1" = "DBC" ] || [ "$1" = "dbc" ]; then
+    echo "Generating DBC files from JSON..."
+    cd "/mnt/c/REPOS/Voltworks_Garage/Firmware/CAN"
+    cmd.exe /c GenerateDBCs.bat
+    echo "DBC generation complete\!"
+
+elif [ "$1" = "ALL" ] || [ "$1" = "all" ]; then
+    echo "Building all projects..."
+    "$0" BMS_APP
+    "$0" BMS_BOOT
+    "$0" MCU_APP
+    "$0" MCU_BOOT
+    echo "All builds complete\!"
+
 else
     echo "Usage: bash build_commands.sh [PROJECT]"
-    echo "Available projects: BMS_APP, BMS_BOOT, MCU_APP, MCU_BOOT"
+    echo "Available projects: BMS_APP, BMS_BOOT, MCU_APP, MCU_BOOT, DBC, ALL"
     echo "Examples:"
-    echo "  bash build_commands.sh BMS_APP"
-    echo "  bash build_commands.sh MCU_BOOT"
+    echo "  bash build_commands.sh BMS_APP      # Build BMS Application"
+    echo "  bash build_commands.sh MCU_BOOT     # Build MCU Bootloader"
+    echo "  bash build_commands.sh DBC          # Generate DBC files from JSON"
+    echo "  bash build_commands.sh ALL          # Build all main projects"
 fi

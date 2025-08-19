@@ -18,7 +18,8 @@ typedef enum{
  * mcu NODE MESSAGES
  */
 #define CAN_mcu_command_interval() 100
-uint8_t CAN_mcu_command_checkDataIsFresh(void);
+uint8_t CAN_mcu_command_checkDataIsUnread(void);
+uint8_t CAN_mcu_command_checkDataIsStale(void);
 uint16_t CAN_mcu_command_DCDC_enable_get(void);
 uint16_t CAN_mcu_command_ev_charger_enable_get(void);
 float CAN_mcu_command_ev_charger_current_get(void);
@@ -29,17 +30,18 @@ uint16_t CAN_mcu_command_motor_controller_enable_get(void);
  * bms NODE MESSAGES
  */
 #define CAN_bms_debug_interval() 10
-uint8_t CAN_bms_debug_checkDataIsFresh(void);
+uint8_t CAN_bms_debug_checkDataIsUnread(void);
+uint8_t CAN_bms_debug_checkDataIsStale(void);
 uint16_t CAN_bms_debug_bool0_get(void);
 uint16_t CAN_bms_debug_bool1_get(void);
 float CAN_bms_debug_float1_get(void);
 float CAN_bms_debug_float2_get(void);
-float CAN_bms_debug_VBUS_Voltage_get(void);
-uint16_t CAN_bms_debug_CPU_USAGE_get(void);
-uint16_t CAN_bms_debug_CPU_peak_get(void);
+uint16_t CAN_bms_debug_word1_get(void);
+uint16_t CAN_bms_debug_byte1_get(void);
 
 #define CAN_bms_charger_request_interval() 1000
-uint8_t CAN_bms_charger_request_checkDataIsFresh(void);
+uint8_t CAN_bms_charger_request_checkDataIsUnread(void);
+uint8_t CAN_bms_charger_request_checkDataIsStale(void);
 uint16_t CAN_bms_charger_request_output_voltage_high_byte_get(void);
 uint16_t CAN_bms_charger_request_output_voltage_low_byte_get(void);
 uint16_t CAN_bms_charger_request_output_current_high_byte_get(void);
@@ -78,6 +80,9 @@ void CAN_charger_status_send(void);
  */
 void CAN_DBC_init();
 
+void CAN_send_1ms(void);
+void CAN_send_10ms(void);
+void CAN_send_100ms(void);
 void CAN_send_1000ms(void);
 
 

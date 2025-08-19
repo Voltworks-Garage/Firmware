@@ -16,10 +16,19 @@
 
 #include <stdint.h>
 
+typedef enum {
+    COMMAND_SERVICE_TYPE_NONE = 0,
+    COMMAND_SERVICE_TYPE_IO_CONTROL,
+    COMMAND_SERVICE_TYPE_RESET,
+    COMMAND_SERVICE_TYPE_SLEEP,
+    COMMAND_SERVICE_TYPE_TESTER_PRESENT,
+    COMMAND_SERVICE_TYPE_MAX
+} CommandService_Type_E;
 
 // Public API Functions
 void CommandService_Init(void);
 void CommandService_Run(void);
 void CommandService_SendResponse(uint8_t responseCode, uint8_t* data, uint8_t dataLength);
+CommandService_Type_E CommandService_GetEvent(void);
 
 #endif /* COMMAND_SERVICE_H */
