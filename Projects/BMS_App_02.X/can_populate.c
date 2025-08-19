@@ -37,53 +37,11 @@ void CAN_populate_1ms(void){
 }
 
 void CAN_populate_10ms(void){
-    // Populate LTC6802-1 error data into bms_status MUX 2 using enhanced error handling
-    LTC6802_1_Error_Info_S current_error_info;
-    static uint32_t total_transactions = 0, failed_transactions = 0, total_retries = 0;
-    
-    // Initialize error info structure to prevent garbage values
-    memset(&current_error_info, 0, sizeof(current_error_info));
-    
-    // Get current LTC module state (map to numeric value)
-    uint16_t ltc_state = 0; // 0=idle, 1=reading, 2=processing, 3=faulted, etc.
-    if (LTC6802_1_IsBusy()) {
-        ltc_state = 1; // Busy/active state
-    }
-    
-    // Check if we have an active error using enhanced error info
-    bool has_active_error = LTC6802_1_GetErrorInfo(&current_error_info);
-    if (has_active_error && current_error_info.error_code != LTC6802_1_ERROR_NONE) {
-        ltc_state = 3; // Faulted state
-    }
-    CAN_bms_status_ltc_state_set(ltc_state);
-    
-    // Get the most recent error code from the enhanced error system
-    uint16_t last_error_code = 0;
-    if (has_active_error && current_error_info.error_code != LTC6802_1_ERROR_NONE) {
-        // Validate error code is within expected range before using
-        if (current_error_info.error_code <= LTC6802_1_ERROR_DATA_CORRUPTION) {
-            last_error_code = (uint16_t)current_error_info.error_code;
-        } else {
-            last_error_code = 255; // Invalid error marker
-        }
-    } else {
-        // Fall back to legacy per-stack error checking
-        LTC6802_1_Error_E error_stack0 = LTC6802_1_GetLastError(0);
-        LTC6802_1_Error_E error_stack1 = LTC6802_1_GetLastError(1);
-        LTC6802_1_Error_E max_error = (error_stack0 > error_stack1) ? error_stack0 : error_stack1;
-        
-        // Validate error code range
-        if (max_error <= LTC6802_1_ERROR_DATA_CORRUPTION) {
-            last_error_code = (uint16_t)max_error;
-        } else {
-            last_error_code = 254; // Invalid legacy error marker
-        }
-    }
-    CAN_bms_status_ltc_last_error_set(last_error_code);
-    
-    // Get transaction statistics and use failed transactions as error count
-    LTC6802_1_GetStats(&total_transactions, &failed_transactions, &total_retries);
-    CAN_bms_status_ltc_error_count_set((uint16_t)(failed_transactions & 0xFFF)); // 12-bit field
+
+    LTC6802_1_Error_Entry_S last_error = LTC6802_1_GetLastError();
+    CAN_bms_status_ltc_last_error_set(last_error.error_type);
+    CAN_bms_status_ltc_state_set(last_error.state_when_occurred);
+    CAN_bms_status_ltc_error_count_set(LTC6802_1_GetTotalErrorCount() & 0xFFF);
 }
 
 void CAN_populate_100ms(void){

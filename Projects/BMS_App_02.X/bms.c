@@ -275,8 +275,7 @@ static void bms_error(BMS_entry_types_E entry_type) {
             // Halt LTC driver and reset
             LTC6802_1_Halt();
             SysTick_TimerStart(error_timer);
-            LTC6802_1_ClearError(0); // Clear error for stack 0
-            LTC6802_1_ClearError(1); // Clear error for stack 1
+            LTC6802_1_ClearError(); // Clear all errors
             LTC6802_1_ResetStats();
             break;
         case RUN:
