@@ -4,7 +4,7 @@ import canopen
 network = canopen.Network()
 
 # Add some nodes with corresponding Object Dictionaries
-node = canopen.RemoteNode(1, 'C:\Repos\E_Moto\Firmware\SevconController\AC24ls.eds')
+node = canopen.RemoteNode(1, 'C:/REPOS/Voltworks_Garage/Firmware/SevconController/new_EDS.eds')
 network.add_node(node)
 
 # Connect to the CAN bus

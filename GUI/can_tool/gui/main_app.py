@@ -487,7 +487,8 @@ Plugins:
                 if msg:
                     self.root.after(0, self.handle_rx_message, msg)
             except Exception as e:
-                self.root.after(0, lambda: self.log(f"❌ RX error: {e}"))
+                error_msg = f"❌ RX error: {e}"
+                self.root.after(0, lambda msg=error_msg: self.log(msg))
 
     def handle_rx_message(self, msg):
         """Handle received CAN message"""

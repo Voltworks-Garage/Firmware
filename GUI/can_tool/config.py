@@ -14,6 +14,10 @@ DEFAULT_CONFIG = {
         "isotp_tab": {
             "enabled": False,  # ISO-TP plugin is OFF by default - only loads when manually selected
             "description": "ISO-TP communication for commandService interaction"
+        },
+        "canopen_sdo_tab": {
+            "enabled": True,  # CANopen SDO plugin is ON by default
+            "description": "CANopen SDO read/write operations using EDS object dictionary"
         }
     },
     "gui": {
@@ -89,9 +93,18 @@ def create_plugin_loader():
             from can_tool.plugins.isotp_tab import ISOTPTab
         return ISOTPTab
     
+    def _get_canopen_sdo_tab():
+        # Import CANopen SDO plugin - handle both relative and absolute imports
+        try:
+            from .plugins.canopen_sdo_tab import CANopenSDOTab
+        except ImportError:
+            from can_tool.plugins.canopen_sdo_tab import CANopenSDOTab
+        return CANopenSDOTab
+    
     # Registry of available plugins (lazy loading)
     PLUGIN_REGISTRY = {
-        "isotp_tab": _get_isotp_tab
+        "isotp_tab": _get_isotp_tab,
+        "canopen_sdo_tab": _get_canopen_sdo_tab
     }
     
     def load_plugins(config: Config, parent_notebook, app_instance) -> List:

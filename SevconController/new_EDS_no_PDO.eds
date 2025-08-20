@@ -10615,7 +10615,7 @@ PDOMapping=0
 ParameterName=Additional Motor Measurements
 ObjectType=0x9
 ;StorageLocation=RAM
-SubNumber=0x10
+SubNumber=16
 
 [4600sub0]
 ParameterName=Number of entries
@@ -10636,10 +10636,10 @@ DataType=0x0003
 AccessType=ro
 HighLimit=32767
 LowLimit=-32768
-DefaultValue=
+DefaultValue=0
 PDOMapping=1
 
-[4600sub3]
+[4600sub2]
 ParameterName=Temperature (Measured - PTC)
 ObjectType=0x7
 ;StorageLocation=RAM
@@ -10647,10 +10647,10 @@ DataType=0x0003
 AccessType=ro
 HighLimit=250
 LowLimit=-50
-DefaultValue=
+DefaultValue=0
 PDOMapping=1
 
-[4600sub4]
+[4600sub3]
 ParameterName=Temperature (Measured - Switch)
 ObjectType=0x7
 ;StorageLocation=RAM
@@ -10658,10 +10658,10 @@ DataType=0x0001
 AccessType=ro
 HighLimit=1
 LowLimit=0
-DefaultValue=
+DefaultValue=0
 PDOMapping=1
 
-[4600sub5]
+[4600sub4]
 ParameterName=Target Id (If)
 ObjectType=0x7
 ;StorageLocation=RAM
@@ -10669,10 +10669,10 @@ DataType=0x0003
 AccessType=ro
 HighLimit=32000
 LowLimit=-32000
-DefaultValue=
+DefaultValue=0
 PDOMapping=1
 
-[4600sub6]
+[4600sub5]
 ParameterName=Target Iq (Ia)
 ObjectType=0x7
 ;StorageLocation=RAM
@@ -10680,10 +10680,10 @@ DataType=0x0003
 AccessType=ro
 HighLimit=32000
 LowLimit=-32000
-DefaultValue=
+DefaultValue=0
 PDOMapping=1
 
-[4600sub7]
+[4600sub6]
 ParameterName=Id (If)
 ObjectType=0x7
 ;StorageLocation=RAM
@@ -10691,10 +10691,10 @@ DataType=0x0003
 AccessType=ro
 HighLimit=32767
 LowLimit=-32768
-DefaultValue=
+DefaultValue=0
 PDOMapping=1
 
-[4600sub8]
+[4600sub7]
 ParameterName=Iq (Ia)
 ObjectType=0x7
 ;StorageLocation=RAM
@@ -10702,10 +10702,10 @@ DataType=0x0003
 AccessType=ro
 HighLimit=32767
 LowLimit=-32768
-DefaultValue=
+DefaultValue=0
 PDOMapping=1
 
-[4600sub9]
+[4600sub8]
 ParameterName=Ud (Uf)
 ObjectType=0x7
 ;StorageLocation=RAM
@@ -10713,10 +10713,10 @@ DataType=0x0003
 AccessType=ro
 HighLimit=3200
 LowLimit=-3200
-DefaultValue=
+DefaultValue=0
 PDOMapping=1
 
-[4600subA]
+[4600sub9]
 ParameterName=Uq (Ua)
 ObjectType=0x7
 ;StorageLocation=RAM
@@ -10724,10 +10724,10 @@ DataType=0x0003
 AccessType=ro
 HighLimit=3200
 LowLimit=-3200
-DefaultValue=
+DefaultValue=0
 PDOMapping=1
 
-[4600subB]
+[4600sub10]
 ParameterName=Voltage modulation
 ObjectType=0x7
 ;StorageLocation=RAM
@@ -10735,10 +10735,10 @@ DataType=0x0003
 AccessType=ro
 HighLimit=255
 LowLimit=0
-DefaultValue=
+DefaultValue=0
 PDOMapping=1
 
-[4600subC]
+[4600sub11]
 ParameterName=Actual AC Motor Current
 ObjectType=0x7
 ;StorageLocation=RAM
@@ -10746,10 +10746,10 @@ DataType=0x0003
 AccessType=ro
 HighLimit=32767
 LowLimit=-32768
-DefaultValue=
+DefaultValue=0
 PDOMapping=1
 
-[4600subD]
+[4600sub12]
 ParameterName=Actual AC Motor Voltage
 ObjectType=0x7
 ;StorageLocation=RAM
@@ -10757,10 +10757,10 @@ DataType=0x0003
 AccessType=ro
 HighLimit=32767
 LowLimit=-32768
-DefaultValue=
+DefaultValue=0
 PDOMapping=1
 
-[4600subE]
+[4600sub13]
 ParameterName=Motor velocity for 2nd motor
 ObjectType=0x7
 ;StorageLocation=RAM
@@ -10768,10 +10768,10 @@ DataType=0x0004
 AccessType=ro
 HighLimit=20000
 LowLimit=-20000
-DefaultValue=
+DefaultValue=0
 PDOMapping=1
 
-[4600subF]
+[4600sub14]
 ParameterName=Electrical output frequency
 ObjectType=0x7
 ;StorageLocation=RAM
@@ -10779,10 +10779,10 @@ DataType=0x0003
 AccessType=ro
 HighLimit=2047
 LowLimit=-2048
-DefaultValue=
+DefaultValue=0
 PDOMapping=1
 
-[4600sub10]
+[4600sub15]
 ParameterName=Temperature (Measured - Remote)
 ObjectType=0x7
 ;StorageLocation=RAM
@@ -10790,7 +10790,7 @@ DataType=0x0003
 AccessType=rww
 HighLimit=250
 LowLimit=-50
-DefaultValue=
+DefaultValue=0
 PDOMapping=1
 
 [4601]
