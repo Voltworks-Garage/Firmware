@@ -306,12 +306,24 @@ float CAN_bms_cell_temperatures_temp_24_get(void);
 #define CAN_motorcontroller_heartbeat_interval() 30
 uint8_t CAN_motorcontroller_heartbeat_checkDataIsUnread(void);
 uint8_t CAN_motorcontroller_heartbeat_checkDataIsStale(void);
-uint16_t CAN_motorcontroller_heartbeat_heartbeat_get(void);
+uint16_t CAN_motorcontroller_heartbeat_Mode_get(void);
 
 #define CAN_motorcontroller_SYNC_interval() 30
 uint8_t CAN_motorcontroller_SYNC_checkDataIsUnread(void);
 uint8_t CAN_motorcontroller_SYNC_checkDataIsStale(void);
-uint16_t CAN_motorcontroller_SYNC_SYNC_dummy_get(void);
+
+uint8_t CAN_motorcontroller_SDO_response_checkDataIsUnread(void);
+uint16_t CAN_motorcontroller_SDO_response_size_get(void);
+uint16_t CAN_motorcontroller_SDO_response_expidited_xfer_get(void);
+uint16_t CAN_motorcontroller_SDO_response_n_bytes_get(void);
+uint16_t CAN_motorcontroller_SDO_response_reserved_get(void);
+uint16_t CAN_motorcontroller_SDO_response_ccs_get(void);
+uint16_t CAN_motorcontroller_SDO_response_index_get(void);
+uint16_t CAN_motorcontroller_SDO_response_subindex_get(void);
+uint16_t CAN_motorcontroller_SDO_response_byte_4_get(void);
+uint16_t CAN_motorcontroller_SDO_response_byte_5_get(void);
+uint16_t CAN_motorcontroller_SDO_response_byte_6_get(void);
+uint16_t CAN_motorcontroller_SDO_response_byte_7_get(void);
 
 #define CAN_motorcontroller_Emergency_interval() 30
 uint8_t CAN_motorcontroller_Emergency_checkDataIsUnread(void);

@@ -52,7 +52,7 @@ NEW_TIMER(pull_in_timer, 200);  // 200ms pull-in time
  *******************************************************************************/
 static uint8_t contactorCommandFromMcu = 0;
 static uint16_t pull_in_pwm_duty = 80;   // 80% duty cycle for pull-in
-static uint16_t hold_pwm_duty = 10;       // 10% duty cycle for hold
+static uint16_t hold_pwm_duty = 5;       // 10% duty cycle for hold
 
 /******************************************************************************
  * Public Functions

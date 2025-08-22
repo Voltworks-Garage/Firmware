@@ -376,7 +376,7 @@ void halt_all_tasks(void) {
     HornControl_Halt();
     j1772Control_Halt();
     IgnitionControl_Halt();
-    LvBattery_Halt();
+    // LvBattery_Halt();
 }
 void resume_all_tasks(void) {
     LightsControl_Init();
@@ -384,7 +384,7 @@ void resume_all_tasks(void) {
     HornControl_Init();
     j1772Control_Init();
     IgnitionControl_Init();
-    LvBattery_Init();
+    // LvBattery_Init();
 }
 
 /*** End of File **************************************************************/

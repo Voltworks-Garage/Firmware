@@ -6,7 +6,7 @@
 
 [BUSMASTER_VERSION] [3.2.2]
 
-[NUMBER_OF_MESSAGES] 25
+[NUMBER_OF_MESSAGES] 26
 
 [START_MSG] dash_status,1797,8,7,1,S
 [START_SIGNALS] heartBeat,4,1,0.0,U,15,0,1,0,1.0,
@@ -281,11 +281,24 @@
 [END_MSG]
 
 [START_MSG] motorcontroller_heartbeat,1793,8,1,1,S
-[START_SIGNALS] heartbeat,16,1,0.0,U,65535,0,1,0,1.0,
+[START_SIGNALS] Mode,16,1,0.0,U,65535,0,1,0,1.0,enum
 [END_MSG]
 
-[START_MSG] motorcontroller_SYNC,128,8,1,1,S
-[START_SIGNALS] SYNC_dummy,16,1,0.0,U,65535,0,1,0,1.0,
+[START_MSG] motorcontroller_SYNC,128,8,0,1,S
+[END_MSG]
+
+[START_MSG] motorcontroller_SDO_response,1409,8,11,1,S
+[START_SIGNALS] size,1,1,0.0,B,1,0,1,0,1.0,bool
+[START_SIGNALS] expidited_xfer,1,1,1.0,B,1,0,1,0,1.0,bool
+[START_SIGNALS] n_bytes,2,1,2.0,U,3,0,1,0,1.0,enum
+[START_SIGNALS] reserved,1,1,4.0,B,1,0,1,0,1.0,
+[START_SIGNALS] ccs,3,1,5.0,U,7,0,1,0,1.0,enum
+[START_SIGNALS] index,16,2,0.0,U,65535,0,1,0,1.0,0x
+[START_SIGNALS] subindex,8,4,0.0,U,255,0,1,0,1.0,0x
+[START_SIGNALS] byte_4,8,5,0.0,U,255,0,1,0,1.0,
+[START_SIGNALS] byte_5,8,6,0.0,U,255,0,1,0,1.0,
+[START_SIGNALS] byte_6,8,7,0.0,U,255,0,1,0,1.0,
+[START_SIGNALS] byte_7,8,8,0.0,U,255,0,1,0,1.0,
 [END_MSG]
 
 [START_MSG] motorcontroller_Emergency,129,8,1,1,S

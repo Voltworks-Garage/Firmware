@@ -12,21 +12,31 @@ class ObjectType(Enum):
 
 
 class DataType(Enum):
-    BOOLEAN = 0
-    INTEGER8 = 1
-    INTEGER16 = 2
-    INTEGER32 = 3
-    INTEGER64 = 4
-    UNSIGNED8 = 5
-    UNSIGNED16 = 6
-    UNSIGNED32 = 7
-    UNSIGNED64 = 8
-    REAL32 = 9
-    REAL64 = 10
-    VISIBLE_STRING = 11
-    OCTET_STRING = 12
-    UNICODE_STRING = 13
-    DOMAIN = 14
+    BOOLEAN = 0x01
+    INTEGER8 = 0x02
+    INTEGER16 = 0x03
+    INTEGER32 = 0x04
+    UNSIGNED8 = 0x05
+    UNSIGNED16 = 0x06
+    UNSIGNED32 = 0x07
+    REAL32 = 0x08
+    VISIBLE_STRING = 0x09
+    OCTET_STRING = 0x0A
+    UNICODE_STRING = 0x0B
+    TIME_OF_DAY = 0x0C
+    TIME_DIFFERENCE = 0x0D
+    DOMAIN = 0x0F
+    INTEGER24 = 0x10
+    REAL64 = 0x11
+    INTEGER40 = 0x12
+    INTEGER48 = 0x13
+    INTEGER56 = 0x14
+    INTEGER64 = 0x15
+    UNSIGNED24 = 0x16
+    UNSIGNED40 = 0x18
+    UNSIGNED48 = 0x19
+    UNSIGNED56 = 0x1A
+    UNSIGNED64 = 0x1B
 
 
 class dictOb():
@@ -112,7 +122,19 @@ def write_eds_object(object: dictOb) -> str:
     if len(object.subindex) > 1:
         string += "[{}]\n".format(hex(object.index)[2:])
         string += "{}={}\n".format("ParameterName", object.name)
-        string += "{}={}\n".format("ObjectType", ObjectType[object.DataType.upper().replace(" ", "_")].value)
+        
+        # Handle ObjectType conversion with error handling
+        try:
+            object_type_name = object.DataType.upper().replace(" ", "_")
+            object_type_val = ObjectType[object_type_name].value
+            string += "{}={}\n".format("ObjectType", object_type_val)
+        except KeyError:
+            print(f"Warning: Unknown object type '{object.DataType}' for object {hex(object.index) if isinstance(object.index, int) else object.index}. Using ARRAY (8).")
+            string += "{}={}\n".format("ObjectType", ObjectType.ARRAY.value)
+        except Exception as e:
+            print(f"Error: Failed to process object type '{object.DataType}' for object {hex(object.index) if isinstance(object.index, int) else object.index}: {e}")
+            string += "{}={}\n".format("ObjectType", ObjectType.ARRAY.value)
+            
         string += ";StorageLocation=RAM\n"
         string += "{}={}\n\n".format("SubNumber", format_hex_value(len(object.subindex), 1))
 
@@ -127,9 +149,14 @@ def write_eds_object(object: dictOb) -> str:
         
         # Format DataType as 4-digit hex
         try:
-            data_type_val = DataType[item["Data Type"].upper().replace(" ", "_")].value
+            data_type_name = item["Data Type"].upper().replace(" ", "_")
+            data_type_val = DataType[data_type_name].value
             string += "{}={}\n".format("DataType", format_hex_value(data_type_val, 4))
-        except:
+        except KeyError as e:
+            print(f"Warning: Unknown data type '{item['Data Type']}' for object {hex(object.index) if isinstance(object.index, int) else object.index}, sub-index {item.get('Sub-Index', 0)}. Using 0x0000.")
+            string += "{}={}\n".format("DataType", "0x0000")
+        except Exception as e:
+            print(f"Error: Failed to process data type '{item.get('Data Type', 'Unknown')}' for object {hex(object.index) if isinstance(object.index, int) else object.index}: {e}")
             string += "{}={}\n".format("DataType", "0x0000")
         
         string += "{}={}\n".format("AccessType", item["Access Type"].lower())
@@ -276,20 +303,45 @@ for row_num, row in enumerate(wb1.active.iter_rows(min_row=5), start=5):
 
     # Handle other cases  
     else:
-        print(f"Warning: Unidentified object structure at row {row_num}, treating as single variable")
-        newOb = dictOb(header_dict)
-        newOb.primaryDict = tempdict.copy()
-        newOb.subindex.append(tempdict.copy())
+        # Provide more detailed info about unidentified structures
+        index_val = tempdict.get("Index")
+        sub_index_val = tempdict.get("Sub-Index")
+        name_val = tempdict.get("Name", "Unknown")
+        print(f"Warning: Unidentified object structure at row {row_num} - Index: {index_val}, Sub-Index: {sub_index_val}, Name: '{name_val}'. Treating as single variable.")
+        
+        if index_val is not None:
+            newOb = dictOb(header_dict)
+            newOb.primaryDict = tempdict.copy()
+            newOb.subindex.append(tempdict.copy())
+        else:
+            print(f"Error: Skipping row {row_num} - no valid index found")
 
 # Don't forget to add the last object
 if newOb is not None and newOb.index is not None and newOb.index != "None":
     Object_Dictionary[newOb.index] = newOb
     print(f"Added object {hex(newOb.index) if isinstance(newOb.index, int) else newOb.index}")
+elif newOb is not None:
+    print(f"Warning: Final object not added - invalid index: {newOb.index}")
 
-print("done")
+print(f"Processing complete - {len(Object_Dictionary)} objects loaded")
 
-# Fix objects with missing datatypes
+# Print summary statistics
+mandatory_count = 0
+communication_count = 0
+manufacturer_count = 0
+device_count = 0
 
+for obj_index in Object_Dictionary:
+    if obj_index in [0x1000, 0x1001, 0x1018]:
+        mandatory_count += 1
+    elif 0x1000 <= obj_index <= 0x1FFF:
+        communication_count += 1
+    elif 0x2000 <= obj_index <= 0x5FFF:
+        manufacturer_count += 1
+    elif 0x6000 <= obj_index <= 0x9FFF:
+        device_count += 1
+
+print(f"Object distribution: Mandatory={mandatory_count}, Communication={communication_count}, Manufacturer={manufacturer_count}, Device Profile={device_count}")
 
 path = os.path.dirname(file1)
 
@@ -362,8 +414,10 @@ with open(os.path.join(path, 'new_EDS.eds'), 'w') as f:
     Communication_object_area = range(0x1000, 0x1FFF)
     Manufacturer_object_area = range(0x2000, 0x5FFF)
     Device_object_area = range(0x6000, 0x9FFF)
-    rpdo_range = range(0x1400, 0x16FF)
-    tpdo_range = range(0x1800, 0x1AFF)
+    rpdo_comm_range = range(0x1400, 0x1600)      # RPDO Communication Parameters
+    rpdo_mapping_range = range(0x1600, 0x1800)  # RPDO Mapping Parameters
+    tpdo_comm_range = range(0x1800, 0x1A00)     # TPDO Communication Parameters  
+    tpdo_mapping_range = range(0x1A00, 0x1C00)  # TPDO Mapping Parameters
 
     range_comm = {}
     range_mfg = {}
@@ -373,16 +427,19 @@ with open(os.path.join(path, 'new_EDS.eds'), 'w') as f:
 
 
     for object in Object_Dictionary:
-        if Object_Dictionary[object].index in rpdo_range or Object_Dictionary[object].index in tpdo_range:
-            continue
-        if Object_Dictionary[object].index in Mandatory_object_area:
+        obj_index = Object_Dictionary[object].index
+        
+        if obj_index in Mandatory_object_area:
             ran_man[object] = Object_Dictionary[object]
-        elif Object_Dictionary[object].index in Communication_object_area or Object_Dictionary[object].index in Device_object_area:
+        elif (obj_index in Communication_object_area or 
+              obj_index in Device_object_area or
+              obj_index in rpdo_comm_range or 
+              obj_index in rpdo_mapping_range or
+              obj_index in tpdo_comm_range or 
+              obj_index in tpdo_mapping_range):
             range_comm[object] = Object_Dictionary[object]
-        elif Object_Dictionary[object].index in Manufacturer_object_area:
+        elif obj_index in Manufacturer_object_area:
             range_mfg[object] = Object_Dictionary[object]
-        # elif Object_Dictionary[object].index in Device_object_area:
-        #     range_dev[object] = Object_Dictionary[object]
         else:
             print(f'Warning: Object {hex(object)} out of standard ranges, placing in manufacturer area')
             range_mfg[object] = Object_Dictionary[object]

@@ -124,10 +124,10 @@ void PinSetup_Init(void) {
     ADC_SetPin(PILOT_MONITOR_AI);
     ADC_SetPin(PROMIXITY_MONINOTR_AI);
     /*PWM*/
-    pwmOCinit(CONTACTOR_1_PWM);
-    pwmOCwriteFreq(CONTACTOR_1_PWM, 300); //10kHz
-    pwmOCinit(CONTACTOR_2_PWM);
-    pwmOCwriteFreq(CONTACTOR_2_PWM, 300); //20kHz
+    pwmOCinit(CONTACTOR_1_PWM, CLOCK_PeripheralFrequencyGet(), OC_CLOCK_PERIPHERAL);
+    pwmOCwriteFreq(CONTACTOR_1_PWM, 2000); //2kHz
+    pwmOCinit(CONTACTOR_2_PWM, CLOCK_PeripheralFrequencyGet(), OC_CLOCK_PERIPHERAL);
+    pwmOCwriteFreq(CONTACTOR_2_PWM, 2000); //2kHz
     
     // Configure Input Capture for PILOT PWM signal
     IC_Config_S pilotConfig = {

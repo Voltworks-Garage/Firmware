@@ -86,6 +86,7 @@ class CANApp:
 
         ttk.Button(control_frame, text="Connect", command=self.connect).pack(side=tk.LEFT, padx=5)
         ttk.Button(control_frame, text="Disconnect", command=self.disconnect).pack(side=tk.LEFT, padx=5)
+        ttk.Button(control_frame, text="Wake Bus", command=self.send_wake_message).pack(side=tk.LEFT, padx=5)
         ttk.Button(control_frame, text="Clear Console", command=lambda: self.console.delete("1.0", tk.END)).pack(side=tk.LEFT, padx=5)
         ttk.Button(control_frame, text="Clear RX Table", command=self.clear_rx_table).pack(side=tk.LEFT, padx=5)
         ttk.Checkbutton(control_frame, text="Log RX to Console", variable=self.console_rx_enabled).pack(side=tk.LEFT, padx=5)
@@ -1214,3 +1215,25 @@ Plugins:
         
         # Start sending
         send_dbf_message()
+    
+    def send_wake_message(self):
+        """Send a wake message to address 0x000 with no payload"""
+        if not self.running or not self.bus:
+            messagebox.showerror("Not Connected", "Please connect to CAN bus first.")
+            return
+        
+        try:
+            # Create wake message: ID 0x000, no data (DLC = 0)
+            msg = can.Message(
+                arbitration_id=0x000,
+                data=[],  # Empty data
+                is_extended_id=False
+            )
+            self.bus.send(msg)
+            
+            # Log the wake message
+            self.log("🌅 WAKE: Sent wake message to 0x000 (DLC=0)")
+            
+        except Exception as e:
+            self.log(f"❌ WAKE ERROR: Failed to send wake message: {e}")
+            messagebox.showerror("Wake Error", f"Failed to send wake message: {e}")

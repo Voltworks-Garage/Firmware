@@ -151,8 +151,10 @@ void PinSetup_Init(void) {
 
 
     /*PWM*/
-    pwmOCinit(PWM_1_OUT);
-    pwmOCinit(PWM_2_OUT);
+    pwmOCinit(PWM_1_OUT, CLOCK_PeripheralFrequencyGet(), OC_CLOCK_PERIPHERAL);
+    pwmOCinit(PWM_2_OUT, CLOCK_PeripheralFrequencyGet(), OC_CLOCK_PERIPHERAL);
+    pwmOCwriteFreq(PWM_1_OUT, 2000); //2kHz
+    pwmOCwriteFreq(PWM_2_OUT, 2000); //2kHz
 
     /*UART*/
     Uart1INIT(UART_TX, UART_RX, UART_BAUD_115200, CLOCK_SystemFrequencyGet());

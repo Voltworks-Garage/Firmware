@@ -126,12 +126,21 @@ class PendingSDORequest:
     data_sent: bytes = b''
 
 
+@dataclass
+class MainObjectInfo:
+    """Information about a main object (not a sub-index)"""
+    index: int
+    name: str
+    object_type: int
+    sub_number: int = 0
+
 class EDSParser:
     """Parser for EDS (Electronic Data Sheet) files"""
     
     def __init__(self, eds_file_path: str):
         self.eds_file_path = eds_file_path
         self.object_dictionary: Dict[Tuple[int, int], ObjectDictionaryEntry] = {}
+        self.main_objects: Dict[int, MainObjectInfo] = {}  # Store main object info separately
         self.device_info: Dict[str, Any] = {}
         self.file_info: Dict[str, Any] = {}
         self.vendor_name = "Unknown"
@@ -166,15 +175,24 @@ class EDSParser:
                         parts = section_name.lower().split('sub')
                         index = int(parts[0], 16)
                         sub_index = int(parts[1], 16)
+                        
+                        # Parse the sub-index object entry
+                        entry = self._parse_object_entry(config[section_name], index, sub_index)
+                        if entry:
+                            self.object_dictionary[(index, sub_index)] = entry
                     else:
-                        # Main index entry like "1018"
+                        # Main object entry like "1400" or standalone "5180"
                         index = int(section_name, 16)
-                        sub_index = 0
-                    
-                    # Parse the object entry
-                    entry = self._parse_object_entry(config[section_name], index, sub_index)
-                    if entry:
-                        self.object_dictionary[(index, sub_index)] = entry
+                        
+                        # Parse main object information for tree structure
+                        main_info = self._parse_main_object(config[section_name], index)
+                        if main_info:
+                            self.main_objects[index] = main_info
+                        
+                        # Also parse as object entry (for standalone objects or objects with implicit sub-index 0)
+                        entry = self._parse_object_entry(config[section_name], index, 0)
+                        if entry:
+                            self.object_dictionary[(index, 0)] = entry
                         
                 except ValueError:
                     # Not a hex number, skip
@@ -182,6 +200,23 @@ class EDSParser:
                     
         except Exception as e:
             print(f"Error parsing EDS file {eds_file_path}: {e}")
+    
+    def _parse_main_object(self, section: configparser.SectionProxy, index: int) -> Optional[MainObjectInfo]:
+        """Parse a main object section (e.g., [1400])"""
+        try:
+            name = section.get('ParameterName', f'Object_{index:04X}')
+            object_type = int(section.get('ObjectType', '0'), 0)
+            sub_number = int(section.get('SubNumber', '0'), 0)
+            
+            return MainObjectInfo(
+                index=index,
+                name=name,
+                object_type=object_type,
+                sub_number=sub_number
+            )
+        except Exception as e:
+            print(f"Error parsing main object {index:04X}: {e}")
+            return None
     
     def _parse_object_entry(self, section: configparser.SectionProxy, index: int, sub_index: int) -> Optional[ObjectDictionaryEntry]:
         """Parse a single object dictionary entry"""
@@ -261,6 +296,12 @@ class EDSParser:
         """Get all object dictionary entries sorted by index"""
         objects = list(self.object_dictionary.values())
         return sorted(objects, key=lambda x: (x.index, x.sub_index))
+    
+    def get_main_object_name(self, index: int) -> Optional[str]:
+        """Get the main object name for a given index"""
+        if index in self.main_objects:
+            return self.main_objects[index].name
+        return None
 
 
 class DataTypeConverter:
@@ -429,6 +470,8 @@ class CANopenSDOTab(BaseTab):
         self.current_node_id = 1
         self.pending_requests: Dict[int, PendingSDORequest] = {}  # COB-ID -> request
         self.selected_object = None
+        self.sdo_timeout_seconds = 1.0  # SDO timeout in seconds
+        self.timeout_timer = None
         
         # CANopen library integration
         self.canopen_network = None
@@ -537,68 +580,100 @@ class CANopenSDOTab(BaseTab):
         # Update preview when node ID changes
         self.node_id_var.trace('w', self._update_can_preview)
         
+        # SDO Timeout setting
+        ttk.Label(node_frame, text="Timeout (s):").pack(side=tk.LEFT, padx=(20, 5))
+        self.timeout_var = tk.StringVar(value="1.0")
+        timeout_spin = ttk.Spinbox(node_frame, from_=0.1, to=10.0, width=4, 
+                                  textvariable=self.timeout_var, increment=0.1)
+        timeout_spin.pack(side=tk.LEFT, padx=(0, 20))
+        
+        # Update timeout when changed
+        self.timeout_var.trace('w', self._on_timeout_changed)
+        
         # Device info
         device_text = f"{self.eds_parser.vendor_name} - {self.eds_parser.product_name}"
         ttk.Label(node_frame, text=device_text, font=("Arial", 9, "italic")).pack(side=tk.LEFT)
+        
+        # NMT Control frame
+        nmt_frame = ttk.LabelFrame(ops_frame, text="NMT Network Management")
+        nmt_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        # NMT controls in one row
+        nmt_controls_frame = ttk.Frame(nmt_frame)
+        nmt_controls_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        ttk.Label(nmt_controls_frame, text="NMT State:").pack(side=tk.LEFT)
+        self.nmt_state_var = tk.StringVar()
+        self.nmt_state_combo = ttk.Combobox(nmt_controls_frame, textvariable=self.nmt_state_var, 
+                                           state="readonly", width=20)
+        # NMT command states according to CiA 301
+        nmt_commands = [
+            "Start Remote Node",
+            "Stop Remote Node", 
+            "Enter Pre-operational",
+            "Reset Node",
+            "Reset Communication"
+        ]
+        self.nmt_state_combo.config(values=nmt_commands)
+        self.nmt_state_combo.set("Start Remote Node")  # Default selection
+        self.nmt_state_combo.pack(side=tk.LEFT, padx=(5, 10))
+        
+        ttk.Label(nmt_controls_frame, text="Target Node:").pack(side=tk.LEFT)
+        self.nmt_node_var = tk.StringVar(value="1")
+        self.nmt_node_entry = ttk.Entry(nmt_controls_frame, textvariable=self.nmt_node_var, width=5)
+        self.nmt_node_entry.pack(side=tk.LEFT, padx=(5, 10))
+        
+        ttk.Button(nmt_controls_frame, text="Send NMT", command=self._send_nmt_command).pack(side=tk.LEFT, padx=5)
         
         # Object selection frame
         obj_frame = ttk.LabelFrame(ops_frame, text="Selected Object")
         obj_frame.pack(fill=tk.X, padx=5, pady=5)
         
-        # Index and sub-index
-        index_frame = ttk.Frame(obj_frame)
-        index_frame.pack(fill=tk.X, padx=5, pady=2)
+        # All object info in one row: Index, Sub, Name, Type, Access
+        info_frame = ttk.Frame(obj_frame)
+        info_frame.pack(fill=tk.X, padx=5, pady=5)
         
-        ttk.Label(index_frame, text="Index:").pack(side=tk.LEFT)
+        ttk.Label(info_frame, text="Index:").pack(side=tk.LEFT)
         self.index_var = tk.StringVar()
-        self.index_entry = ttk.Entry(index_frame, textvariable=self.index_var, width=8)
+        self.index_entry = ttk.Entry(info_frame, textvariable=self.index_var, width=8)
         self.index_entry.pack(side=tk.LEFT, padx=(5, 10))
         
-        ttk.Label(index_frame, text="Sub:").pack(side=tk.LEFT)
+        ttk.Label(info_frame, text="Sub:").pack(side=tk.LEFT)
         self.sub_index_var = tk.StringVar()
-        self.sub_index_entry = ttk.Entry(index_frame, textvariable=self.sub_index_var, width=4)
+        self.sub_index_entry = ttk.Entry(info_frame, textvariable=self.sub_index_var, width=4)
         self.sub_index_entry.pack(side=tk.LEFT, padx=(5, 10))
-        
-        # Object info
-        info_frame = ttk.Frame(obj_frame)
-        info_frame.pack(fill=tk.X, padx=5, pady=2)
         
         ttk.Label(info_frame, text="Name:").pack(side=tk.LEFT)
         self.obj_name_var = tk.StringVar()
-        ttk.Label(info_frame, textvariable=self.obj_name_var, font=("Arial", 9, "bold")).pack(side=tk.LEFT, padx=(5, 10))
+        ttk.Label(info_frame, textvariable=self.obj_name_var, font=("Arial", 9, "bold"), width=20, anchor="w").pack(side=tk.LEFT, padx=(5, 10))
         
-        type_frame = ttk.Frame(obj_frame)
-        type_frame.pack(fill=tk.X, padx=5, pady=2)
-        
-        ttk.Label(type_frame, text="Type:").pack(side=tk.LEFT)
+        ttk.Label(info_frame, text="Type:").pack(side=tk.LEFT)
         self.obj_type_var = tk.StringVar()
-        ttk.Label(type_frame, textvariable=self.obj_type_var).pack(side=tk.LEFT, padx=(5, 10))
+        ttk.Label(info_frame, textvariable=self.obj_type_var, width=12, anchor="w").pack(side=tk.LEFT, padx=(5, 10))
         
-        ttk.Label(type_frame, text="Access:").pack(side=tk.LEFT)
+        ttk.Label(info_frame, text="Access:").pack(side=tk.LEFT)
         self.obj_access_var = tk.StringVar()
-        ttk.Label(type_frame, textvariable=self.obj_access_var).pack(side=tk.LEFT, padx=(5, 10))
+        ttk.Label(info_frame, textvariable=self.obj_access_var, width=8, anchor="w").pack(side=tk.LEFT, padx=(5, 10))
         
         # Value operations frame
         value_frame = ttk.LabelFrame(ops_frame, text="Value Operations")
         value_frame.pack(fill=tk.X, padx=5, pady=5)
         
-        # Read operations
-        read_frame = ttk.Frame(value_frame)
-        read_frame.pack(fill=tk.X, padx=5, pady=2)
+        # All value operations in one row: Read, Current, New Value, Write
+        operations_frame = ttk.Frame(value_frame)
+        operations_frame.pack(fill=tk.X, padx=5, pady=5)
         
-        ttk.Button(read_frame, text="Read Value", command=self._read_object).pack(side=tk.LEFT)
-        ttk.Label(read_frame, text="Current:").pack(side=tk.LEFT, padx=(10, 5))
+        ttk.Button(operations_frame, text="Read Value", command=self._read_object).pack(side=tk.LEFT)
+        
+        ttk.Label(operations_frame, text="Current:").pack(side=tk.LEFT, padx=(10, 5))
         self.current_value_var = tk.StringVar()
-        ttk.Label(read_frame, textvariable=self.current_value_var, 
-                 font=("Courier", 9), background="white", relief="sunken").pack(side=tk.LEFT, padx=(0, 5))
+        # Width 15 to hold "0x" + 8 hex digits (uint32) = 10 chars + some extra for readability
+        ttk.Label(operations_frame, textvariable=self.current_value_var, 
+                 font=("Courier", 9), background="white", relief="sunken", width=15, anchor="w").pack(side=tk.LEFT, padx=(0, 10))
         
-        # Write operations
-        write_frame = ttk.Frame(value_frame)
-        write_frame.pack(fill=tk.X, padx=5, pady=2)
-        
-        ttk.Label(write_frame, text="New Value:").pack(side=tk.LEFT)
+        ttk.Label(operations_frame, text="New Value:").pack(side=tk.LEFT)
         self.write_value_var = tk.StringVar(value="0x")
-        self.write_entry = ttk.Entry(write_frame, textvariable=self.write_value_var, width=15)
+        self.write_entry = ttk.Entry(operations_frame, textvariable=self.write_value_var, width=15)
         self.write_entry.pack(side=tk.LEFT, padx=(5, 10))
         
         # Bind events to handle hex input formatting
@@ -606,7 +681,7 @@ class CANopenSDOTab(BaseTab):
         self.write_entry.bind('<FocusIn>', self._on_value_focus_in)
         self.write_value_var.trace('w', self._update_can_preview)  # Live update on value change
         
-        ttk.Button(write_frame, text="Write Value", command=self._write_object).pack(side=tk.LEFT)
+        ttk.Button(operations_frame, text="Write Value", command=self._write_object).pack(side=tk.LEFT)
         
         # CAN Message Preview
         preview_frame = ttk.Frame(value_frame)
@@ -678,46 +753,94 @@ class CANopenSDOTab(BaseTab):
         for item in self.object_tree.get_children():
             self.object_tree.delete(item)
         
-        # Get all objects sorted by index
-        all_objects = self.eds_parser.get_all_objects()
+        # Get objects to display - handle main objects and sub-index objects separately
+        objects_to_display = {}
+        
+        # Get all sub-index objects (including standalone objects parsed as sub-index 0)
+        all_sub_index_objects = self.eds_parser.get_all_objects()
+        
+        # Group sub-index objects by their main index
+        sub_index_groups = {}
+        for obj in all_sub_index_objects:
+            if obj.index not in sub_index_groups:
+                sub_index_groups[obj.index] = []
+            sub_index_groups[obj.index].append(obj)
+        
+        # Add all objects (both standalone and with multiple sub-indices)
+        for index, sub_objects in sub_index_groups.items():
+            main_info = self.eds_parser.main_objects.get(index)
+            objects_to_display[index] = {
+                'type': 'with_subs',
+                'main_info': main_info,
+                'sub_objects': sub_objects
+            }
         
         # Apply filter if provided
         if filter_text:
             filter_text = filter_text.lower()
-            filtered_objects = []
-            for obj in all_objects:
-                if (filter_text in obj.name.lower() or 
-                    filter_text in f"{obj.index:04x}" or
-                    filter_text in f"{obj.index:04x}:{obj.sub_index:02x}"):
-                    filtered_objects.append(obj)
-            all_objects = filtered_objects
-        
-        # Group by main index
-        current_main_index = None
-        main_item = None
-        
-        for obj in all_objects:
-            if obj.index != current_main_index:
-                # Create new main index item
-                current_main_index = obj.index
-                main_text = f"0x{obj.index:04X}"
-                if obj.sub_index == 0:
-                    main_text += f" - {obj.name}"
-                
-                data_type_name = DataTypeConverter.get_data_type_name(obj.data_type)
-                
-                main_item = self.object_tree.insert('', 'end', text=main_text,
-                                                  values=(data_type_name, obj.access_type),
-                                                  tags=(f"{obj.index:04X}:{obj.sub_index:02X}",))
+            filtered_objects = {}
             
-            # Add sub-index if not 0
-            if obj.sub_index != 0 and main_item:
-                sub_text = f"[{obj.sub_index:02X}] {obj.name}"
-                data_type_name = DataTypeConverter.get_data_type_name(obj.data_type)
+            for index, obj_info in objects_to_display.items():
+                matches = False
                 
-                self.object_tree.insert(main_item, 'end', text=sub_text,
-                                       values=(data_type_name, obj.access_type),
-                                       tags=(f"{obj.index:04X}:{obj.sub_index:02X}",))
+                # Check main object name
+                if obj_info['main_info'] and filter_text in obj_info['main_info'].name.lower():
+                    matches = True
+                
+                # Check sub-object names and indices
+                if not matches:
+                    for sub_obj in obj_info['sub_objects']:
+                        if (filter_text in sub_obj.name.lower() or 
+                            filter_text in f"{sub_obj.index:04x}" or
+                            filter_text in f"{sub_obj.index:04x}:{sub_obj.sub_index:02x}"):
+                            matches = True
+                            break
+                
+                # Check index match
+                if not matches and filter_text in f"{index:04x}":
+                    matches = True
+                
+                if matches:
+                    filtered_objects[index] = obj_info
+            
+            objects_to_display = filtered_objects
+        
+        # Process objects for display
+        for index in sorted(objects_to_display.keys()):
+            obj_info = objects_to_display[index]
+            
+            if obj_info['type'] == 'with_subs':
+                # Object with sub-indices
+                sub_objects = obj_info['sub_objects']
+                sub_objects.sort(key=lambda x: x.sub_index)
+                
+                if len(sub_objects) == 1 and sub_objects[0].sub_index == 0:
+                    # Single sub-index 0 object - display as single entry
+                    obj = sub_objects[0]
+                    main_text = f"0x{index:04X} - {obj.name}"
+                    data_type_name = DataTypeConverter.get_data_type_name(obj.data_type)
+                    
+                    self.object_tree.insert('', 'end', text=main_text,
+                                           values=(data_type_name, obj.access_type),
+                                           tags=(f"{obj.index:04X}:{obj.sub_index:02X}",))
+                else:
+                    # Multiple sub-indices - create tree structure
+                    main_object_name = obj_info['main_info'].name if obj_info['main_info'] else f"Object_{index:04X}"
+                    main_text = f"0x{index:04X} - {main_object_name}"
+                    
+                    # Create parent entry
+                    main_item = self.object_tree.insert('', 'end', text=main_text,
+                                                      values=("", ""),
+                                                      tags=())
+                    
+                    # Add all sub-indices as children
+                    for obj in sub_objects:
+                        sub_text = f"[{obj.sub_index:02X}] {obj.name}"
+                        data_type_name = DataTypeConverter.get_data_type_name(obj.data_type)
+                        
+                        self.object_tree.insert(main_item, 'end', text=sub_text,
+                                               values=(data_type_name, obj.access_type),
+                                               tags=(f"{obj.index:04X}:{obj.sub_index:02X}",))
         
         # Expand all main items
         for item in self.object_tree.get_children():
@@ -799,9 +922,10 @@ class CANopenSDOTab(BaseTab):
             messagebox.showerror("Not Connected", "Please connect to CAN bus first.")
             return
         
-        # Check if readable
-        if 'r' not in self.selected_object.access_type:
-            messagebox.showwarning("Read Error", "Selected object is write-only.")
+        # Check if readable (allow 'ro', 'rw', and 'const' access types)
+        access_type = self.selected_object.access_type.lower()
+        if not ('r' in access_type or 'const' in access_type):
+            messagebox.showwarning("Read Error", f"Selected object is write-only (access: {access_type}).")
             return
         
         try:
@@ -825,9 +949,10 @@ class CANopenSDOTab(BaseTab):
             messagebox.showerror("Not Connected", "Please connect to CAN bus first.")
             return
         
-        # Check if writable
-        if 'w' not in self.selected_object.access_type:
-            messagebox.showwarning("Write Error", "Selected object is read-only.")
+        # Check if writable (allow 'wo', 'rw' access types)
+        access_type = self.selected_object.access_type.lower()
+        if 'w' not in access_type:
+            messagebox.showwarning("Write Error", f"Selected object is read-only (access: {access_type}).")
             return
         
         value_str = self.write_value_var.get().strip()
@@ -930,6 +1055,10 @@ class CANopenSDOTab(BaseTab):
             
             self._log_message(f"    ✅ SENT: Upload request transmitted")
             
+            # Start timeout timer if not already running
+            if not self.timeout_timer:
+                self.timeout_timer = self.app.root.after(100, self._check_sdo_timeouts)
+            
         except Exception as e:
             self._log_message(f"❌ ERROR: Failed to send read request: {e}")
     
@@ -977,6 +1106,10 @@ class CANopenSDOTab(BaseTab):
             value_display = data.hex().upper() if len(data) <= 4 else f"{data[:4].hex().upper()}..."
             self._log_message(f"📤 WRITE: Node {node_id} - 0x{index:04X}:{sub_index:02X} ({obj_name}) = {value_display}")
             self._log_message(f"    TX: 0x{tx_id:03X} → {can_data.hex().upper()}")
+            
+            # Start timeout timer if not already running
+            if not self.timeout_timer:
+                self.timeout_timer = self.app.root.after(100, self._check_sdo_timeouts)
             
         except Exception as e:
             self._log_message(f"❌ ERROR: Failed to send write request: {e}")
@@ -1179,7 +1312,101 @@ class CANopenSDOTab(BaseTab):
         
         self._log_message(f"    RX: 0x{rx_id:03X} ← {bytes(data).hex().upper()}")
     
+    def _check_sdo_timeouts(self):
+        """Check for and handle SDO timeouts"""
+        current_time = time.time()
+        timed_out_requests = []
+        
+        for rx_id, request in self.pending_requests.items():
+            if current_time - request.timestamp > self.sdo_timeout_seconds:
+                timed_out_requests.append((rx_id, request))
+        
+        # Handle timed out requests
+        for rx_id, request in timed_out_requests:
+            self.pending_requests.pop(rx_id, None)
+            operation = "WRITE" if request.is_write else "READ"
+            self._log_message(f"⏱️ TIMEOUT: {operation} Node {request.node_id} 0x{request.index:04X}:{request.sub_index:02X} (>{self.sdo_timeout_seconds:.1f}s)")
+        
+        # Schedule next timeout check if we still have pending requests
+        if self.pending_requests:
+            self.timeout_timer = self.app.root.after(100, self._check_sdo_timeouts)  # Check every 100ms
+        else:
+            self.timeout_timer = None
+
+    def _on_timeout_changed(self, *args):
+        """Handle timeout setting changes"""
+        try:
+            self.sdo_timeout_seconds = float(self.timeout_var.get())
+            if self.sdo_timeout_seconds < 0.1:
+                self.sdo_timeout_seconds = 0.1
+            elif self.sdo_timeout_seconds > 10.0:
+                self.sdo_timeout_seconds = 10.0
+        except ValueError:
+            self.sdo_timeout_seconds = 1.0  # Default fallback
+
+    def _send_nmt_command(self):
+        """Send NMT (Network Management) command"""
+        try:
+            # Get selected NMT command and target node
+            selected_command = self.nmt_state_combo.get()
+            target_node_str = self.nmt_node_var.get().strip()
+            
+            if not target_node_str:
+                self._log_message("❌ ERROR: Target node ID required")
+                return
+            
+            try:
+                target_node = int(target_node_str)
+                if target_node < 1 or target_node > 127:
+                    self._log_message("❌ ERROR: Target node ID must be between 1 and 127")
+                    return
+            except ValueError:
+                self._log_message("❌ ERROR: Invalid target node ID")
+                return
+            
+            # Map NMT commands to CANopen command codes
+            nmt_commands = {
+                "Start Remote Node": 0x01,
+                "Stop Remote Node": 0x02,
+                "Enter Pre-operational": 0x80,
+                "Reset Node": 0x81,
+                "Reset Communication": 0x82
+            }
+            
+            if selected_command not in nmt_commands:
+                self._log_message(f"❌ ERROR: Unknown NMT command: {selected_command}")
+                return
+            
+            command_code = nmt_commands[selected_command]
+            
+            # Check CAN connection
+            if not self.app.running or not self.app.bus:
+                self._log_message("❌ ERROR: CAN not connected")
+                return
+            
+            # Create NMT message: ID 0x000, data = [command_code, target_node]
+            nmt_data = [command_code, target_node]
+            
+            try:
+                import can
+                msg = can.Message(arbitration_id=0x000, data=nmt_data, is_extended_id=False)
+                self.app.bus.send(msg)
+                
+                # Log the sent command
+                self._log_message(f"📤 NMT: {selected_command} → Node {target_node}")
+                self._log_message(f"    TX: 0x000 → {bytes(nmt_data).hex().upper()}")
+                
+            except Exception as e:
+                self._log_message(f"❌ ERROR: Failed to send NMT command: {e}")
+                
+        except Exception as e:
+            self._log_message(f"❌ ERROR: NMT command failed: {e}")
+
     def cleanup(self):
         """Cleanup when tab is destroyed"""
+        # Cancel timeout timer
+        if self.timeout_timer:
+            self.app.root.after_cancel(self.timeout_timer)
+            self.timeout_timer = None
         # Clear any pending requests
         self.pending_requests.clear()

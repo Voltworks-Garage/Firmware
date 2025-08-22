@@ -48,7 +48,7 @@ uint16_t CAN_bms_debug_byte1_get(void);
  * motorcontroller NODE MESSAGES
  */
 #define CAN_motorcontroller_heartbeat_interval() 30
-void CAN_motorcontroller_heartbeat_heartbeat_set(uint16_t heartbeat);
+void CAN_motorcontroller_heartbeat_Mode_set(uint16_t Mode);
 void CAN_motorcontroller_heartbeat_dlc_set(uint8_t dlc);
 
 
@@ -56,11 +56,27 @@ void CAN_motorcontroller_heartbeat_send(void);
 
 
 #define CAN_motorcontroller_SYNC_interval() 30
-void CAN_motorcontroller_SYNC_SYNC_dummy_set(uint16_t SYNC_dummy);
 void CAN_motorcontroller_SYNC_dlc_set(uint8_t dlc);
 
 
 void CAN_motorcontroller_SYNC_send(void);
+
+
+void CAN_motorcontroller_SDO_response_size_set(uint16_t size);
+void CAN_motorcontroller_SDO_response_expidited_xfer_set(uint16_t expidited_xfer);
+void CAN_motorcontroller_SDO_response_n_bytes_set(uint16_t n_bytes);
+void CAN_motorcontroller_SDO_response_reserved_set(uint16_t reserved);
+void CAN_motorcontroller_SDO_response_ccs_set(uint16_t ccs);
+void CAN_motorcontroller_SDO_response_index_set(uint16_t index);
+void CAN_motorcontroller_SDO_response_subindex_set(uint16_t subindex);
+void CAN_motorcontroller_SDO_response_byte_4_set(uint16_t byte_4);
+void CAN_motorcontroller_SDO_response_byte_5_set(uint16_t byte_5);
+void CAN_motorcontroller_SDO_response_byte_6_set(uint16_t byte_6);
+void CAN_motorcontroller_SDO_response_byte_7_set(uint16_t byte_7);
+void CAN_motorcontroller_SDO_response_dlc_set(uint8_t dlc);
+
+
+void CAN_motorcontroller_SDO_response_send(void);
 
 
 #define CAN_motorcontroller_Emergency_interval() 30

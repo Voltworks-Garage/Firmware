@@ -18,10 +18,11 @@ typedef struct _OCmodule {
     uint8_t Pin;
     uint8_t status;
     uint8_t duty;
-    uint16_t freq;
+    uint32_t freq;
+    oc_clock_source clockSource;
+    uint32_t clock_freq;
+    uint16_t period_ticks;
 } OCmodule;
-
-static uint16_t OCMasterPeriod = 2000;
 
 static OCmodule modules[NUMBER_OC_MODULES];
 
@@ -33,12 +34,15 @@ static OCmodule modules[NUMBER_OC_MODULES];
 
 uint8_t ppsMapArr[NUMBER_OC_MODULES] = {OC1_PPS_MAP, OC2_PPS_MAP, OC3_PPS_MAP, OC4_PPS_MAP};
 
+  uint16_t calculate_period(uint32_t clock_freq, uint32_t desired_freq);
+  uint16_t calculate_duty(uint32_t period_ticks, uint8_t duty);
+
 /**
  * pwm init, there are only 4 modules.
  * @param pin RP pin number
  * @return succes or failure
  */
-uint8_t pwmOCinit(oc_pin_number pin) {
+uint8_t pwmOCinit(oc_pin_number pin, uint32_t clock_freq, oc_clock_source clock_source) {
 
     OCmodule currentModule = {}; /*variable to hold module to assign*/
     uint8_t i = 0;
@@ -51,7 +55,10 @@ uint8_t pwmOCinit(oc_pin_number pin) {
             modules[i].Pin = pin;
             modules[i].ppsMap = ppsMapArr[i];
             modules[i].duty = 0;
-            modules[i].freq = OCMasterPeriod;
+            modules[i].freq = 0xFFFFFFFF; /*default to max period*/
+            modules[i].clockSource = clock_source;
+            modules[i].clock_freq = clock_freq;
+            modules[i].period_ticks = 0xFFFF; /*default to max period*/
             currentModule = modules[i];
             break;
         }
@@ -154,37 +161,37 @@ uint8_t pwmOCinit(oc_pin_number pin) {
         case 0:
             OC1CON1 = 0; /* It is a good practice to clear off the control bits initially */
             OC1CON2 = 0;
-            OC1CON1bits.OCTSEL = 0x07; /* selects the periph clock as the input to the OC module */
+            OC1CON1bits.OCTSEL = currentModule.clockSource;
             OC1CON1bits.OCM = 0b110; /* This selects and starts the PWM mode */
             OC1R = 0; /*duty cycle*/
-            OC1RS = OCMasterPeriod; /*period*/
+            OC1RS = currentModule.period_ticks; /*period*/
             OC1CON2bits.SYNCSEL = 0x1F; /*sync source is itslef*/
             break;
         case 1:
             OC2CON1 = 0; /* It is a good practice to clear off the control bits initially */
             OC2CON2 = 0;
-            OC2CON1bits.OCTSEL = 0x07; /* selects the periph clock as the input to the OC module */
+            OC2CON1bits.OCTSEL = currentModule.clockSource;
             OC2CON1bits.OCM = 0b110; /* This selects and starts the PWM mode */
             OC2R = 0; /*duty cycle*/
-            OC2RS = OCMasterPeriod; /*period*/
+            OC2RS = currentModule.period_ticks; /*period*/
             OC2CON2bits.SYNCSEL = 0x1F; /*sync source is itslef*/
             break;
         case 2:
             OC3CON1 = 0; /* It is a good practice to clear off the control bits initially */
             OC3CON2 = 0;
-            OC3CON1bits.OCTSEL = 0x07; /* selects the periph clock as the input to the OC module */
+            OC3CON1bits.OCTSEL = currentModule.clockSource;
             OC3CON1bits.OCM = 0b110; /* This selects and starts the PWM mode */
             OC3R = 0; /*duty cycle*/
-            OC3RS = OCMasterPeriod; /*period*/
+            OC3RS = currentModule.period_ticks; /*period*/
             OC3CON2bits.SYNCSEL = 0x1F; /*sync source is itslef*/
             break;
         case 3:
             OC4CON1 = 0; /* It is a good practice to clear off the control bits initially */
             OC4CON2 = 0;
-            OC4CON1bits.OCTSEL = 0x07; /* selects the periph clock as the input to the OC module */
+            OC4CON1bits.OCTSEL = currentModule.clockSource;
             OC4CON1bits.OCM = 0b110; /* This selects and starts the PWM mode */
             OC4R = 0; /*duty cycle*/
-            OC4RS = OCMasterPeriod; /*period*/
+            OC4RS = currentModule.period_ticks; /*period*/
             OC4CON2bits.SYNCSEL = 0x1F; /*sync source is itslef*/
             break;
     }
@@ -212,16 +219,16 @@ uint8_t pwmOCwriteDuty(oc_pin_number pin, uint16_t dutyCycle) {
 
     switch (currentModule) {
         case 0:
-            OC1R = (((uint32_t) modules[0].duty)*((uint32_t) modules[0].freq)) / 100; /*duty cycle*/
+            OC1R = calculate_duty(modules[0].period_ticks, modules[0].duty); /*duty cycle*/
             break;
         case 1:
-            OC2R = (((uint32_t) modules[1].duty)*((uint32_t) modules[1].freq)) / 100; /*duty cycle*/
+            OC2R = calculate_duty(modules[1].period_ticks, modules[1].duty); /*duty cycle*/
             break;
         case 2:
-            OC3R = (((uint32_t) modules[2].duty)*((uint32_t) modules[2].freq)) / 100; /*duty cycle*/
+            OC3R = calculate_duty(modules[2].period_ticks, modules[2].duty); /*duty cycle*/
             break;
         case 3:
-            OC4R = (((uint32_t) modules[3].duty)*((uint32_t) modules[3].freq)) / 100; /*duty cycle*/
+            OC4R = calculate_duty(modules[3].period_ticks, modules[3].duty); /*duty cycle*/
             break;
         default:
             return 0; /*invalid pin*/
@@ -236,6 +243,7 @@ uint8_t pwmOCwriteFreq(oc_pin_number pin, uint16_t frequency) {
         if (modules[i].Pin == pin) {
             currentModule = modules[i].moduleNumber;
             modules[i].freq = frequency;
+            modules[i].period_ticks = calculate_period(modules[i].clock_freq, frequency);
             break;
         }
     }
@@ -245,20 +253,20 @@ uint8_t pwmOCwriteFreq(oc_pin_number pin, uint16_t frequency) {
 
     switch (currentModule) {
         case 0:
-            OC1RS = modules[0].freq; /*duty cycle*/
-            OC1R = (((uint32_t) modules[0].duty)*((uint32_t) modules[0].freq)) / 100; /*duty cycle*/
+            OC1RS = modules[0].period_ticks; /*period*/
+            OC1R = calculate_duty(modules[0].period_ticks, modules[0].duty); /*duty cycle*/
             break;
         case 1:
-            OC2RS = modules[1].freq; /*duty cycle*/
-            OC2R = (((uint32_t) modules[1].duty)*((uint32_t) modules[1].freq)) / 100; /*duty cycle*/
+            OC2RS = modules[1].period_ticks; /*period*/
+            OC2R = calculate_duty(modules[1].period_ticks, modules[1].duty); /*duty cycle*/
             break;
         case 2:
-            OC3RS = modules[2].freq; /*duty cycle*/
-            OC3R = (((uint32_t) modules[2].duty)*((uint32_t) modules[2].freq)) / 100; /*duty cycle*/
+            OC3RS = modules[2].period_ticks; /*period*/
+            OC3R = calculate_duty(modules[2].period_ticks, modules[2].duty); /*duty cycle*/
             break;
         case 3:
-            OC4RS = modules[3].freq; /*duty cycle*/
-            OC4R = (((uint32_t) modules[3].duty)*((uint32_t) modules[3].freq)) / 100; /*duty cycle*/
+            OC4RS = modules[3].period_ticks; /*period*/
+            OC4R = calculate_duty(modules[3].period_ticks, modules[3].duty); /*duty cycle*/
             break;
         default:
             return 0; /*invalid pin*/
@@ -266,6 +274,14 @@ uint8_t pwmOCwriteFreq(oc_pin_number pin, uint16_t frequency) {
     return 1;
 }
 
+  uint16_t calculate_period(uint32_t clock_freq, uint32_t desired_freq) {
+      return (clock_freq / desired_freq) - 1;
+  }
 
-
-
+    // Calculate duty cycle in timer ticks
+  // clock_freq: Timer clock frequency (Hz)
+  // desired_freq: PWM frequency (Hz)
+  // duty: 0 to 100 (integer percentage)
+  uint16_t calculate_duty(uint32_t period_ticks, uint8_t duty) {
+      return (duty * period_ticks) / 100;
+  }

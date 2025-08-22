@@ -1923,15 +1923,16 @@
                     "x_id": 0,
                     "freq": 30,
                     "consumers": [
-                        "mcu"
+                        "mcu",
+                        "bms"
                     ],
                     "signals": [
                         {
-                            "name": "heartbeat",
+                            "name": "Mode",
                             "length": 16,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": ""
+                            "units": "enum"
                         }
                     ]
                 },
@@ -1941,19 +1942,101 @@
                     "x_id": 0,
                     "freq": 30,
                     "consumers": [
-                        "mcu"
+                        "mcu",
+                        "bms"
                     ],
-                    "signals": [                        
+                    "signals": []
+                },
+                {
+                    "name": "SDO_response",
+                    "id": "0x581",
+                    "x_id": 0,
+                    "freq": 0,
+                    "consumers": [
+                        "mcu",
+                        "bms"
+                    ],
+                    "signals": [
                         {
-                            "name": "SYNC_dummy",
+                            "name": "size",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool"
+                        },
+                        {
+                            "name": "expidited_xfer",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool"
+                        },
+                        {
+                            "name": "n_bytes",
+                            "length": 2,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "enum"
+                        },
+                        {
+                            "name": "reserved",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": ""
+                        },
+                        {
+                            "name": "ccs",
+                            "length": 3,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "enum"
+                        },
+                        {
+                            "name": "index",
                             "length": 16,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "0x"
+                        },
+                        {
+                            "name": "subindex",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "0x"
+                        },
+                        {
+                            "name": "byte_4",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": ""
+                        },
+                        {
+                            "name": "byte_5",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": ""
+                        },
+                        {
+                            "name": "byte_6",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": ""
+                        },
+                        {
+                            "name": "byte_7",
+                            "length": 8,
                             "scale": 1.0,
                             "offset": 0,
                             "units": ""
                         }
                     ]
                 },
-                                {
+                {
                     "name": "Emergency",
                     "id": "0x81",
                     "x_id": 0,

@@ -2974,8 +2974,8 @@ static CAN_message_S CAN_motorcontroller_heartbeat={
 	.canMessageStatus = 0
 };
 
-#define CAN_MOTORCONTROLLER_HEARTBEAT_HEARTBEAT_RANGE 16
-#define CAN_MOTORCONTROLLER_HEARTBEAT_HEARTBEAT_OFFSET 0
+#define CAN_MOTORCONTROLLER_HEARTBEAT_MODE_RANGE 16
+#define CAN_MOTORCONTROLLER_HEARTBEAT_MODE_OFFSET 0
 
 uint8_t CAN_motorcontroller_heartbeat_checkDataIsUnread(void){
 	return CAN_checkDataIsUnread(&CAN_motorcontroller_heartbeat);
@@ -2983,7 +2983,7 @@ uint8_t CAN_motorcontroller_heartbeat_checkDataIsUnread(void){
 uint8_t CAN_motorcontroller_heartbeat_checkDataIsStale(void){
 	return CAN_checkDataIsStale(&CAN_motorcontroller_heartbeat, 60);
 }
-uint16_t CAN_motorcontroller_heartbeat_heartbeat_get(void){
+uint16_t CAN_motorcontroller_heartbeat_Mode_get(void){
 	// Extract 16-bit signal at bit offset 0
 	uint16_t data = 0;
 	data |= (uint16_t)((CAN_motorcontroller_heartbeat.payload->word0 & 0xFFFF) >> 0) << 0;
@@ -3000,8 +3000,6 @@ static CAN_message_S CAN_motorcontroller_SYNC={
 	.canMessageStatus = 0
 };
 
-#define CAN_MOTORCONTROLLER_SYNC_SYNC_DUMMY_RANGE 16
-#define CAN_MOTORCONTROLLER_SYNC_SYNC_DUMMY_OFFSET 0
 
 uint8_t CAN_motorcontroller_SYNC_checkDataIsUnread(void){
 	return CAN_checkDataIsUnread(&CAN_motorcontroller_SYNC);
@@ -3009,10 +3007,108 @@ uint8_t CAN_motorcontroller_SYNC_checkDataIsUnread(void){
 uint8_t CAN_motorcontroller_SYNC_checkDataIsStale(void){
 	return CAN_checkDataIsStale(&CAN_motorcontroller_SYNC, 60);
 }
-uint16_t CAN_motorcontroller_SYNC_SYNC_dummy_get(void){
-	// Extract 16-bit signal at bit offset 0
+
+#define CAN_motorcontroller_SDO_response_ID 0x581
+
+static CAN_message_S CAN_motorcontroller_SDO_response={
+	.canID = CAN_motorcontroller_SDO_response_ID,
+	.canXID = 0,
+	.dlc = 8,
+	.payload = 0,
+	.canMessageStatus = 0
+};
+
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_SIZE_RANGE 1
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_SIZE_OFFSET 0
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_EXPIDITED_XFER_RANGE 1
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_EXPIDITED_XFER_OFFSET 1
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_N_BYTES_RANGE 2
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_N_BYTES_OFFSET 2
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_RESERVED_RANGE 1
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_RESERVED_OFFSET 4
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_CCS_RANGE 3
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_CCS_OFFSET 5
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_INDEX_RANGE 16
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_INDEX_OFFSET 8
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_SUBINDEX_RANGE 8
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_SUBINDEX_OFFSET 24
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_4_RANGE 8
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_4_OFFSET 32
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_5_RANGE 8
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_5_OFFSET 40
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_6_RANGE 8
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_6_OFFSET 48
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_7_RANGE 8
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_7_OFFSET 56
+
+uint8_t CAN_motorcontroller_SDO_response_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_motorcontroller_SDO_response);
+}
+uint16_t CAN_motorcontroller_SDO_response_size_get(void){
+	// Extract 1-bit signal at bit offset 0
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_motorcontroller_SYNC.payload->word0 & 0xFFFF) >> 0) << 0;
+	data |= (uint16_t)((CAN_motorcontroller_SDO_response.payload->word0 & 0x0001) >> 0) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_motorcontroller_SDO_response_expidited_xfer_get(void){
+	// Extract 1-bit signal at bit offset 1
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_motorcontroller_SDO_response.payload->word0 & 0x0002) >> 1) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_motorcontroller_SDO_response_n_bytes_get(void){
+	// Extract 2-bit signal at bit offset 2
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_motorcontroller_SDO_response.payload->word0 & 0x000C) >> 2) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_motorcontroller_SDO_response_reserved_get(void){
+	// Extract 1-bit signal at bit offset 4
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_motorcontroller_SDO_response.payload->word0 & 0x0010) >> 4) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_motorcontroller_SDO_response_ccs_get(void){
+	// Extract 3-bit signal at bit offset 5
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_motorcontroller_SDO_response.payload->word0 & 0x00E0) >> 5) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_motorcontroller_SDO_response_index_get(void){
+	// Extract 16-bit signal at bit offset 8
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_motorcontroller_SDO_response.payload->word0 & 0xFF00) >> 8) << 0;
+	data |= (uint16_t)((CAN_motorcontroller_SDO_response.payload->word1 & 0x00FF) >> 0) << 8;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_motorcontroller_SDO_response_subindex_get(void){
+	// Extract 8-bit signal at bit offset 24
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_motorcontroller_SDO_response.payload->word1 & 0xFF00) >> 8) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_motorcontroller_SDO_response_byte_4_get(void){
+	// Extract 8-bit signal at bit offset 32
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_motorcontroller_SDO_response.payload->word2 & 0x00FF) >> 0) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_motorcontroller_SDO_response_byte_5_get(void){
+	// Extract 8-bit signal at bit offset 40
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_motorcontroller_SDO_response.payload->word2 & 0xFF00) >> 8) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_motorcontroller_SDO_response_byte_6_get(void){
+	// Extract 8-bit signal at bit offset 48
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_motorcontroller_SDO_response.payload->word3 & 0x00FF) >> 0) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_motorcontroller_SDO_response_byte_7_get(void){
+	// Extract 8-bit signal at bit offset 56
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_motorcontroller_SDO_response.payload->word3 & 0xFF00) >> 8) << 0;
 	return (data * 1.0) + 0;
 }
 
@@ -3351,6 +3447,7 @@ void CAN_DBC_init(void) {
 	CAN_configureMailbox(&CAN_bms_cell_temperatures);
 	CAN_configureMailbox(&CAN_motorcontroller_heartbeat);
 	CAN_configureMailbox(&CAN_motorcontroller_SYNC);
+	CAN_configureMailbox(&CAN_motorcontroller_SDO_response);
 	CAN_configureMailbox(&CAN_motorcontroller_Emergency);
 	CAN_configureMailbox(&CAN_motorcontroller_motorStatus);
 	CAN_configureMailbox(&CAN_motorcontroller_response);

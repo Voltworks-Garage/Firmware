@@ -23,6 +23,10 @@ class CANTableView:
     def __init__(self, parent_widget, message_manager: CANMessageManager):
         self.message_manager = message_manager
         
+        # Sorting state
+        self.sort_column = None
+        self.sort_reverse = False
+        
         # Create the tree view
         self.tree = ttk.Treeview(parent_widget, 
                                 columns=("ID", "Name", "DLC", "Data", "Count", "Cycle", "Bus%"), 
@@ -33,7 +37,7 @@ class CANTableView:
         self.tree.column("#0", width=20, minwidth=20, stretch=False)
         
         for col, w in [("ID", 80), ("Name", 120), ("DLC", 50), ("Data", 200), ("Count", 60), ("Cycle", 80), ("Bus%", 60)]:
-            self.tree.heading(col, text=col)
+            self.tree.heading(col, text=col, command=lambda c=col: self._sort_by_column(c))
             self.tree.column(col, width=w)
         
         # Create bus utilization display frame
@@ -205,3 +209,79 @@ class CANTableView:
         self.tree.delete(*self.tree.get_children())
         self.bus_util_label.config(text="Bus Utilization: 0.0%")
         self.bus_details_label.config(text="(0 active messages)")
+    
+    def _sort_by_column(self, column):
+        """Sort table by the specified column"""
+        # Toggle sort direction if clicking the same column
+        if self.sort_column == column:
+            self.sort_reverse = not self.sort_reverse
+        else:
+            self.sort_column = column
+            self.sort_reverse = False
+        
+        # Update column header to show sort direction
+        self._update_column_headers()
+        
+        # Get all top-level items (messages only, not signals)
+        items = []
+        for item_id in self.tree.get_children():
+            values = self.tree.item(item_id, 'values')
+            # Store both the item_id and its values for sorting
+            items.append((item_id, values))
+        
+        # Sort items based on the selected column
+        column_index = ["ID", "Name", "DLC", "Data", "Count", "Cycle", "Bus%"].index(column)
+        
+        def sort_key(item):
+            value = item[1][column_index]  # Get the value from the column
+            
+            if column == "ID":
+                # Convert hex ID to integer for proper numeric sorting
+                try:
+                    return int(value, 16)
+                except (ValueError, TypeError):
+                    return 0
+            elif column in ["DLC", "Count"]:
+                # Numeric columns
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    return 0
+            elif column == "Cycle":
+                # Handle cycle time (remove "ms" suffix if present)
+                try:
+                    if value == "-":
+                        return float('inf') if not self.sort_reverse else float('-inf')
+                    cycle_val = value.replace("ms", "").strip()
+                    return float(cycle_val)
+                except (ValueError, TypeError):
+                    return float('inf') if not self.sort_reverse else float('-inf')
+            elif column == "Bus%":
+                # Handle bus utilization percentage
+                try:
+                    if value == "-":
+                        return 0.0
+                    bus_val = value.replace("%", "").strip()
+                    return float(bus_val)
+                except (ValueError, TypeError):
+                    return 0.0
+            else:
+                # String columns (Name, Data)
+                return str(value).lower()
+        
+        items.sort(key=sort_key, reverse=self.sort_reverse)
+        
+        # Rearrange items in the tree
+        for index, (item_id, _) in enumerate(items):
+            self.tree.move(item_id, '', index)
+    
+    def _update_column_headers(self):
+        """Update column headers to show sort direction indicators"""
+        for col in ["ID", "Name", "DLC", "Data", "Count", "Cycle", "Bus%"]:
+            if col == self.sort_column:
+                # Add arrow indicator for sorted column
+                arrow = " ▲" if not self.sort_reverse else " ▼"
+                self.tree.heading(col, text=col + arrow)
+            else:
+                # Remove arrow for other columns
+                self.tree.heading(col, text=col)

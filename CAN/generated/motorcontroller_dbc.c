@@ -178,11 +178,11 @@ static CAN_message_S CAN_motorcontroller_heartbeat={
 	.canMessageStatus = &CAN_motorcontroller_heartbeat_status
 };
 
-#define CAN_MOTORCONTROLLER_HEARTBEAT_HEARTBEAT_RANGE 16
-#define CAN_MOTORCONTROLLER_HEARTBEAT_HEARTBEAT_OFFSET 0
+#define CAN_MOTORCONTROLLER_HEARTBEAT_MODE_RANGE 16
+#define CAN_MOTORCONTROLLER_HEARTBEAT_MODE_OFFSET 0
 
-void CAN_motorcontroller_heartbeat_heartbeat_set(uint16_t heartbeat){
-	uint16_t data_scaled = heartbeat * 1.0;
+void CAN_motorcontroller_heartbeat_Mode_set(uint16_t Mode){
+	uint16_t data_scaled = Mode * 1.0;
 	// Set 16-bit signal at bit offset 0
 	CAN_motorcontroller_heartbeat.payload->word0 &= ~0xFFFF;
 	CAN_motorcontroller_heartbeat.payload->word0 |= data_scaled & 0xFFFF;
@@ -208,15 +208,7 @@ static CAN_message_S CAN_motorcontroller_SYNC={
 	.canMessageStatus = &CAN_motorcontroller_SYNC_status
 };
 
-#define CAN_MOTORCONTROLLER_SYNC_SYNC_DUMMY_RANGE 16
-#define CAN_MOTORCONTROLLER_SYNC_SYNC_DUMMY_OFFSET 0
 
-void CAN_motorcontroller_SYNC_SYNC_dummy_set(uint16_t SYNC_dummy){
-	uint16_t data_scaled = SYNC_dummy * 1.0;
-	// Set 16-bit signal at bit offset 0
-	CAN_motorcontroller_SYNC.payload->word0 &= ~0xFFFF;
-	CAN_motorcontroller_SYNC.payload->word0 |= data_scaled & 0xFFFF;
-}
 void CAN_motorcontroller_SYNC_dlc_set(uint8_t dlc){
 	CAN_motorcontroller_SYNC.dlc = dlc;
 }
@@ -224,6 +216,118 @@ void CAN_motorcontroller_SYNC_send(void){
 	// Update message status for self-consumption
 	*CAN_motorcontroller_SYNC.canMessageStatus = 1;
 	CAN_write(&CAN_motorcontroller_SYNC);
+}
+
+static CAN_payload_S CAN_motorcontroller_SDO_response_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_motorcontroller_SDO_response_status = 0;
+#define CAN_motorcontroller_SDO_response_ID 0x581
+
+static CAN_message_S CAN_motorcontroller_SDO_response={
+	.canID = CAN_motorcontroller_SDO_response_ID,
+	.canXID = 0,
+	.dlc = 8,
+	.payload = &CAN_motorcontroller_SDO_response_payload,
+	.canMessageStatus = &CAN_motorcontroller_SDO_response_status
+};
+
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_SIZE_RANGE 1
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_SIZE_OFFSET 0
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_EXPIDITED_XFER_RANGE 1
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_EXPIDITED_XFER_OFFSET 1
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_N_BYTES_RANGE 2
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_N_BYTES_OFFSET 2
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_RESERVED_RANGE 1
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_RESERVED_OFFSET 4
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_CCS_RANGE 3
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_CCS_OFFSET 5
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_INDEX_RANGE 16
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_INDEX_OFFSET 8
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_SUBINDEX_RANGE 8
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_SUBINDEX_OFFSET 24
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_4_RANGE 8
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_4_OFFSET 32
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_5_RANGE 8
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_5_OFFSET 40
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_6_RANGE 8
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_6_OFFSET 48
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_7_RANGE 8
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_7_OFFSET 56
+
+void CAN_motorcontroller_SDO_response_size_set(uint16_t size){
+	uint16_t data_scaled = size * 1.0;
+	// Set 1-bit signal at bit offset 0
+	CAN_motorcontroller_SDO_response.payload->word0 &= ~0x0001;
+	CAN_motorcontroller_SDO_response.payload->word0 |= data_scaled & 0x0001;
+}
+void CAN_motorcontroller_SDO_response_expidited_xfer_set(uint16_t expidited_xfer){
+	uint16_t data_scaled = expidited_xfer * 1.0;
+	// Set 1-bit signal at bit offset 1
+	CAN_motorcontroller_SDO_response.payload->word0 &= ~0x0002;
+	CAN_motorcontroller_SDO_response.payload->word0 |= (data_scaled << 1) & 0x0002;
+}
+void CAN_motorcontroller_SDO_response_n_bytes_set(uint16_t n_bytes){
+	uint16_t data_scaled = n_bytes * 1.0;
+	// Set 2-bit signal at bit offset 2
+	CAN_motorcontroller_SDO_response.payload->word0 &= ~0x000C;
+	CAN_motorcontroller_SDO_response.payload->word0 |= (data_scaled << 2) & 0x000C;
+}
+void CAN_motorcontroller_SDO_response_reserved_set(uint16_t reserved){
+	uint16_t data_scaled = reserved * 1.0;
+	// Set 1-bit signal at bit offset 4
+	CAN_motorcontroller_SDO_response.payload->word0 &= ~0x0010;
+	CAN_motorcontroller_SDO_response.payload->word0 |= (data_scaled << 4) & 0x0010;
+}
+void CAN_motorcontroller_SDO_response_ccs_set(uint16_t ccs){
+	uint16_t data_scaled = ccs * 1.0;
+	// Set 3-bit signal at bit offset 5
+	CAN_motorcontroller_SDO_response.payload->word0 &= ~0x00E0;
+	CAN_motorcontroller_SDO_response.payload->word0 |= (data_scaled << 5) & 0x00E0;
+}
+void CAN_motorcontroller_SDO_response_index_set(uint16_t index){
+	uint16_t data_scaled = index * 1.0;
+	// Set 16-bit signal at bit offset 8
+	CAN_motorcontroller_SDO_response.payload->word0 &= ~0xFF00;
+	CAN_motorcontroller_SDO_response.payload->word0 |= (data_scaled << 8) & 0xFF00;
+	CAN_motorcontroller_SDO_response.payload->word1 &= ~0x00FF;
+	CAN_motorcontroller_SDO_response.payload->word1 |= (data_scaled >> 8) & 0x00FF;
+}
+void CAN_motorcontroller_SDO_response_subindex_set(uint16_t subindex){
+	uint16_t data_scaled = subindex * 1.0;
+	// Set 8-bit signal at bit offset 24
+	CAN_motorcontroller_SDO_response.payload->word1 &= ~0xFF00;
+	CAN_motorcontroller_SDO_response.payload->word1 |= (data_scaled << 8) & 0xFF00;
+}
+void CAN_motorcontroller_SDO_response_byte_4_set(uint16_t byte_4){
+	uint16_t data_scaled = byte_4 * 1.0;
+	// Set 8-bit signal at bit offset 32
+	CAN_motorcontroller_SDO_response.payload->word2 &= ~0x00FF;
+	CAN_motorcontroller_SDO_response.payload->word2 |= data_scaled & 0x00FF;
+}
+void CAN_motorcontroller_SDO_response_byte_5_set(uint16_t byte_5){
+	uint16_t data_scaled = byte_5 * 1.0;
+	// Set 8-bit signal at bit offset 40
+	CAN_motorcontroller_SDO_response.payload->word2 &= ~0xFF00;
+	CAN_motorcontroller_SDO_response.payload->word2 |= (data_scaled << 8) & 0xFF00;
+}
+void CAN_motorcontroller_SDO_response_byte_6_set(uint16_t byte_6){
+	uint16_t data_scaled = byte_6 * 1.0;
+	// Set 8-bit signal at bit offset 48
+	CAN_motorcontroller_SDO_response.payload->word3 &= ~0x00FF;
+	CAN_motorcontroller_SDO_response.payload->word3 |= data_scaled & 0x00FF;
+}
+void CAN_motorcontroller_SDO_response_byte_7_set(uint16_t byte_7){
+	uint16_t data_scaled = byte_7 * 1.0;
+	// Set 8-bit signal at bit offset 56
+	CAN_motorcontroller_SDO_response.payload->word3 &= ~0xFF00;
+	CAN_motorcontroller_SDO_response.payload->word3 |= (data_scaled << 8) & 0xFF00;
+}
+void CAN_motorcontroller_SDO_response_dlc_set(uint8_t dlc){
+	CAN_motorcontroller_SDO_response.dlc = dlc;
+}
+void CAN_motorcontroller_SDO_response_send(void){
+	// Update message status for self-consumption
+	*CAN_motorcontroller_SDO_response.canMessageStatus = 1;
+	CAN_write(&CAN_motorcontroller_SDO_response);
 }
 
 static CAN_payload_S CAN_motorcontroller_Emergency_payload __attribute__((aligned(sizeof(CAN_payload_S))));

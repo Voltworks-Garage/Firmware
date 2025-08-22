@@ -275,10 +275,21 @@ class BusmasterDBFParser:
         if signal['type'] == 'B':
             return 'True' if value else 'False'
         else:
-            unit_str = f" {signal['unit']}" if signal['unit'] else ''
-            if signal['factor'] == 1.0 and signal['offset'] == 0.0:
-                return f"{int(value)}{unit_str}"
+            unit = signal['unit']
+            
+            # Check for special hex/binary formatting units
+            if unit == '0x':
+                # Display as hexadecimal
+                return f"0x{int(value):X}"
+            elif unit == '0b':
+                # Display as binary
+                return f"0b{int(value):b}"
             else:
-                # Use higher precision for voltage/current measurements
-                precision = 3 if 'voltage' in signal['name'].lower() or 'current' in signal['name'].lower() else 2
-                return f"{value:.{precision}f}{unit_str}"
+                # Standard formatting
+                unit_str = f" {unit}" if unit else ''
+                if signal['factor'] == 1.0 and signal['offset'] == 0.0:
+                    return f"{int(value)}{unit_str}"
+                else:
+                    # Use higher precision for voltage/current measurements
+                    precision = 3 if 'voltage' in signal['name'].lower() or 'current' in signal['name'].lower() else 2
+                    return f"{value:.{precision}f}{unit_str}"
