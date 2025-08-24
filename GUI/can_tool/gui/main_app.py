@@ -482,11 +482,27 @@ Plugins:
 
     def read_messages(self):
         """Read CAN messages in a separate thread"""
+        message_batch = []
+        last_batch_time = time.time()
+        
         while self.running and self.bus:
             try:
-                msg = self.bus.recv(0.1)
+                # Read messages with very short timeout to prevent buffer overflow
+                msg = self.bus.recv(0.001)  # 1ms timeout
                 if msg:
-                    self.root.after(0, self.handle_rx_message, msg)
+                    message_batch.append(msg)
+                    
+                # Process batch when we have messages and either:
+                # - batch is full (10 messages), or 
+                # - 10ms have passed since last batch
+                current_time = time.time()
+                if message_batch and (len(message_batch) >= 10 or 
+                                    (current_time - last_batch_time) >= 0.01):
+                    # Send batch to GUI thread
+                    self.root.after_idle(self.handle_rx_message_batch, message_batch.copy())
+                    message_batch.clear()
+                    last_batch_time = current_time
+                    
             except Exception as e:
                 error_msg = f"❌ RX error: {e}"
                 self.root.after(0, lambda msg=error_msg: self.log(msg))
@@ -526,6 +542,11 @@ Plugins:
                 console_msg += f"\n    Decoded: {signal_str}"
             
             self.log(console_msg)
+    
+    def handle_rx_message_batch(self, messages):
+        """Handle a batch of received CAN messages for better performance"""
+        for msg in messages:
+            self.handle_rx_message(msg)
     
     def _schedule_gui_update(self):
         """Schedule a GUI update if one isn't already pending"""
@@ -1218,9 +1239,21 @@ Plugins:
     
     def send_wake_message(self):
         """Send a wake message to address 0x000 with no payload"""
-        if not self.running or not self.bus:
-            messagebox.showerror("Not Connected", "Please connect to CAN bus first.")
-            return
+        was_connected = self.running and self.bus is not None
+        
+        # If not connected, try to connect first
+        if not was_connected:
+            if not self.device_var.get():
+                messagebox.showerror("No Device", "Please scan and select a CAN device first.")
+                return
+                
+            self.log("🌅 WAKE: Auto-connecting to send wake message...")
+            self.connect()
+            
+            # Check if connection was successful
+            if not self.running or not self.bus:
+                messagebox.showerror("Connection Failed", "Could not connect to CAN bus for wake message.")
+                return
         
         try:
             # Create wake message: ID 0x000, no data (DLC = 0)
@@ -1234,6 +1267,16 @@ Plugins:
             # Log the wake message
             self.log("🌅 WAKE: Sent wake message to 0x000 (DLC=0)")
             
+            # If we auto-connected, disconnect after sending wake message
+            if not was_connected:
+                self.log("🌅 WAKE: Auto-disconnecting after wake message")
+                # Use a short delay to ensure message is sent before disconnecting
+                self.root.after(100, self.disconnect)
+            
         except Exception as e:
             self.log(f"❌ WAKE ERROR: Failed to send wake message: {e}")
             messagebox.showerror("Wake Error", f"Failed to send wake message: {e}")
+            
+            # If we auto-connected and failed, still disconnect
+            if not was_connected:
+                self.disconnect()

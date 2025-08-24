@@ -398,6 +398,10 @@ void IO_SET_FAN_1_EN(uint8_t state) {
     }
 }
 
+void IO_SET_KICKSTAND_SWITCH_IN(uint8_t state) {
+    PINS_write(KICKSTAND_SWITCH_IN, state);
+}
+
 /*INPUTS*/
 
 uint8_t IO_GET_DEBUG_LED_EN(void) {

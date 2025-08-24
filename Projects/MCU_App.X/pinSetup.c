@@ -125,7 +125,7 @@ void PinSetup_Init(void) {
     PINS_direction(TURN_RIGHT_SWITCH_IN, INPUT);
     PINS_direction(BRIGHTS_SWITCH_IN, INPUT);
     PINS_direction(HORN_SWITCH_IN, INPUT);
-    PINS_direction(KICKSTAND_SWITCH_IN, INPUT);
+    //PINS_direction(KICKSTAND_SWITCH_IN, OUTPUT);
 
     /*ANALOG*/
     ADC_Init();
@@ -153,8 +153,17 @@ void PinSetup_Init(void) {
     /*PWM*/
     pwmOCinit(PWM_1_OUT, CLOCK_PeripheralFrequencyGet(), OC_CLOCK_PERIPHERAL);
     pwmOCinit(PWM_2_OUT, CLOCK_PeripheralFrequencyGet(), OC_CLOCK_PERIPHERAL);
+    // pwmOCinit(KICKSTAND_SWITCH_IN, CLOCK_PeripheralFrequencyGet(), OC_CLOCK_PERIPHERAL);
     pwmOCwriteFreq(PWM_1_OUT, 2000); //2kHz
     pwmOCwriteFreq(PWM_2_OUT, 2000); //2kHz
+    // pwmOCwriteFreq(KICKSTAND_SWITCH_IN, 2000); //2kHz
+    // pwmOCwriteDuty(KICKSTAND_SWITCH_IN, 5);
+
+        // Initialize PWM using Output Compare module with Timer4 clock source
+    uint32_t clock_freq = CLOCK_PeripheralFrequencyGet()/256; // Peripheral clock divided by prescaler);
+   pwmOCinit(KICKSTAND_SWITCH_IN, clock_freq, OC_CLOCK_T4CLK);
+
+
 
     /*UART*/
     Uart1INIT(UART_TX, UART_RX, UART_BAUD_115200, CLOCK_SystemFrequencyGet());

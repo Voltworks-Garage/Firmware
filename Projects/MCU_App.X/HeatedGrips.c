@@ -175,7 +175,7 @@ void heated_grips_high(HEATED_GRIPS_CONTROL_entry_types_E entry_type) {
             break;
         case RUN:
         CAN_mcu_mcu_debug_debug_value_4_set(4);
-            if (IgnitionControl_GetAssButtonEvent() == BUTTON_WAS_RELEASED) {
+            if (IgnitionControl_GetAssButtonEvent() == BUTTON_WAS_PRESSED) {
                 heated_grips_nextState = heated_grips_idle_state;
             }
             break;

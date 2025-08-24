@@ -48,14 +48,15 @@ typedef enum _oc_pin_number {
     PWM_PIN_RP57,
     PWM_PIN_RP100,
     PWM_PIN_RP101,
+    PWM_PIN_RP126,
     NUMBER_OF_OC_PINS,
 } oc_pin_number;
 
 typedef enum _oc_clock_source {
-    OC_CLOCK_T2CLK = 0x00, /*Timer1 clock*/
-    OC_CLOCK_T3CLK = 0x01, /*Timer2 clock*/
-    OC_CLOCK_T4CLK = 0x02, /*Timer3 clock*/
-    OC_CLOCK_T5CLK = 0x03, /*Timer4 clock*/
+    OC_CLOCK_T2CLK = 0x00, /*Timer2 clock*/
+    OC_CLOCK_T3CLK = 0x01, /*Timer3 clock*/
+    OC_CLOCK_T4CLK = 0x02, /*Timer4 clock*/
+    OC_CLOCK_T5CLK = 0x03, /*Timer5 clock*/
     OC_CLOCK_T1CLK = 0x04, /*Timer1 clock*/
     OC_CLOCK_PTOGX = 0x05, /*PTOG clock*/
     OC_CLOCK_RESERVED = 0x06, /*Fosc clock*/

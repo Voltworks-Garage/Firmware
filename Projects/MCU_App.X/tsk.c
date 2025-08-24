@@ -37,6 +37,7 @@
 #include "mcc_generated_files/watchdog.h"
 #include "StateMachine.h"
 #include "commandService.h"
+#include "tachometer.h"
 
 /******************************************************************************
  * Constants
@@ -127,6 +128,8 @@ void Tsk_10ms(void) {
     LvBattery_Run_10ms();
     LightsControl_Run_10ms(); //Run the System Lights layer (Responds to button presses, controls, etc...)
 
+    
+    tachometer_run_10ms(); //Run the Tachometer
     
     CAN_populate_10ms();
     CAN_send_10ms();

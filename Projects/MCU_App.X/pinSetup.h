@@ -67,7 +67,7 @@ typedef enum {
     TURN_RIGHT_SWITCH_IN = PG3,
     BRIGHTS_SWITCH_IN = PG12,
     HORN_SWITCH_IN = PG13,
-    KICKSTAND_SWITCH_IN = PG14
+    // KICKSTAND_SWITCH_IN = PG14
 } pin_assignments_t;
 
 /*ANALOG INPUT DEFINITIONS*/
@@ -99,8 +99,9 @@ typedef enum {
 
 // Functional PWM assignments
 typedef enum {
-    PWM_1_OUT = PWM_PIN_RP100,
-    PWM_2_OUT = PWM_PIN_RP101
+    PWM_1_OUT = PWM_PIN_RP101,
+    PWM_2_OUT = PWM_PIN_RP100,
+    KICKSTAND_SWITCH_IN = PWM_PIN_RP126
 } pwm_assignments_t;
 
 /*COMMUNICATION DEFINITIONS*/

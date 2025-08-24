@@ -52,6 +52,7 @@
         <itemPath>can_iso_tp_lite_config.h</itemPath>
         <itemPath>canPopulate.h</itemPath>
         <itemPath>lvBattery.h</itemPath>
+        <itemPath>tachometer.h</itemPath>
       </logicalFolder>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
@@ -124,6 +125,7 @@
         <itemPath>canPopulate.c</itemPath>
         <itemPath>lvBattery.c</itemPath>
         <itemPath>commandService_config.h</itemPath>
+        <itemPath>tachometer.c</itemPath>
       </logicalFolder>
     </logicalFolder>
   </logicalFolder>

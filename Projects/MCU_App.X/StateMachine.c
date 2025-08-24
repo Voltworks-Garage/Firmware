@@ -20,6 +20,7 @@
 #include "can_iso_tp_lite.h"
 #include "mcc_generated_files/watchdog.h"
 #include "CommandService.h"
+#include "tachometer.h"
 
 
 /******************************************************************************
@@ -83,6 +84,9 @@ uint8_t sm_keepAwakeFlag = 0;
 NEW_TIMER(idleTimer, 60000);
 NEW_TIMER(SwEnTimer, 1);
 NEW_TIMER(diagTimer, 60000);
+NEW_TIMER(tachTimer, 1500);
+
+static uint8_t tach = 0;
 
 /******************************************************************************
  * Function Prototypes
@@ -129,6 +133,8 @@ void boot(STATE_MACHINE_entry_types_E entry_type) {
             HornControl_Init();
             j1772Control_Init();
             LvBattery_Init();
+            tachometer_init();
+        
 
             //Get HV support ready.
             IO_SET_BMS_CONTROLLER_EN(HIGH);
@@ -151,6 +157,8 @@ void idle(STATE_MACHINE_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
             SysTick_TimerStart(idleTimer);
+            SysTick_TimerStart(tachTimer);
+            tachometer_set_percent(100);
             break;
 
         case EXIT:
@@ -190,6 +198,13 @@ void idle(STATE_MACHINE_entry_types_E entry_type) {
             // Clear the hold flag to prevent re-entry.
             if (IgnitionControl_GetStartButtonIsHeld(true)) {
                 sm_nextState = running_state;
+            }
+
+            if(SysTick_TimeOut(tachTimer)){
+                tachometer_set_percent(0);
+                // tach += 10;
+                // if(tach > 100) tach = 0;
+                // SysTick_TimerStart(tachTimer);
             }
 
             break;
@@ -377,6 +392,7 @@ void halt_all_tasks(void) {
     j1772Control_Halt();
     IgnitionControl_Halt();
     // LvBattery_Halt();
+    tachometer_halt();
 }
 void resume_all_tasks(void) {
     LightsControl_Init();
@@ -385,6 +401,7 @@ void resume_all_tasks(void) {
     j1772Control_Init();
     IgnitionControl_Init();
     // LvBattery_Init();
+    tachometer_init();
 }
 
 /*** End of File **************************************************************/

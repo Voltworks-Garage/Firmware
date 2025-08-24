@@ -150,7 +150,8 @@ class EDSParser:
     def _parse_eds_file(self):
         """Parse the EDS file and build object dictionary"""
         try:
-            config = configparser.ConfigParser()
+            # Disable interpolation to handle % characters in parameter names
+            config = configparser.ConfigParser(interpolation=None)
             config.read(self.eds_file_path)
             
             # Parse file info
@@ -504,7 +505,7 @@ class CANopenSDOTab(BaseTab):
             self.eds_parser = None
     
     def create_widgets(self):
-        """Create the CANopen SDO interface"""
+        """Create the CANopen interface with SDO and PDO sub-tabs"""
         main_frame = self.tab_frame
         
         if not self.eds_parser:
@@ -517,6 +518,28 @@ class CANopenSDOTab(BaseTab):
             ttk.Button(error_frame, text="Browse for EDS file", 
                       command=self._browse_eds_file).pack(pady=5)
             return
+        
+        # Create sub-tab notebook
+        self.notebook = ttk.Notebook(main_frame)
+        self.notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        # Create SDO tab
+        self.sdo_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.sdo_frame, text="SDO")
+        
+        # Create PDO tab
+        self.pdo_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.pdo_frame, text="PDO")
+        
+        # Create SDO widgets
+        self._create_sdo_widgets()
+        
+        # Create PDO widgets
+        self._create_pdo_widgets()
+    
+    def _create_sdo_widgets(self):
+        """Create the SDO interface widgets"""
+        main_frame = self.sdo_frame
         
         # Create main paned window (left: browser, right: operations)
         main_paned = ttk.PanedWindow(main_frame, orient=tk.HORIZONTAL)
@@ -723,6 +746,612 @@ class CANopenSDOTab(BaseTab):
         self._log_message("✅ CANopen SDO plugin initialized")
         self._log_message(f"📁 EDS file loaded: {len(self.eds_parser.object_dictionary)} objects")
     
+    def _create_pdo_widgets(self):
+        """Create the PDO configuration interface"""
+        main_frame = self.pdo_frame
+        
+        # Create main layout
+        pdo_notebook = ttk.Notebook(main_frame)
+        pdo_notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        # RPDO (Receive PDO) tab
+        rpdo_frame = ttk.Frame(pdo_notebook)
+        pdo_notebook.add(rpdo_frame, text="RPDO (Receive)")
+        
+        # TPDO (Transmit PDO) tab  
+        tpdo_frame = ttk.Frame(pdo_notebook)
+        pdo_notebook.add(tpdo_frame, text="TPDO (Transmit)")
+        
+        # Create RPDO interface
+        self._create_rpdo_interface(rpdo_frame)
+        
+        # Create TPDO interface
+        self._create_tpdo_interface(tpdo_frame)
+    
+    def _create_rpdo_interface(self, parent_frame):
+        """Create RPDO (Receive PDO) configuration interface"""
+        # PDO selection frame
+        pdo_select_frame = ttk.LabelFrame(parent_frame, text="RPDO Selection")
+        pdo_select_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        ttk.Label(pdo_select_frame, text="RPDO Number:").pack(side=tk.LEFT, padx=5)
+        self.rpdo_number_var = tk.StringVar(value="1")
+        rpdo_combo = ttk.Combobox(pdo_select_frame, textvariable=self.rpdo_number_var, 
+                                 values=["1", "2", "3", "4"], width=5, state="readonly")
+        rpdo_combo.pack(side=tk.LEFT, padx=5)
+        rpdo_combo.bind('<<ComboboxSelected>>', self._on_rpdo_selected)
+        
+        # PDO configuration frame
+        config_frame = ttk.LabelFrame(parent_frame, text="PDO Configuration")
+        config_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        # COB-ID
+        cob_frame = ttk.Frame(config_frame)
+        cob_frame.pack(fill=tk.X, padx=5, pady=2)
+        ttk.Label(cob_frame, text="COB-ID:").pack(side=tk.LEFT)
+        self.rpdo_cob_var = tk.StringVar(value="0x200")
+        ttk.Entry(cob_frame, textvariable=self.rpdo_cob_var, width=10).pack(side=tk.LEFT, padx=5)
+        
+        # Transmission type
+        trans_frame = ttk.Frame(config_frame)
+        trans_frame.pack(fill=tk.X, padx=5, pady=2)
+        ttk.Label(trans_frame, text="Transmission Type:").pack(side=tk.LEFT)
+        self.rpdo_trans_var = tk.StringVar(value="255")
+        rpdo_trans_combo = ttk.Combobox(trans_frame, textvariable=self.rpdo_trans_var, width=25, state="readonly")
+        rpdo_trans_combo['values'] = [
+            "1 - Synchronous (every SYNC)",
+            "2 - Synchronous (every 2nd SYNC)", 
+            "10 - Synchronous (every 10th SYNC)",
+            "50 - Synchronous (every 50th SYNC)",
+            "100 - Synchronous (every 100th SYNC)",
+            "254 - Manufacturer-specific async",
+            "255 - Event-driven/async"
+        ]
+        rpdo_trans_combo.set("255 - Event-driven/async")  # Default for RPDO
+        rpdo_trans_combo.pack(side=tk.LEFT, padx=5)
+        
+        # Mapping frame
+        mapping_frame = ttk.LabelFrame(parent_frame, text="Object Mapping")
+        mapping_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        # Mapping table
+        columns = ('slot', 'object', 'subindex', 'length', 'description')
+        self.rpdo_mapping_tree = ttk.Treeview(mapping_frame, columns=columns, show='headings', height=8)
+        
+        for col in columns:
+            self.rpdo_mapping_tree.heading(col, text=col.title())
+            
+        self.rpdo_mapping_tree.column('slot', width=50)
+        self.rpdo_mapping_tree.column('object', width=80)
+        self.rpdo_mapping_tree.column('subindex', width=80)
+        self.rpdo_mapping_tree.column('length', width=60)
+        self.rpdo_mapping_tree.column('description', width=200)
+        
+        # Scrollbar for mapping tree
+        mapping_scroll = ttk.Scrollbar(mapping_frame, orient=tk.VERTICAL, command=self.rpdo_mapping_tree.yview)
+        self.rpdo_mapping_tree.configure(yscrollcommand=mapping_scroll.set)
+        
+        self.rpdo_mapping_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        mapping_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Control buttons
+        button_frame = ttk.Frame(parent_frame)
+        button_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        ttk.Button(button_frame, text="Load Configuration", command=self._load_rpdo_config).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Save Configuration", command=self._save_rpdo_config).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Add Mapping", command=self._add_rpdo_mapping).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Remove Mapping", command=self._remove_rpdo_mapping).pack(side=tk.LEFT, padx=5)
+    
+    def _create_tpdo_interface(self, parent_frame):
+        """Create TPDO (Transmit PDO) configuration interface"""
+        # Similar structure to RPDO but for transmit PDOs
+        # PDO selection frame
+        pdo_select_frame = ttk.LabelFrame(parent_frame, text="TPDO Selection")
+        pdo_select_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        ttk.Label(pdo_select_frame, text="TPDO Number:").pack(side=tk.LEFT, padx=5)
+        self.tpdo_number_var = tk.StringVar(value="1")
+        tpdo_combo = ttk.Combobox(pdo_select_frame, textvariable=self.tpdo_number_var, 
+                                 values=["1", "2", "3", "4"], width=5, state="readonly")
+        tpdo_combo.pack(side=tk.LEFT, padx=5)
+        tpdo_combo.bind('<<ComboboxSelected>>', self._on_tpdo_selected)
+        
+        # PDO configuration frame
+        config_frame = ttk.LabelFrame(parent_frame, text="PDO Configuration")
+        config_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        # COB-ID
+        cob_frame = ttk.Frame(config_frame)
+        cob_frame.pack(fill=tk.X, padx=5, pady=2)
+        ttk.Label(cob_frame, text="COB-ID:").pack(side=tk.LEFT)
+        self.tpdo_cob_var = tk.StringVar(value="0x180")
+        ttk.Entry(cob_frame, textvariable=self.tpdo_cob_var, width=10).pack(side=tk.LEFT, padx=5)
+        
+        # Transmission type
+        trans_frame = ttk.Frame(config_frame)
+        trans_frame.pack(fill=tk.X, padx=5, pady=2)
+        ttk.Label(trans_frame, text="Transmission Type:").pack(side=tk.LEFT)
+        self.tpdo_trans_var = tk.StringVar(value="255")
+        tpdo_trans_combo = ttk.Combobox(trans_frame, textvariable=self.tpdo_trans_var, width=25, state="readonly")
+        tpdo_trans_combo['values'] = [
+            "1 - Synchronous (every SYNC)",
+            "2 - Synchronous (every 2nd SYNC)", 
+            "10 - Synchronous (every 10th SYNC)",
+            "50 - Synchronous (every 50th SYNC)",
+            "100 - Synchronous (every 100th SYNC)",
+            "254 - Manufacturer-specific async",
+            "255 - Event-driven/async"
+        ]
+        tpdo_trans_combo.set("255 - Event-driven/async")  # Default for TPDO
+        tpdo_trans_combo.pack(side=tk.LEFT, padx=5)
+        
+        # Event timer
+        timer_frame = ttk.Frame(config_frame)
+        timer_frame.pack(fill=tk.X, padx=5, pady=2)
+        ttk.Label(timer_frame, text="Event Timer (ms):").pack(side=tk.LEFT)
+        self.tpdo_timer_var = tk.StringVar(value="0")
+        ttk.Entry(timer_frame, textvariable=self.tpdo_timer_var, width=10).pack(side=tk.LEFT, padx=5)
+        
+        # Mapping frame
+        mapping_frame = ttk.LabelFrame(parent_frame, text="Object Mapping")
+        mapping_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        # Mapping table
+        columns = ('slot', 'object', 'subindex', 'length', 'description')
+        self.tpdo_mapping_tree = ttk.Treeview(mapping_frame, columns=columns, show='headings', height=8)
+        
+        for col in columns:
+            self.tpdo_mapping_tree.heading(col, text=col.title())
+            
+        self.tpdo_mapping_tree.column('slot', width=50)
+        self.tpdo_mapping_tree.column('object', width=80)
+        self.tpdo_mapping_tree.column('subindex', width=80)
+        self.tpdo_mapping_tree.column('length', width=60)
+        self.tpdo_mapping_tree.column('description', width=200)
+        
+        # Scrollbar for mapping tree
+        mapping_scroll = ttk.Scrollbar(mapping_frame, orient=tk.VERTICAL, command=self.tpdo_mapping_tree.yview)
+        self.tpdo_mapping_tree.configure(yscrollcommand=mapping_scroll.set)
+        
+        self.tpdo_mapping_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        mapping_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Control buttons
+        button_frame = ttk.Frame(parent_frame)
+        button_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        ttk.Button(button_frame, text="Load Configuration", command=self._load_tpdo_config).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Save Configuration", command=self._save_tpdo_config).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Add Mapping", command=self._add_tpdo_mapping).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Remove Mapping", command=self._remove_tpdo_mapping).pack(side=tk.LEFT, padx=5)
+    
+    # Helper methods for transmission type handling
+    def _get_transmission_type_value(self, combo_value):
+        """Extract numeric transmission type from dropdown text"""
+        if not combo_value:
+            return 255
+        # Extract number before the first space/dash
+        return int(combo_value.split(' ')[0])
+    
+    def _set_transmission_type_combo(self, var, value):
+        """Set transmission type combo to match numeric value"""
+        transmission_map = {
+            1: "1 - Synchronous (every SYNC)",
+            2: "2 - Synchronous (every 2nd SYNC)",
+            10: "10 - Synchronous (every 10th SYNC)",
+            50: "50 - Synchronous (every 50th SYNC)",
+            100: "100 - Synchronous (every 100th SYNC)",
+            254: "254 - Manufacturer-specific async",
+            255: "255 - Event-driven/async"
+        }
+        var.set(transmission_map.get(value, "255 - Event-driven/async"))
+    
+    # PDO event handlers (placeholder implementations)
+    def _on_rpdo_selected(self, event=None):
+        """Handle RPDO selection change"""
+        # TODO: Load selected RPDO configuration
+        pass
+    
+    def _on_tpdo_selected(self, event=None):
+        """Handle TPDO selection change"""
+        # TODO: Load selected TPDO configuration
+        pass
+    
+    def _load_rpdo_config(self):
+        """Load RPDO configuration from device"""
+        try:
+            # Get selected RPDO number (1-4)
+            pdo_num = int(self.rpdo_number_var.get())
+            
+            # Check if we're connected
+            if not self.app.running or not self.app.bus:
+                self._log_message("❌ ERROR: CAN not connected")
+                return
+            
+            # Calculate object indices for this RPDO
+            comm_index = 0x1400 + (pdo_num - 1)  # 0x1400-0x1403 for RPDO 1-4
+            map_index = 0x1600 + (pdo_num - 1)   # 0x1600-0x1603 for RPDO 1-4 mapping
+            
+            self._log_message(f"📥 Loading RPDO {pdo_num} configuration...")
+            self._log_message(f"📄 Communication object: 0x{comm_index:04X}")
+            self._log_message(f"📄 Mapping object: 0x{map_index:04X}")
+            
+            # Store the PDO being loaded for response handling
+            self.loading_pdo = {
+                'type': 'RPDO',
+                'number': pdo_num,
+                'comm_index': comm_index,
+                'map_index': map_index,
+                'step': 'comm_cob_id'  # Track which parameter we're reading
+            }
+            
+            # Start the loading sequence by reading COB-ID
+            self._request_sdo_read(comm_index, 0x01, f"RPDO {pdo_num} COB-ID", for_pdo_loading=True)
+            
+        except Exception as e:
+            self._log_message(f"❌ ERROR: Failed to load RPDO configuration: {e}")
+    
+    def _save_rpdo_config(self):
+        """Save RPDO configuration to device"""
+        # TODO: Implement RPDO configuration saving via SDO
+        pass
+    
+    def _add_rpdo_mapping(self):
+        """Add object mapping to RPDO"""
+        # TODO: Implement mapping addition
+        pass
+    
+    def _remove_rpdo_mapping(self):
+        """Remove object mapping from RPDO"""
+        # TODO: Implement mapping removal
+        pass
+    
+    def _load_tpdo_config(self):
+        """Load TPDO configuration from device"""
+        try:
+            # Get selected TPDO number (1-4)
+            pdo_num = int(self.tpdo_number_var.get())
+            
+            # Check if we're connected
+            if not self.app.running or not self.app.bus:
+                self._log_message("❌ ERROR: CAN not connected")
+                return
+            
+            # Calculate object indices for this TPDO
+            comm_index = 0x1800 + (pdo_num - 1)  # 0x1800-0x1803 for TPDO 1-4
+            map_index = 0x1A00 + (pdo_num - 1)   # 0x1A00-0x1A03 for TPDO 1-4 mapping
+            
+            self._log_message(f"📥 Loading TPDO {pdo_num} configuration...")
+            self._log_message(f"📄 Communication object: 0x{comm_index:04X}")
+            self._log_message(f"📄 Mapping object: 0x{map_index:04X}")
+            
+            # Store the PDO being loaded for response handling
+            self.loading_pdo = {
+                'type': 'TPDO',
+                'number': pdo_num,
+                'comm_index': comm_index,
+                'map_index': map_index,
+                'step': 'comm_cob_id'  # Track which parameter we're reading
+            }
+            
+            # Start the loading sequence by reading COB-ID
+            self._request_sdo_read(comm_index, 0x01, f"TPDO {pdo_num} COB-ID", for_pdo_loading=True)
+            
+        except Exception as e:
+            self._log_message(f"❌ ERROR: Failed to load TPDO configuration: {e}")
+    
+    def _request_sdo_read(self, index, sub_index, description="", for_pdo_loading=False):
+        """Send an SDO read request"""
+        try:
+            node_id = int(self.node_id_var.get())
+            if node_id < 1 or node_id > 127:
+                raise Exception("Invalid node ID")
+            
+            # Create SDO upload (read) request
+            tx_id = 0x600 + node_id
+            rx_id = 0x580 + node_id
+            
+            sdo_data = [
+                0x40,  # Command (SDO upload initiate)
+                index & 0xFF,        # Index low byte
+                (index >> 8) & 0xFF, # Index high byte  
+                sub_index,           # Sub-index
+                0x00, 0x00, 0x00, 0x00  # Unused for upload initiate
+            ]
+            
+            # Send SDO request
+            import can
+            msg = can.Message(arbitration_id=tx_id, data=sdo_data, is_extended_id=False)
+            self.app.bus.send(msg)
+            
+            # Only track as regular request if not for PDO loading
+            if not for_pdo_loading:
+                # Store pending request for response matching
+                request = PendingSDORequest(
+                    node_id=node_id,
+                    index=index, 
+                    sub_index=sub_index,
+                    is_write=False,
+                    timestamp=time.time()
+                )
+                self.pending_requests[rx_id] = request
+                
+                # Start timeout timer if not already running
+                if not self.timeout_timer:
+                    self.timeout_timer = self.app.root.after(100, self._check_sdo_timeouts)
+            
+            self._log_message(f"📤 SDO READ: {description} - Node {node_id} 0x{index:04X}:{sub_index:02X}")
+            self._log_message(f"    TX: 0x{tx_id:03X} → {bytes(sdo_data).hex().upper()}")
+            
+        except Exception as e:
+            self._log_message(f"❌ ERROR: SDO read request failed: {e}")
+            # Clear loading state on error
+            if hasattr(self, 'loading_pdo'):
+                delattr(self, 'loading_pdo')
+    
+    def _continue_tpdo_loading(self, index, sub_index, value):
+        """Continue TPDO loading sequence based on response"""
+        if not hasattr(self, 'loading_pdo') or self.loading_pdo['type'] != 'TPDO':
+            return
+            
+        pdo_info = self.loading_pdo
+        step = pdo_info['step']
+        pdo_num = pdo_info['number']
+        
+        try:
+            if step == 'comm_cob_id' and index == pdo_info['comm_index'] and sub_index == 0x01:
+                # Process COB-ID response
+                cob_id = value & 0x7FF  # Mask out valid bit
+                self.tpdo_cob_var.set(f"0x{cob_id:03X}")
+                self._log_message(f"📄 TPDO {pdo_num} COB-ID: 0x{cob_id:03X}")
+                
+                # Next: read transmission type
+                pdo_info['step'] = 'comm_trans_type'
+                self._request_sdo_read(pdo_info['comm_index'], 0x02, f"TPDO {pdo_num} transmission type", for_pdo_loading=True)
+                
+            elif step == 'comm_trans_type' and index == pdo_info['comm_index'] and sub_index == 0x02:
+                # Process transmission type response
+                self._set_transmission_type_combo(self.tpdo_trans_var, value)
+                self._log_message(f"📄 TPDO {pdo_num} transmission type: {value}")
+                
+                # Next: read event timer
+                pdo_info['step'] = 'comm_event_timer'
+                self._request_sdo_read(pdo_info['comm_index'], 0x05, f"TPDO {pdo_num} event timer", for_pdo_loading=True)
+                
+            elif step == 'comm_event_timer' and index == pdo_info['comm_index'] and sub_index == 0x05:
+                # Process event timer response
+                self.tpdo_timer_var.set(str(value))
+                self._log_message(f"📄 TPDO {pdo_num} event timer: {value} ms")
+                
+                # Next: read mapping count
+                pdo_info['step'] = 'map_count'
+                self._request_sdo_read(pdo_info['map_index'], 0x00, f"TPDO {pdo_num} mapping count", for_pdo_loading=True)
+                
+            elif step == 'map_count' and index == pdo_info['map_index'] and sub_index == 0x00:
+                # Process mapping count response
+                self._log_message(f"📄 TPDO {pdo_num} has {value} mapped objects")
+                
+                # Clear existing mappings in UI
+                self.tpdo_mapping_tree.delete(*self.tpdo_mapping_tree.get_children())
+                
+                # Start reading mapping entries (always read all 8 slots)
+                pdo_info['step'] = 'map_entries'
+                pdo_info['map_count'] = value
+                pdo_info['current_slot'] = 1
+                
+                # Always read slot 1 (will show unused if value is 0)
+                self._request_sdo_read(pdo_info['map_index'], 1, f"TPDO {pdo_num} mapping slot 1", for_pdo_loading=True)
+                    
+            elif step == 'map_entries' and index == pdo_info['map_index']:
+                # Process mapping entry response
+                slot = pdo_info['current_slot']
+                
+                self._log_message(f"📄 TPDO Slot {slot} raw value: 0x{value:08X}")
+                
+                if value != 0:  # Non-zero mapping
+                    # Decode 32-bit mapping value
+                    obj_index = (value >> 16) & 0xFFFF
+                    obj_sub_index = (value >> 8) & 0xFF
+                    bit_length = value & 0xFF
+                    
+                    # Get object description from EDS
+                    description = self._get_object_description(obj_index, obj_sub_index)
+                    
+                    # Add to mapping table
+                    self.tpdo_mapping_tree.insert('', 'end', values=(
+                        slot, 
+                        f"0x{obj_index:04X}", 
+                        f"0x{obj_sub_index:02X}",
+                        bit_length, 
+                        description
+                    ))
+                    
+                    self._log_message(f"📄 Slot {slot}: 0x{obj_index:04X}:{obj_sub_index:02X} ({bit_length} bits) - {description}")
+                    
+                    # Check for inconsistency with mapping count
+                    if slot > pdo_info['map_count']:
+                        self._log_message(f"⚠️  WARNING: Slot {slot} has data but mapping count is {pdo_info['map_count']} - possible stale configuration")
+                else:
+                    # Empty/unused mapping slot
+                    self.tpdo_mapping_tree.insert('', 'end', values=(
+                        slot, 
+                        "-", 
+                        "-",
+                        "-", 
+                        "(unused)"
+                    ))
+                    
+                    self._log_message(f"📄 Slot {slot}: (unused)")
+                
+                # Continue with next slot or finish
+                pdo_info['current_slot'] += 1
+                if pdo_info['current_slot'] <= 8:  # Always read all 8 slots
+                    next_slot = pdo_info['current_slot']
+                    self._request_sdo_read(pdo_info['map_index'], next_slot, f"TPDO {pdo_num} mapping slot {next_slot}", for_pdo_loading=True)
+                else:
+                    # Finished reading all mappings
+                    self._finish_tpdo_loading()
+                    
+        except Exception as e:
+            self._log_message(f"❌ ERROR: Failed to process TPDO loading step {step}: {e}")
+            self._finish_tpdo_loading()
+    
+    def _finish_tpdo_loading(self):
+        """Finish TPDO loading sequence"""
+        if hasattr(self, 'loading_pdo'):
+            pdo_num = self.loading_pdo['number']
+            self._log_message(f"✅ TPDO {pdo_num} configuration loaded successfully")
+            delattr(self, 'loading_pdo')
+    
+    def _continue_rpdo_loading(self, index, sub_index, value):
+        """Continue RPDO loading sequence based on response"""
+        if not hasattr(self, 'loading_pdo') or self.loading_pdo['type'] != 'RPDO':
+            return
+            
+        pdo_info = self.loading_pdo
+        step = pdo_info['step']
+        pdo_num = pdo_info['number']
+        
+        try:
+            if step == 'comm_cob_id' and index == pdo_info['comm_index'] and sub_index == 0x01:
+                # Process COB-ID response
+                cob_id = value & 0x7FF  # Mask out valid bit
+                self.rpdo_cob_var.set(f"0x{cob_id:03X}")
+                self._log_message(f"📄 RPDO {pdo_num} COB-ID: 0x{cob_id:03X} (raw value: 0x{value:08X})")
+                self._log_message(f"📄 UI updated: rpdo_cob_var set to {self.rpdo_cob_var.get()}")
+                
+                # Next: read transmission type
+                pdo_info['step'] = 'comm_trans_type'
+                self._request_sdo_read(pdo_info['comm_index'], 0x02, f"RPDO {pdo_num} transmission type", for_pdo_loading=True)
+                
+            elif step == 'comm_trans_type' and index == pdo_info['comm_index'] and sub_index == 0x02:
+                # Process transmission type response
+                self._set_transmission_type_combo(self.rpdo_trans_var, value)
+                self._log_message(f"📄 RPDO {pdo_num} transmission type: {value}")
+                self._log_message(f"📄 UI updated: rpdo_trans_var set to {self.rpdo_trans_var.get()}")
+                
+                # Next: read mapping count (RPDOs don't have event timer)
+                pdo_info['step'] = 'map_count'
+                self._request_sdo_read(pdo_info['map_index'], 0x00, f"RPDO {pdo_num} mapping count", for_pdo_loading=True)
+                
+            elif step == 'map_count' and index == pdo_info['map_index'] and sub_index == 0x00:
+                # Process mapping count response
+                self._log_message(f"📄 RPDO {pdo_num} mapping count: {value} (0x{value:02X})")
+                self._log_message(f"📄 Note: Reading all 8 slots regardless of count to check for stale data")
+                
+                # Clear existing mappings in UI
+                self.rpdo_mapping_tree.delete(*self.rpdo_mapping_tree.get_children())
+                
+                # Start reading mapping entries (always read all 8 slots)
+                pdo_info['step'] = 'map_entries'
+                pdo_info['map_count'] = value
+                pdo_info['current_slot'] = 1
+                
+                # Always read slot 1 (will show unused if value is 0)
+                self._request_sdo_read(pdo_info['map_index'], 1, f"RPDO {pdo_num} mapping slot 1", for_pdo_loading=True)
+                    
+            elif step == 'map_entries' and index == pdo_info['map_index']:
+                # Process mapping entry response
+                slot = pdo_info['current_slot']
+                
+                self._log_message(f"📄 RPDO Slot {slot} raw value: 0x{value:08X}")
+                
+                if value != 0:  # Non-zero mapping
+                    # Decode 32-bit mapping value
+                    obj_index = (value >> 16) & 0xFFFF
+                    obj_sub_index = (value >> 8) & 0xFF
+                    bit_length = value & 0xFF
+                    
+                    # Get object description from EDS
+                    description = self._get_object_description(obj_index, obj_sub_index)
+                    
+                    # Add to mapping table
+                    self.rpdo_mapping_tree.insert('', 'end', values=(
+                        slot, 
+                        f"0x{obj_index:04X}", 
+                        f"0x{obj_sub_index:02X}",
+                        bit_length, 
+                        description
+                    ))
+                    
+                    self._log_message(f"📄 Slot {slot}: 0x{obj_index:04X}:{obj_sub_index:02X} ({bit_length} bits) - {description}")
+                    
+                    # Check for inconsistency with mapping count
+                    if slot > pdo_info['map_count']:
+                        self._log_message(f"⚠️  WARNING: Slot {slot} has data but mapping count is {pdo_info['map_count']} - possible stale configuration")
+                else:
+                    # Empty/unused mapping slot
+                    self.rpdo_mapping_tree.insert('', 'end', values=(
+                        slot, 
+                        "-", 
+                        "-",
+                        "-", 
+                        "(unused)"
+                    ))
+                    
+                    self._log_message(f"📄 Slot {slot}: (unused)")
+                
+                # Continue with next slot or finish
+                pdo_info['current_slot'] += 1
+                if pdo_info['current_slot'] <= 8:  # Always read all 8 slots
+                    next_slot = pdo_info['current_slot']
+                    self._request_sdo_read(pdo_info['map_index'], next_slot, f"RPDO {pdo_num} mapping slot {next_slot}", for_pdo_loading=True)
+                else:
+                    # Finished reading all mappings
+                    self._finish_rpdo_loading()
+                    
+        except Exception as e:
+            self._log_message(f"❌ ERROR: Failed to process RPDO loading step {step}: {e}")
+            self._finish_rpdo_loading()
+    
+    def _finish_rpdo_loading(self):
+        """Finish RPDO loading sequence"""
+        if hasattr(self, 'loading_pdo'):
+            pdo_num = self.loading_pdo['number']
+            self._log_message(f"✅ RPDO {pdo_num} configuration loaded successfully")
+            delattr(self, 'loading_pdo')
+    
+    def _finish_pdo_loading(self):
+        """Finish PDO loading sequence (generic for both TPDO and RPDO)"""
+        if hasattr(self, 'loading_pdo'):
+            pdo_type = self.loading_pdo['type']
+            if pdo_type == 'TPDO':
+                self._finish_tpdo_loading()
+            elif pdo_type == 'RPDO':
+                self._finish_rpdo_loading()
+    
+    def _get_object_description(self, index, sub_index):
+        """Get object description from EDS file"""
+        try:
+            obj = self.eds_parser.get_object(index, sub_index)
+            if obj:
+                return obj.name
+            else:
+                # Try to get main object name if sub-index not found
+                main_name = self.eds_parser.get_main_object_name(index)
+                if main_name:
+                    return f"{main_name} (sub {sub_index})"
+                else:
+                    return f"Object_{index:04X}_{sub_index:02X}"
+        except:
+            return f"Unknown_{index:04X}_{sub_index:02X}"
+    
+    def _save_tpdo_config(self):
+        """Save TPDO configuration to device"""
+        # TODO: Implement TPDO configuration saving via SDO
+        pass
+    
+    def _add_tpdo_mapping(self):
+        """Add object mapping to TPDO"""
+        # TODO: Implement mapping addition
+        pass
+    
+    def _remove_tpdo_mapping(self):
+        """Remove object mapping from TPDO"""
+        # TODO: Implement mapping removal
+        pass
+
     def _browse_eds_file(self):
         """Browse for and load a new EDS file"""
         file_path = filedialog.askopenfilename(
@@ -1234,35 +1863,66 @@ class CANopenSDOTab(BaseTab):
         rx_id = msg.arbitration_id
         data = list(msg.data)
         
-        # Check if this is an SDO response we're waiting for
-        if rx_id not in self.pending_requests:
+        # Check if this is an SDO response (0x580 + node ID)
+        if (rx_id & 0xFF80) != 0x580:
             return
         
         if len(data) < 4:
             return
         
-        request = self.pending_requests.pop(rx_id)
-        response_time = time.time() - request.timestamp
-        
+        node_id = rx_id & 0x7F
         cmd = data[0]
         
-        # Check for abort
+        # Check for abort first
         if cmd == 0x80:
-            if len(data) >= 8:
-                abort_code = struct.unpack('<L', bytes(data[4:8]))[0]
-                # Try to get a meaningful error name
-                error_name = "UNKNOWN_ERROR"
-                for abort in SDOAbortCode:
-                    if abort.value == abort_code:
-                        error_name = abort.name.replace('_', ' ')
-                        break
-                
-                self._log_message(f"📥 ABORT: 0x{abort_code:08X} - {error_name} ({response_time:.3f}s)")
-            else:
-                self._log_message(f"📥 ABORT: Invalid abort message ({response_time:.3f}s)")
-            
-            self._log_message(f"    RX: 0x{rx_id:03X} ← {bytes(data).hex().upper()}")
+            self._handle_sdo_abort(rx_id, data, node_id)
             return
+        
+        # Check if this is a regular SDO response we're waiting for
+        if rx_id in self.pending_requests:
+            self._handle_regular_sdo_response(rx_id, data)
+            return
+        
+        # Check if this is a PDO loading response
+        if hasattr(self, 'loading_pdo') and node_id == self.current_node_id:
+            self._handle_pdo_loading_response(data)
+            return
+    
+    def _handle_sdo_abort(self, rx_id, data, node_id):
+        """Handle SDO abort messages"""
+        # Check if this was a regular SDO request
+        request = self.pending_requests.pop(rx_id, None)
+        if request:
+            response_time = time.time() - request.timestamp
+            timestamp_info = f" ({response_time:.3f}s)"
+        else:
+            timestamp_info = ""
+        
+        if len(data) >= 8:
+            abort_code = struct.unpack('<L', bytes(data[4:8]))[0]
+            # Try to get a meaningful error name
+            error_name = "UNKNOWN_ERROR"
+            for abort in SDOAbortCode:
+                if abort.value == abort_code:
+                    error_name = abort.name.replace('_', ' ')
+                    break
+            
+            self._log_message(f"📥 ABORT: 0x{abort_code:08X} - {error_name}{timestamp_info}")
+        else:
+            self._log_message(f"📥 ABORT: Invalid abort message{timestamp_info}")
+        
+        self._log_message(f"    RX: 0x{rx_id:03X} ← {bytes(data).hex().upper()}")
+        
+        # If this was a PDO loading abort, clean up
+        if hasattr(self, 'loading_pdo') and node_id == self.current_node_id:
+            self._log_message(f"❌ PDO loading aborted")
+            self._finish_pdo_loading()
+    
+    def _handle_regular_sdo_response(self, rx_id, data):
+        """Handle regular SDO responses for manual read/write operations"""
+        request = self.pending_requests.pop(rx_id)
+        response_time = time.time() - request.timestamp
+        cmd = data[0]
         
         # Process successful response
         if request.is_write:
@@ -1311,6 +1971,50 @@ class CANopenSDOTab(BaseTab):
                 self._log_message(f"📥 READ RESPONSE: Unexpected format ({response_time:.3f}s)")
         
         self._log_message(f"    RX: 0x{rx_id:03X} ← {bytes(data).hex().upper()}")
+    
+    def _handle_pdo_loading_response(self, data):
+        """Handle SDO responses during PDO loading operations"""
+        cmd = data[0]
+        
+        # Check for successful read response
+        if (cmd & 0xE0) == 0x40:  # Upload initiate response
+            if cmd & 0x02:  # Expedited transfer
+                size_indicated = cmd & 0x01
+                if size_indicated:
+                    data_size = 4 - ((cmd >> 2) & 0x03)
+                else:
+                    data_size = 4
+                
+                # Extract index and sub-index from response
+                index = struct.unpack('<H', bytes(data[1:3]))[0]
+                sub_index = data[3]
+                
+                # Extract value data
+                raw_data = bytes(data[4:4+data_size])
+                
+                # Convert raw data to integer value
+                if data_size == 1:
+                    value = struct.unpack('<B', raw_data)[0]
+                elif data_size == 2:
+                    value = struct.unpack('<H', raw_data)[0]
+                elif data_size == 4:
+                    value = struct.unpack('<L', raw_data)[0]
+                else:
+                    # Fallback - convert as little endian integer
+                    value = int.from_bytes(raw_data, byteorder='little')
+                
+                # Continue PDO loading sequence based on type
+                if self.loading_pdo['type'] == 'TPDO':
+                    self._continue_tpdo_loading(index, sub_index, value)
+                elif self.loading_pdo['type'] == 'RPDO':
+                    self._continue_rpdo_loading(index, sub_index, value)
+                
+            else:
+                self._log_message(f"📥 PDO LOADING: Segmented transfer not supported")
+                self._finish_pdo_loading()
+        else:
+            self._log_message(f"📥 PDO LOADING: Unexpected response format")
+            self._finish_pdo_loading()
     
     def _check_sdo_timeouts(self):
         """Check for and handle SDO timeouts"""
