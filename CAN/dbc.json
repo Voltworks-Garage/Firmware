@@ -506,7 +506,7 @@
                             "multiplex": 1
                         },
                         {
-                            "name": "spare_1_controller_fault",
+                            "name": "J1772_controller_fault",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
@@ -523,114 +523,114 @@
                         },
                         {
                             "name": "fan_current",
-                            "length": 10,
-                            "scale": 0.01,
+                            "length": 12,
+                            "scale": 1,
                             "offset": 0,
-                            "units": "A",
+                            "units": "mA",
                             "multiplex": 2
                         },
                         {
                             "name": "pump_current",
-                            "length": 10,
-                            "scale": 0.01,
+                            "length": 12,
+                            "scale": 1,
                             "offset": 0,
-                            "units": "A",
+                            "units": "mA",
                             "multiplex": 2
                         },
                         {
                             "name": "taillight_current",
-                            "length": 10,
-                            "scale": 0.01,
+                            "length": 12,
+                            "scale": 1,
                             "offset": 0,
-                            "units": "A",
+                            "units": "mA",
                             "multiplex": 2
                         },
                         {
                             "name": "brakelight_current",
-                            "length": 10,
-                            "scale": 0.01,
+                            "length": 12,
+                            "scale": 1,
                             "offset": 0,
-                            "units": "A",
+                            "units": "mA",
                             "multiplex": 2
                         },
                         {
                             "name": "lowbeam_current",
-                            "length": 10,
-                            "scale": 0.01,
+                            "length": 12,
+                            "scale": 1,
                             "offset": 0,
-                            "units": "A",
+                            "units": "mA",
                             "multiplex": 2
                         },
                         {
                             "name": "highbeam_current",
-                            "length": 10,
-                            "scale": 0.01,
+                            "length": 12,
+                            "scale": 1,
                             "offset": 0,
-                            "units": "A",
-                            "multiplex": 2
+                            "units": "mA",
+                            "multiplex": 3
                         },
                         {
                             "name": "horn_current",
-                            "length": 10,
-                            "scale": 0.01,
+                            "length": 12,
+                            "scale": 1,
                             "offset": 0,
-                            "units": "A",
+                            "units": "mA",
                             "multiplex": 3
                         },
                         {
                             "name": "aux_port_current",
-                            "length": 10,
-                            "scale": 0.01,
+                            "length": 12,
+                            "scale": 1,
                             "offset": 0,
-                            "units": "A",
+                            "units": "mA",
                             "multiplex": 3
                         },
                         {
                             "name": "heated_grips_current",
-                            "length": 10,
-                            "scale": 0.01,
+                            "length": 12,
+                            "scale": 1,
                             "offset": 0,
-                            "units": "A",
+                            "units": "mA",
                             "multiplex": 3
                         },
                         {
                             "name": "heated_seat_current",
-                            "length": 10,
-                            "scale": 0.01,
+                            "length": 12,
+                            "scale": 1,
                             "offset": 0,
-                            "units": "A",
+                            "units": "mA",
                             "multiplex": 3
                         },
                         {
                             "name": "charge_controller_current",
-                            "length": 10,
-                            "scale": 0.01,
+                            "length": 12,
+                            "scale": 1,
                             "offset": 0,
-                            "units": "A",
-                            "multiplex": 3
-                        },
-                        {
-                            "name": "motor_controller_current",
-                            "length": 10,
-                            "scale": 0.01,
-                            "offset": 0,
-                            "units": "A",
-                            "multiplex": 3
-                        },
-                        {
-                            "name": "bms_controller_current",
-                            "length": 10,
-                            "scale": 0.01,
-                            "offset": 0,
-                            "units": "A",
+                            "units": "mA",
                             "multiplex": 4
                         },
                         {
-                            "name": "spare_1_controller_current",
-                            "length": 10,
-                            "scale": 0.01,
+                            "name": "motor_controller_current",
+                            "length": 12,
+                            "scale": 1,
                             "offset": 0,
-                            "units": "A",
+                            "units": "mA",
+                            "multiplex": 4
+                        },
+                        {
+                            "name": "bms_controller_current",
+                            "length": 12,
+                            "scale": 1,
+                            "offset": 0,
+                            "units": "mA",
+                            "multiplex": 4
+                        },
+                        {
+                            "name": "J1772_controller_current",
+                            "length": 12,
+                            "scale": 1,
+                            "offset": 0,
+                            "units": "mA",
                             "multiplex": 4
                         }
                     ]
@@ -852,6 +852,38 @@
                             "multiplex": 1
                         },
                         {
+                            "name": "task_1ms_cpu_percent",
+                            "length": 8,
+                            "scale": 1,
+                            "offset": 0,
+                            "units": "%",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "task_10ms_cpu_percent",
+                            "length": 8,
+                            "scale": 1,
+                            "offset": 0,
+                            "units": "%",
+                            "multiplex": 1
+                        },
+                        {
+                            "name": "task_100ms_cpu_percent",
+                            "length": 8,
+                            "scale": 1,
+                            "offset": 0,
+                            "units": "%",
+                            "multiplex": 0
+                        },
+                        {
+                            "name": "task_1000ms_cpu_percent",
+                            "length": 8,
+                            "scale": 1,
+                            "offset": 0,
+                            "units": "%",
+                            "multiplex": 0
+                        },
+                        {
                             "name": "debug_value_9",
                             "length": 8,
                             "scale": 1.0,
@@ -861,22 +893,6 @@
                         },
                         {
                             "name": "debug_value_10",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "",
-                            "multiplex": 2
-                        },
-                        {
-                            "name": "debug_value_11",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "",
-                            "multiplex": 2
-                        },
-                        {
-                            "name": "debug_value_12",
                             "length": 8,
                             "scale": 1.0,
                             "offset": 0,
@@ -900,20 +916,36 @@
                             "multiplex": 3
                         },
                         {
-                            "name": "debug_value_15",
+                            "name": "task_1ms_peak_cpu_percent",
                             "length": 8,
-                            "scale": 1.0,
+                            "scale": 1,
                             "offset": 0,
-                            "units": "",
+                            "units": "%",
                             "multiplex": 3
                         },
                         {
-                            "name": "debug_value_16",
+                            "name": "task_10ms_peak_cpu_percent",
                             "length": 8,
-                            "scale": 1.0,
+                            "scale": 1,
                             "offset": 0,
-                            "units": "",
+                            "units": "%",
                             "multiplex": 3
+                        },
+                        {
+                            "name": "task_100ms_peak_cpu_percent",
+                            "length": 8,
+                            "scale": 1,
+                            "offset": 0,
+                            "units": "%",
+                            "multiplex": 2
+                        },
+                        {
+                            "name": "task_1000ms_peak_cpu_percent",
+                            "length": 8,
+                            "scale": 1,
+                            "offset": 0,
+                            "units": "%",
+                            "multiplex": 2
                         }
                     ]
                 }

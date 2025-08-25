@@ -79,22 +79,22 @@
 [START_SIGNALS] charge_controller_fault,1,7,7.0,B,1,0,1,0,1.0,bool,M1
 [START_SIGNALS] motor_controller_fault,1,8,0.0,B,1,0,1,0,1.0,bool,M1
 [START_SIGNALS] bms_controller_fault,1,8,1.0,B,1,0,1,0,1.0,bool,M1
-[START_SIGNALS] spare_1_controller_fault,1,8,2.0,B,1,0,1,0,1.0,bool,M1
+[START_SIGNALS] J1772_controller_fault,1,8,2.0,B,1,0,1,0,1.0,bool,M1
 [START_SIGNALS] ic_controller_fault,1,8,3.0,B,1,0,1,0,1.0,bool,M1
-[START_SIGNALS] fan_current,10,1,3.0,U,1023,0,1,0,0.01,A,M2
-[START_SIGNALS] pump_current,10,2,5.0,U,1023,0,1,0,0.01,A,M2
-[START_SIGNALS] taillight_current,10,3,7.0,U,1023,0,1,0,0.01,A,M2
-[START_SIGNALS] brakelight_current,10,5,1.0,U,1023,0,1,0,0.01,A,M2
-[START_SIGNALS] lowbeam_current,10,6,3.0,U,1023,0,1,0,0.01,A,M2
-[START_SIGNALS] highbeam_current,10,7,5.0,U,1023,0,1,0,0.01,A,M2
-[START_SIGNALS] horn_current,10,1,3.0,U,1023,0,1,0,0.01,A,M3
-[START_SIGNALS] aux_port_current,10,2,5.0,U,1023,0,1,0,0.01,A,M3
-[START_SIGNALS] heated_grips_current,10,3,7.0,U,1023,0,1,0,0.01,A,M3
-[START_SIGNALS] heated_seat_current,10,5,1.0,U,1023,0,1,0,0.01,A,M3
-[START_SIGNALS] charge_controller_current,10,6,3.0,U,1023,0,1,0,0.01,A,M3
-[START_SIGNALS] motor_controller_current,10,7,5.0,U,1023,0,1,0,0.01,A,M3
-[START_SIGNALS] bms_controller_current,10,1,3.0,U,1023,0,1,0,0.01,A,M4
-[START_SIGNALS] spare_1_controller_current,10,2,5.0,U,1023,0,1,0,0.01,A,M4
+[START_SIGNALS] fan_current,12,1,3.0,U,4095,0,1,0,1,mA,M2
+[START_SIGNALS] pump_current,12,2,7.0,U,4095,0,1,0,1,mA,M2
+[START_SIGNALS] taillight_current,12,4,3.0,U,4095,0,1,0,1,mA,M2
+[START_SIGNALS] brakelight_current,12,5,7.0,U,4095,0,1,0,1,mA,M2
+[START_SIGNALS] lowbeam_current,12,7,3.0,U,4095,0,1,0,1,mA,M2
+[START_SIGNALS] highbeam_current,12,1,3.0,U,4095,0,1,0,1,mA,M3
+[START_SIGNALS] horn_current,12,2,7.0,U,4095,0,1,0,1,mA,M3
+[START_SIGNALS] aux_port_current,12,4,3.0,U,4095,0,1,0,1,mA,M3
+[START_SIGNALS] heated_grips_current,12,5,7.0,U,4095,0,1,0,1,mA,M3
+[START_SIGNALS] heated_seat_current,12,7,3.0,U,4095,0,1,0,1,mA,M3
+[START_SIGNALS] charge_controller_current,12,1,3.0,U,4095,0,1,0,1,mA,M4
+[START_SIGNALS] motor_controller_current,12,2,7.0,U,4095,0,1,0,1,mA,M4
+[START_SIGNALS] bms_controller_current,12,4,3.0,U,4095,0,1,0,1,mA,M4
+[START_SIGNALS] J1772_controller_current,12,5,7.0,U,4095,0,1,0,1,mA,M4
 [END_MSG]
 
 [START_MSG] mcu_command,1810,8,5,1,S
@@ -121,7 +121,7 @@
 [START_SIGNALS] byte7,8,8,0.0,U,255,0,1,0,1.0,
 [END_MSG]
 
-[START_MSG] mcu_mcu_debug,1811,8,17,1,S
+[START_MSG] mcu_mcu_debug,1811,8,21,1,S
 [START_SIGNALS] Multiplex,2,1,0.0,U,3,0,1,0,1.0,,m
 [START_SIGNALS] cpu_usage_percent,8,1,2.0,U,255,0,1,0,0.5,%,M2
 [START_SIGNALS] cpu_peak_percent,8,2,2.0,U,255,0,1,0,0.5,%,M2
@@ -131,14 +131,18 @@
 [START_SIGNALS] debug_value_6,8,2,2.0,U,255,0,1,0,1.0,,M1
 [START_SIGNALS] debug_value_7,8,3,2.0,U,255,0,1,0,1.0,,M1
 [START_SIGNALS] debug_value_8,8,4,2.0,U,255,0,1,0,1.0,,M1
+[START_SIGNALS] task_1ms_cpu_percent,8,5,2.0,U,255,0,1,0,1,%,M1
+[START_SIGNALS] task_10ms_cpu_percent,8,6,2.0,U,255,0,1,0,1,%,M1
+[START_SIGNALS] task_100ms_cpu_percent,8,3,2.0,U,255,0,1,0,1,%,M0
+[START_SIGNALS] task_1000ms_cpu_percent,8,4,2.0,U,255,0,1,0,1,%,M0
 [START_SIGNALS] debug_value_9,8,3,2.0,U,255,0,1,0,1.0,,M2
 [START_SIGNALS] debug_value_10,8,4,2.0,U,255,0,1,0,1.0,,M2
-[START_SIGNALS] debug_value_11,8,5,2.0,U,255,0,1,0,1.0,,M2
-[START_SIGNALS] debug_value_12,8,6,2.0,U,255,0,1,0,1.0,,M2
 [START_SIGNALS] debug_value_13,8,1,2.0,U,255,0,1,0,1.0,,M3
 [START_SIGNALS] debug_value_14,8,2,2.0,U,255,0,1,0,1.0,,M3
-[START_SIGNALS] debug_value_15,8,3,2.0,U,255,0,1,0,1.0,,M3
-[START_SIGNALS] debug_value_16,8,4,2.0,U,255,0,1,0,1.0,,M3
+[START_SIGNALS] task_1ms_peak_cpu_percent,8,3,2.0,U,255,0,1,0,1,%,M3
+[START_SIGNALS] task_10ms_peak_cpu_percent,8,4,2.0,U,255,0,1,0,1,%,M3
+[START_SIGNALS] task_100ms_peak_cpu_percent,8,5,2.0,U,255,0,1,0,1,%,M2
+[START_SIGNALS] task_1000ms_peak_cpu_percent,8,6,2.0,U,255,0,1,0,1,%,M2
 [END_MSG]
 
 [START_MSG] bms_status,1825,8,30,1,S

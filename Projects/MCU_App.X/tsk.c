@@ -14,6 +14,7 @@
 #include "tsk.h"					
 #include "tsk_cfg.h"
 #include "SysTick.h"
+#include "cpu_usage.h"
 
 //Direct low level access
 #include "pins.h"
@@ -109,6 +110,11 @@ void Tsk_1ms(void) {
 
     IgnitionControl_Run_1ms();
    
+    // Populate 1ms task CPU usage (will be available after CAN code regeneration)
+    TaskType *tasks = Tsk_GetConfig();
+    CAN_mcu_mcu_debug_task_1ms_cpu_percent_set(CPUUsage_GetTaskCPUPercent(&tasks[1]));
+    CAN_mcu_mcu_debug_task_1ms_peak_cpu_percent_set(CPUUsage_GetTaskPeakCPU(&tasks[1]));
+   
     CAN_populate_1ms();
     CAN_send_1ms();
 
@@ -122,6 +128,12 @@ void Tsk_1ms(void) {
 void Tsk_10ms(void) {
     CAN_mcu_mcu_debug_cpu_usage_percent_set(SysTick_GetCPUPercentage());
     CAN_mcu_mcu_debug_cpu_peak_percent_set(SysTick_GetCPUPeak());
+    
+    // Populate 10ms task CPU usage (will be available after CAN code regeneration)
+    TaskType *tasks = Tsk_GetConfig();
+    CAN_mcu_mcu_debug_task_10ms_cpu_percent_set(CPUUsage_GetTaskCPUPercent(&tasks[2]));
+    CAN_mcu_mcu_debug_task_10ms_peak_cpu_percent_set(CPUUsage_GetTaskPeakCPU(&tasks[2]));
+    
     IO_Efuse_Run_10ms(); //Run the Efuse System
 
     HornControl_Run_10ms(); //Run Horn. Horn is disabled if button is held for too long.
@@ -142,6 +154,11 @@ void Tsk_100ms(void) {
     HeatedGripControl_Run_100ms(); //Run Heated Grips. Currently activated by spare sw 2
     j1772Control_Run_100ms(); //Run j1772 Proximity and Pilot Signal Control.
     
+    // Populate 100ms task CPU usage (will be available after CAN code regeneration)
+    TaskType *tasks = Tsk_GetConfig();
+    CAN_mcu_mcu_debug_task_100ms_cpu_percent_set(CPUUsage_GetTaskCPUPercent(&tasks[3]));
+    CAN_mcu_mcu_debug_task_100ms_peak_cpu_percent_set(CPUUsage_GetTaskPeakCPU(&tasks[3]));
+    
     CAN_populate_100ms();
     CAN_send_100ms();
 }
@@ -151,6 +168,11 @@ void Tsk_100ms(void) {
  */
 void Tsk_1000ms(void) {
     IO_SET_DEBUG_LED_EN(TOGGLE); //Toggle Debug LED at 1Hz for scheduler running status
+
+    // Populate 1000ms task CPU usage (will be available after CAN code regeneration)
+    TaskType *tasks = Tsk_GetConfig();
+    CAN_mcu_mcu_debug_task_1000ms_cpu_percent_set(CPUUsage_GetTaskCPUPercent(&tasks[4]));
+    CAN_mcu_mcu_debug_task_1000ms_peak_cpu_percent_set(CPUUsage_GetTaskPeakCPU(&tasks[4]));
 
     CAN_populate_1000ms();
     CAN_send_1000ms();
@@ -174,6 +196,9 @@ void Tsk_Run(uint32_t SystemClock) {
     const uint8_t NumTasks = Tsk_GetNumTasks(); // Number of tasks
 
     SysTick_Init(SystemClock);
+
+    Tsk_InitCPUMeasurement();
+    CPUUsage_Init();
 
     tsk_configPtr = Tsk_GetConfig(); // Get a pointer to the task configuration
     
@@ -199,7 +224,9 @@ void Tsk_Run(uint32_t SystemClock) {
             for (tsk_currentIndex = 0; tsk_currentIndex < NumTasks; tsk_currentIndex++) {
 
                 if ((tick - tsk_configPtr[tsk_currentIndex].LastTick) >= tsk_configPtr[tsk_currentIndex].Interval) {
+                    CPUUsage_StartTaskTiming(&tsk_configPtr[tsk_currentIndex]);
                     (*tsk_configPtr[tsk_currentIndex].Func)(); // Execute Task
+                    CPUUsage_EndTaskTiming(&tsk_configPtr[tsk_currentIndex]);
 
                     tsk_configPtr[tsk_currentIndex].LastTick = tick; // Save last tick the task was ran.
                 }

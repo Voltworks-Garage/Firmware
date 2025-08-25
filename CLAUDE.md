@@ -101,6 +101,15 @@ Examples:
   - Changing file extensions during testing
 - If file operations fail, use git commands to restore originals when possible
 
+## Include Path Protocol
+- NEVER use relative paths in #include statements (e.g., `#include "../../Libraries/Standard/file.h"`)
+- Use simple include filenames without paths (e.g., `#include "file.h"`)
+- The compiler's include path configuration will locate the files correctly
+- This prevents brittle path dependencies and makes code more portable
+- Example violations to avoid:
+  - `#include "../Libraries/Standard/movingAverageInt.h"` (incorrect)
+  - `#include "movingAverageInt.h"` (correct)
+
 ## CAN DBC Protocol
 - ALWAYS read `CAN/README.md` before modifying `CAN/dbc.json`
 - Follow the signal addition guidelines for regular vs multiplexed messages

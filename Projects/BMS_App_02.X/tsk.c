@@ -14,6 +14,7 @@
 #include "tsk.h"					
 #include "tsk_cfg.h"
 #include "SysTick.h"
+#include "cpu_usage.h"
 #include "movingAverage.h"
 
 //Direct low level access
@@ -107,6 +108,14 @@ void Tsk_init(void) {
 }
 
 /**
+ * Tsk is for continuously running tasks, will run when scheduler is Idle.
+ */
+void Tsk(void) {
+    Nop();
+}
+
+
+/**
  * Runs every 1ms
  */
 void Tsk_1ms(void) {
@@ -184,6 +193,9 @@ void Tsk_Run(uint32_t SystemClock) {
 
     SysTick_Init(SystemClock);
 
+    Tsk_InitCPUMeasurement();
+    CPUUsage_Init();
+
     tsk_configPtr = Tsk_GetConfig(); // Get a pointer to the task configuration
     
     SysTick_Set(tsk_configPtr[0].LastTick);// Set the Tick to the first task to allow for the phase offset
@@ -204,7 +216,9 @@ void Tsk_Run(uint32_t SystemClock) {
             for (tsk_currentIndex = 0; tsk_currentIndex < NumTasks; tsk_currentIndex++) {
 
                 if ((tick - tsk_configPtr[tsk_currentIndex].LastTick) >= tsk_configPtr[tsk_currentIndex].Interval) {
+                    CPUUsage_StartTaskTiming(&tsk_configPtr[tsk_currentIndex]);
                     (*tsk_configPtr[tsk_currentIndex].Func)(); // Execute Task
+                    CPUUsage_EndTaskTiming(&tsk_configPtr[tsk_currentIndex]);
 
                     tsk_configPtr[tsk_currentIndex].LastTick = tick; // Save last tick the task was ran.
                 }

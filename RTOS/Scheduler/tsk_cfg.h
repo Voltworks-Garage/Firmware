@@ -39,6 +39,7 @@
 * Includes
 *******************************************************************************/
 #include "stdint.h"
+#include "movingAverageInt.h"
 
 /******************************************************************************
 * Constants
@@ -47,6 +48,11 @@
  * Define the system tick interval in microseconds
  */
 #define SYS_TICK_INTERVAL			1000UL
+
+/**
+ * The interval to call the 1 ms tasks
+ */
+#define INTERVAL_1MS        (1000UL / SYS_TICK_INTERVAL)
 
 /**
  * The interval to call the 10 ms tasks
@@ -93,6 +99,12 @@ typedef struct
   	uint16_t Interval;			/**< Defines how often a task will run  */
   	uint32_t LastTick;			/**< Stores the last tick task was ran  */
   	void (*Func)(void);			/**< Function pointer to the task  */
+  	
+  	uint16_t start_timer;			/**< Timer value when task started */
+  	uint16_t peak_execution_ticks;		/**< Peak execution time recorded */
+  	uint16_t peak_cpu_percent;		/**< Peak CPU percentage (0.1% resolution) */
+  	movingAverageInt_S cpu_filter;		/**< Moving average filter struct */
+  	uint16_t cpu_filter_buffer[16];		/**< Buffer for moving average */
 }TaskType;
 /******************************************************************************
 * Variable Declarations
@@ -104,6 +116,7 @@ typedef struct
 
 TaskType *Tsk_GetConfig(void);
 uint8_t Tsk_GetNumTasks(void);
+void Tsk_InitCPUMeasurement(void);
 
 
 

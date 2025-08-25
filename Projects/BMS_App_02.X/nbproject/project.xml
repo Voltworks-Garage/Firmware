@@ -19,6 +19,7 @@
                 <sourceRootElem>../../Libraries/CommandHandler</sourceRootElem>
                 <sourceRootElem>../../Libraries/CommandService</sourceRootElem>
                 <sourceRootElem>../../Libraries/Standard</sourceRootElem>
+                <sourceRootElem>../../RTOS/Scheduler</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>

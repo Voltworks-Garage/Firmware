@@ -137,7 +137,7 @@ uint16_t IO_GET_CURRENT_HEATED_SEAT(void);
 uint16_t IO_GET_CURRENT_CHARGE_CONTROLLER(void);
 uint16_t IO_GET_CURRENT_MOTOR_CONTROLLER(void);
 uint16_t IO_GET_CURRENT_BMS_CONTROLLER(void);
-uint16_t IO_GET_CURRENT_SPARE_1_CONTROLLER(void);
+uint16_t IO_GET_CURRENT_J1772_CONTROLLER(void);
 float IO_GET_CURRENT_BATT(void);
 float IO_GET_CURRENT_DCDC(void);
 float IO_GET_CURRENT_IC_CONTROLLER(void);
@@ -171,7 +171,7 @@ uint8_t IO_GET_HEATED_SEAT_FAULT(void);
 uint8_t IO_GET_CHARGE_CONTROLLER_FAULT(void);
 uint8_t IO_GET_MOTOR_CONTROLLER_FAULT(void);
 uint8_t IO_GET_BMS_CONTROLLER_FAULT(void);
-uint8_t IO_GET_SPARE_1_CONTROLLER_FAULT(void);
+uint8_t IO_GET_J1772_CONTROLLER_FAULT(void);
 
 
 /******************************************************************************
@@ -304,7 +304,7 @@ static const GetAnalogIn_FPtr getAnalogInFunctions[] = {
     IO_GET_CURRENT_CHARGE_CONTROLLER,   // Index 11
     IO_GET_CURRENT_MOTOR_CONTROLLER,    // Index 12
     IO_GET_CURRENT_BMS_CONTROLLER,      // Index 13
-    IO_GET_CURRENT_SPARE_1_CONTROLLER,  // Index 14
+    IO_GET_CURRENT_J1772_CONTROLLER,  // Index 14
     NULL
 };
 

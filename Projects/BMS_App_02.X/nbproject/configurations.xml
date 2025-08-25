@@ -20,6 +20,9 @@
         <itemPath>../../Libraries/PIC33_plib/inc/ic.h</itemPath>
         <itemPath>../../Libraries/CommandService/commandService.h</itemPath>
         <itemPath>../../Libraries/Standard/NTC.h</itemPath>
+        <itemPath>../../Libraries/Standard/movingAverageInt.h</itemPath>
+        <itemPath>../../RTOS/Scheduler/cpu_usage.h</itemPath>
+        <itemPath>../../RTOS/Scheduler/tsk_cfg.h</itemPath>
       </logicalFolder>
       <logicalFolder name="MCC Generated Files"
                      displayName="MCC Generated Files"
@@ -39,7 +42,6 @@
         <itemPath>mcc_generated_files/clock.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f2" displayName="ProjectSpecific" projectFiles="true">
-        <itemPath>tsk_cfg.h</itemPath>
         <itemPath>IO.h</itemPath>
         <itemPath>StateMachine.h</itemPath>
         <itemPath>pinSetup.h</itemPath>
@@ -92,6 +94,8 @@
         <itemPath>../../Libraries/PIC33_plib/src/ic.c</itemPath>
         <itemPath>../../Libraries/CommandService/commandService.c</itemPath>
         <itemPath>../../Libraries/Standard/NTC.c</itemPath>
+        <itemPath>../../Libraries/Standard/movingAverageInt.c</itemPath>
+        <itemPath>../../RTOS/Scheduler/cpu_usage.c</itemPath>
       </logicalFolder>
       <logicalFolder name="MCC Generated Files"
                      displayName="MCC Generated Files"
@@ -139,6 +143,7 @@
     <Elem>../../Libraries/CommandHandler</Elem>
     <Elem>../../Libraries/CommandService</Elem>
     <Elem>../../Libraries/Standard</Elem>
+    <Elem>../../RTOS/Scheduler</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>

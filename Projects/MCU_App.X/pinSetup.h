@@ -67,7 +67,7 @@ typedef enum {
     TURN_RIGHT_SWITCH_IN = PG3,
     BRIGHTS_SWITCH_IN = PG12,
     HORN_SWITCH_IN = PG13,
-    // KICKSTAND_SWITCH_IN = PG14
+    // KICKSTAND_SWITCH_IN = PG14 //This was re-used as tachometer PWM output
 } pin_assignments_t;
 
 /*ANALOG INPUT DEFINITIONS*/

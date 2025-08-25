@@ -4,7 +4,7 @@
 #include <xc.h>
 
 static uint32_t volatile Tick = 0;
-static uint32_t TicksPerMS = 0;
+static uint16_t TicksPerMS = 0;
 static uint32_t CPU_Timer = 0;
 static uint16_t CPU_peak = 0;
 static uint16_t CPU_peak_last = 0;
@@ -22,20 +22,22 @@ void SysTick_Set(uint32_t value){
 }
 
 void SysTick_Init(uint32_t sysClock) {
-    TicksPerMS = ((sysClock / 2) / 1000);
+    uint32_t TickPerMS_temp = 0;
+    TickPerMS_temp = ((sysClock / 2) / 1000);
     uint8_t preScaler = 0;
 
-    if (TicksPerMS > 0x0000FFFF) {
+    if (TickPerMS_temp > 0x0000FFFF) {
         preScaler = 1;
-        TicksPerMS = (TicksPerMS / 8);
+        TickPerMS_temp = (TickPerMS_temp / 8);
     }
+    TicksPerMS = (uint16_t) TickPerMS_temp;
 
     /* Initialize timer */
     T5CONbits.TON = 0;
     T5CON = 0; /* Clear timer config register */
     T5CONbits.TCKPS = preScaler; /* prescaler set to 0 */
     TMR5 = 0x00; /*Clear Timers*/
-    PR5 = (uint16_t) TicksPerMS; /*set timer period */
+    PR5 = TicksPerMS; /*set timer period */
 
     /* Enable level 1-7 interrupts */
     /* No restoring of previous CPU IPL state performed here */
@@ -109,6 +111,14 @@ float SysTick_GetCPUPercentage(void){
 
 float SysTick_GetCPUPeak(void){
     return (float)(CPU_peak_last); //Remove the decimal place before converting to float
+}
+
+uint16_t SysTick_GetTimerValue(void){
+    return TMR5;
+}
+
+uint16_t SysTick_GetTicksPerMS(void){
+    return TicksPerMS;
 }
 
 void __attribute__((__interrupt__, __auto_psv__, __shadow__)) _T5Interrupt(void) {
