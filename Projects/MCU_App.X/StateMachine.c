@@ -83,7 +83,7 @@ uint8_t sm_keepAwakeFlag = 0;
 
 NEW_TIMER(idleTimer, 60000);
 NEW_TIMER(SwEnTimer, 1);
-NEW_TIMER(diagTimer, 60000);
+NEW_TIMER(diagTimer, 10*60000); //10 minute diag timer.
 NEW_TIMER(tachTimer, 1500);
 
 static uint8_t tach = 0;
@@ -101,6 +101,10 @@ void StateMachine_Init(void) {
 }
 
 void StateMachine_Run(void) {
+
+    if(!CAN_motorcontroller_SYNC_checkDataIsStale() && CAN_motorcontroller_SYNC_checkDataIsUnread()){
+        CAN_mcu_motorControllerRequest_send();
+    }
 
     CAN_mcu_status_vehicleState_set(sm_curState);
                 
@@ -189,10 +193,10 @@ void idle(STATE_MACHINE_entry_types_E entry_type) {
                     break;
             }
 
-            // // If the kill switch is pressed, go to goingToSleep and prepare for sleep.
-            // if (IgnitionControl_GetKillSwitchStatus() == BUTTON_PRESSED) {
-            //     sm_nextState = goingToSleep_state;
-            // }
+            // If the kill switch is pressed, go to goingToSleep and prepare for sleep.
+            if (IgnitionControl_GetKillSwitchStatus() == BUTTON_PRESSED) {
+                sm_nextState = goingToSleep_state;
+            }
 
             // If the start button is held, go to running state.
             // Clear the hold flag to prevent re-entry.
@@ -235,14 +239,16 @@ void silent_wake(STATE_MACHINE_entry_types_E entry_type) {
 void running(STATE_MACHINE_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
-            IO_SET_HEADLIGHT_HI_EN(HIGH);
+            IO_SET_HEADLIGHT_LO_EN(HIGH);
             CAN_mcu_command_motor_controller_enable_set(1);
             break;
         case EXIT:
-            IO_SET_HEADLIGHT_HI_EN(LOW);
+            IO_SET_HEADLIGHT_LO_EN(LOW);
             CAN_mcu_command_motor_controller_enable_set(0);
+            CAN_mcu_motorControllerRequest_Throttle_Value_set(0x00);
             break;
         case RUN:
+            CAN_mcu_motorControllerRequest_Throttle_Value_set(0xAA);
             // If the start button is held, go to idle state.
             // Clear the hold flag to prevent re-entry.
             if (IgnitionControl_GetStartButtonIsHeld(true)) {

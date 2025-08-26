@@ -40,7 +40,7 @@ class CANTableView:
             self.tree.heading(col, text=col, command=lambda c=col: self._sort_by_column(c))
             self.tree.column(col, width=w)
         
-        # Create bus utilization display frame
+        # Create bus utilization and status display frame
         self.bus_util_frame = ttk.Frame(parent_widget)
         self.bus_util_frame.pack(fill=tk.X, padx=5, pady=2)
         
@@ -51,6 +51,11 @@ class CANTableView:
         self.bus_details_label = ttk.Label(self.bus_util_frame, text="(0 active messages)", 
                                           font=("TkDefaultFont", 8))
         self.bus_details_label.pack(side=tk.LEFT, padx=(10, 0))
+        
+        # Add bus status display
+        self.bus_status_label = ttk.Label(self.bus_util_frame, text="Bus Status: Unknown", 
+                                         font=("TkDefaultFont", 9, "bold"))
+        self.bus_status_label.pack(side=tk.RIGHT, padx=(10, 0))
         
         # Bind events (only single-click on tree column)
         self.tree.bind("<Button-1>", self._on_single_click)
@@ -204,11 +209,32 @@ class CANTableView:
         self.bus_util_label.config(text=utilization_text)
         self.bus_details_label.config(text=details_text)
     
+    def update_bus_status_display(self, bus_state):
+        """Update the bus status display"""
+        import can
+        
+        # Map bus state to user-friendly text and colors
+        if bus_state == can.BusState.ACTIVE:
+            status_text = "Bus Status: Active"
+            status_color = "green"
+        elif bus_state == can.BusState.PASSIVE:
+            status_text = "Bus Status: Error Passive"  
+            status_color = "orange"
+        elif bus_state == can.BusState.ERROR:
+            status_text = "Bus Status: Bus Off"
+            status_color = "red"
+        else:
+            status_text = "Bus Status: Unknown"
+            status_color = "gray"
+        
+        self.bus_status_label.config(text=status_text, foreground=status_color)
+    
     def clear_all(self):
         """Clear all items from the tree"""
         self.tree.delete(*self.tree.get_children())
         self.bus_util_label.config(text="Bus Utilization: 0.0%")
         self.bus_details_label.config(text="(0 active messages)")
+        self.bus_status_label.config(text="Bus Status: Unknown", foreground="gray")
     
     def _sort_by_column(self, column):
         """Sort table by the specified column"""

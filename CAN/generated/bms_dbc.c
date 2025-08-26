@@ -3020,6 +3020,118 @@ void CAN_bms_cell_temperatures_send(void){
 	}
 }
 
+static CAN_payload_S CAN_bms_SDO_request_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_bms_SDO_request_status = 0;
+#define CAN_bms_SDO_request_ID 0x601
+
+static CAN_message_S CAN_bms_SDO_request={
+	.canID = CAN_bms_SDO_request_ID,
+	.canXID = 0,
+	.dlc = 8,
+	.payload = &CAN_bms_SDO_request_payload,
+	.canMessageStatus = &CAN_bms_SDO_request_status
+};
+
+#define CAN_BMS_SDO_REQUEST_SIZE_RANGE 1
+#define CAN_BMS_SDO_REQUEST_SIZE_OFFSET 0
+#define CAN_BMS_SDO_REQUEST_EXPIDITED_XFER_RANGE 1
+#define CAN_BMS_SDO_REQUEST_EXPIDITED_XFER_OFFSET 1
+#define CAN_BMS_SDO_REQUEST_N_BYTES_RANGE 2
+#define CAN_BMS_SDO_REQUEST_N_BYTES_OFFSET 2
+#define CAN_BMS_SDO_REQUEST_RESERVED_RANGE 1
+#define CAN_BMS_SDO_REQUEST_RESERVED_OFFSET 4
+#define CAN_BMS_SDO_REQUEST_CCS_RANGE 3
+#define CAN_BMS_SDO_REQUEST_CCS_OFFSET 5
+#define CAN_BMS_SDO_REQUEST_INDEX_RANGE 16
+#define CAN_BMS_SDO_REQUEST_INDEX_OFFSET 8
+#define CAN_BMS_SDO_REQUEST_SUBINDEX_RANGE 8
+#define CAN_BMS_SDO_REQUEST_SUBINDEX_OFFSET 24
+#define CAN_BMS_SDO_REQUEST_BYTE_4_RANGE 8
+#define CAN_BMS_SDO_REQUEST_BYTE_4_OFFSET 32
+#define CAN_BMS_SDO_REQUEST_BYTE_5_RANGE 8
+#define CAN_BMS_SDO_REQUEST_BYTE_5_OFFSET 40
+#define CAN_BMS_SDO_REQUEST_BYTE_6_RANGE 8
+#define CAN_BMS_SDO_REQUEST_BYTE_6_OFFSET 48
+#define CAN_BMS_SDO_REQUEST_BYTE_7_RANGE 8
+#define CAN_BMS_SDO_REQUEST_BYTE_7_OFFSET 56
+
+void CAN_bms_SDO_request_size_set(uint16_t size){
+	uint16_t data_scaled = size * 1.0;
+	// Set 1-bit signal at bit offset 0
+	CAN_bms_SDO_request.payload->word0 &= ~0x0001;
+	CAN_bms_SDO_request.payload->word0 |= data_scaled & 0x0001;
+}
+void CAN_bms_SDO_request_expidited_xfer_set(uint16_t expidited_xfer){
+	uint16_t data_scaled = expidited_xfer * 1.0;
+	// Set 1-bit signal at bit offset 1
+	CAN_bms_SDO_request.payload->word0 &= ~0x0002;
+	CAN_bms_SDO_request.payload->word0 |= (data_scaled << 1) & 0x0002;
+}
+void CAN_bms_SDO_request_n_bytes_set(uint16_t n_bytes){
+	uint16_t data_scaled = n_bytes * 1.0;
+	// Set 2-bit signal at bit offset 2
+	CAN_bms_SDO_request.payload->word0 &= ~0x000C;
+	CAN_bms_SDO_request.payload->word0 |= (data_scaled << 2) & 0x000C;
+}
+void CAN_bms_SDO_request_reserved_set(uint16_t reserved){
+	uint16_t data_scaled = reserved * 1.0;
+	// Set 1-bit signal at bit offset 4
+	CAN_bms_SDO_request.payload->word0 &= ~0x0010;
+	CAN_bms_SDO_request.payload->word0 |= (data_scaled << 4) & 0x0010;
+}
+void CAN_bms_SDO_request_ccs_set(uint16_t ccs){
+	uint16_t data_scaled = ccs * 1.0;
+	// Set 3-bit signal at bit offset 5
+	CAN_bms_SDO_request.payload->word0 &= ~0x00E0;
+	CAN_bms_SDO_request.payload->word0 |= (data_scaled << 5) & 0x00E0;
+}
+void CAN_bms_SDO_request_index_set(uint16_t index){
+	uint16_t data_scaled = index * 1.0;
+	// Set 16-bit signal at bit offset 8
+	CAN_bms_SDO_request.payload->word0 &= ~0xFF00;
+	CAN_bms_SDO_request.payload->word0 |= (data_scaled << 8) & 0xFF00;
+	CAN_bms_SDO_request.payload->word1 &= ~0x00FF;
+	CAN_bms_SDO_request.payload->word1 |= (data_scaled >> 8) & 0x00FF;
+}
+void CAN_bms_SDO_request_subindex_set(uint16_t subindex){
+	uint16_t data_scaled = subindex * 1.0;
+	// Set 8-bit signal at bit offset 24
+	CAN_bms_SDO_request.payload->word1 &= ~0xFF00;
+	CAN_bms_SDO_request.payload->word1 |= (data_scaled << 8) & 0xFF00;
+}
+void CAN_bms_SDO_request_byte_4_set(uint16_t byte_4){
+	uint16_t data_scaled = byte_4 * 1.0;
+	// Set 8-bit signal at bit offset 32
+	CAN_bms_SDO_request.payload->word2 &= ~0x00FF;
+	CAN_bms_SDO_request.payload->word2 |= data_scaled & 0x00FF;
+}
+void CAN_bms_SDO_request_byte_5_set(uint16_t byte_5){
+	uint16_t data_scaled = byte_5 * 1.0;
+	// Set 8-bit signal at bit offset 40
+	CAN_bms_SDO_request.payload->word2 &= ~0xFF00;
+	CAN_bms_SDO_request.payload->word2 |= (data_scaled << 8) & 0xFF00;
+}
+void CAN_bms_SDO_request_byte_6_set(uint16_t byte_6){
+	uint16_t data_scaled = byte_6 * 1.0;
+	// Set 8-bit signal at bit offset 48
+	CAN_bms_SDO_request.payload->word3 &= ~0x00FF;
+	CAN_bms_SDO_request.payload->word3 |= data_scaled & 0x00FF;
+}
+void CAN_bms_SDO_request_byte_7_set(uint16_t byte_7){
+	uint16_t data_scaled = byte_7 * 1.0;
+	// Set 8-bit signal at bit offset 56
+	CAN_bms_SDO_request.payload->word3 &= ~0xFF00;
+	CAN_bms_SDO_request.payload->word3 |= (data_scaled << 8) & 0xFF00;
+}
+void CAN_bms_SDO_request_dlc_set(uint8_t dlc){
+	CAN_bms_SDO_request.dlc = dlc;
+}
+void CAN_bms_SDO_request_send(void){
+	// Update message status for self-consumption
+	*CAN_bms_SDO_request.canMessageStatus = 1;
+	CAN_write(&CAN_bms_SDO_request);
+}
+
 /**********************************************************
  * motorcontroller NODE MESSAGES
  */
@@ -3064,7 +3176,7 @@ uint8_t CAN_motorcontroller_SYNC_checkDataIsUnread(void){
 	return CAN_checkDataIsUnread(&CAN_motorcontroller_SYNC);
 }
 uint8_t CAN_motorcontroller_SYNC_checkDataIsStale(void){
-	return CAN_checkDataIsStale(&CAN_motorcontroller_SYNC, 60);
+	return CAN_checkDataIsStale(&CAN_motorcontroller_SYNC, 2);
 }
 
 #define CAN_motorcontroller_SDO_response_ID 0x581
@@ -3169,6 +3281,108 @@ uint16_t CAN_motorcontroller_SDO_response_byte_7_get(void){
 	uint16_t data = 0;
 	data |= (uint16_t)((CAN_motorcontroller_SDO_response.payload->word3 & 0xFF00) >> 8) << 0;
 	return (data * 1.0) + 0;
+}
+
+#define CAN_motorcontroller_motorStatus_PDO1_ID 0x391
+
+static CAN_message_S CAN_motorcontroller_motorStatus_PDO1={
+	.canID = CAN_motorcontroller_motorStatus_PDO1_ID,
+	.canXID = 0,
+	.dlc = 8,
+	.payload = 0,
+	.canMessageStatus = 0
+};
+
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_TARGET_ID_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_TARGET_ID_OFFSET 0
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_TARGET_IQ_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_TARGET_IQ_OFFSET 16
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_ID_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_ID_OFFSET 32
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_BATTERY_VOLTAGE_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_BATTERY_VOLTAGE_OFFSET 48
+
+uint8_t CAN_motorcontroller_motorStatus_PDO1_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_motorcontroller_motorStatus_PDO1);
+}
+uint8_t CAN_motorcontroller_motorStatus_PDO1_checkDataIsStale(void){
+	return CAN_checkDataIsStale(&CAN_motorcontroller_motorStatus_PDO1, 120);
+}
+uint16_t CAN_motorcontroller_motorStatus_PDO1_Target_Id_get(void){
+	// Extract 16-bit signal at bit offset 0
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_motorcontroller_motorStatus_PDO1.payload->word0 & 0xFFFF) >> 0) << 0;
+	return (data * 1.0) + 0;
+}
+float CAN_motorcontroller_motorStatus_PDO1_Target_Iq_get(void){
+	// Extract 16-bit signal at bit offset 16
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_motorcontroller_motorStatus_PDO1.payload->word1 & 0xFFFF) >> 0) << 0;
+	return (data * 0.01) + 0;
+}
+uint16_t CAN_motorcontroller_motorStatus_PDO1_Id_get(void){
+	// Extract 16-bit signal at bit offset 32
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_motorcontroller_motorStatus_PDO1.payload->word2 & 0xFFFF) >> 0) << 0;
+	return (data * 1.0) + 0;
+}
+float CAN_motorcontroller_motorStatus_PDO1_Battery_voltage_get(void){
+	// Extract 16-bit signal at bit offset 48
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_motorcontroller_motorStatus_PDO1.payload->word3 & 0xFFFF) >> 0) << 0;
+	return (data * 0.0625) + 0;
+}
+
+#define CAN_motorcontroller_motor_status_PDO4_ID 0x271
+
+static CAN_message_S CAN_motorcontroller_motor_status_PDO4={
+	.canID = CAN_motorcontroller_motor_status_PDO4_ID,
+	.canXID = 0,
+	.dlc = 8,
+	.payload = 0,
+	.canMessageStatus = 0
+};
+
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_CAPACITOR_VOLTAGE_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_CAPACITOR_VOLTAGE_OFFSET 0
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_HEATSINK_TEMPERATURE_RANGE 8
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_HEATSINK_TEMPERATURE_OFFSET 16
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_BATTERY_CURRENT_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_BATTERY_CURRENT_OFFSET 24
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MAX_TORQUE_LEFT_MOTOR_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MAX_TORQUE_LEFT_MOTOR_OFFSET 40
+
+uint8_t CAN_motorcontroller_motor_status_PDO4_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_motorcontroller_motor_status_PDO4);
+}
+uint8_t CAN_motorcontroller_motor_status_PDO4_checkDataIsStale(void){
+	return CAN_checkDataIsStale(&CAN_motorcontroller_motor_status_PDO4, 40);
+}
+float CAN_motorcontroller_motor_status_PDO4_Capacitor_Voltage_get(void){
+	// Extract 16-bit signal at bit offset 0
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_motorcontroller_motor_status_PDO4.payload->word0 & 0xFFFF) >> 0) << 0;
+	return (data * 0.0625) + 0;
+}
+float CAN_motorcontroller_motor_status_PDO4_Heatsink_Temperature_get(void){
+	// Extract 8-bit signal at bit offset 16
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_motorcontroller_motor_status_PDO4.payload->word1 & 0x00FF) >> 0) << 0;
+	return (data * 1.0) + 0;
+}
+float CAN_motorcontroller_motor_status_PDO4_Battery_Current_get(void){
+	// Extract 16-bit signal at bit offset 24
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_motorcontroller_motor_status_PDO4.payload->word1 & 0xFF00) >> 8) << 0;
+	data |= (uint16_t)((CAN_motorcontroller_motor_status_PDO4.payload->word2 & 0x00FF) >> 0) << 8;
+	return (data * 0.0625) + 0;
+}
+uint16_t CAN_motorcontroller_motor_status_PDO4_Max_Torque_Left_Motor_get(void){
+	// Extract 16-bit signal at bit offset 40
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_motorcontroller_motor_status_PDO4.payload->word2 & 0xFF00) >> 8) << 0;
+	data |= (uint16_t)((CAN_motorcontroller_motor_status_PDO4.payload->word3 & 0x00FF) >> 0) << 8;
+	return (data * 0.001) + 0;
 }
 
 /**********************************************************
@@ -3459,6 +3673,8 @@ void CAN_DBC_init(void) {
 	CAN_configureMailbox(&CAN_motorcontroller_heartbeat);
 	CAN_configureMailbox(&CAN_motorcontroller_SYNC);
 	CAN_configureMailbox(&CAN_motorcontroller_SDO_response);
+	CAN_configureMailbox(&CAN_motorcontroller_motorStatus_PDO1);
+	CAN_configureMailbox(&CAN_motorcontroller_motor_status_PDO4);
 	CAN_configureMailbox(&CAN_charger_status);
 	CAN_configureMailbox(&CAN_boot_host_bms);
 }

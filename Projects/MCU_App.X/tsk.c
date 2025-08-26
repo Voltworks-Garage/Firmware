@@ -88,6 +88,7 @@ void Tsk_init(void) {
     /*Init each module once*/
     PinSetup_Init(); //Pin setup should be first
     CAN_DBC_init(); //Init the CAN System Service
+    CAN_timeStampFunc(SysTick_Get); // enable CAN message time-stamping
     StateMachine_Init(); //Init state machine
     CommandService_Init();
     WATCHDOG_TimerClear();

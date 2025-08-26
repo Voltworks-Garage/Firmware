@@ -669,7 +669,7 @@ void CAN_timeStampFunc(CAN_GetTimestamp_t timestampFunc) {
 }
 
 uint8_t CAN_checkDataIsStale(CAN_message_S * data, uint32_t timeout_ms) {
-    if (can_getTimestamp == NULL) return 0;
+    if (can_getTimestamp == NULL) return 1;
     uint32_t current_time = can_getTimestamp();
     return (current_time - data->last_received_timestamp) > timeout_ms;
 }

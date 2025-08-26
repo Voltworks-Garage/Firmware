@@ -303,6 +303,15 @@ class EDSParser:
         if index in self.main_objects:
             return self.main_objects[index].name
         return None
+    
+    def get_mappable_objects(self) -> List[ObjectDictionaryEntry]:
+        """Get objects that can be mapped to PDOs"""
+        mappable = []
+        for entry in self.object_dictionary.values():
+            # Only include objects that can be PDO mapped
+            if entry.pdo_mapping:
+                mappable.append(entry)
+        return sorted(mappable, key=lambda x: (x.index, x.sub_index))
 
 
 class DataTypeConverter:
@@ -473,6 +482,17 @@ class CANopenSDOTab(BaseTab):
         self.selected_object = None
         self.sdo_timeout_seconds = 1.0  # SDO timeout in seconds
         self.timeout_timer = None
+        
+        # PDO save state machine
+        self.pdo_save_state = {
+            'active': False,
+            'pdo_type': None,
+            'pdo_num': None,
+            'step': None,
+            'mappings': [],
+            'config': {},
+            'current_mapping_index': 0
+        }
         
         # CANopen library integration
         self.canopen_network = None
@@ -994,18 +1014,38 @@ class CANopenSDOTab(BaseTab):
     
     def _save_rpdo_config(self):
         """Save RPDO configuration to device"""
-        # TODO: Implement RPDO configuration saving via SDO
-        pass
+        try:
+            # Get selected RPDO number (1-4)
+            pdo_num = int(self.rpdo_number_var.get())
+            
+            # Check if we're connected
+            if not self.app.running or not self.app.bus:
+                self._log_message("❌ ERROR: CAN not connected")
+                return
+            
+            # Calculate object indices for this RPDO
+            comm_index = 0x1400 + (pdo_num - 1)  # 0x1400-0x1403 for RPDO 1-4
+            map_index = 0x1600 + (pdo_num - 1)   # 0x1600-0x1603 for RPDO 1-4 mapping
+            
+            self._log_message(f"💾 Saving RPDO {pdo_num} configuration...")
+            
+            # Save PDO configuration
+            self._save_pdo_config(pdo_num, 'RPDO', comm_index, map_index,
+                                self.rpdo_cob_var.get(),
+                                self._get_transmission_type_value(self.rpdo_trans_var.get()),
+                                None,  # No event timer for RPDO
+                                self.rpdo_mapping_tree)
+            
+        except Exception as e:
+            self._log_message(f"❌ ERROR: Failed to save RPDO configuration: {e}")
     
     def _add_rpdo_mapping(self):
         """Add object mapping to RPDO"""
-        # TODO: Implement mapping addition
-        pass
+        self._show_add_mapping_dialog('RPDO', self.rpdo_mapping_tree)
     
     def _remove_rpdo_mapping(self):
         """Remove object mapping from RPDO"""
-        # TODO: Implement mapping removal
-        pass
+        self._remove_mapping_from_tree(self.rpdo_mapping_tree)
     
     def _load_tpdo_config(self):
         """Load TPDO configuration from device"""
@@ -1089,6 +1129,7 @@ class CANopenSDOTab(BaseTab):
             # Clear loading state on error
             if hasattr(self, 'loading_pdo'):
                 delattr(self, 'loading_pdo')
+
     
     def _continue_tpdo_loading(self, index, sub_index, value):
         """Continue TPDO loading sequence based on response"""
@@ -1339,18 +1380,432 @@ class CANopenSDOTab(BaseTab):
     
     def _save_tpdo_config(self):
         """Save TPDO configuration to device"""
-        # TODO: Implement TPDO configuration saving via SDO
-        pass
+        try:
+            # Get selected TPDO number (1-4)
+            pdo_num = int(self.tpdo_number_var.get())
+            
+            # Check if we're connected
+            if not self.app.running or not self.app.bus:
+                self._log_message("❌ ERROR: CAN not connected")
+                return
+            
+            # Calculate object indices for this TPDO
+            comm_index = 0x1800 + (pdo_num - 1)  # 0x1800-0x1803 for TPDO 1-4
+            map_index = 0x1A00 + (pdo_num - 1)   # 0x1A00-0x1A03 for TPDO 1-4 mapping
+            
+            self._log_message(f"💾 Saving TPDO {pdo_num} configuration...")
+            
+            # Save PDO configuration
+            self._save_pdo_config(pdo_num, 'TPDO', comm_index, map_index,
+                                self.tpdo_cob_var.get(),
+                                self._get_transmission_type_value(self.tpdo_trans_var.get()),
+                                self.tpdo_timer_var.get(),
+                                self.tpdo_mapping_tree)
+            
+        except Exception as e:
+            self._log_message(f"❌ ERROR: Failed to save TPDO configuration: {e}")
     
     def _add_tpdo_mapping(self):
         """Add object mapping to TPDO"""
-        # TODO: Implement mapping addition
-        pass
+        self._show_add_mapping_dialog('TPDO', self.tpdo_mapping_tree)
     
     def _remove_tpdo_mapping(self):
         """Remove object mapping from TPDO"""
-        # TODO: Implement mapping removal
-        pass
+        self._remove_mapping_from_tree(self.tpdo_mapping_tree)
+
+    def _show_add_mapping_dialog(self, pdo_type, mapping_tree):
+        """Show dialog to add a new mapping entry"""
+        dialog = tk.Toplevel(self.app.root)
+        dialog.title(f"Add {pdo_type} Mapping")
+        dialog.geometry("500x300")
+        dialog.transient(self.app.root)
+        dialog.grab_set()
+        
+        # Center the dialog
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() // 2) - (dialog.winfo_width() // 2)
+        y = (dialog.winfo_screenheight() // 2) - (dialog.winfo_height() // 2)
+        dialog.geometry(f"+{x}+{y}")
+        
+        # Object selection frame
+        obj_frame = ttk.LabelFrame(dialog, text="Select Object")
+        obj_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        
+        # Create listbox for objects
+        list_frame = ttk.Frame(obj_frame)
+        list_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        scrollbar = ttk.Scrollbar(list_frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        listbox = tk.Listbox(list_frame, yscrollcommand=scrollbar.set)
+        listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.config(command=listbox.yview)
+        
+        # Populate with PDO-mappable objects
+        mappable_objects = []
+        if hasattr(self, 'eds_parser') and self.eds_parser:
+            mappable_entries = self.eds_parser.get_mappable_objects()
+            total_objects = len(self.eds_parser.get_all_objects())
+            
+            # Debug logging
+            self._log_message(f"🔍 Found {len(mappable_entries)} mappable objects out of {total_objects} total objects")
+            
+            for entry in mappable_entries:
+                # Format: Index:SubIndex - Name (Type, Length bits)
+                size_bits = DataTypeConverter.get_data_type_size(entry.data_type) * 8
+                obj_text = f"0x{entry.index:04X}:{entry.sub_index:02X} - {entry.name} ({entry.data_type}, {size_bits} bits)"
+                listbox.insert(tk.END, obj_text)
+                mappable_objects.append(entry)
+            
+            # If no PDO mappable objects, show all objects as fallback
+            if not mappable_entries:
+                self._log_message("⚠️ No PDO-mappable objects found, showing all objects")
+                for entry in self.eds_parser.get_all_objects():
+                    # Skip system objects (index < 0x1000)
+                    if entry.index >= 0x1000:
+                        size_bits = DataTypeConverter.get_data_type_size(entry.data_type) * 8
+                        obj_text = f"0x{entry.index:04X}:{entry.sub_index:02X} - {entry.name} ({entry.data_type}, {size_bits} bits) [Not PDO marked]"
+                        listbox.insert(tk.END, obj_text)
+                        mappable_objects.append(entry)
+        
+        if not mappable_objects:
+            listbox.insert(tk.END, "No objects available - load EDS file first")
+        
+        # Input frame for manual entry
+        input_frame = ttk.LabelFrame(dialog, text="Or Enter Manually")
+        input_frame.pack(fill=tk.X, padx=10, pady=5)
+        
+        # Object index
+        index_frame = ttk.Frame(input_frame)
+        index_frame.pack(fill=tk.X, padx=5, pady=2)
+        ttk.Label(index_frame, text="Object Index (hex):").pack(side=tk.LEFT)
+        index_var = tk.StringVar()
+        ttk.Entry(index_frame, textvariable=index_var, width=10).pack(side=tk.LEFT, padx=5)
+        
+        # Sub-index
+        sub_frame = ttk.Frame(input_frame)
+        sub_frame.pack(fill=tk.X, padx=5, pady=2)
+        ttk.Label(sub_frame, text="Sub-Index (hex):").pack(side=tk.LEFT)
+        sub_var = tk.StringVar()
+        ttk.Entry(sub_frame, textvariable=sub_var, width=10).pack(side=tk.LEFT, padx=5)
+        
+        # Length in bits
+        len_frame = ttk.Frame(input_frame)
+        len_frame.pack(fill=tk.X, padx=5, pady=2)
+        ttk.Label(len_frame, text="Length (bits):").pack(side=tk.LEFT)
+        length_var = tk.StringVar(value="8")
+        ttk.Entry(len_frame, textvariable=length_var, width=10).pack(side=tk.LEFT, padx=5)
+        
+        # Button frame
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(fill=tk.X, padx=10, pady=5)
+        
+        def on_add():
+            try:
+                # Check if using list selection
+                selection = listbox.curselection()
+                if selection and mappable_objects:
+                    entry = mappable_objects[selection[0]]
+                    index = entry.index
+                    sub_index = entry.sub_index
+                    length = DataTypeConverter.get_data_type_size(entry.data_type) * 8
+                    description = entry.name
+                elif index_var.get() and sub_var.get():
+                    # Use manual entry
+                    index = int(index_var.get(), 16)
+                    sub_index = int(sub_var.get(), 16)
+                    length = int(length_var.get()) if length_var.get() else 8
+                    description = self._get_object_name(index, sub_index)
+                else:
+                    messagebox.showwarning("Invalid Input", "Please select an object or enter index/sub-index")
+                    return
+                
+                # Find next available slot
+                slot = 1
+                for item in mapping_tree.get_children():
+                    existing_slot = int(mapping_tree.item(item)['values'][0])
+                    if existing_slot >= slot:
+                        slot = existing_slot + 1
+                
+                # Add to mapping tree
+                mapping_tree.insert('', 'end', values=(
+                    slot,
+                    f"0x{index:04X}",
+                    f"0x{sub_index:02X}",
+                    length,
+                    description
+                ))
+                
+                self._log_message(f"✅ Added {pdo_type} mapping: slot {slot} → 0x{index:04X}:{sub_index:02X} ({length} bits)")
+                dialog.destroy()
+                
+            except ValueError as e:
+                messagebox.showerror("Error", f"Invalid hex value: {e}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to add mapping: {e}")
+        
+        ttk.Button(btn_frame, text="Add Mapping", command=on_add).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def _remove_mapping_from_tree(self, mapping_tree):
+        """Remove selected mapping from tree"""
+        selection = mapping_tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a mapping to remove")
+            return
+        
+        for item in selection:
+            values = mapping_tree.item(item)['values']
+            slot = values[0] if values else "?"
+            self._log_message(f"🗑️ Removed mapping from slot {slot}")
+            mapping_tree.delete(item)
+
+    def _save_pdo_config(self, pdo_num, pdo_type, comm_index, map_index, cob_id, trans_type, event_timer, mapping_tree):
+        """Save PDO configuration to device via SDO using state machine"""
+        # Use the new state machine for proper sequencing
+        self._start_pdo_save_sequence(pdo_num, pdo_type, comm_index, map_index, cob_id, trans_type, event_timer, mapping_tree)
+
+    def _start_pdo_save_sequence(self, pdo_num, pdo_type, comm_index, map_index, cob_id, trans_type, event_timer, mapping_tree):
+        """Start the PDO save state machine sequence"""
+        try:
+            # Parse COB-ID
+            if isinstance(cob_id, str):
+                if cob_id.startswith('0x'):
+                    cob_id_val = int(cob_id, 16)
+                else:
+                    cob_id_val = int(cob_id)
+            else:
+                cob_id_val = int(cob_id)
+            
+            # Parse event timer for TPDO
+            timer_val = 0
+            if pdo_type == 'TPDO' and event_timer:
+                timer_val = int(event_timer) if isinstance(event_timer, str) else event_timer
+            
+            # Get mapping entries from tree
+            mappings = []
+            for item in mapping_tree.get_children():
+                values = mapping_tree.item(item)['values']
+                if len(values) >= 4:
+                    try:
+                        slot = int(values[0])
+                        index = int(values[1], 16)
+                        sub_index = int(values[2], 16)
+                        length = int(values[3])
+                        
+                        # Create 32-bit mapping value: Index(16) | SubIndex(8) | Length(8)
+                        mapping_val = (index << 16) | (sub_index << 8) | length
+                        mappings.append((slot, mapping_val))
+                    except (ValueError, IndexError):
+                        continue
+            
+            mappings.sort(key=lambda x: x[0])  # Sort by slot
+            
+            # Initialize state machine
+            self.pdo_save_state = {
+                'active': True,
+                'pdo_type': pdo_type,
+                'pdo_num': pdo_num,
+                'step': 'DISABLE_PDO',
+                'mappings': mappings,
+                'config': {
+                    'comm_index': comm_index,
+                    'map_index': map_index,
+                    'cob_id_val': cob_id_val,
+                    'trans_type': trans_type,
+                    'timer_val': timer_val,
+                    'node_id': int(self.node_id_var.get())
+                },
+                'current_mapping_index': 0
+            }
+            
+            self._log_message(f"🔄 Starting {pdo_type} {pdo_num} save sequence...")
+            self._execute_next_pdo_save_step()
+            
+        except Exception as e:
+            self._log_message(f"❌ ERROR: Failed to start PDO save sequence: {e}")
+            self._abort_pdo_save()
+
+    def _execute_next_pdo_save_step(self):
+        """Execute the next step in the PDO save sequence"""
+        if not self.pdo_save_state['active']:
+            return
+            
+        state = self.pdo_save_state
+        step = state['step']
+        config = state['config']
+        
+        # Store timestamp for timeout detection
+        state['last_request_time'] = time.time()
+        
+        try:
+            if step == 'DISABLE_PDO':
+                # Disable PDO before configuration (set COB-ID bit 31)
+                disabled_cob_id = config['cob_id_val'] | 0x80000000
+                self._log_message(f"🔒 Step 1/8: Disabling {state['pdo_type']} {state['pdo_num']} (COB-ID = 0x{disabled_cob_id:08X})")
+                self._log_message(f"📍 Writing to object 0x{config['comm_index']:04X}:01 (PDO communication parameter)")
+                encoded_data = DataTypeConverter.encode_value(disabled_cob_id, CANopenDataTypes.UNSIGNED32.value)
+                self._log_message(f"📊 Encoded data: {encoded_data.hex().upper()}")
+                self._send_sdo_download(config['node_id'], config['comm_index'], 0x01, encoded_data)
+                state['step'] = 'SET_TRANS_TYPE'
+                
+            elif step == 'SET_TRANS_TYPE':
+                # Set transmission type
+                self._log_message(f"⚙️ Step 2/8: Setting transmission type: {config['trans_type']}")
+                encoded_data = DataTypeConverter.encode_value(config['trans_type'], CANopenDataTypes.UNSIGNED8.value)
+                self._send_sdo_download(config['node_id'], config['comm_index'], 0x02, encoded_data)
+                if state['pdo_type'] == 'TPDO':
+                    state['step'] = 'SET_EVENT_TIMER'
+                else:
+                    state['step'] = 'CLEAR_MAPPINGS'
+                
+            elif step == 'SET_EVENT_TIMER':
+                # Set event timer for TPDO
+                self._log_message(f"⏱️ Step 3/8: Setting event timer: {config['timer_val']} ms")
+                encoded_data = DataTypeConverter.encode_value(config['timer_val'], CANopenDataTypes.UNSIGNED16.value)
+                self._send_sdo_download(config['node_id'], config['comm_index'], 0x05, encoded_data)
+                state['step'] = 'CLEAR_MAPPINGS'
+                
+            elif step == 'CLEAR_MAPPINGS':
+                # Clear existing mappings (set count to 0)
+                self._log_message(f"🧹 Step 4/8: Clearing existing mappings")
+                encoded_data = DataTypeConverter.encode_value(0, CANopenDataTypes.UNSIGNED8.value)
+                self._send_sdo_download(config['node_id'], config['map_index'], 0x00, encoded_data)
+                state['step'] = 'WRITE_MAPPINGS'
+                state['current_mapping_index'] = 0
+                
+            elif step == 'WRITE_MAPPINGS':
+                # Write mapping entries
+                mappings = state['mappings']
+                mapping_idx = state['current_mapping_index']
+                
+                if mapping_idx < len(mappings):
+                    slot, mapping_val = mappings[mapping_idx]
+                    self._log_message(f"📝 Step 5/8: Writing mapping slot {slot}: 0x{mapping_val:08X} ({mapping_idx + 1}/{len(mappings)})")
+                    encoded_data = DataTypeConverter.encode_value(mapping_val, CANopenDataTypes.UNSIGNED32.value)
+                    self._send_sdo_download(config['node_id'], config['map_index'], slot, encoded_data)
+                    state['current_mapping_index'] += 1
+                    
+                    # If this was the last mapping, change state so next response moves to SET_MAPPING_COUNT
+                    if state['current_mapping_index'] >= len(mappings):
+                        state['step'] = 'SET_MAPPING_COUNT'
+                    # Otherwise stay in WRITE_MAPPINGS step
+                    
+            elif step == 'SET_MAPPING_COUNT':
+                # This step should only execute after successful completion of all mappings
+                # The state was changed during the last mapping write, so we need to actually execute the step
+                mapping_count = len(state['mappings'])
+                self._log_message(f"🔢 Step 6/8: Setting mapping count: {mapping_count}")
+                encoded_data = DataTypeConverter.encode_value(mapping_count, CANopenDataTypes.UNSIGNED8.value)
+                self._send_sdo_download(config['node_id'], config['map_index'], 0x00, encoded_data)
+                state['step'] = 'ENABLE_PDO'
+                
+            elif step == 'ENABLE_PDO':
+                # Re-enable PDO (clear bit 31)
+                self._log_message(f"🔓 Step 7/8: Re-enabling {state['pdo_type']} {state['pdo_num']} (COB-ID = 0x{config['cob_id_val']:08X})")
+                encoded_data = DataTypeConverter.encode_value(config['cob_id_val'], CANopenDataTypes.UNSIGNED32.value)
+                self._send_sdo_download(config['node_id'], config['comm_index'], 0x01, encoded_data)
+                state['step'] = 'COMPLETE'
+                
+            elif step == 'COMPLETE':
+                # Success!
+                self._log_message(f"✅ Step 8/8: {state['pdo_type']} {state['pdo_num']} configuration saved successfully")
+                self._complete_pdo_save()
+                
+        except Exception as e:
+            self._log_message(f"❌ ERROR: PDO save step '{step}' failed: {e}")
+            self._abort_pdo_save()
+        
+        # Schedule timeout check for this step (except for COMPLETE step)
+        if step != 'COMPLETE' and self.pdo_save_state['active']:
+            self.app.root.after(1000, self._check_pdo_save_timeout)
+
+    def _complete_pdo_save(self):
+        """Complete the PDO save sequence successfully"""
+        self.pdo_save_state['active'] = False
+        self.pdo_save_state['step'] = None
+
+    def _abort_pdo_save(self, reason="Error occurred"):
+        """Abort the PDO save sequence due to error or timeout"""
+        if self.pdo_save_state['active']:
+            self._log_message(f"❌ Aborting {self.pdo_save_state['pdo_type']} {self.pdo_save_state['pdo_num']} save sequence: {reason}")
+        self.pdo_save_state['active'] = False
+        self.pdo_save_state['step'] = None
+    
+    def _check_pdo_save_timeout(self):
+        """Check if PDO save step has timed out"""
+        if not self.pdo_save_state['active']:
+            return
+            
+        elapsed = time.time() - self.pdo_save_state.get('last_request_time', 0)
+        if elapsed > 1.0:  # 1 second timeout
+            step = self.pdo_save_state['step']
+            self._log_message(f"⏰ PDO save step '{step}' timed out after {elapsed:.1f}s - device not responding")
+            self._abort_pdo_save("SDO request timeout")
+
+    def _handle_pdo_save_response(self, rx_id, data, request):
+        """Handle SDO responses during PDO save sequence"""
+        if not self.pdo_save_state['active']:
+            return False  # Not handling PDO save
+            
+        # Process the response (success/error handling)
+        cmd = data[0]
+        
+        if cmd == 0x80:  # SDO abort transfer
+            # SDO error response
+            error_code = (data[7] << 24) | (data[6] << 16) | (data[5] << 8) | data[4]
+            error_name = self._get_sdo_error_name(error_code)
+            self._log_message(f"❌ PDO save failed at step '{self.pdo_save_state['step']}': SDO abort 0x{error_code:08X} - {error_name}")
+            self._abort_pdo_save()
+            return True  # We handled this response
+            
+        elif (cmd & 0xE0) == 0x60:  # Download initiate response (success)
+            self._log_message(f"📥 Step complete: {self.pdo_save_state['step']}")
+            # Move to next step
+            self._execute_next_pdo_save_step()
+            return True  # We handled this response
+            
+        else:
+            # Unexpected response format
+            self._log_message(f"❌ PDO save failed at step '{self.pdo_save_state['step']}': Unexpected SDO response format (cmd=0x{cmd:02X})")
+            self._abort_pdo_save()
+            return True  # We handled this response
+            
+    def _get_sdo_error_name(self, error_code):
+        """Get human readable name for SDO error codes"""
+        error_names = {
+            0x05030000: "TOGGLE_BIT_NOT_CHANGED",
+            0x05040000: "SDO_PROTOCOL_TIMEOUT", 
+            0x05040001: "CLIENT_SERVER_COMMAND_NOT_VALID",
+            0x05040002: "INVALID_BLOCK_SIZE",
+            0x05040003: "INVALID_SEQUENCE_NUMBER",
+            0x05040004: "CRC_ERROR",
+            0x05040005: "OUT_OF_MEMORY",
+            0x06010000: "UNSUPPORTED_ACCESS",
+            0x06010001: "READ_ONLY_ENTRY",
+            0x06010002: "WRITE_ONLY_ENTRY", 
+            0x06020000: "OBJECT_NOT_EXIST",
+            0x06040041: "OBJECT_CANNOT_BE_MAPPED",
+            0x06040042: "MAPPED_OBJECTS_EXCEED_PDO",
+            0x06040043: "GENERAL_PARAMETER_INCOMPATIBILITY",
+            0x06040047: "GENERAL_INTERNAL_INCOMPATIBILITY",
+            0x06060000: "HARDWARE_FAULT",
+            0x06070010: "DATA_TYPE_LENGTH_NOT_MATCH",
+            0x06070012: "DATA_TYPE_LENGTH_TOO_HIGH",
+            0x06070013: "DATA_TYPE_LENGTH_TOO_LOW",
+            0x06090011: "SUB_INDEX_NOT_EXIST",
+            0x06090030: "PARAMETER_RANGE_EXCEEDED",
+            0x06090031: "PARAMETER_WRITTEN_TOO_HIGH",
+            0x06090032: "PARAMETER_WRITTEN_TOO_LOW",
+            0x06090036: "MAXIMUM_LESS_MINIMUM",
+            0x08000000: "GENERAL_ERROR",
+            0x08000020: "DATA_CANNOT_TRANSFER_STORE_LOCAL",
+            0x08000021: "DATA_CANNOT_TRANSFER_STORE_LOCAL_CONTROL",
+            0x08000022: "DATA_CANNOT_TRANSFER_STORE_LOCAL_STATE",
+            0x08000023: "OBJECT_DICTIONARY_NOT_PRESENT"
+        }
+        return error_names.get(error_code, f"UNKNOWN_ERROR")
 
     def _browse_eds_file(self):
         """Browse for and load a new EDS file"""
@@ -1971,6 +2426,19 @@ class CANopenSDOTab(BaseTab):
                 self._log_message(f"📥 READ RESPONSE: Unexpected format ({response_time:.3f}s)")
         
         self._log_message(f"    RX: 0x{rx_id:03X} ← {bytes(data).hex().upper()}")
+        
+        # Notify any observers (like PDO save sequence)
+        self._notify_sdo_observers(rx_id, data, request)
+    
+    def _notify_sdo_observers(self, rx_id, data, request):
+        """Notify observers of SDO responses for specialized handling"""
+        # PDO save sequence observer
+        if self.pdo_save_state['active']:
+            self._handle_pdo_save_response(rx_id, data, request)
+        
+        # Future: Other observers can be added here
+        # if self.some_other_state['active']:
+        #     self._handle_other_response(rx_id, data, request)
     
     def _handle_pdo_loading_response(self, data):
         """Handle SDO responses during PDO loading operations"""
@@ -2030,6 +2498,11 @@ class CANopenSDOTab(BaseTab):
             self.pending_requests.pop(rx_id, None)
             operation = "WRITE" if request.is_write else "READ"
             self._log_message(f"⏱️ TIMEOUT: {operation} Node {request.node_id} 0x{request.index:04X}:{request.sub_index:02X} (>{self.sdo_timeout_seconds:.1f}s)")
+            
+            # Check if this timeout affects PDO save sequence
+            if self.pdo_save_state['active']:
+                self._log_message(f"⏱️ PDO save sequence timed out at step: {self.pdo_save_state['step']}")
+                self._abort_pdo_save()
         
         # Schedule next timeout check if we still have pending requests
         if self.pending_requests:

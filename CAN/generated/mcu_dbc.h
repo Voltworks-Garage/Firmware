@@ -126,8 +126,7 @@ void CAN_mcu_command_dlc_set(uint8_t dlc);
 void CAN_mcu_command_send(void);
 
 
-#define CAN_mcu_motorControllerRequest_interval() 1
-void CAN_mcu_motorControllerRequest_requestType_set(uint16_t requestType);
+void CAN_mcu_motorControllerRequest_Throttle_Value_set(uint16_t Throttle_Value);
 void CAN_mcu_motorControllerRequest_dlc_set(uint8_t dlc);
 
 
@@ -312,7 +311,7 @@ uint8_t CAN_motorcontroller_heartbeat_checkDataIsUnread(void);
 uint8_t CAN_motorcontroller_heartbeat_checkDataIsStale(void);
 uint16_t CAN_motorcontroller_heartbeat_Mode_get(void);
 
-#define CAN_motorcontroller_SYNC_interval() 30
+#define CAN_motorcontroller_SYNC_interval() 1
 uint8_t CAN_motorcontroller_SYNC_checkDataIsUnread(void);
 uint8_t CAN_motorcontroller_SYNC_checkDataIsStale(void);
 
@@ -334,27 +333,21 @@ uint8_t CAN_motorcontroller_Emergency_checkDataIsUnread(void);
 uint8_t CAN_motorcontroller_Emergency_checkDataIsStale(void);
 uint16_t CAN_motorcontroller_Emergency_EMCY_get(void);
 
-#define CAN_motorcontroller_motorStatus_interval() 10
-uint8_t CAN_motorcontroller_motorStatus_checkDataIsUnread(void);
-uint8_t CAN_motorcontroller_motorStatus_checkDataIsStale(void);
-uint16_t CAN_motorcontroller_motorStatus_motorSpeed_get(void);
-float CAN_motorcontroller_motorStatus_motorCurrent_get(void);
-uint16_t CAN_motorcontroller_motorStatus_IphaseA_get(void);
-uint16_t CAN_motorcontroller_motorStatus_IphaseB_get(void);
-uint16_t CAN_motorcontroller_motorStatus_IphaseC_get(void);
-uint16_t CAN_motorcontroller_motorStatus_VphaseA_get(void);
-uint16_t CAN_motorcontroller_motorStatus_VphaseB_get(void);
-uint16_t CAN_motorcontroller_motorStatus_VphaseC_get(void);
+#define CAN_motorcontroller_motorStatus_PDO1_interval() 60
+uint8_t CAN_motorcontroller_motorStatus_PDO1_checkDataIsUnread(void);
+uint8_t CAN_motorcontroller_motorStatus_PDO1_checkDataIsStale(void);
+uint16_t CAN_motorcontroller_motorStatus_PDO1_Target_Id_get(void);
+float CAN_motorcontroller_motorStatus_PDO1_Target_Iq_get(void);
+uint16_t CAN_motorcontroller_motorStatus_PDO1_Id_get(void);
+float CAN_motorcontroller_motorStatus_PDO1_Battery_voltage_get(void);
 
-uint8_t CAN_motorcontroller_response_checkDataIsUnread(void);
-uint16_t CAN_motorcontroller_response_byte1_get(void);
-uint16_t CAN_motorcontroller_response_byte2_get(void);
-uint16_t CAN_motorcontroller_response_byte3_get(void);
-uint16_t CAN_motorcontroller_response_byte4_get(void);
-uint16_t CAN_motorcontroller_response_byte5_get(void);
-uint16_t CAN_motorcontroller_response_byte6_get(void);
-uint16_t CAN_motorcontroller_response_byte7_get(void);
-uint16_t CAN_motorcontroller_response_byte8_get(void);
+#define CAN_motorcontroller_motor_status_PDO4_interval() 20
+uint8_t CAN_motorcontroller_motor_status_PDO4_checkDataIsUnread(void);
+uint8_t CAN_motorcontroller_motor_status_PDO4_checkDataIsStale(void);
+float CAN_motorcontroller_motor_status_PDO4_Capacitor_Voltage_get(void);
+float CAN_motorcontroller_motor_status_PDO4_Heatsink_Temperature_get(void);
+float CAN_motorcontroller_motor_status_PDO4_Battery_Current_get(void);
+uint16_t CAN_motorcontroller_motor_status_PDO4_Max_Torque_Left_Motor_get(void);
 
 /**********************************************************
  * charger NODE MESSAGES

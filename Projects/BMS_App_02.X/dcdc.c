@@ -45,7 +45,7 @@ static DCDC_states_E nextState = off_state;
 NEW_LOW_PASS_FILTER(dcdc_voltage, 10.0, 1000.0);
 NEW_LOW_PASS_FILTER(dcdc_current, 10.0, 1000.0);
 NEW_LOW_PASS_FILTER(vbus_voltage, 10.0, 1000.0);
-NEW_TIMER(precharge_timer,3000);
+NEW_TIMER(precharge_timer,5000);
 NEW_TIMER(gateDriveChargeTimer, 400);
 
 /******************************************************************************

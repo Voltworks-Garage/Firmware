@@ -65,7 +65,7 @@ uint16_t CAN_mcu_command_motor_controller_enable_get(void){
 	return (data * 1.0) + 0;
 }
 
-#define CAN_mcu_motorControllerRequest_ID 0x700
+#define CAN_mcu_motorControllerRequest_ID 0x201
 
 static CAN_message_S CAN_mcu_motorControllerRequest={
 	.canID = CAN_mcu_motorControllerRequest_ID,
@@ -75,19 +75,16 @@ static CAN_message_S CAN_mcu_motorControllerRequest={
 	.canMessageStatus = 0
 };
 
-#define CAN_MCU_MOTORCONTROLLERREQUEST_REQUESTTYPE_RANGE 8
-#define CAN_MCU_MOTORCONTROLLERREQUEST_REQUESTTYPE_OFFSET 0
+#define CAN_MCU_MOTORCONTROLLERREQUEST_THROTTLE_VALUE_RANGE 16
+#define CAN_MCU_MOTORCONTROLLERREQUEST_THROTTLE_VALUE_OFFSET 0
 
 uint8_t CAN_mcu_motorControllerRequest_checkDataIsUnread(void){
 	return CAN_checkDataIsUnread(&CAN_mcu_motorControllerRequest);
 }
-uint8_t CAN_mcu_motorControllerRequest_checkDataIsStale(void){
-	return CAN_checkDataIsStale(&CAN_mcu_motorControllerRequest, 2);
-}
-uint16_t CAN_mcu_motorControllerRequest_requestType_get(void){
-	// Extract 8-bit signal at bit offset 0
+uint16_t CAN_mcu_motorControllerRequest_Throttle_Value_get(void){
+	// Extract 16-bit signal at bit offset 0
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_mcu_motorControllerRequest.payload->word0 & 0x00FF) >> 0) << 0;
+	data |= (uint16_t)((CAN_mcu_motorControllerRequest.payload->word0 & 0xFFFF) >> 0) << 0;
 	return (data * 1.0) + 0;
 }
 
@@ -161,6 +158,110 @@ uint16_t CAN_bms_debug_byte1_get(void){
 	uint16_t data = 0;
 	data |= (uint16_t)((CAN_bms_debug.payload->word3 & 0x03FC) >> 2) << 0;
 	return (data * 1) + 0;
+}
+
+#define CAN_bms_SDO_request_ID 0x601
+
+static CAN_message_S CAN_bms_SDO_request={
+	.canID = CAN_bms_SDO_request_ID,
+	.canXID = 0,
+	.dlc = 8,
+	.payload = 0,
+	.canMessageStatus = 0
+};
+
+#define CAN_BMS_SDO_REQUEST_SIZE_RANGE 1
+#define CAN_BMS_SDO_REQUEST_SIZE_OFFSET 0
+#define CAN_BMS_SDO_REQUEST_EXPIDITED_XFER_RANGE 1
+#define CAN_BMS_SDO_REQUEST_EXPIDITED_XFER_OFFSET 1
+#define CAN_BMS_SDO_REQUEST_N_BYTES_RANGE 2
+#define CAN_BMS_SDO_REQUEST_N_BYTES_OFFSET 2
+#define CAN_BMS_SDO_REQUEST_RESERVED_RANGE 1
+#define CAN_BMS_SDO_REQUEST_RESERVED_OFFSET 4
+#define CAN_BMS_SDO_REQUEST_CCS_RANGE 3
+#define CAN_BMS_SDO_REQUEST_CCS_OFFSET 5
+#define CAN_BMS_SDO_REQUEST_INDEX_RANGE 16
+#define CAN_BMS_SDO_REQUEST_INDEX_OFFSET 8
+#define CAN_BMS_SDO_REQUEST_SUBINDEX_RANGE 8
+#define CAN_BMS_SDO_REQUEST_SUBINDEX_OFFSET 24
+#define CAN_BMS_SDO_REQUEST_BYTE_4_RANGE 8
+#define CAN_BMS_SDO_REQUEST_BYTE_4_OFFSET 32
+#define CAN_BMS_SDO_REQUEST_BYTE_5_RANGE 8
+#define CAN_BMS_SDO_REQUEST_BYTE_5_OFFSET 40
+#define CAN_BMS_SDO_REQUEST_BYTE_6_RANGE 8
+#define CAN_BMS_SDO_REQUEST_BYTE_6_OFFSET 48
+#define CAN_BMS_SDO_REQUEST_BYTE_7_RANGE 8
+#define CAN_BMS_SDO_REQUEST_BYTE_7_OFFSET 56
+
+uint8_t CAN_bms_SDO_request_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_bms_SDO_request);
+}
+uint16_t CAN_bms_SDO_request_size_get(void){
+	// Extract 1-bit signal at bit offset 0
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word0 & 0x0001) >> 0) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_SDO_request_expidited_xfer_get(void){
+	// Extract 1-bit signal at bit offset 1
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word0 & 0x0002) >> 1) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_SDO_request_n_bytes_get(void){
+	// Extract 2-bit signal at bit offset 2
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word0 & 0x000C) >> 2) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_SDO_request_reserved_get(void){
+	// Extract 1-bit signal at bit offset 4
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word0 & 0x0010) >> 4) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_SDO_request_ccs_get(void){
+	// Extract 3-bit signal at bit offset 5
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word0 & 0x00E0) >> 5) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_SDO_request_index_get(void){
+	// Extract 16-bit signal at bit offset 8
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word0 & 0xFF00) >> 8) << 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word1 & 0x00FF) >> 0) << 8;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_SDO_request_subindex_get(void){
+	// Extract 8-bit signal at bit offset 24
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word1 & 0xFF00) >> 8) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_SDO_request_byte_4_get(void){
+	// Extract 8-bit signal at bit offset 32
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word2 & 0x00FF) >> 0) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_SDO_request_byte_5_get(void){
+	// Extract 8-bit signal at bit offset 40
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word2 & 0xFF00) >> 8) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_SDO_request_byte_6_get(void){
+	// Extract 8-bit signal at bit offset 48
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word3 & 0x00FF) >> 0) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_SDO_request_byte_7_get(void){
+	// Extract 8-bit signal at bit offset 56
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word3 & 0xFF00) >> 8) << 0;
+	return (data * 1.0) + 0;
 }
 
 /**********************************************************
@@ -360,176 +461,116 @@ void CAN_motorcontroller_Emergency_send(void){
 	CAN_write(&CAN_motorcontroller_Emergency);
 }
 
-static CAN_payload_S CAN_motorcontroller_motorStatus_payload __attribute__((aligned(sizeof(CAN_payload_S))));
-static volatile uint8_t CAN_motorcontroller_motorStatus_status = 0;
-#define CAN_motorcontroller_motorStatus_ID 0x731
+static CAN_payload_S CAN_motorcontroller_motorStatus_PDO1_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_motorcontroller_motorStatus_PDO1_status = 0;
+#define CAN_motorcontroller_motorStatus_PDO1_ID 0x391
 
-static CAN_message_S CAN_motorcontroller_motorStatus={
-	.canID = CAN_motorcontroller_motorStatus_ID,
+static CAN_message_S CAN_motorcontroller_motorStatus_PDO1={
+	.canID = CAN_motorcontroller_motorStatus_PDO1_ID,
 	.canXID = 0,
 	.dlc = 8,
-	.payload = &CAN_motorcontroller_motorStatus_payload,
-	.canMessageStatus = &CAN_motorcontroller_motorStatus_status
+	.payload = &CAN_motorcontroller_motorStatus_PDO1_payload,
+	.canMessageStatus = &CAN_motorcontroller_motorStatus_PDO1_status
 };
 
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_MOTORSPEED_RANGE 8
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_MOTORSPEED_OFFSET 0
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_MOTORCURRENT_RANGE 8
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_MOTORCURRENT_OFFSET 8
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_IPHASEA_RANGE 8
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_IPHASEA_OFFSET 16
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_IPHASEB_RANGE 8
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_IPHASEB_OFFSET 24
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_IPHASEC_RANGE 8
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_IPHASEC_OFFSET 32
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_VPHASEA_RANGE 8
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_VPHASEA_OFFSET 40
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_VPHASEB_RANGE 8
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_VPHASEB_OFFSET 48
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_VPHASEC_RANGE 8
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_VPHASEC_OFFSET 56
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_TARGET_ID_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_TARGET_ID_OFFSET 0
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_TARGET_IQ_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_TARGET_IQ_OFFSET 16
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_ID_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_ID_OFFSET 32
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_BATTERY_VOLTAGE_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_BATTERY_VOLTAGE_OFFSET 48
 
-void CAN_motorcontroller_motorStatus_motorSpeed_set(uint16_t motorSpeed){
-	uint16_t data_scaled = motorSpeed * 1.0;
-	// Set 8-bit signal at bit offset 0
-	CAN_motorcontroller_motorStatus.payload->word0 &= ~0x00FF;
-	CAN_motorcontroller_motorStatus.payload->word0 |= data_scaled & 0x00FF;
+void CAN_motorcontroller_motorStatus_PDO1_Target_Id_set(uint16_t Target_Id){
+	uint16_t data_scaled = Target_Id * 1.0;
+	// Set 16-bit signal at bit offset 0
+	CAN_motorcontroller_motorStatus_PDO1.payload->word0 &= ~0xFFFF;
+	CAN_motorcontroller_motorStatus_PDO1.payload->word0 |= data_scaled & 0xFFFF;
 }
-void CAN_motorcontroller_motorStatus_motorCurrent_set(float motorCurrent){
-	uint16_t data_scaled = (uint16_t)(motorCurrent * 100.0f + 0.5f);
-	// Set 8-bit signal at bit offset 8
-	CAN_motorcontroller_motorStatus.payload->word0 &= ~0xFF00;
-	CAN_motorcontroller_motorStatus.payload->word0 |= (data_scaled << 8) & 0xFF00;
+void CAN_motorcontroller_motorStatus_PDO1_Target_Iq_set(float Target_Iq){
+	uint16_t data_scaled = (uint16_t)(Target_Iq * 100.0f + 0.5f);
+	// Set 16-bit signal at bit offset 16
+	CAN_motorcontroller_motorStatus_PDO1.payload->word1 &= ~0xFFFF;
+	CAN_motorcontroller_motorStatus_PDO1.payload->word1 |= data_scaled & 0xFFFF;
 }
-void CAN_motorcontroller_motorStatus_IphaseA_set(uint16_t IphaseA){
-	uint16_t data_scaled = IphaseA * 1.0;
-	// Set 8-bit signal at bit offset 16
-	CAN_motorcontroller_motorStatus.payload->word1 &= ~0x00FF;
-	CAN_motorcontroller_motorStatus.payload->word1 |= data_scaled & 0x00FF;
+void CAN_motorcontroller_motorStatus_PDO1_Id_set(uint16_t Id){
+	uint16_t data_scaled = Id * 1.0;
+	// Set 16-bit signal at bit offset 32
+	CAN_motorcontroller_motorStatus_PDO1.payload->word2 &= ~0xFFFF;
+	CAN_motorcontroller_motorStatus_PDO1.payload->word2 |= data_scaled & 0xFFFF;
 }
-void CAN_motorcontroller_motorStatus_IphaseB_set(uint16_t IphaseB){
-	uint16_t data_scaled = IphaseB * 1.0;
-	// Set 8-bit signal at bit offset 24
-	CAN_motorcontroller_motorStatus.payload->word1 &= ~0xFF00;
-	CAN_motorcontroller_motorStatus.payload->word1 |= (data_scaled << 8) & 0xFF00;
+void CAN_motorcontroller_motorStatus_PDO1_Battery_voltage_set(float Battery_voltage){
+	uint16_t data_scaled = (uint16_t)(Battery_voltage * 16.0f + 0.5f);
+	// Set 16-bit signal at bit offset 48
+	CAN_motorcontroller_motorStatus_PDO1.payload->word3 &= ~0xFFFF;
+	CAN_motorcontroller_motorStatus_PDO1.payload->word3 |= data_scaled & 0xFFFF;
 }
-void CAN_motorcontroller_motorStatus_IphaseC_set(uint16_t IphaseC){
-	uint16_t data_scaled = IphaseC * 1.0;
-	// Set 8-bit signal at bit offset 32
-	CAN_motorcontroller_motorStatus.payload->word2 &= ~0x00FF;
-	CAN_motorcontroller_motorStatus.payload->word2 |= data_scaled & 0x00FF;
+void CAN_motorcontroller_motorStatus_PDO1_dlc_set(uint8_t dlc){
+	CAN_motorcontroller_motorStatus_PDO1.dlc = dlc;
 }
-void CAN_motorcontroller_motorStatus_VphaseA_set(uint16_t VphaseA){
-	uint16_t data_scaled = VphaseA * 1.0;
-	// Set 8-bit signal at bit offset 40
-	CAN_motorcontroller_motorStatus.payload->word2 &= ~0xFF00;
-	CAN_motorcontroller_motorStatus.payload->word2 |= (data_scaled << 8) & 0xFF00;
-}
-void CAN_motorcontroller_motorStatus_VphaseB_set(uint16_t VphaseB){
-	uint16_t data_scaled = VphaseB * 1.0;
-	// Set 8-bit signal at bit offset 48
-	CAN_motorcontroller_motorStatus.payload->word3 &= ~0x00FF;
-	CAN_motorcontroller_motorStatus.payload->word3 |= data_scaled & 0x00FF;
-}
-void CAN_motorcontroller_motorStatus_VphaseC_set(uint16_t VphaseC){
-	uint16_t data_scaled = VphaseC * 1.0;
-	// Set 8-bit signal at bit offset 56
-	CAN_motorcontroller_motorStatus.payload->word3 &= ~0xFF00;
-	CAN_motorcontroller_motorStatus.payload->word3 |= (data_scaled << 8) & 0xFF00;
-}
-void CAN_motorcontroller_motorStatus_dlc_set(uint8_t dlc){
-	CAN_motorcontroller_motorStatus.dlc = dlc;
-}
-void CAN_motorcontroller_motorStatus_send(void){
+void CAN_motorcontroller_motorStatus_PDO1_send(void){
 	// Update message status for self-consumption
-	*CAN_motorcontroller_motorStatus.canMessageStatus = 1;
-	CAN_write(&CAN_motorcontroller_motorStatus);
+	*CAN_motorcontroller_motorStatus_PDO1.canMessageStatus = 1;
+	CAN_write(&CAN_motorcontroller_motorStatus_PDO1);
 }
 
-static CAN_payload_S CAN_motorcontroller_response_payload __attribute__((aligned(sizeof(CAN_payload_S))));
-static volatile uint8_t CAN_motorcontroller_response_status = 0;
-#define CAN_motorcontroller_response_ID 0x6FF
+static CAN_payload_S CAN_motorcontroller_motor_status_PDO4_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_motorcontroller_motor_status_PDO4_status = 0;
+#define CAN_motorcontroller_motor_status_PDO4_ID 0x271
 
-static CAN_message_S CAN_motorcontroller_response={
-	.canID = CAN_motorcontroller_response_ID,
+static CAN_message_S CAN_motorcontroller_motor_status_PDO4={
+	.canID = CAN_motorcontroller_motor_status_PDO4_ID,
 	.canXID = 0,
 	.dlc = 8,
-	.payload = &CAN_motorcontroller_response_payload,
-	.canMessageStatus = &CAN_motorcontroller_response_status
+	.payload = &CAN_motorcontroller_motor_status_PDO4_payload,
+	.canMessageStatus = &CAN_motorcontroller_motor_status_PDO4_status
 };
 
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE1_RANGE 8
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE1_OFFSET 0
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE2_RANGE 8
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE2_OFFSET 8
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE3_RANGE 8
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE3_OFFSET 16
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE4_RANGE 8
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE4_OFFSET 24
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE5_RANGE 8
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE5_OFFSET 32
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE6_RANGE 8
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE6_OFFSET 40
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE7_RANGE 8
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE7_OFFSET 48
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE8_RANGE 8
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE8_OFFSET 56
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_CAPACITOR_VOLTAGE_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_CAPACITOR_VOLTAGE_OFFSET 0
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_HEATSINK_TEMPERATURE_RANGE 8
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_HEATSINK_TEMPERATURE_OFFSET 16
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_BATTERY_CURRENT_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_BATTERY_CURRENT_OFFSET 24
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MAX_TORQUE_LEFT_MOTOR_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MAX_TORQUE_LEFT_MOTOR_OFFSET 40
 
-void CAN_motorcontroller_response_byte1_set(uint16_t byte1){
-	uint16_t data_scaled = byte1 * 1.0;
-	// Set 8-bit signal at bit offset 0
-	CAN_motorcontroller_response.payload->word0 &= ~0x00FF;
-	CAN_motorcontroller_response.payload->word0 |= data_scaled & 0x00FF;
+void CAN_motorcontroller_motor_status_PDO4_Capacitor_Voltage_set(float Capacitor_Voltage){
+	uint16_t data_scaled = (uint16_t)(Capacitor_Voltage * 16.0f + 0.5f);
+	// Set 16-bit signal at bit offset 0
+	CAN_motorcontroller_motor_status_PDO4.payload->word0 &= ~0xFFFF;
+	CAN_motorcontroller_motor_status_PDO4.payload->word0 |= data_scaled & 0xFFFF;
 }
-void CAN_motorcontroller_response_byte2_set(uint16_t byte2){
-	uint16_t data_scaled = byte2 * 1.0;
-	// Set 8-bit signal at bit offset 8
-	CAN_motorcontroller_response.payload->word0 &= ~0xFF00;
-	CAN_motorcontroller_response.payload->word0 |= (data_scaled << 8) & 0xFF00;
-}
-void CAN_motorcontroller_response_byte3_set(uint16_t byte3){
-	uint16_t data_scaled = byte3 * 1.0;
+void CAN_motorcontroller_motor_status_PDO4_Heatsink_Temperature_set(float Heatsink_Temperature){
+	uint16_t data_scaled = (uint16_t)(Heatsink_Temperature * 1.0f + 0.5f);
 	// Set 8-bit signal at bit offset 16
-	CAN_motorcontroller_response.payload->word1 &= ~0x00FF;
-	CAN_motorcontroller_response.payload->word1 |= data_scaled & 0x00FF;
+	CAN_motorcontroller_motor_status_PDO4.payload->word1 &= ~0x00FF;
+	CAN_motorcontroller_motor_status_PDO4.payload->word1 |= data_scaled & 0x00FF;
 }
-void CAN_motorcontroller_response_byte4_set(uint16_t byte4){
-	uint16_t data_scaled = byte4 * 1.0;
-	// Set 8-bit signal at bit offset 24
-	CAN_motorcontroller_response.payload->word1 &= ~0xFF00;
-	CAN_motorcontroller_response.payload->word1 |= (data_scaled << 8) & 0xFF00;
+void CAN_motorcontroller_motor_status_PDO4_Battery_Current_set(float Battery_Current){
+	uint16_t data_scaled = (uint16_t)(Battery_Current * 16.0f + 0.5f);
+	// Set 16-bit signal at bit offset 24
+	CAN_motorcontroller_motor_status_PDO4.payload->word1 &= ~0xFF00;
+	CAN_motorcontroller_motor_status_PDO4.payload->word1 |= (data_scaled << 8) & 0xFF00;
+	CAN_motorcontroller_motor_status_PDO4.payload->word2 &= ~0x00FF;
+	CAN_motorcontroller_motor_status_PDO4.payload->word2 |= (data_scaled >> 8) & 0x00FF;
 }
-void CAN_motorcontroller_response_byte5_set(uint16_t byte5){
-	uint16_t data_scaled = byte5 * 1.0;
-	// Set 8-bit signal at bit offset 32
-	CAN_motorcontroller_response.payload->word2 &= ~0x00FF;
-	CAN_motorcontroller_response.payload->word2 |= data_scaled & 0x00FF;
+void CAN_motorcontroller_motor_status_PDO4_Max_Torque_Left_Motor_set(uint16_t Max_Torque_Left_Motor){
+	uint16_t data_scaled = Max_Torque_Left_Motor * 1000.0;
+	// Set 16-bit signal at bit offset 40
+	CAN_motorcontroller_motor_status_PDO4.payload->word2 &= ~0xFF00;
+	CAN_motorcontroller_motor_status_PDO4.payload->word2 |= (data_scaled << 8) & 0xFF00;
+	CAN_motorcontroller_motor_status_PDO4.payload->word3 &= ~0x00FF;
+	CAN_motorcontroller_motor_status_PDO4.payload->word3 |= (data_scaled >> 8) & 0x00FF;
 }
-void CAN_motorcontroller_response_byte6_set(uint16_t byte6){
-	uint16_t data_scaled = byte6 * 1.0;
-	// Set 8-bit signal at bit offset 40
-	CAN_motorcontroller_response.payload->word2 &= ~0xFF00;
-	CAN_motorcontroller_response.payload->word2 |= (data_scaled << 8) & 0xFF00;
+void CAN_motorcontroller_motor_status_PDO4_dlc_set(uint8_t dlc){
+	CAN_motorcontroller_motor_status_PDO4.dlc = dlc;
 }
-void CAN_motorcontroller_response_byte7_set(uint16_t byte7){
-	uint16_t data_scaled = byte7 * 1.0;
-	// Set 8-bit signal at bit offset 48
-	CAN_motorcontroller_response.payload->word3 &= ~0x00FF;
-	CAN_motorcontroller_response.payload->word3 |= data_scaled & 0x00FF;
-}
-void CAN_motorcontroller_response_byte8_set(uint16_t byte8){
-	uint16_t data_scaled = byte8 * 1.0;
-	// Set 8-bit signal at bit offset 56
-	CAN_motorcontroller_response.payload->word3 &= ~0xFF00;
-	CAN_motorcontroller_response.payload->word3 |= (data_scaled << 8) & 0xFF00;
-}
-void CAN_motorcontroller_response_dlc_set(uint8_t dlc){
-	CAN_motorcontroller_response.dlc = dlc;
-}
-void CAN_motorcontroller_response_send(void){
+void CAN_motorcontroller_motor_status_PDO4_send(void){
 	// Update message status for self-consumption
-	*CAN_motorcontroller_response.canMessageStatus = 1;
-	CAN_write(&CAN_motorcontroller_response);
+	*CAN_motorcontroller_motor_status_PDO4.canMessageStatus = 1;
+	CAN_write(&CAN_motorcontroller_motor_status_PDO4);
 }
 
 /**********************************************************
@@ -542,14 +583,15 @@ void CAN_DBC_init(void) {
 	CAN_configureMailbox(&CAN_mcu_command);
 	CAN_configureMailbox(&CAN_mcu_motorControllerRequest);
 	CAN_configureMailbox(&CAN_bms_debug);
+	CAN_configureMailbox(&CAN_bms_SDO_request);
 }
 
 void CAN_send_1ms(void){
-	// No messages to send at this interval
+	CAN_motorcontroller_SYNC_send();
 }
 
 void CAN_send_10ms(void){
-	CAN_motorcontroller_motorStatus_send();
+	// No messages to send at this interval
 }
 
 void CAN_send_100ms(void){
@@ -562,6 +604,13 @@ void CAN_send_1000ms(void){
 
 void CAN_send_30ms(void){
 	CAN_motorcontroller_heartbeat_send();
-	CAN_motorcontroller_SYNC_send();
 	CAN_motorcontroller_Emergency_send();
+}
+
+void CAN_send_60ms(void){
+	CAN_motorcontroller_motorStatus_PDO1_send();
+}
+
+void CAN_send_20ms(void){
+	CAN_motorcontroller_motor_status_PDO4_send();
 }

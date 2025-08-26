@@ -21,20 +21,24 @@ void clearMovingAverageInt(movingAverageInt_S *x){
     x->sum = 0;
 }
 
+#define QN 7
+#define SCALE (1 << QN)
+
 uint16_t takeLowPassFilterInt(lowPassFilterInt_S *x, uint32_t value){
     // convert input to Q7
-    uint32_t valueQ7 = ((uint32_t)value) << 7;
+    uint32_t valueQ7 = ((uint32_t)value) << QN;
 
-    // IIR update: accum = alpha*input + (1-alpha)*prev
-    x->accum = (x->alpha * valueQ7 + (128 - x->alpha) * x->accum) >> 7;
+    // IIR update: accum = alpha*input + (1-alpha)*prev + roundup
+    x->accum = ((x->alpha * valueQ7) + ((SCALE - x->alpha) * x->accum)  + (SCALE >> 1)) >> QN;
 
-    // return integer result (drop Q10 fraction)
-    return (uint16_t)(x->accum >> 7);
+    // return integer result (drop Q7 fraction)
+    return (uint16_t)((x->accum + (SCALE >> 1)) >> QN);
 }
+
 
 uint16_t getLowPassFilterInt(lowPassFilterInt_S *x){
     // return integer result (drop Q7 fraction)
-    return (uint16_t)(x->accum >> 7);
+    return (uint16_t)((x->accum + (SCALE >> 1)) >> QN);
 }
 
 void clearLowPassFilterInt(lowPassFilterInt_S *x){

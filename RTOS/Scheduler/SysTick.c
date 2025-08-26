@@ -1,5 +1,5 @@
 #include "SysTick.h"
-#include "movingAverage.h"
+#include "movingAverageInt.h"
 #include <stdint.h>
 #include <xc.h>
 
@@ -11,7 +11,7 @@ static uint16_t CPU_peak_last = 0;
 static uint16_t CPU_peak_counter = 0;
 #define CPU_PEAK_COUNTER_MAX 1000
 
-NEW_LOW_PASS_FILTER(CPU_usage, 100.0, 1000.0);
+NEW_LOW_PASS_FILTER_INT(CPU_usage, 10, 1000);
 
 uint32_t SysTick_Get(void) {
     return Tick;
@@ -92,9 +92,9 @@ void SysTick_CPUTimerEnd(void){
     } else {
         delta_ticks = (uint16_t)((TicksPerMS - CPU_Timer) + end_value); // wrapped around
     }
-    uint16_t CPU_percentage = (uint16_t)((delta_ticks*100) / TicksPerMS); //10 to get the extra decimal place
+    uint16_t CPU_percentage = (uint16_t)((delta_ticks*100) / TicksPerMS); //100 to get the extra decimal place
     
-    takeLowPassFilter(CPU_usage, CPU_percentage);
+    takeLowPassFilterInt(CPU_usage, CPU_percentage);
     if (CPU_percentage > CPU_peak){
         CPU_peak = CPU_percentage;
     }
@@ -105,11 +105,11 @@ void SysTick_CPUTimerEnd(void){
     }
 }
 
-float SysTick_GetCPUPercentage(void){
-    return getLowPassFilter(CPU_usage); //Remove the decimal place before converting to float
+uint16_t SysTick_GetCPUPercentage(void){
+    return getLowPassFilterInt(CPU_usage); //Remove the decimal place before converting to float
 }
 
-float SysTick_GetCPUPeak(void){
+uint16_t SysTick_GetCPUPeak(void){
     return (float)(CPU_peak_last); //Remove the decimal place before converting to float
 }
 

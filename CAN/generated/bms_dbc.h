@@ -324,6 +324,23 @@ void CAN_bms_cell_temperatures_send(void);
 
 
 #define CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES 7
+void CAN_bms_SDO_request_size_set(uint16_t size);
+void CAN_bms_SDO_request_expidited_xfer_set(uint16_t expidited_xfer);
+void CAN_bms_SDO_request_n_bytes_set(uint16_t n_bytes);
+void CAN_bms_SDO_request_reserved_set(uint16_t reserved);
+void CAN_bms_SDO_request_ccs_set(uint16_t ccs);
+void CAN_bms_SDO_request_index_set(uint16_t index);
+void CAN_bms_SDO_request_subindex_set(uint16_t subindex);
+void CAN_bms_SDO_request_byte_4_set(uint16_t byte_4);
+void CAN_bms_SDO_request_byte_5_set(uint16_t byte_5);
+void CAN_bms_SDO_request_byte_6_set(uint16_t byte_6);
+void CAN_bms_SDO_request_byte_7_set(uint16_t byte_7);
+void CAN_bms_SDO_request_dlc_set(uint8_t dlc);
+
+
+void CAN_bms_SDO_request_send(void);
+
+
 /**********************************************************
  * motorcontroller NODE MESSAGES
  */
@@ -332,7 +349,7 @@ uint8_t CAN_motorcontroller_heartbeat_checkDataIsUnread(void);
 uint8_t CAN_motorcontroller_heartbeat_checkDataIsStale(void);
 uint16_t CAN_motorcontroller_heartbeat_Mode_get(void);
 
-#define CAN_motorcontroller_SYNC_interval() 30
+#define CAN_motorcontroller_SYNC_interval() 1
 uint8_t CAN_motorcontroller_SYNC_checkDataIsUnread(void);
 uint8_t CAN_motorcontroller_SYNC_checkDataIsStale(void);
 
@@ -348,6 +365,22 @@ uint16_t CAN_motorcontroller_SDO_response_byte_4_get(void);
 uint16_t CAN_motorcontroller_SDO_response_byte_5_get(void);
 uint16_t CAN_motorcontroller_SDO_response_byte_6_get(void);
 uint16_t CAN_motorcontroller_SDO_response_byte_7_get(void);
+
+#define CAN_motorcontroller_motorStatus_PDO1_interval() 60
+uint8_t CAN_motorcontroller_motorStatus_PDO1_checkDataIsUnread(void);
+uint8_t CAN_motorcontroller_motorStatus_PDO1_checkDataIsStale(void);
+uint16_t CAN_motorcontroller_motorStatus_PDO1_Target_Id_get(void);
+float CAN_motorcontroller_motorStatus_PDO1_Target_Iq_get(void);
+uint16_t CAN_motorcontroller_motorStatus_PDO1_Id_get(void);
+float CAN_motorcontroller_motorStatus_PDO1_Battery_voltage_get(void);
+
+#define CAN_motorcontroller_motor_status_PDO4_interval() 20
+uint8_t CAN_motorcontroller_motor_status_PDO4_checkDataIsUnread(void);
+uint8_t CAN_motorcontroller_motor_status_PDO4_checkDataIsStale(void);
+float CAN_motorcontroller_motor_status_PDO4_Capacitor_Voltage_get(void);
+float CAN_motorcontroller_motor_status_PDO4_Heatsink_Temperature_get(void);
+float CAN_motorcontroller_motor_status_PDO4_Battery_Current_get(void);
+uint16_t CAN_motorcontroller_motor_status_PDO4_Max_Torque_Left_Motor_get(void);
 
 /**********************************************************
  * charger NODE MESSAGES

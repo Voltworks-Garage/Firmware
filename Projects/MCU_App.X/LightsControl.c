@@ -208,11 +208,12 @@ void lights_active(LIGHTS_CONTROL_entry_types_E entry_type) {
 
             IO_SET_J1772_CONTROLLER_EN(HIGH); //RUNNING_LIGHTS
             
+            // Handle High Beam Button
             highBeamEnabled = false;
             if (IgnitionControl_GetHighBeamButtonStatus() == BUTTON_PRESSED) {
                 highBeamEnabled = true;
             }
-            IO_SET_HEADLIGHT_LO_EN(highBeamEnabled);
+            IO_SET_HEADLIGHT_HI_EN(highBeamEnabled);
 
             break;
         default:

@@ -680,16 +680,16 @@
                 },
                 {
                     "name": "motorControllerRequest",
-                    "id": "0x700",
+                    "id": "0x201",
                     "x_id": 0,
-                    "freq": 1,
+                    "freq": 0,
                     "consumers": [
                         "motorcontroller"
                     ],
                     "signals": [
                         {
-                            "name": "requestType",
-                            "length": 8,
+                            "name": "Throttle_Value",
+                            "length": 16,
                             "scale": 1.0,
                             "offset": 0,
                             "units": ""
@@ -1943,6 +1943,94 @@
                             "multiplex": 6
                         }
                     ]
+                },
+                {
+                    "name": "SDO_request",
+                    "id": "0x601",
+                    "x_id": 0,
+                    "freq": 0,
+                    "consumers": [
+                        "motorcontroller"
+                    ],
+                    "signals": [
+                        {
+                            "name": "size",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool"
+                        },
+                        {
+                            "name": "expidited_xfer",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool"
+                        },
+                        {
+                            "name": "n_bytes",
+                            "length": 2,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "enum"
+                        },
+                        {
+                            "name": "reserved",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": ""
+                        },
+                        {
+                            "name": "ccs",
+                            "length": 3,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "enum"
+                        },
+                        {
+                            "name": "index",
+                            "length": 16,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "0x"
+                        },
+                        {
+                            "name": "subindex",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "0x"
+                        },
+                        {
+                            "name": "byte_4",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": ""
+                        },
+                        {
+                            "name": "byte_5",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": ""
+                        },
+                        {
+                            "name": "byte_6",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": ""
+                        },
+                        {
+                            "name": "byte_7",
+                            "length": 8,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": ""
+                        }
+                    ]
                 }
             ]
         },
@@ -1972,7 +2060,7 @@
                     "name": "SYNC",
                     "id": "0x80",
                     "x_id": 0,
-                    "freq": 30,
+                    "freq": 1,
                     "consumers": [
                         "mcu",
                         "bms"
@@ -2087,136 +2175,82 @@
                     ]
                 },
                 {
-                    "name": "motorStatus",
-                    "id": "0x731",
+                    "name": "motorStatus_PDO1",
+                    "id": "0x391",
                     "x_id": 0,
-                    "freq": 10,
+                    "freq": 60,
                     "consumers": [
-                        "mcu"
+                        "mcu",
+                        "bms"
                     ],
                     "signals": [
                         {
-                            "name": "motorSpeed",
-                            "length": 8,
+                            "name": "Target_Id",
+                            "length": 16,
                             "scale": 1.0,
                             "offset": 0,
                             "units": ""
                         },
                         {
-                            "name": "motorCurrent",
-                            "length": 8,
+                            "name": "Target_Iq",
+                            "length": 16,
                             "scale": 0.01,
                             "offset": 0,
                             "units": "A"
                         },
                         {
-                            "name": "IphaseA",
-                            "length": 8,
+                            "name": "Id",
+                            "length": 16,
                             "scale": 1.0,
                             "offset": 0,
                             "units": ""
                         },
                         {
-                            "name": "IphaseB",
-                            "length": 8,
-                            "scale": 1.0,
+                            "name": "Battery_voltage",
+                            "length": 16,
+                            "scale": 0.0625,
                             "offset": 0,
-                            "units": ""
-                        },
-                        {
-                            "name": "IphaseC",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": ""
-                        },
-                        {
-                            "name": "VphaseA",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": ""
-                        },
-                        {
-                            "name": "VphaseB",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": ""
-                        },
-                        {
-                            "name": "VphaseC",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": ""
+                            "units": "V"
                         }
                     ]
                 },
                 {
-                    "name": "response",
-                    "id": "0x6FF",
+                    "name": "motor_status_PDO4",
+                    "id": "0x271",
                     "x_id": 0,
-                    "freq": null,
+                    "freq": 20,
                     "consumers": [
-                        "mcu"
+                        "mcu",
+                        "bms"
                     ],
                     "signals": [
                         {
-                            "name": "byte1",
-                            "length": 8,
-                            "scale": 1.0,
+                            "name": "Capacitor_Voltage",
+                            "length": 16,
+                            "scale": 0.0625,
                             "offset": 0,
-                            "units": ""
+                            "units": "V"
                         },
                         {
-                            "name": "byte2",
+                            "name": "Heatsink_Temperature",
                             "length": 8,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": ""
+                            "units": "degC"
                         },
                         {
-                            "name": "byte3",
-                            "length": 8,
-                            "scale": 1.0,
+                            "name": "Battery_Current",
+                            "length": 16,
+                            "scale": 0.0625,
                             "offset": 0,
-                            "units": ""
+                            "units": "A"
                         },
                         {
-                            "name": "byte4",
-                            "length": 8,
-                            "scale": 1.0,
+                            "name": "Max_Torque_Left_Motor",
+                            "length": 16,
+                            "scale": 0.001,
                             "offset": 0,
-                            "units": ""
-                        },
-                        {
-                            "name": "byte5",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": ""
-                        },
-                        {
-                            "name": "byte6",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": ""
-                        },
-                        {
-                            "name": "byte7",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": ""
-                        },
-                        {
-                            "name": "byte8",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": ""
+                            "units": "?"
                         }
                     ]
                 }

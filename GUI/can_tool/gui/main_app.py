@@ -49,6 +49,10 @@ class CANApp:
         self.pending_gui_updates = set()  # Track which messages need GUI updates
         self.gui_update_timer = None
         
+        # Bus status monitoring (5Hz = 200ms)
+        self.bus_status_timer = None
+        self.last_bus_state = None
+        
         self.create_widgets()
         self.initialize_plugins()
         
@@ -445,6 +449,9 @@ Plugins:
             self.rx_thread.start()
             self.log(f"✅ Connected to {channel} at {baud} bps.")
             
+            # Start bus status monitoring
+            self._start_bus_status_monitoring()
+            
             # Notify plugins of connection
             for plugin in self.plugins:
                 try:
@@ -468,6 +475,9 @@ Plugins:
             self.root.after_cancel(self.gui_update_timer)
             self.gui_update_timer = None
         self.pending_gui_updates.clear()
+        
+        # Stop bus status monitoring
+        self._stop_bus_status_monitoring()
 
         # Stop all TX messages
         for msg_id in list(self.tx_messages.keys()):
@@ -1280,3 +1290,42 @@ Plugins:
             # If we auto-connected and failed, still disconnect
             if not was_connected:
                 self.disconnect()
+    
+    def _start_bus_status_monitoring(self):
+        """Start monitoring bus status"""
+        if self.bus_status_timer is None and self.bus:
+            self._update_bus_status()
+    
+    def _stop_bus_status_monitoring(self):
+        """Stop monitoring bus status"""
+        if self.bus_status_timer is not None:
+            self.root.after_cancel(self.bus_status_timer)
+            self.bus_status_timer = None
+        self.last_bus_state = None
+        # Reset status display to unknown
+        self.table_view.update_bus_status_display(None)
+    
+    def _update_bus_status(self):
+        """Update bus status from CAN interface"""
+        if not self.running or not self.bus:
+            return
+        
+        try:
+            # Get current bus state
+            current_state = self.bus.state
+            
+            # Only update display if state changed
+            if current_state != self.last_bus_state:
+                self.table_view.update_bus_status_display(current_state)
+                self.last_bus_state = current_state
+                
+            # Schedule next update (200ms = 5Hz)
+            self.bus_status_timer = self.root.after(200, self._update_bus_status)
+            
+        except Exception as e:
+            # Some CAN interfaces might not support state queries
+            # Log once and stop monitoring to avoid spam
+            if self.last_bus_state is not None:  # Only log if we were monitoring
+                self.log(f"⚠️  Bus status monitoring disabled: {e}")
+            self.last_bus_state = None
+            self.bus_status_timer = None

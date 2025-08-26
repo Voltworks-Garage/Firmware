@@ -71,7 +71,7 @@ NEW_LOW_PASS_FILTER(lvBatteryCurrent, 1.0, 100.0);
 
 #define CHARGE_MONITOR_TIME 30000  // 30 seconds
 NEW_TIMER(chargeMonitorTimer, CHARGE_MONITOR_TIME);
-NEW_TIMER(dcdcReadyTimer, 2000); // 2 seconds for DCDC to start up
+NEW_TIMER(dcdcReadyTimer, 5000); // 2 seconds for DCDC to start up
 NEW_TIMER(faultTimer, 10000);
 
 /******************************************************************************

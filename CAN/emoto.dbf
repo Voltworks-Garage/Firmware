@@ -6,7 +6,7 @@
 
 [BUSMASTER_VERSION] [3.2.2]
 
-[NUMBER_OF_MESSAGES] 26
+[NUMBER_OF_MESSAGES] 27
 
 [START_MSG] dash_status,1797,8,7,1,S
 [START_SIGNALS] heartBeat,4,1,0.0,U,15,0,1,0,1.0,
@@ -105,8 +105,8 @@
 [START_SIGNALS] motor_controller_enable,1,3,0.0,B,1,0,1,0,1.0,bool
 [END_MSG]
 
-[START_MSG] mcu_motorControllerRequest,1792,8,1,1,S
-[START_SIGNALS] requestType,8,1,0.0,U,255,0,1,0,1.0,
+[START_MSG] mcu_motorControllerRequest,513,8,1,1,S
+[START_SIGNALS] Throttle_Value,16,1,0.0,U,65535,0,1,0,1.0,
 [END_MSG]
 
 [START_MSG] mcu_boot_response,162,8,9,1,S
@@ -284,6 +284,20 @@
 [START_SIGNALS] temp_24,12,5,7.0,U,4095,0,1,-40,0.1,degC,M6
 [END_MSG]
 
+[START_MSG] bms_SDO_request,1537,8,11,1,S
+[START_SIGNALS] size,1,1,0.0,B,1,0,1,0,1.0,bool
+[START_SIGNALS] expidited_xfer,1,1,1.0,B,1,0,1,0,1.0,bool
+[START_SIGNALS] n_bytes,2,1,2.0,U,3,0,1,0,1.0,enum
+[START_SIGNALS] reserved,1,1,4.0,B,1,0,1,0,1.0,
+[START_SIGNALS] ccs,3,1,5.0,U,7,0,1,0,1.0,enum
+[START_SIGNALS] index,16,2,0.0,U,65535,0,1,0,1.0,0x
+[START_SIGNALS] subindex,8,4,0.0,U,255,0,1,0,1.0,0x
+[START_SIGNALS] byte_4,8,5,0.0,U,255,0,1,0,1.0,
+[START_SIGNALS] byte_5,8,6,0.0,U,255,0,1,0,1.0,
+[START_SIGNALS] byte_6,8,7,0.0,U,255,0,1,0,1.0,
+[START_SIGNALS] byte_7,8,8,0.0,U,255,0,1,0,1.0,
+[END_MSG]
+
 [START_MSG] motorcontroller_heartbeat,1793,8,1,1,S
 [START_SIGNALS] Mode,16,1,0.0,U,65535,0,1,0,1.0,enum
 [END_MSG]
@@ -309,26 +323,18 @@
 [START_SIGNALS] EMCY,16,1,0.0,U,65535,0,1,0,1.0,
 [END_MSG]
 
-[START_MSG] motorcontroller_motorStatus,1841,8,8,1,S
-[START_SIGNALS] motorSpeed,8,1,0.0,U,255,0,1,0,1.0,
-[START_SIGNALS] motorCurrent,8,2,0.0,U,255,0,1,0,0.01,A
-[START_SIGNALS] IphaseA,8,3,0.0,U,255,0,1,0,1.0,
-[START_SIGNALS] IphaseB,8,4,0.0,U,255,0,1,0,1.0,
-[START_SIGNALS] IphaseC,8,5,0.0,U,255,0,1,0,1.0,
-[START_SIGNALS] VphaseA,8,6,0.0,U,255,0,1,0,1.0,
-[START_SIGNALS] VphaseB,8,7,0.0,U,255,0,1,0,1.0,
-[START_SIGNALS] VphaseC,8,8,0.0,U,255,0,1,0,1.0,
+[START_MSG] motorcontroller_motorStatus_PDO1,913,8,4,1,S
+[START_SIGNALS] Target_Id,16,1,0.0,U,65535,0,1,0,1.0,
+[START_SIGNALS] Target_Iq,16,3,0.0,U,65535,0,1,0,0.01,A
+[START_SIGNALS] Id,16,5,0.0,U,65535,0,1,0,1.0,
+[START_SIGNALS] Battery_voltage,16,7,0.0,U,65535,0,1,0,0.0625,V
 [END_MSG]
 
-[START_MSG] motorcontroller_response,1791,8,8,1,S
-[START_SIGNALS] byte1,8,1,0.0,U,255,0,1,0,1.0,
-[START_SIGNALS] byte2,8,2,0.0,U,255,0,1,0,1.0,
-[START_SIGNALS] byte3,8,3,0.0,U,255,0,1,0,1.0,
-[START_SIGNALS] byte4,8,4,0.0,U,255,0,1,0,1.0,
-[START_SIGNALS] byte5,8,5,0.0,U,255,0,1,0,1.0,
-[START_SIGNALS] byte6,8,6,0.0,U,255,0,1,0,1.0,
-[START_SIGNALS] byte7,8,7,0.0,U,255,0,1,0,1.0,
-[START_SIGNALS] byte8,8,8,0.0,U,255,0,1,0,1.0,
+[START_MSG] motorcontroller_motor_status_PDO4,625,8,4,1,S
+[START_SIGNALS] Capacitor_Voltage,16,1,0.0,U,65535,0,1,0,0.0625,V
+[START_SIGNALS] Heatsink_Temperature,8,3,0.0,U,255,0,1,0,1.0,degC
+[START_SIGNALS] Battery_Current,16,4,0.0,U,65535,0,1,0,0.0625,A
+[START_SIGNALS] Max_Torque_Left_Motor,16,6,0.0,U,65535,0,1,0,0.001,?
 [END_MSG]
 
 [START_MSG] charger_status,419450997,8,11,1,X

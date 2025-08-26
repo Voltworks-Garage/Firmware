@@ -42,17 +42,21 @@ static uint8_t contactorRun = 0;
 static CONTACTOR_states_E prevState = idle_state;
 static CONTACTOR_states_E curState = idle_state;
 static CONTACTOR_states_E nextState = idle_state;
+
+
+/******************************************************************************
+ * Internal Variables
+ *******************************************************************************/
 NEW_LOW_PASS_FILTER(contactor_vbus_voltage, 10.0, 1000.0);
 NEW_LOW_PASS_FILTER(contactor_hv_bus_voltage, 10.0, 1000.0);
 NEW_TIMER(precharge_timer, 3000);  // 3 second precharge timeout
 NEW_TIMER(pull_in_timer, 200);  // 200ms pull-in time
 
-/******************************************************************************
- * Internal Variables
- *******************************************************************************/
 static uint8_t contactorCommandFromMcu = 0;
+static float dcLinkVoltage = 0;
 static uint16_t pull_in_pwm_duty = 80;   // 80% duty cycle for pull-in
-static uint16_t hold_pwm_duty = 5;       // 10% duty cycle for hold
+static uint16_t hold_pwm_duty = 15;       // 10% duty cycle for hold
+static const float final_precharge_percent = 0.85; //Sevcon controller is set to 90%, so allow a little margin here.
 
 /******************************************************************************
  * Public Functions
@@ -74,7 +78,20 @@ void CONTACTOR_Run_1ms(void) {
 }
 
 void CONTACTOR_Run_100ms(void) {
-    contactorCommandFromMcu = CAN_mcu_command_motor_controller_enable_get();
+    // always get the motor controller status request
+    if(!CAN_mcu_command_checkDataIsStale()){
+        contactorCommandFromMcu = CAN_mcu_command_motor_controller_enable_get();
+    } else {
+        contactorCommandFromMcu = 0;
+    }
+
+    // always get the motor controller input cap voltage for determining precharge
+    if(!CAN_motorcontroller_motor_status_PDO4_checkDataIsStale()){
+        dcLinkVoltage = CAN_motorcontroller_motor_status_PDO4_Capacitor_Voltage_get();
+    } else {
+        dcLinkVoltage = 0;
+    }
+
     if (contactorRun) {
         // Check for state transitions
         if (nextState != curState) {
@@ -142,12 +159,22 @@ static void precharge(CONTACTOR_entry_types_E entry_type) {
     
     switch (entry_type) {
         case ENTRY:
-            IO_SET_PRE_CHARGE_EN(HIGH);
+            CAN_bms_SDO_request_size_set(1); // size shown in n
+            CAN_bms_SDO_request_expidited_xfer_set(1); //exp transfer yes
+            CAN_bms_SDO_request_n_bytes_set(3); // e and s are set, and three bytes are NOT used.
+            CAN_bms_SDO_request_ccs_set(1); //download
+            CAN_bms_SDO_request_index_set(0x5180); //Capacitor Precharge Activate
+            CAN_bms_SDO_request_subindex_set(0); // no subindex
+            CAN_bms_SDO_request_byte_4_set(0x01);
+            CAN_bms_SDO_request_byte_5_set(0x00);
+            CAN_bms_SDO_request_byte_6_set(0x00);
+            CAN_bms_SDO_request_byte_7_set(0x00);
+            CAN_bms_SDO_request_send();
             SysTick_TimerStart(precharge_timer);
             break;
             
         case RUN:
-            if ((getLowPassFilter(contactor_hv_bus_voltage) > getLowPassFilter(contactor_vbus_voltage) * 0.90)) {
+            if ((dcLinkVoltage > getLowPassFilter(contactor_vbus_voltage) * final_precharge_percent)) {
                 nextState = pull_in_state;
             }
             else if (contactorCommandFromMcu == false) {

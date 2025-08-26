@@ -76,8 +76,8 @@ void SysTick_CPUTimerStart(void);
  */
 void SysTick_CPUTimerEnd(void);
 
-float SysTick_GetCPUPercentage(void);
-float SysTick_GetCPUPeak(void);
+uint16_t SysTick_GetCPUPercentage(void);
+uint16_t SysTick_GetCPUPeak(void);
 
 /**
  * @brief SysTick_GetTimerValue returns the current TMR5 value

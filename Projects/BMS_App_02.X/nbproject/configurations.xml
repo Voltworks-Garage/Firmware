@@ -23,6 +23,7 @@
         <itemPath>../../Libraries/Standard/movingAverageInt.h</itemPath>
         <itemPath>../../RTOS/Scheduler/cpu_usage.h</itemPath>
         <itemPath>../../RTOS/Scheduler/tsk_cfg.h</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/inc/timer.h</itemPath>
       </logicalFolder>
       <logicalFolder name="MCC Generated Files"
                      displayName="MCC Generated Files"
@@ -96,6 +97,7 @@
         <itemPath>../../Libraries/Standard/NTC.c</itemPath>
         <itemPath>../../Libraries/Standard/movingAverageInt.c</itemPath>
         <itemPath>../../RTOS/Scheduler/cpu_usage.c</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/src/timer.c</itemPath>
       </logicalFolder>
       <logicalFolder name="MCC Generated Files"
                      displayName="MCC Generated Files"
