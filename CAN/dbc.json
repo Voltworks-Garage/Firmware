@@ -108,84 +108,6 @@
                             "units": "bool"
                         }
                     ]
-                },
-                {
-                    "name": "data1",
-                    "id": "0x18005075",
-                    "x_id": 1,
-                    "freq": 10,
-                    "consumers": [
-                        "mcu"
-                    ],
-                    "signals": [
-                        {
-                            "name": "speed",
-                            "length": 16,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": ""
-                        },
-                        {
-                            "name": "odometer",
-                            "length": 16,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": ""
-                        },
-                        {
-                            "name": "tripA",
-                            "length": 16,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": ""
-                        },
-                        {
-                            "name": "tripB",
-                            "length": 16,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": ""
-                        }
-                    ]
-                },
-                {
-                    "name": "data2",
-                    "id": "0x704",
-                    "x_id": 0,
-                    "freq": 10,
-                    "consumers": [
-                        "mcu"
-                    ],
-                    "signals": [
-                        {
-                            "name": "runningTime",
-                            "length": 16,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": ""
-                        },
-                        {
-                            "name": "odometer",
-                            "length": 16,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": ""
-                        },
-                        {
-                            "name": "tripA",
-                            "length": 16,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": ""
-                        },
-                        {
-                            "name": "tripB",
-                            "length": 16,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": ""
-                        }
-                    ]
                 }
             ]
         },
@@ -775,10 +697,7 @@
                     "id": "0x713",
                     "x_id": 0,
                     "freq": 10,
-                    "consumers": [
-                        "dash",
-                        "bms"
-                    ],
+                    "consumers": [],
                     "signals": [
                         {
                             "name": "Multiplex",
@@ -1300,8 +1219,7 @@
                     "id": "0x723",
                     "x_id": 0,
                     "freq": 10,
-                    "consumers": [
-                    ],
+                    "consumers": [],
                     "signals": [
                         {
                             "name": "bool0",

@@ -88,6 +88,435 @@ uint16_t CAN_mcu_motorControllerRequest_Throttle_Value_get(void){
 	return (data * 1.0) + 0;
 }
 
+static CAN_payload_S CAN_mcu_mcu_debug_payloads[4] __attribute__((aligned(sizeof(CAN_payload_S))));
+static uint8_t CAN_mcu_mcu_debug_mux = 0;
+#define CAN_mcu_mcu_debug_ID 0x713
+
+static CAN_message_S CAN_mcu_mcu_debug={
+	.canID = CAN_mcu_mcu_debug_ID,
+	.canXID = 0,
+	.dlc = 8,
+	.payload = 0,
+	.canMessageStatus = 0
+};
+
+#define CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE 2
+#define CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET 0
+#define CAN_MCU_MCU_DEBUG_M2_CPU_USAGE_PERCENT_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M2_CPU_USAGE_PERCENT_OFFSET 2
+#define CAN_MCU_MCU_DEBUG_M2_CPU_PEAK_PERCENT_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M2_CPU_PEAK_PERCENT_OFFSET 10
+#define CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_3_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_3_OFFSET 2
+#define CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_4_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_4_OFFSET 10
+#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_5_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_5_OFFSET 2
+#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_6_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_6_OFFSET 10
+#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_7_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_7_OFFSET 18
+#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_8_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_8_OFFSET 26
+#define CAN_MCU_MCU_DEBUG_M1_TASK_1MS_CPU_PERCENT_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M1_TASK_1MS_CPU_PERCENT_OFFSET 34
+#define CAN_MCU_MCU_DEBUG_M1_TASK_10MS_CPU_PERCENT_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M1_TASK_10MS_CPU_PERCENT_OFFSET 42
+#define CAN_MCU_MCU_DEBUG_M0_TASK_100MS_CPU_PERCENT_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M0_TASK_100MS_CPU_PERCENT_OFFSET 18
+#define CAN_MCU_MCU_DEBUG_M0_TASK_1000MS_CPU_PERCENT_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M0_TASK_1000MS_CPU_PERCENT_OFFSET 26
+#define CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_9_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_9_OFFSET 18
+#define CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_10_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_10_OFFSET 26
+#define CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_13_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_13_OFFSET 2
+#define CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_14_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_14_OFFSET 10
+#define CAN_MCU_MCU_DEBUG_M3_TASK_1MS_PEAK_CPU_PERCENT_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M3_TASK_1MS_PEAK_CPU_PERCENT_OFFSET 18
+#define CAN_MCU_MCU_DEBUG_M3_TASK_10MS_PEAK_CPU_PERCENT_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M3_TASK_10MS_PEAK_CPU_PERCENT_OFFSET 26
+#define CAN_MCU_MCU_DEBUG_M2_TASK_100MS_PEAK_CPU_PERCENT_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M2_TASK_100MS_PEAK_CPU_PERCENT_OFFSET 34
+#define CAN_MCU_MCU_DEBUG_M2_TASK_1000MS_PEAK_CPU_PERCENT_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M2_TASK_1000MS_PEAK_CPU_PERCENT_OFFSET 42
+
+uint8_t CAN_mcu_mcu_debug_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_mcu_mcu_debug);
+}
+uint8_t CAN_mcu_mcu_debug_checkDataIsStale(void){
+	return CAN_checkDataIsStale(&CAN_mcu_mcu_debug, 20);
+}
+uint16_t CAN_mcu_mcu_debug_Multiplex_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 2-bit signal at bit offset 0
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug.payload->word0 & 0x0003) >> 0) << 0;
+	return (data * 1.0) + 0;
+}
+float CAN_mcu_mcu_debug_cpu_usage_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 2
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[2].word0 & 0x03FC) >> 2) << 0;
+	return (data * 0.5) + 0;
+}
+float CAN_mcu_mcu_debug_cpu_peak_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 10
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[2].word0 & 0xFC00) >> 10) << 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[2].word1 & 0x0003) >> 0) << 6;
+	return (data * 0.5) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_debug_value_3_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 2
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[0].word0 & 0x03FC) >> 2) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_debug_value_4_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 10
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[0].word0 & 0xFC00) >> 10) << 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[0].word1 & 0x0003) >> 0) << 6;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_debug_value_5_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 2
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[1].word0 & 0x03FC) >> 2) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_debug_value_6_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 10
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[1].word0 & 0xFC00) >> 10) << 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[1].word1 & 0x0003) >> 0) << 6;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_debug_value_7_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 18
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[1].word1 & 0x03FC) >> 2) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_debug_value_8_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 26
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[1].word1 & 0xFC00) >> 10) << 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[1].word2 & 0x0003) >> 0) << 6;
+	return (data * 1.0) + 0;
+}
+float CAN_mcu_mcu_debug_task_1ms_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 34
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[1].word2 & 0x03FC) >> 2) << 0;
+	return (data * 1) + 0;
+}
+float CAN_mcu_mcu_debug_task_10ms_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 42
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[1].word2 & 0xFC00) >> 10) << 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[1].word3 & 0x0003) >> 0) << 6;
+	return (data * 1) + 0;
+}
+float CAN_mcu_mcu_debug_task_100ms_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 18
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[0].word1 & 0x03FC) >> 2) << 0;
+	return (data * 1) + 0;
+}
+float CAN_mcu_mcu_debug_task_1000ms_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 26
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[0].word1 & 0xFC00) >> 10) << 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[0].word2 & 0x0003) >> 0) << 6;
+	return (data * 1) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_debug_value_9_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 18
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[2].word1 & 0x03FC) >> 2) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_debug_value_10_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 26
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[2].word1 & 0xFC00) >> 10) << 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[2].word2 & 0x0003) >> 0) << 6;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_debug_value_13_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 2
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[3].word0 & 0x03FC) >> 2) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_debug_value_14_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 10
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[3].word0 & 0xFC00) >> 10) << 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[3].word1 & 0x0003) >> 0) << 6;
+	return (data * 1.0) + 0;
+}
+float CAN_mcu_mcu_debug_task_1ms_peak_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 18
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[3].word1 & 0x03FC) >> 2) << 0;
+	return (data * 1) + 0;
+}
+float CAN_mcu_mcu_debug_task_10ms_peak_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 26
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[3].word1 & 0xFC00) >> 10) << 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[3].word2 & 0x0003) >> 0) << 6;
+	return (data * 1) + 0;
+}
+float CAN_mcu_mcu_debug_task_100ms_peak_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 34
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[2].word2 & 0x03FC) >> 2) << 0;
+	return (data * 1) + 0;
+}
+float CAN_mcu_mcu_debug_task_1000ms_peak_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 42
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[2].word2 & 0xFC00) >> 10) << 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[2].word3 & 0x0003) >> 0) << 6;
+	return (data * 1) + 0;
+}
+
 /**********************************************************
  * bms NODE MESSAGES
  */
@@ -582,6 +1011,7 @@ void CAN_motorcontroller_motor_status_PDO4_send(void){
 void CAN_DBC_init(void) {
 	CAN_configureMailbox(&CAN_mcu_command);
 	CAN_configureMailbox(&CAN_mcu_motorControllerRequest);
+	CAN_configureMailbox(&CAN_mcu_mcu_debug);
 	CAN_configureMailbox(&CAN_bms_debug);
 	CAN_configureMailbox(&CAN_bms_SDO_request);
 }

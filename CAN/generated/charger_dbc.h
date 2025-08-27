@@ -26,6 +26,32 @@ float CAN_mcu_command_ev_charger_current_get(void);
 uint16_t CAN_mcu_command_precharge_enable_get(void);
 uint16_t CAN_mcu_command_motor_controller_enable_get(void);
 
+#define CAN_mcu_mcu_debug_interval() 10
+#define CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES 4
+uint8_t CAN_mcu_mcu_debug_checkDataIsUnread(void);
+uint8_t CAN_mcu_mcu_debug_checkDataIsStale(void);
+uint16_t CAN_mcu_mcu_debug_Multiplex_get(void);
+float CAN_mcu_mcu_debug_cpu_usage_percent_get(void);
+float CAN_mcu_mcu_debug_cpu_peak_percent_get(void);
+uint16_t CAN_mcu_mcu_debug_debug_value_3_get(void);
+uint16_t CAN_mcu_mcu_debug_debug_value_4_get(void);
+uint16_t CAN_mcu_mcu_debug_debug_value_5_get(void);
+uint16_t CAN_mcu_mcu_debug_debug_value_6_get(void);
+uint16_t CAN_mcu_mcu_debug_debug_value_7_get(void);
+uint16_t CAN_mcu_mcu_debug_debug_value_8_get(void);
+float CAN_mcu_mcu_debug_task_1ms_cpu_percent_get(void);
+float CAN_mcu_mcu_debug_task_10ms_cpu_percent_get(void);
+float CAN_mcu_mcu_debug_task_100ms_cpu_percent_get(void);
+float CAN_mcu_mcu_debug_task_1000ms_cpu_percent_get(void);
+uint16_t CAN_mcu_mcu_debug_debug_value_9_get(void);
+uint16_t CAN_mcu_mcu_debug_debug_value_10_get(void);
+uint16_t CAN_mcu_mcu_debug_debug_value_13_get(void);
+uint16_t CAN_mcu_mcu_debug_debug_value_14_get(void);
+float CAN_mcu_mcu_debug_task_1ms_peak_cpu_percent_get(void);
+float CAN_mcu_mcu_debug_task_10ms_peak_cpu_percent_get(void);
+float CAN_mcu_mcu_debug_task_100ms_peak_cpu_percent_get(void);
+float CAN_mcu_mcu_debug_task_1000ms_peak_cpu_percent_get(void);
+
 /**********************************************************
  * bms NODE MESSAGES
  */

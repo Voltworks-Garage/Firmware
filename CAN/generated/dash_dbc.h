@@ -40,28 +40,6 @@ void CAN_dash_command_dlc_set(uint8_t dlc);
 void CAN_dash_command_send(void);
 
 
-#define CAN_dash_data1_interval() 10
-void CAN_dash_data1_speed_set(uint16_t speed);
-void CAN_dash_data1_odometer_set(uint16_t odometer);
-void CAN_dash_data1_tripA_set(uint16_t tripA);
-void CAN_dash_data1_tripB_set(uint16_t tripB);
-void CAN_dash_data1_dlc_set(uint8_t dlc);
-
-
-void CAN_dash_data1_send(void);
-
-
-#define CAN_dash_data2_interval() 10
-void CAN_dash_data2_runningTime_set(uint16_t runningTime);
-void CAN_dash_data2_odometer_set(uint16_t odometer);
-void CAN_dash_data2_tripA_set(uint16_t tripA);
-void CAN_dash_data2_tripB_set(uint16_t tripB);
-void CAN_dash_data2_dlc_set(uint8_t dlc);
-
-
-void CAN_dash_data2_send(void);
-
-
 /**********************************************************
  * mcu NODE MESSAGES
  */

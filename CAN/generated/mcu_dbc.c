@@ -137,106 +137,6 @@ uint16_t CAN_dash_command_hornRequest_get(void){
 	return (data * 1.0) + 0;
 }
 
-#define CAN_dash_data1_ID 0x18005075
-
-static CAN_message_S CAN_dash_data1={
-	.canID = CAN_dash_data1_ID,
-	.canXID = 1,
-	.dlc = 8,
-	.payload = 0,
-	.canMessageStatus = 0
-};
-
-#define CAN_DASH_DATA1_SPEED_RANGE 16
-#define CAN_DASH_DATA1_SPEED_OFFSET 0
-#define CAN_DASH_DATA1_ODOMETER_RANGE 16
-#define CAN_DASH_DATA1_ODOMETER_OFFSET 16
-#define CAN_DASH_DATA1_TRIPA_RANGE 16
-#define CAN_DASH_DATA1_TRIPA_OFFSET 32
-#define CAN_DASH_DATA1_TRIPB_RANGE 16
-#define CAN_DASH_DATA1_TRIPB_OFFSET 48
-
-uint8_t CAN_dash_data1_checkDataIsUnread(void){
-	return CAN_checkDataIsUnread(&CAN_dash_data1);
-}
-uint8_t CAN_dash_data1_checkDataIsStale(void){
-	return CAN_checkDataIsStale(&CAN_dash_data1, 20);
-}
-uint16_t CAN_dash_data1_speed_get(void){
-	// Extract 16-bit signal at bit offset 0
-	uint16_t data = 0;
-	data |= (uint16_t)((CAN_dash_data1.payload->word0 & 0xFFFF) >> 0) << 0;
-	return (data * 1.0) + 0;
-}
-uint16_t CAN_dash_data1_odometer_get(void){
-	// Extract 16-bit signal at bit offset 16
-	uint16_t data = 0;
-	data |= (uint16_t)((CAN_dash_data1.payload->word1 & 0xFFFF) >> 0) << 0;
-	return (data * 1.0) + 0;
-}
-uint16_t CAN_dash_data1_tripA_get(void){
-	// Extract 16-bit signal at bit offset 32
-	uint16_t data = 0;
-	data |= (uint16_t)((CAN_dash_data1.payload->word2 & 0xFFFF) >> 0) << 0;
-	return (data * 1.0) + 0;
-}
-uint16_t CAN_dash_data1_tripB_get(void){
-	// Extract 16-bit signal at bit offset 48
-	uint16_t data = 0;
-	data |= (uint16_t)((CAN_dash_data1.payload->word3 & 0xFFFF) >> 0) << 0;
-	return (data * 1.0) + 0;
-}
-
-#define CAN_dash_data2_ID 0x704
-
-static CAN_message_S CAN_dash_data2={
-	.canID = CAN_dash_data2_ID,
-	.canXID = 0,
-	.dlc = 8,
-	.payload = 0,
-	.canMessageStatus = 0
-};
-
-#define CAN_DASH_DATA2_RUNNINGTIME_RANGE 16
-#define CAN_DASH_DATA2_RUNNINGTIME_OFFSET 0
-#define CAN_DASH_DATA2_ODOMETER_RANGE 16
-#define CAN_DASH_DATA2_ODOMETER_OFFSET 16
-#define CAN_DASH_DATA2_TRIPA_RANGE 16
-#define CAN_DASH_DATA2_TRIPA_OFFSET 32
-#define CAN_DASH_DATA2_TRIPB_RANGE 16
-#define CAN_DASH_DATA2_TRIPB_OFFSET 48
-
-uint8_t CAN_dash_data2_checkDataIsUnread(void){
-	return CAN_checkDataIsUnread(&CAN_dash_data2);
-}
-uint8_t CAN_dash_data2_checkDataIsStale(void){
-	return CAN_checkDataIsStale(&CAN_dash_data2, 20);
-}
-uint16_t CAN_dash_data2_runningTime_get(void){
-	// Extract 16-bit signal at bit offset 0
-	uint16_t data = 0;
-	data |= (uint16_t)((CAN_dash_data2.payload->word0 & 0xFFFF) >> 0) << 0;
-	return (data * 1.0) + 0;
-}
-uint16_t CAN_dash_data2_odometer_get(void){
-	// Extract 16-bit signal at bit offset 16
-	uint16_t data = 0;
-	data |= (uint16_t)((CAN_dash_data2.payload->word1 & 0xFFFF) >> 0) << 0;
-	return (data * 1.0) + 0;
-}
-uint16_t CAN_dash_data2_tripA_get(void){
-	// Extract 16-bit signal at bit offset 32
-	uint16_t data = 0;
-	data |= (uint16_t)((CAN_dash_data2.payload->word2 & 0xFFFF) >> 0) << 0;
-	return (data * 1.0) + 0;
-}
-uint16_t CAN_dash_data2_tripB_get(void){
-	// Extract 16-bit signal at bit offset 48
-	uint16_t data = 0;
-	data |= (uint16_t)((CAN_dash_data2.payload->word3 & 0xFFFF) >> 0) << 0;
-	return (data * 1.0) + 0;
-}
-
 /**********************************************************
  * mcu NODE MESSAGES
  */
@@ -3417,18 +3317,15 @@ void CAN_DBC_init(void) {
 	// Set 2-bit signal at bit offset 0
 	CAN_mcu_mcu_debug_payloads[3].word0 &= ~0x0003;
 	CAN_mcu_mcu_debug_payloads[3].word0 |= 3 & 0x0003;
-		CAN_configureMailbox(&CAN_motorcontroller_SYNC);
 	CAN_configureMailbox(&CAN_dash_status);
 	CAN_configureMailbox(&CAN_dash_command);
-	CAN_configureMailbox(&CAN_dash_data1);
-	CAN_configureMailbox(&CAN_dash_data2);
 	CAN_configureMailbox(&CAN_bms_status);
 	CAN_configureMailbox(&CAN_bms_power_systems);
 	CAN_configureMailbox(&CAN_bms_debug);
 	CAN_configureMailbox(&CAN_bms_cell_voltages);
 	CAN_configureMailbox(&CAN_bms_cell_temperatures);
 	CAN_configureMailbox(&CAN_motorcontroller_heartbeat);
-
+	CAN_configureMailbox(&CAN_motorcontroller_SYNC);
 	CAN_configureMailbox(&CAN_motorcontroller_SDO_response);
 	CAN_configureMailbox(&CAN_motorcontroller_Emergency);
 	CAN_configureMailbox(&CAN_motorcontroller_motorStatus_PDO1);

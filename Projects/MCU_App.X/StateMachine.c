@@ -102,7 +102,7 @@ void StateMachine_Init(void) {
 
 void StateMachine_Run(void) {
 
-    if(!CAN_motorcontroller_SYNC_checkDataIsStale() && CAN_motorcontroller_SYNC_checkDataIsUnread()){
+    if(CAN_motorcontroller_SYNC_checkDataIsUnread()){
         CAN_mcu_motorControllerRequest_send();
     }
 
@@ -354,6 +354,8 @@ void sleep(STATE_MACHINE_entry_types_E entry_type) {
             // } else {
                 sm_nextState = boot_state;
             // }
+
+            asm("reset");
 
             break;
         default:

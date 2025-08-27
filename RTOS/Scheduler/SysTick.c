@@ -44,7 +44,7 @@ void SysTick_Init(uint32_t sysClock) {
     INTCON2bits.GIE = 1;
 
     /* set timer interrupt priority */
-    _T5IP = 7;
+    _T5IP = 5;
     /* reset timer interrupt */
     _T5IF = 0;
     /* Enable timer interrupt */
@@ -121,7 +121,7 @@ uint16_t SysTick_GetTicksPerMS(void){
     return TicksPerMS;
 }
 
-void __attribute__((__interrupt__, __auto_psv__, __shadow__)) _T5Interrupt(void) {
+void __attribute__((__interrupt__, __auto_psv__)) _T5Interrupt(void) {
     /* clear timer interrupt Flag*/
     _T5IF = 0;
 

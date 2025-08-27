@@ -34,7 +34,7 @@ typedef struct CAN_message_S {
     uint8_t dlc;
     volatile CAN_payload_S * payload;
     volatile uint8_t * canMessageStatus;
-    uint32_t last_received_timestamp;
+    volatile uint32_t last_received_timestamp;
 } CAN_message_S;
 
 /* mode types */

@@ -34,22 +34,6 @@ uint16_t CAN_dash_command_batteryEjectRequest_get(void);
 uint16_t CAN_dash_command_lightsRequest_get(void);
 uint16_t CAN_dash_command_hornRequest_get(void);
 
-#define CAN_dash_data1_interval() 10
-uint8_t CAN_dash_data1_checkDataIsUnread(void);
-uint8_t CAN_dash_data1_checkDataIsStale(void);
-uint16_t CAN_dash_data1_speed_get(void);
-uint16_t CAN_dash_data1_odometer_get(void);
-uint16_t CAN_dash_data1_tripA_get(void);
-uint16_t CAN_dash_data1_tripB_get(void);
-
-#define CAN_dash_data2_interval() 10
-uint8_t CAN_dash_data2_checkDataIsUnread(void);
-uint8_t CAN_dash_data2_checkDataIsStale(void);
-uint16_t CAN_dash_data2_runningTime_get(void);
-uint16_t CAN_dash_data2_odometer_get(void);
-uint16_t CAN_dash_data2_tripA_get(void);
-uint16_t CAN_dash_data2_tripB_get(void);
-
 /**********************************************************
  * mcu NODE MESSAGES
  */

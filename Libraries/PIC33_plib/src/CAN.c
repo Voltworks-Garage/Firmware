@@ -15,6 +15,7 @@
 #include <math.h>
 #include <xc.h>
 #include <stdbool.h>
+#include <string.h>
 
 /*DEBUGGING*/
 /*WARNING USING THIS WILL CAUSE ERRORS IF CAN BUS BECOMES DISCONNECTED. TOO MANY ERRORS TO PRINT WILL CAUSE LOCKUP*/
@@ -39,6 +40,7 @@ static uint8_t debugEnable = 1;
 // Possible loss of interrupts when DMA is used with CAN.
 // https://ww1.microchip.com/downloads/en/DeviceDoc/dsPIC33EPXXX(GP-MC-MU)806-810-814-and-PIC24EPXXX(GP-GU)810-814-Family-Errata.pdf
 __eds__ volatile uint16_t ecanMsgBuf[32][8] __attribute__((space(eds), aligned(NUM_OF_ECAN_BUFFERS * 16)));
+_MSTRPR = 0x20;
 #else
 volatile uint16_t ecanMsgBuf[32][8] __attribute__((aligned(NUM_OF_ECAN_BUFFERS * 16)));
 #endif
@@ -314,7 +316,7 @@ uint8_t CAN_init(uint32_t baud, uint8_t mode, uint32_t system_freq) {
     /* Enable Event Interrupt ISR and select events*/
     _C1IE = 1;
     _C1IF = 0;
-    _C1IP = 6;
+    _C1IP = 7;
 
     /* enable TX Buffer interrupt, but NOT the dedicated TX ISR */
     C1INTEbits.TBIE = 1;
@@ -327,6 +329,9 @@ uint8_t CAN_init(uint32_t baud, uint8_t mode, uint32_t system_freq) {
     C1RXFUL2 = 0x0000;
     C1RXOVF1 = 0x0000;
     C1RXOVF2 = 0x0000;
+
+    /* Enable RX Overflow Interrupt*/
+    C1INTEbits.RBOVIE = 1;
 
     /* enable invalid message interrupt*/
     C1INTEbits.IVRIE = 1;
@@ -694,51 +699,95 @@ void __attribute__((__interrupt__, auto_psv)) _C1Interrupt(void) {
 
     /*Clear Interrupt flag*/
     _C1IF = 0;
+    uint16_t ICODE = C1VECbits.ICODE;
+
+    if (C1INTFbits.FIFOIF){
+        C1INTFbits.FIFOIF = 0;
+    }
 
     /*If WAKE-UP Interrupt, do something*/
-    if (C1INTFbits.WAKIF) {
-        uint16_t temp __attribute__((unused)) = C1VECbits.ICODE;
+    else if (C1INTFbits.WAKIF) {
         C1INTFbits.WAKIF = 0;
-        can_print("CAN_WAKE %d\n", temp);
-        /*do something here...*/
     }
 
     /*If Error Interrupt, do something*/
-    if (C1INTFbits.ERRIF) {
-        uint16_t temp __attribute__((unused)) = C1VECbits.ICODE;
+    else if (C1INTFbits.ERRIF) {
         C1INTFbits.ERRIF = 0;
-        C1INTFbits.EWARN = 0;
-        C1INTFbits.RXWAR = 0;
-        can_print("ERROR %d\n", temp);
-        /*do something here...*/
     }
 
-    /*If Error Interrupt, do something*/
-    if (C1INTFbits.IVRIF) {
-        uint16_t temp __attribute__((unused)) = C1VECbits.ICODE;
+    /*If Invalid Message Interrupt, do something*/
+    else if (C1INTFbits.IVRIF) {
         C1INTFbits.IVRIF = 0;
-        can_print("ERROR %d\n", temp);
-        /*do something here...*/
     }
 
     /*If Receive buffer overflow Interrupt, do something*/
-    if (C1INTFbits.RBOVIF) {
-        uint16_t temp __attribute__((unused)) = C1VECbits.ICODE;
+    else if (C1INTFbits.RBOVIF) {
         C1INTFbits.RBOVIF = 0;
         C1RXOVF1 = 0x0000;
         C1RXOVF2 = 0x0000;
         C1RXFUL1 = 0x0000;
         C1RXFUL2 = 0x0000;
-        can_print("ERROR %d\n", temp);
-        /*do something here...*/
+    }
+
+    /*If Receive Buffer Interrupt, copy messages to static buffer.*/
+    else if (C1INTFbits.RBIF) {
+        C1INTFbits.RBIF = 0;
+        /* Process all FIFO messages using FNRB pointer */
+        while (C1RXFUL2 || (C1RXFUL1 & (1 << 15))) {
+            uint16_t thisBuff = C1FIFObits.FNRB;
+            
+            /* Clear the RXFUL flag for this FIFO buffer */
+            if (thisBuff == 15) {
+                C1RXFUL1 &= ~(1 << 15);
+            } else {
+                C1RXFUL2 &= ~(1 << (thisBuff - 16));
+            }
+            
+            /* Extract filter hit and copy message data */
+            uint8_t filterHit = (ecanMsgBuf[thisBuff][7] >> 8);
+            for (uint8_t i = 0; i < 8; i++) {
+                ecanRXMsgBuf[filterHit][i] = ecanMsgBuf[thisBuff][i];
+            }
+            ecanRXMsgBuf[filterHit][7] |= 0x01; /* Set fresh message flag */
+            
+            /* Update timestamp if callback available and message configured */
+            if (can_getTimestamp && can_mailboxLookup[filterHit]) {
+                can_mailboxLookup[filterHit]->last_received_timestamp = can_getTimestamp();
+            }
+
+            can_rxDataReady |= 1 << (thisBuff-CAN_TX_FIFO_BUFFER_SIZE); //TODO get rid of this.
+        }
+
+        /* Process all static buffers (8-14) that have messages */
+        for (uint16_t i = CAN_TX_FIFO_BUFFER_SIZE; i < 15; i++) {
+            if (C1RXFUL1 & (1 << i)) {
+                
+                /* Clear this buffer's flag */
+                C1RXFUL1 &= ~(1 << i);
+
+                uint8_t sw_buffer_index = i - CAN_TX_FIFO_BUFFER_SIZE;
+
+                /* Copy message data */
+                for (uint8_t j = 0; j < 8; j++) {
+                    ecanRXMsgBuf[sw_buffer_index][j] = ecanMsgBuf[i][j];
+                }
+                ecanRXMsgBuf[sw_buffer_index][7] |= 0x01; /* Set fresh message flag */
+                
+                /* Update timestamp if callback available and message configured */
+                if (can_getTimestamp && can_mailboxLookup[sw_buffer_index]) {
+                    can_mailboxLookup[sw_buffer_index]->last_received_timestamp = can_getTimestamp();
+                }
+
+                can_rxDataReady |= 1 << sw_buffer_index; //TODO: get rid of this
+            }
+        }
+
     }
 
     /*If Transmit Buffer Interrupt, do something*/
-    if (C1INTFbits.TBIF) {
-        uint16_t temp __attribute__((unused)) = C1VECbits.ICODE;
+    else if (C1INTFbits.TBIF) {
         C1INTFbits.TBIF = 0;
-        //can_print("TX_INT %d\n", temp);
-        
+
         /* Process TX queue - send pending messages if buffers are available */
         while (!can_txQueueIsEmpty()) {
             // Find a free buffer
@@ -761,67 +810,6 @@ void __attribute__((__interrupt__, auto_psv)) _C1Interrupt(void) {
                 can_sendMessageToBuffer(msg, free_buffer);
             }
         }
-    }
-
-    /*If Receive Buffer Interrupt, copy messages to static buffer.*/
-    if (C1INTFbits.RBIF) {
-        C1INTFbits.RBIF = 0;
-        
-        /* Process all static buffers (0-14) that have messages */
-        for (uint16_t i = 0; i < 15; i++) {
-            if (C1RXFUL1 & (1 << i)) {
-                uint8_t sw_buffer_index = i - CAN_TX_FIFO_BUFFER_SIZE;
-                can_rxDataReady |= 1 << (i-8);
-                
-                /* Copy message data */
-                for (uint8_t j = 0; j < 8; j++) {
-                    ecanRXMsgBuf[sw_buffer_index][j] = ecanMsgBuf[i][j];
-                }
-                ecanRXMsgBuf[sw_buffer_index][7] |= 0x01; /* Set fresh message flag */
-                
-                /* Clear this buffer's flag */
-                C1RXFUL1 &= ~(1 << i);
-                
-                /* Update timestamp if callback available and message configured */
-                if (can_getTimestamp && can_mailboxLookup[sw_buffer_index]) {
-                    can_mailboxLookup[sw_buffer_index]->last_received_timestamp = can_getTimestamp();
-                }
-                
-                can_print("RX_INT %d\n", i);
-            }
-        }
-        
-        /* Process all FIFO messages using FNRB pointer */
-        while (C1RXFUL1 & (1 << 15) || C1RXFUL2) {
-            uint16_t thisBuff = C1FIFObits.FNRB;
-            can_rxDataReady |= 1 << (thisBuff-8);
-            
-            /* Clear the RXFUL flag for this FIFO buffer */
-            if (thisBuff == 15) {
-                C1RXFUL1 &= ~(1 << 15);
-            } else {
-                C1RXFUL2 &= ~(1 << (thisBuff - 16));
-            }
-            
-            /* Extract filter hit and copy message data */
-            uint8_t filterHit = (ecanMsgBuf[thisBuff][7] >> 8);
-            for (uint8_t i = 0; i < 8; i++) {
-                ecanRXMsgBuf[filterHit][i] = ecanMsgBuf[thisBuff][i];
-            }
-            ecanRXMsgBuf[filterHit][7] |= 0x01; /* Set fresh message flag */
-            
-            /* Update timestamp if callback available and message configured */
-            if (can_getTimestamp && can_mailboxLookup[filterHit]) {
-                can_mailboxLookup[filterHit]->last_received_timestamp = can_getTimestamp();
-            }
-            
-            can_print("RX_INT %d\n", thisBuff);
-        }
-        
-        /* Clear overflow flags only */
-        C1RXOVF1 = 0x0000;
-        C1RXOVF2 = 0x0000;
-        C1INTF = 0x0000;
     }
 
     /* ICODE INTERUPT SOURCES
@@ -868,5 +856,4 @@ void __attribute__((__interrupt__, auto_psv)) _C1RxRdyInterrupt(void) {
     _C1RXIF = 0;
     can_print("CAN RCVD\n");
 }
-
 
