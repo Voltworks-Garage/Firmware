@@ -86,8 +86,8 @@ void CONTACTOR_Run_100ms(void) {
     }
 
     // always get the motor controller input cap voltage for determining precharge
-    if(!CAN_motorcontroller_motor_status_PDO4_checkDataIsStale()){
-        dcLinkVoltage = CAN_motorcontroller_motor_status_PDO4_Capacitor_Voltage_get();
+    if(!CAN_motorcontroller_motorStatus_PDO1_checkDataIsStale()){
+        dcLinkVoltage = CAN_motorcontroller_motorStatus_PDO1_Capacitor_Voltage_get();
     } else {
         dcLinkVoltage = 0;
     }

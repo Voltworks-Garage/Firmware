@@ -1,0 +1,33 @@
+PDOs from the factory:
+
+PDO1:
+1. Target Id
+2. Target Iq
+3. Id
+4. Iq
+COB: 0x391
+SYNC = 1
+
+PDO2:
+1. Ud
+2. 0x4600 0x09 Add Motor Meas sub10
+3. 0x4600 0x0A Add motor Meas sub11
+4. 0x4602 0x1D Motor Debug sub 29
+COB: 0x330
+SYNC = 1
+
+PDO3:
+1. 0x4602 0x1F Motor dbug sub 31
+2. 0x4602 0x20 Powerframe I2t current limit
+3. 0x4602 0x21 Cap long term temp
+4. 0x4600 0x03 Temp measured PTC
+COB: 0x411
+SYNC = 1
+
+PDO4
+1. 0x5100 0x03 Cap Voltage
+2. 0x5100 0x04 Heatsink Temp
+3. 0x5100 0x02 Battery Current
+4. 0x2020 0x05 Max Torque Left motor
+COB: 0x271
+SYNC = 1

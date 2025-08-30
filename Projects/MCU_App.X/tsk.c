@@ -39,6 +39,8 @@
 #include "StateMachine.h"
 #include "commandService.h"
 #include "tachometer.h"
+#include "CAN.h"
+#include "ThrottleControl.h"
 
 /******************************************************************************
  * Constants
@@ -110,7 +112,20 @@ void Tsk_1ms(void) {
     CommandService_Run();
 
     IgnitionControl_Run_1ms();
-   
+    ThrottleControl_Run_1ms();
+
+    // This is where we repspond to the SYNC data. TODO: Find somewhere better to do this.
+    if(CAN_motorcontroller_SYNC_checkDataIsUnread() && !CAN_motorcontroller_SYNC_checkDataIsStale()){
+        static uint32_t last_time = 0;
+        uint32_t now = SysTick_Get();
+        CAN_mcu_mcu_debug_debug_value_1_u30_set(now - last_time);
+        CAN_mcu_motorControllerRequest_send();
+        last_time = now;
+    }
+    
+    
+    StateMachine_Run();
+       
     // Populate 1ms task CPU usage (will be available after CAN code regeneration)
     TaskType *tasks = Tsk_GetConfig();
     CAN_mcu_mcu_debug_task_1ms_cpu_percent_set(CPUUsage_GetTaskCPUPercent(&tasks[1]));
@@ -233,7 +248,7 @@ void Tsk_Run(uint32_t SystemClock) {
                 }
             }// end for
             
-            StateMachine_Run();
+
             SysTick_CPUTimerEnd();
 
         }

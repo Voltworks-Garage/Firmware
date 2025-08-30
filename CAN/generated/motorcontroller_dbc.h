@@ -28,6 +28,11 @@ uint16_t CAN_mcu_command_motor_controller_enable_get(void);
 
 uint8_t CAN_mcu_motorControllerRequest_checkDataIsUnread(void);
 uint16_t CAN_mcu_motorControllerRequest_Throttle_Value_get(void);
+uint16_t CAN_mcu_motorControllerRequest_Forward_Switch_get(void);
+uint16_t CAN_mcu_motorControllerRequest_Reverse_Switch_get(void);
+uint16_t CAN_mcu_motorControllerRequest_FS1_Switch_get(void);
+uint16_t CAN_mcu_motorControllerRequest_Seat_Switch_get(void);
+uint16_t CAN_mcu_motorControllerRequest_Handbrake_Switch_get(void);
 
 #define CAN_mcu_mcu_debug_interval() 10
 #define CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES 4
@@ -36,20 +41,13 @@ uint8_t CAN_mcu_mcu_debug_checkDataIsStale(void);
 uint16_t CAN_mcu_mcu_debug_Multiplex_get(void);
 float CAN_mcu_mcu_debug_cpu_usage_percent_get(void);
 float CAN_mcu_mcu_debug_cpu_peak_percent_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_3_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_4_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_5_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_6_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_7_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_8_get(void);
+uint16_t CAN_mcu_mcu_debug_debug_value_1_u16_get(void);
+uint32_t CAN_mcu_mcu_debug_debug_value_1_u24_get(void);
 float CAN_mcu_mcu_debug_task_1ms_cpu_percent_get(void);
 float CAN_mcu_mcu_debug_task_10ms_cpu_percent_get(void);
 float CAN_mcu_mcu_debug_task_100ms_cpu_percent_get(void);
 float CAN_mcu_mcu_debug_task_1000ms_cpu_percent_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_9_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_10_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_13_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_14_get(void);
+uint32_t CAN_mcu_mcu_debug_debug_value_1_u30_get(void);
 float CAN_mcu_mcu_debug_task_1ms_peak_cpu_percent_get(void);
 float CAN_mcu_mcu_debug_task_10ms_peak_cpu_percent_get(void);
 float CAN_mcu_mcu_debug_task_100ms_peak_cpu_percent_get(void);
@@ -124,15 +122,24 @@ void CAN_motorcontroller_Emergency_dlc_set(uint8_t dlc);
 void CAN_motorcontroller_Emergency_send(void);
 
 
-#define CAN_motorcontroller_motorStatus_PDO1_interval() 60
-void CAN_motorcontroller_motorStatus_PDO1_Target_Id_set(uint16_t Target_Id);
-void CAN_motorcontroller_motorStatus_PDO1_Target_Iq_set(float Target_Iq);
-void CAN_motorcontroller_motorStatus_PDO1_Id_set(uint16_t Id);
-void CAN_motorcontroller_motorStatus_PDO1_Battery_voltage_set(float Battery_voltage);
+#define CAN_motorcontroller_motorStatus_PDO1_interval() 20
+void CAN_motorcontroller_motorStatus_PDO1_Battery_Voltage_set(float Battery_Voltage);
+void CAN_motorcontroller_motorStatus_PDO1_Battery_Current_set(float Battery_Current);
+void CAN_motorcontroller_motorStatus_PDO1_Capacitor_Voltage_set(float Capacitor_Voltage);
+void CAN_motorcontroller_motorStatus_PDO1_Heatsink_Temperature_set(float Heatsink_Temperature);
 void CAN_motorcontroller_motorStatus_PDO1_dlc_set(uint8_t dlc);
 
 
 void CAN_motorcontroller_motorStatus_PDO1_send(void);
+
+
+#define CAN_motorcontroller_motorStatus_PDO2_interval() 20
+void CAN_motorcontroller_motorStatus_PDO2_Throttle_Input_Voltage_set(float Throttle_Input_Voltage);
+void CAN_motorcontroller_motorStatus_PDO2_Throttle_Value_set(float Throttle_Value);
+void CAN_motorcontroller_motorStatus_PDO2_dlc_set(uint8_t dlc);
+
+
+void CAN_motorcontroller_motorStatus_PDO2_send(void);
 
 
 #define CAN_motorcontroller_motor_status_PDO4_interval() 20
@@ -159,7 +166,6 @@ void CAN_send_10ms(void);
 void CAN_send_100ms(void);
 void CAN_send_1000ms(void);
 void CAN_send_30ms(void);
-void CAN_send_60ms(void);
 void CAN_send_20ms(void);
 
 

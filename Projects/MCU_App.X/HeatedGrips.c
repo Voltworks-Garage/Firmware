@@ -120,7 +120,6 @@ void heated_grips_idle(HEATED_GRIPS_CONTROL_entry_types_E entry_type) {
         case EXIT:
             break;
         case RUN:
-            CAN_mcu_mcu_debug_debug_value_4_set(0);
             if (IgnitionControl_GetAssButtonEvent() == BUTTON_WAS_PRESSED) {
                 heated_grips_nextState = heated_grips_low_state;
             }
@@ -138,7 +137,6 @@ void heated_grips_low(HEATED_GRIPS_CONTROL_entry_types_E entry_type) {
         case EXIT:
             break;
         case RUN:
-            CAN_mcu_mcu_debug_debug_value_4_set(1);
             if (IgnitionControl_GetAssButtonEvent() == BUTTON_WAS_PRESSED) {
                  heated_grips_nextState = heated_grips_medium_state;
             }
@@ -156,7 +154,6 @@ void heated_grips_medium(HEATED_GRIPS_CONTROL_entry_types_E entry_type) {
         case EXIT:
             break;
         case RUN:
-            CAN_mcu_mcu_debug_debug_value_4_set(3);
             if (IgnitionControl_GetAssButtonEvent() == BUTTON_WAS_PRESSED) {
                 heated_grips_nextState = heated_grips_high_state;
             }
@@ -174,7 +171,6 @@ void heated_grips_high(HEATED_GRIPS_CONTROL_entry_types_E entry_type) {
         case EXIT:
             break;
         case RUN:
-        CAN_mcu_mcu_debug_debug_value_4_set(4);
             if (IgnitionControl_GetAssButtonEvent() == BUTTON_WAS_PRESSED) {
                 heated_grips_nextState = heated_grips_idle_state;
             }

@@ -100,7 +100,6 @@ typedef struct
   	uint32_t LastTick;			/**< Stores the last tick task was ran  */
   	void (*Func)(void);			/**< Function pointer to the task  */
   	
-  	uint16_t start_timer;			/**< Timer value when task started */
   	uint16_t peak_execution_ticks;		/**< Peak execution time recorded */
   	uint16_t peak_cpu_percent;		/**< Peak CPU percentage (0.1% resolution) */
   	movingAverageInt_S cpu_filter;		/**< Moving average filter struct */

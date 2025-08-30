@@ -138,18 +138,20 @@ uint16_t IO_GET_CURRENT_CHARGE_CONTROLLER(void);
 uint16_t IO_GET_CURRENT_MOTOR_CONTROLLER(void);
 uint16_t IO_GET_CURRENT_BMS_CONTROLLER(void);
 uint16_t IO_GET_CURRENT_J1772_CONTROLLER(void);
-float IO_GET_CURRENT_BATT(void);
-float IO_GET_CURRENT_DCDC(void);
-float IO_GET_CURRENT_IC_CONTROLLER(void);
+float IO_GET_CURRENT_BATT(void);//TODO: Change mA.
+float IO_GET_CURRENT_DCDC(void);//TODO: Change mA.
+float IO_GET_CURRENT_IC_CONTROLLER(void);//TODO: Change mA.
 
 /**
- * IO_GET_VOLTAGE_xxx will return the converted voltage (including divider) in milliVolts
- * @return Voltage in milliVolts
+ * IO_GET_VOLTAGE_xxx will return the converted voltage (including divider) in Volts
+ * @return Voltage in Volts
  */
+//TODO: Change everything to mV.
 float IO_GET_VOLTAGE_PILOT(void);
 float IO_GET_VOLTAGE_PROXIMITY(void);
 float IO_GET_VOLTAGE_VBAT(void);
 float IO_GET_VOLTAGE_VBAT_SW(void);
+uint16_t IO_GET_VOLTAGE_THROTTLE_mV(void); //This one is in millivolts already
 
 
 /**

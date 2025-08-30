@@ -14,7 +14,8 @@ static uint16_t CPU_peak_counter = 0;
 NEW_LOW_PASS_FILTER_INT(CPU_usage, 10, 1000);
 
 uint32_t SysTick_Get(void) {
-    return Tick;
+    uint32_t thisTick = Tick;
+    return thisTick;
 }
 
 void SysTick_Set(uint32_t value){

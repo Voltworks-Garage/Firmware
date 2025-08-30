@@ -50,7 +50,7 @@ volatile uint16_t ecanRXMsgBuf[NUM_OF_SW_CAN_BUFFERS][8] __attribute__((aligned(
 
 /* Private Variables */
 static volatile uint32_t can_rxDataReady = 0;
-static volatile uint8_t can_thisTxBuffer = 0;
+static uint8_t can_thisTxBuffer = 0;
 static uint8_t can_mailboxNumber = 0;
 static uint8_t can_currentOpMode = CAN_NORMAL;
 
@@ -98,21 +98,24 @@ static uint8_t can_txQueueEnqueue(CAN_message_S* msg) {
     if (can_txQueueIsFull()) {
         return 0; // Queue full, message lost
     }
-    
+    __builtin_disable_interrupts();
     can_txQueue[can_txQueueTail] = msg;
     can_txQueueTail = (can_txQueueTail + 1) % CAN_TX_QUEUE_SIZE;
     can_txQueueCount++;
+    __builtin_enable_interrupts();
     return 1; // Success
 }
 
 static CAN_message_S* can_txQueueDequeue(void) {
+
     if (can_txQueueIsEmpty()) {
         return NULL;
     }
-    
+    __builtin_disable_interrupts();
     CAN_message_S* msg = can_txQueue[can_txQueueHead];
     can_txQueueHead = (can_txQueueHead + 1) % CAN_TX_QUEUE_SIZE;
     can_txQueueCount--;
+    __builtin_enable_interrupts();
     return msg;
 }
 

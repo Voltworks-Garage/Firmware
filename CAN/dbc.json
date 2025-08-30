@@ -615,6 +615,41 @@
                             "scale": 1.0,
                             "offset": 0,
                             "units": ""
+                        },                        
+                        {
+                            "name": "Forward_Switch",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool"
+                        },                        
+                        {
+                            "name": "Reverse_Switch",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool"
+                        },                        
+                        {
+                            "name": "FS1_Switch",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool"
+                        },                        
+                        {
+                            "name": "Seat_Switch",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool"
+                        },
+                        {
+                            "name": "Handbrake_Switch",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool"
                         }
                     ]
                 },
@@ -723,48 +758,16 @@
                             "multiplex": 2
                         },
                         {
-                            "name": "debug_value_3",
-                            "length": 8,
+                            "name": "debug_value_1_u16",
+                            "length": 16,
                             "scale": 1.0,
                             "offset": 0,
                             "units": "",
                             "multiplex": 0
                         },
                         {
-                            "name": "debug_value_4",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "",
-                            "multiplex": 0
-                        },
-                        {
-                            "name": "debug_value_5",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "",
-                            "multiplex": 1
-                        },
-                        {
-                            "name": "debug_value_6",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "",
-                            "multiplex": 1
-                        },
-                        {
-                            "name": "debug_value_7",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "",
-                            "multiplex": 1
-                        },
-                        {
-                            "name": "debug_value_8",
-                            "length": 8,
+                            "name": "debug_value_1_u24",
+                            "length": 24,
                             "scale": 1.0,
                             "offset": 0,
                             "units": "",
@@ -803,36 +806,12 @@
                             "multiplex": 0
                         },
                         {
-                            "name": "debug_value_9",
-                            "length": 8,
+                            "name": "debug_value_1_u30",
+                            "length": 30,
                             "scale": 1.0,
                             "offset": 0,
                             "units": "",
                             "multiplex": 2
-                        },
-                        {
-                            "name": "debug_value_10",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "",
-                            "multiplex": 2
-                        },
-                        {
-                            "name": "debug_value_13",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "",
-                            "multiplex": 3
-                        },
-                        {
-                            "name": "debug_value_14",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "",
-                            "multiplex": 3
                         },
                         {
                             "name": "task_1ms_peak_cpu_percent",
@@ -2096,39 +2075,65 @@
                     "name": "motorStatus_PDO1",
                     "id": "0x391",
                     "x_id": 0,
-                    "freq": 60,
+                    "freq": 20,
                     "consumers": [
                         "mcu",
                         "bms"
                     ],
                     "signals": [
                         {
-                            "name": "Target_Id",
-                            "length": 16,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": ""
-                        },
-                        {
-                            "name": "Target_Iq",
-                            "length": 16,
-                            "scale": 0.01,
-                            "offset": 0,
-                            "units": "A"
-                        },
-                        {
-                            "name": "Id",
-                            "length": 16,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": ""
-                        },
-                        {
-                            "name": "Battery_voltage",
+                            "name": "Battery_Voltage",
                             "length": 16,
                             "scale": 0.0625,
                             "offset": 0,
                             "units": "V"
+                        },
+                        {
+                            "name": "Battery_Current",
+                            "length": 16,
+                            "scale": 0.0625,
+                            "offset": 0,
+                            "units": "A"
+                        },
+                        {
+                            "name": "Capacitor_Voltage",
+                            "length": 16,
+                            "scale": 0.0625,
+                            "offset": 0,
+                            "units": "V"
+                        },
+                        {
+                            "name": "Heatsink_Temperature",
+                            "length": 16,
+                            "scale": 1,
+                            "offset": 0,
+                            "units": "degC"
+                        }
+                    ]
+                },
+                {
+                    "name": "motorStatus_PDO2",
+                    "id": "0x330",
+                    "x_id": 0,
+                    "freq": 20,
+                    "consumers": [
+                        "mcu",
+                        "bms"
+                    ],
+                    "signals": [
+                        {
+                            "name": "Throttle_Input_Voltage",
+                            "length": 16,
+                            "scale": 0.0039,
+                            "offset": 0,
+                            "units": "V"
+                        },
+                        {
+                            "name": "Throttle_Value",
+                            "length": 16,
+                            "scale": 0.00305,
+                            "offset": 0,
+                            "units": "%"
                         }
                     ]
                 },

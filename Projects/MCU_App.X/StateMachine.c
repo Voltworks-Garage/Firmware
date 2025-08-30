@@ -2,6 +2,7 @@
  * Includes
  *******************************************************************************/
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "StateMachine.h"
 #include "CAN.h"
@@ -21,6 +22,7 @@
 #include "mcc_generated_files/watchdog.h"
 #include "CommandService.h"
 #include "tachometer.h"
+#include "ThrottleControl.h"
 
 
 /******************************************************************************
@@ -82,11 +84,8 @@ static STATE_MACHINE_states_E sm_nextState = boot_state; /* initialize next stat
 uint8_t sm_keepAwakeFlag = 0;
 
 NEW_TIMER(idleTimer, 60000);
-NEW_TIMER(SwEnTimer, 1);
 NEW_TIMER(diagTimer, 10*60000); //10 minute diag timer.
 NEW_TIMER(tachTimer, 1500);
-
-static uint8_t tach = 0;
 
 /******************************************************************************
  * Function Prototypes
@@ -99,13 +98,16 @@ void resume_all_tasks(void);
 void StateMachine_Init(void) {
     state_functions[sm_curState](ENTRY);
 }
-
+extern CAN_message_S CAN_motorcontroller_SYNC;
 void StateMachine_Run(void) {
 
-    if(CAN_motorcontroller_SYNC_checkDataIsUnread()){
+    bool unread = CAN_motorcontroller_SYNC_checkDataIsUnread();
+    bool fresh = !CAN_motorcontroller_SYNC_checkDataIsStale();
+
+
+    if(unread && fresh){
         CAN_mcu_motorControllerRequest_send();
     }
-
     CAN_mcu_status_vehicleState_set(sm_curState);
                 
     /* This only happens during state transition
@@ -138,6 +140,7 @@ void boot(STATE_MACHINE_entry_types_E entry_type) {
             j1772Control_Init();
             LvBattery_Init();
             tachometer_init();
+            ThrottleControl_Init();
         
 
             //Get HV support ready.
@@ -241,14 +244,14 @@ void running(STATE_MACHINE_entry_types_E entry_type) {
         case ENTRY:
             IO_SET_HEADLIGHT_LO_EN(HIGH);
             CAN_mcu_command_motor_controller_enable_set(1);
+            ThrottleControl_Enable(true);
             break;
         case EXIT:
             IO_SET_HEADLIGHT_LO_EN(LOW);
             CAN_mcu_command_motor_controller_enable_set(0);
-            CAN_mcu_motorControllerRequest_Throttle_Value_set(0x00);
+            ThrottleControl_Enable(false);
             break;
         case RUN:
-            CAN_mcu_motorControllerRequest_Throttle_Value_set(0xAA);
             // If the start button is held, go to idle state.
             // Clear the hold flag to prevent re-entry.
             if (IgnitionControl_GetStartButtonIsHeld(true)) {
@@ -355,7 +358,6 @@ void sleep(STATE_MACHINE_entry_types_E entry_type) {
                 sm_nextState = boot_state;
             // }
 
-            asm("reset");
 
             break;
         default:
@@ -401,6 +403,7 @@ void halt_all_tasks(void) {
     IgnitionControl_Halt();
     // LvBattery_Halt();
     tachometer_halt();
+    ThrottleControl_Halt();
 }
 void resume_all_tasks(void) {
     LightsControl_Init();
@@ -410,6 +413,7 @@ void resume_all_tasks(void) {
     IgnitionControl_Init();
     // LvBattery_Init();
     tachometer_init();
+    ThrottleControl_Init();
 }
 
 /*** End of File **************************************************************/

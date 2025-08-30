@@ -18,6 +18,8 @@
 * Static Variables
 *******************************************************************************/
 static uint16_t ticks_per_ms_cached = 0;
+static uint16_t current_task_start_timer = 0;  /**< Timer value when current task started */
+static uint32_t current_task_start_systick = 0; /**< SysTick value when current task started */
 
 /******************************************************************************
 * Function Implementations
@@ -32,7 +34,8 @@ void CPUUsage_Init(void)
 void CPUUsage_StartTaskTiming(TaskType *task)
 {
     if (task != NULL) {
-        task->start_timer = SysTick_GetTimerValue();
+        current_task_start_timer = SysTick_GetTimerValue();
+        current_task_start_systick = SysTick_Get();
     }
 }
 
@@ -41,25 +44,39 @@ void CPUUsage_EndTaskTiming(TaskType *task)
     if (task == NULL) return;
     
     uint16_t end_timer = SysTick_GetTimerValue();
+    uint32_t end_systick = SysTick_Get();
     uint16_t execution_ticks = 0;
+    uint16_t cpu_percent = 0;
     
-    // Handle timer wraparound
-    if (end_timer >= task->start_timer) {
-        execution_ticks = end_timer - task->start_timer;
+    // Check for SysTick overflow during task execution
+    // If more than 1ms has passed, we likely had an overflow
+    uint32_t systick_duration = end_systick - current_task_start_systick;
+    if (systick_duration > 1) {
+        // Overflow detected - set CPU usage to 100%
+        cpu_percent = 100;
+        execution_ticks = ticks_per_ms_cached;
     } else {
-        execution_ticks = (ticks_per_ms_cached - task->start_timer) + end_timer;
+        // Handle timer wraparound
+        if (end_timer >= current_task_start_timer) {
+            execution_ticks = end_timer - current_task_start_timer;
+        } else {
+            execution_ticks = (ticks_per_ms_cached - current_task_start_timer) + end_timer;
+        }
+        
+        // Calculate CPU percentage (0-100%)
+        // Formula: (execution_ticks * 100) / (1ms_ticks)
+        cpu_percent = (uint16_t)((execution_ticks * 100UL) / ticks_per_ms_cached);
+        
+        // Cap at 100% 
+        if (cpu_percent > 100) {
+            cpu_percent = 100;
+        }
     }
     
     // Update peak execution time
     if (execution_ticks > task->peak_execution_ticks) {
         task->peak_execution_ticks = execution_ticks;
     }
-    
-    // Calculate CPU percentage (0-100%)
-    // Formula: (execution_ticks * 100) / (1ms_ticks)
-    uint16_t cpu_percent = 0;
-    
-    cpu_percent = (uint16_t)((execution_ticks * 100UL) / ticks_per_ms_cached);
     
     takeMovingAverageInt(&task->cpu_filter, cpu_percent);
     

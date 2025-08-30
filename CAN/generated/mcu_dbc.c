@@ -695,12 +695,52 @@ static CAN_message_S CAN_mcu_motorControllerRequest={
 
 #define CAN_MCU_MOTORCONTROLLERREQUEST_THROTTLE_VALUE_RANGE 16
 #define CAN_MCU_MOTORCONTROLLERREQUEST_THROTTLE_VALUE_OFFSET 0
+#define CAN_MCU_MOTORCONTROLLERREQUEST_FORWARD_SWITCH_RANGE 1
+#define CAN_MCU_MOTORCONTROLLERREQUEST_FORWARD_SWITCH_OFFSET 16
+#define CAN_MCU_MOTORCONTROLLERREQUEST_REVERSE_SWITCH_RANGE 1
+#define CAN_MCU_MOTORCONTROLLERREQUEST_REVERSE_SWITCH_OFFSET 17
+#define CAN_MCU_MOTORCONTROLLERREQUEST_FS1_SWITCH_RANGE 1
+#define CAN_MCU_MOTORCONTROLLERREQUEST_FS1_SWITCH_OFFSET 18
+#define CAN_MCU_MOTORCONTROLLERREQUEST_SEAT_SWITCH_RANGE 1
+#define CAN_MCU_MOTORCONTROLLERREQUEST_SEAT_SWITCH_OFFSET 19
+#define CAN_MCU_MOTORCONTROLLERREQUEST_HANDBRAKE_SWITCH_RANGE 1
+#define CAN_MCU_MOTORCONTROLLERREQUEST_HANDBRAKE_SWITCH_OFFSET 20
 
 void CAN_mcu_motorControllerRequest_Throttle_Value_set(uint16_t Throttle_Value){
 	uint16_t data_scaled = Throttle_Value * 1.0;
 	// Set 16-bit signal at bit offset 0
 	CAN_mcu_motorControllerRequest.payload->word0 &= ~0xFFFF;
 	CAN_mcu_motorControllerRequest.payload->word0 |= data_scaled & 0xFFFF;
+}
+void CAN_mcu_motorControllerRequest_Forward_Switch_set(uint16_t Forward_Switch){
+	uint16_t data_scaled = Forward_Switch * 1.0;
+	// Set 1-bit signal at bit offset 16
+	CAN_mcu_motorControllerRequest.payload->word1 &= ~0x0001;
+	CAN_mcu_motorControllerRequest.payload->word1 |= data_scaled & 0x0001;
+}
+void CAN_mcu_motorControllerRequest_Reverse_Switch_set(uint16_t Reverse_Switch){
+	uint16_t data_scaled = Reverse_Switch * 1.0;
+	// Set 1-bit signal at bit offset 17
+	CAN_mcu_motorControllerRequest.payload->word1 &= ~0x0002;
+	CAN_mcu_motorControllerRequest.payload->word1 |= (data_scaled << 1) & 0x0002;
+}
+void CAN_mcu_motorControllerRequest_FS1_Switch_set(uint16_t FS1_Switch){
+	uint16_t data_scaled = FS1_Switch * 1.0;
+	// Set 1-bit signal at bit offset 18
+	CAN_mcu_motorControllerRequest.payload->word1 &= ~0x0004;
+	CAN_mcu_motorControllerRequest.payload->word1 |= (data_scaled << 2) & 0x0004;
+}
+void CAN_mcu_motorControllerRequest_Seat_Switch_set(uint16_t Seat_Switch){
+	uint16_t data_scaled = Seat_Switch * 1.0;
+	// Set 1-bit signal at bit offset 19
+	CAN_mcu_motorControllerRequest.payload->word1 &= ~0x0008;
+	CAN_mcu_motorControllerRequest.payload->word1 |= (data_scaled << 3) & 0x0008;
+}
+void CAN_mcu_motorControllerRequest_Handbrake_Switch_set(uint16_t Handbrake_Switch){
+	uint16_t data_scaled = Handbrake_Switch * 1.0;
+	// Set 1-bit signal at bit offset 20
+	CAN_mcu_motorControllerRequest.payload->word1 &= ~0x0010;
+	CAN_mcu_motorControllerRequest.payload->word1 |= (data_scaled << 4) & 0x0010;
 }
 void CAN_mcu_motorControllerRequest_dlc_set(uint8_t dlc){
 	CAN_mcu_motorControllerRequest.dlc = dlc;
@@ -824,42 +864,28 @@ static CAN_message_S CAN_mcu_mcu_debug={
 #define CAN_MCU_MCU_DEBUG_M2_CPU_USAGE_PERCENT_OFFSET 2
 #define CAN_MCU_MCU_DEBUG_M2_CPU_PEAK_PERCENT_RANGE 8
 #define CAN_MCU_MCU_DEBUG_M2_CPU_PEAK_PERCENT_OFFSET 10
-#define CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_3_RANGE 8
-#define CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_3_OFFSET 2
-#define CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_4_RANGE 8
-#define CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_4_OFFSET 10
-#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_5_RANGE 8
-#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_5_OFFSET 2
-#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_6_RANGE 8
-#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_6_OFFSET 10
-#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_7_RANGE 8
-#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_7_OFFSET 18
-#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_8_RANGE 8
-#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_8_OFFSET 26
+#define CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_1_U16_RANGE 16
+#define CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_1_U16_OFFSET 2
+#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_1_U24_RANGE 24
+#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_1_U24_OFFSET 2
 #define CAN_MCU_MCU_DEBUG_M1_TASK_1MS_CPU_PERCENT_RANGE 8
-#define CAN_MCU_MCU_DEBUG_M1_TASK_1MS_CPU_PERCENT_OFFSET 34
+#define CAN_MCU_MCU_DEBUG_M1_TASK_1MS_CPU_PERCENT_OFFSET 26
 #define CAN_MCU_MCU_DEBUG_M1_TASK_10MS_CPU_PERCENT_RANGE 8
-#define CAN_MCU_MCU_DEBUG_M1_TASK_10MS_CPU_PERCENT_OFFSET 42
+#define CAN_MCU_MCU_DEBUG_M1_TASK_10MS_CPU_PERCENT_OFFSET 34
 #define CAN_MCU_MCU_DEBUG_M0_TASK_100MS_CPU_PERCENT_RANGE 8
 #define CAN_MCU_MCU_DEBUG_M0_TASK_100MS_CPU_PERCENT_OFFSET 18
 #define CAN_MCU_MCU_DEBUG_M0_TASK_1000MS_CPU_PERCENT_RANGE 8
 #define CAN_MCU_MCU_DEBUG_M0_TASK_1000MS_CPU_PERCENT_OFFSET 26
-#define CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_9_RANGE 8
-#define CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_9_OFFSET 18
-#define CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_10_RANGE 8
-#define CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_10_OFFSET 26
-#define CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_13_RANGE 8
-#define CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_13_OFFSET 2
-#define CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_14_RANGE 8
-#define CAN_MCU_MCU_DEBUG_M3_DEBUG_VALUE_14_OFFSET 10
+#define CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_1_U30_RANGE 30
+#define CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_1_U30_OFFSET 18
 #define CAN_MCU_MCU_DEBUG_M3_TASK_1MS_PEAK_CPU_PERCENT_RANGE 8
-#define CAN_MCU_MCU_DEBUG_M3_TASK_1MS_PEAK_CPU_PERCENT_OFFSET 18
+#define CAN_MCU_MCU_DEBUG_M3_TASK_1MS_PEAK_CPU_PERCENT_OFFSET 2
 #define CAN_MCU_MCU_DEBUG_M3_TASK_10MS_PEAK_CPU_PERCENT_RANGE 8
-#define CAN_MCU_MCU_DEBUG_M3_TASK_10MS_PEAK_CPU_PERCENT_OFFSET 26
+#define CAN_MCU_MCU_DEBUG_M3_TASK_10MS_PEAK_CPU_PERCENT_OFFSET 10
 #define CAN_MCU_MCU_DEBUG_M2_TASK_100MS_PEAK_CPU_PERCENT_RANGE 8
-#define CAN_MCU_MCU_DEBUG_M2_TASK_100MS_PEAK_CPU_PERCENT_OFFSET 34
+#define CAN_MCU_MCU_DEBUG_M2_TASK_100MS_PEAK_CPU_PERCENT_OFFSET 48
 #define CAN_MCU_MCU_DEBUG_M2_TASK_1000MS_PEAK_CPU_PERCENT_RANGE 8
-#define CAN_MCU_MCU_DEBUG_M2_TASK_1000MS_PEAK_CPU_PERCENT_OFFSET 42
+#define CAN_MCU_MCU_DEBUG_M2_TASK_1000MS_PEAK_CPU_PERCENT_OFFSET 56
 
 void CAN_mcu_mcu_debug_cpu_usage_percent_set(float cpu_usage_percent){
 	uint16_t data_scaled = (uint16_t)(cpu_usage_percent * 2.0f + 0.5f);
@@ -875,61 +901,35 @@ void CAN_mcu_mcu_debug_cpu_peak_percent_set(float cpu_peak_percent){
 	CAN_mcu_mcu_debug_payloads[2].word1 &= ~0x0003;
 	CAN_mcu_mcu_debug_payloads[2].word1 |= (data_scaled >> 6) & 0x0003;
 }
-void CAN_mcu_mcu_debug_debug_value_3_set(uint16_t debug_value_3){
-	uint16_t data_scaled = debug_value_3 * 1.0;
-	// Set 8-bit signal at bit offset 2
-	CAN_mcu_mcu_debug_payloads[0].word0 &= ~0x03FC;
-	CAN_mcu_mcu_debug_payloads[0].word0 |= (data_scaled << 2) & 0x03FC;
-}
-void CAN_mcu_mcu_debug_debug_value_4_set(uint16_t debug_value_4){
-	uint16_t data_scaled = debug_value_4 * 1.0;
-	// Set 8-bit signal at bit offset 10
-	CAN_mcu_mcu_debug_payloads[0].word0 &= ~0xFC00;
-	CAN_mcu_mcu_debug_payloads[0].word0 |= (data_scaled << 10) & 0xFC00;
+void CAN_mcu_mcu_debug_debug_value_1_u16_set(uint16_t debug_value_1_u16){
+	uint16_t data_scaled = debug_value_1_u16 * 1.0;
+	// Set 16-bit signal at bit offset 2
+	CAN_mcu_mcu_debug_payloads[0].word0 &= ~0xFFFC;
+	CAN_mcu_mcu_debug_payloads[0].word0 |= (data_scaled << 2) & 0xFFFC;
 	CAN_mcu_mcu_debug_payloads[0].word1 &= ~0x0003;
-	CAN_mcu_mcu_debug_payloads[0].word1 |= (data_scaled >> 6) & 0x0003;
+	CAN_mcu_mcu_debug_payloads[0].word1 |= (data_scaled >> 14) & 0x0003;
 }
-void CAN_mcu_mcu_debug_debug_value_5_set(uint16_t debug_value_5){
-	uint16_t data_scaled = debug_value_5 * 1.0;
-	// Set 8-bit signal at bit offset 2
-	CAN_mcu_mcu_debug_payloads[1].word0 &= ~0x03FC;
-	CAN_mcu_mcu_debug_payloads[1].word0 |= (data_scaled << 2) & 0x03FC;
+void CAN_mcu_mcu_debug_debug_value_1_u24_set(uint32_t debug_value_1_u24){
+	uint32_t data_scaled = debug_value_1_u24 * 1.0;
+	// Set 24-bit signal at bit offset 2
+	CAN_mcu_mcu_debug_payloads[1].word0 &= ~0xFFFC;
+	CAN_mcu_mcu_debug_payloads[1].word0 |= (data_scaled << 2) & 0xFFFC;
+	CAN_mcu_mcu_debug_payloads[1].word1 &= ~0x03FF;
+	CAN_mcu_mcu_debug_payloads[1].word1 |= (data_scaled >> 14) & 0x03FF;
 }
-void CAN_mcu_mcu_debug_debug_value_6_set(uint16_t debug_value_6){
-	uint16_t data_scaled = debug_value_6 * 1.0;
-	// Set 8-bit signal at bit offset 10
-	CAN_mcu_mcu_debug_payloads[1].word0 &= ~0xFC00;
-	CAN_mcu_mcu_debug_payloads[1].word0 |= (data_scaled << 10) & 0xFC00;
-	CAN_mcu_mcu_debug_payloads[1].word1 &= ~0x0003;
-	CAN_mcu_mcu_debug_payloads[1].word1 |= (data_scaled >> 6) & 0x0003;
-}
-void CAN_mcu_mcu_debug_debug_value_7_set(uint16_t debug_value_7){
-	uint16_t data_scaled = debug_value_7 * 1.0;
-	// Set 8-bit signal at bit offset 18
-	CAN_mcu_mcu_debug_payloads[1].word1 &= ~0x03FC;
-	CAN_mcu_mcu_debug_payloads[1].word1 |= (data_scaled << 2) & 0x03FC;
-}
-void CAN_mcu_mcu_debug_debug_value_8_set(uint16_t debug_value_8){
-	uint16_t data_scaled = debug_value_8 * 1.0;
+void CAN_mcu_mcu_debug_task_1ms_cpu_percent_set(float task_1ms_cpu_percent){
+	uint16_t data_scaled = (uint16_t)(task_1ms_cpu_percent * 1.0f + 0.5f);
 	// Set 8-bit signal at bit offset 26
 	CAN_mcu_mcu_debug_payloads[1].word1 &= ~0xFC00;
 	CAN_mcu_mcu_debug_payloads[1].word1 |= (data_scaled << 10) & 0xFC00;
 	CAN_mcu_mcu_debug_payloads[1].word2 &= ~0x0003;
 	CAN_mcu_mcu_debug_payloads[1].word2 |= (data_scaled >> 6) & 0x0003;
 }
-void CAN_mcu_mcu_debug_task_1ms_cpu_percent_set(float task_1ms_cpu_percent){
-	uint16_t data_scaled = (uint16_t)(task_1ms_cpu_percent * 1.0f + 0.5f);
+void CAN_mcu_mcu_debug_task_10ms_cpu_percent_set(float task_10ms_cpu_percent){
+	uint16_t data_scaled = (uint16_t)(task_10ms_cpu_percent * 1.0f + 0.5f);
 	// Set 8-bit signal at bit offset 34
 	CAN_mcu_mcu_debug_payloads[1].word2 &= ~0x03FC;
 	CAN_mcu_mcu_debug_payloads[1].word2 |= (data_scaled << 2) & 0x03FC;
-}
-void CAN_mcu_mcu_debug_task_10ms_cpu_percent_set(float task_10ms_cpu_percent){
-	uint16_t data_scaled = (uint16_t)(task_10ms_cpu_percent * 1.0f + 0.5f);
-	// Set 8-bit signal at bit offset 42
-	CAN_mcu_mcu_debug_payloads[1].word2 &= ~0xFC00;
-	CAN_mcu_mcu_debug_payloads[1].word2 |= (data_scaled << 10) & 0xFC00;
-	CAN_mcu_mcu_debug_payloads[1].word3 &= ~0x0003;
-	CAN_mcu_mcu_debug_payloads[1].word3 |= (data_scaled >> 6) & 0x0003;
 }
 void CAN_mcu_mcu_debug_task_100ms_cpu_percent_set(float task_100ms_cpu_percent){
 	uint16_t data_scaled = (uint16_t)(task_100ms_cpu_percent * 1.0f + 0.5f);
@@ -945,61 +945,39 @@ void CAN_mcu_mcu_debug_task_1000ms_cpu_percent_set(float task_1000ms_cpu_percent
 	CAN_mcu_mcu_debug_payloads[0].word2 &= ~0x0003;
 	CAN_mcu_mcu_debug_payloads[0].word2 |= (data_scaled >> 6) & 0x0003;
 }
-void CAN_mcu_mcu_debug_debug_value_9_set(uint16_t debug_value_9){
-	uint16_t data_scaled = debug_value_9 * 1.0;
-	// Set 8-bit signal at bit offset 18
-	CAN_mcu_mcu_debug_payloads[2].word1 &= ~0x03FC;
-	CAN_mcu_mcu_debug_payloads[2].word1 |= (data_scaled << 2) & 0x03FC;
+void CAN_mcu_mcu_debug_debug_value_1_u30_set(uint32_t debug_value_1_u30){
+	uint32_t data_scaled = debug_value_1_u30 * 1.0;
+	// Set 30-bit signal at bit offset 18
+	CAN_mcu_mcu_debug_payloads[2].word1 &= ~0xFFFC;
+	CAN_mcu_mcu_debug_payloads[2].word1 |= (data_scaled << 2) & 0xFFFC;
+	CAN_mcu_mcu_debug_payloads[2].word2 &= ~0xFFFF;
+	CAN_mcu_mcu_debug_payloads[2].word2 |= (data_scaled >> 14) & 0xFFFF;
 }
-void CAN_mcu_mcu_debug_debug_value_10_set(uint16_t debug_value_10){
-	uint16_t data_scaled = debug_value_10 * 1.0;
-	// Set 8-bit signal at bit offset 26
-	CAN_mcu_mcu_debug_payloads[2].word1 &= ~0xFC00;
-	CAN_mcu_mcu_debug_payloads[2].word1 |= (data_scaled << 10) & 0xFC00;
-	CAN_mcu_mcu_debug_payloads[2].word2 &= ~0x0003;
-	CAN_mcu_mcu_debug_payloads[2].word2 |= (data_scaled >> 6) & 0x0003;
-}
-void CAN_mcu_mcu_debug_debug_value_13_set(uint16_t debug_value_13){
-	uint16_t data_scaled = debug_value_13 * 1.0;
+void CAN_mcu_mcu_debug_task_1ms_peak_cpu_percent_set(float task_1ms_peak_cpu_percent){
+	uint16_t data_scaled = (uint16_t)(task_1ms_peak_cpu_percent * 1.0f + 0.5f);
 	// Set 8-bit signal at bit offset 2
 	CAN_mcu_mcu_debug_payloads[3].word0 &= ~0x03FC;
 	CAN_mcu_mcu_debug_payloads[3].word0 |= (data_scaled << 2) & 0x03FC;
 }
-void CAN_mcu_mcu_debug_debug_value_14_set(uint16_t debug_value_14){
-	uint16_t data_scaled = debug_value_14 * 1.0;
+void CAN_mcu_mcu_debug_task_10ms_peak_cpu_percent_set(float task_10ms_peak_cpu_percent){
+	uint16_t data_scaled = (uint16_t)(task_10ms_peak_cpu_percent * 1.0f + 0.5f);
 	// Set 8-bit signal at bit offset 10
 	CAN_mcu_mcu_debug_payloads[3].word0 &= ~0xFC00;
 	CAN_mcu_mcu_debug_payloads[3].word0 |= (data_scaled << 10) & 0xFC00;
 	CAN_mcu_mcu_debug_payloads[3].word1 &= ~0x0003;
 	CAN_mcu_mcu_debug_payloads[3].word1 |= (data_scaled >> 6) & 0x0003;
 }
-void CAN_mcu_mcu_debug_task_1ms_peak_cpu_percent_set(float task_1ms_peak_cpu_percent){
-	uint16_t data_scaled = (uint16_t)(task_1ms_peak_cpu_percent * 1.0f + 0.5f);
-	// Set 8-bit signal at bit offset 18
-	CAN_mcu_mcu_debug_payloads[3].word1 &= ~0x03FC;
-	CAN_mcu_mcu_debug_payloads[3].word1 |= (data_scaled << 2) & 0x03FC;
-}
-void CAN_mcu_mcu_debug_task_10ms_peak_cpu_percent_set(float task_10ms_peak_cpu_percent){
-	uint16_t data_scaled = (uint16_t)(task_10ms_peak_cpu_percent * 1.0f + 0.5f);
-	// Set 8-bit signal at bit offset 26
-	CAN_mcu_mcu_debug_payloads[3].word1 &= ~0xFC00;
-	CAN_mcu_mcu_debug_payloads[3].word1 |= (data_scaled << 10) & 0xFC00;
-	CAN_mcu_mcu_debug_payloads[3].word2 &= ~0x0003;
-	CAN_mcu_mcu_debug_payloads[3].word2 |= (data_scaled >> 6) & 0x0003;
-}
 void CAN_mcu_mcu_debug_task_100ms_peak_cpu_percent_set(float task_100ms_peak_cpu_percent){
 	uint16_t data_scaled = (uint16_t)(task_100ms_peak_cpu_percent * 1.0f + 0.5f);
-	// Set 8-bit signal at bit offset 34
-	CAN_mcu_mcu_debug_payloads[2].word2 &= ~0x03FC;
-	CAN_mcu_mcu_debug_payloads[2].word2 |= (data_scaled << 2) & 0x03FC;
+	// Set 8-bit signal at bit offset 48
+	CAN_mcu_mcu_debug_payloads[2].word3 &= ~0x00FF;
+	CAN_mcu_mcu_debug_payloads[2].word3 |= data_scaled & 0x00FF;
 }
 void CAN_mcu_mcu_debug_task_1000ms_peak_cpu_percent_set(float task_1000ms_peak_cpu_percent){
 	uint16_t data_scaled = (uint16_t)(task_1000ms_peak_cpu_percent * 1.0f + 0.5f);
-	// Set 8-bit signal at bit offset 42
-	CAN_mcu_mcu_debug_payloads[2].word2 &= ~0xFC00;
-	CAN_mcu_mcu_debug_payloads[2].word2 |= (data_scaled << 10) & 0xFC00;
-	CAN_mcu_mcu_debug_payloads[2].word3 &= ~0x0003;
-	CAN_mcu_mcu_debug_payloads[2].word3 |= (data_scaled >> 6) & 0x0003;
+	// Set 8-bit signal at bit offset 56
+	CAN_mcu_mcu_debug_payloads[2].word3 &= ~0xFF00;
+	CAN_mcu_mcu_debug_payloads[2].word3 |= (data_scaled << 8) & 0xFF00;
 }
 void CAN_mcu_mcu_debug_dlc_set(uint8_t dlc){
 	CAN_mcu_mcu_debug.dlc = dlc;
@@ -3088,44 +3066,78 @@ static CAN_message_S CAN_motorcontroller_motorStatus_PDO1={
 	.canMessageStatus = 0
 };
 
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_TARGET_ID_RANGE 16
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_TARGET_ID_OFFSET 0
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_TARGET_IQ_RANGE 16
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_TARGET_IQ_OFFSET 16
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_ID_RANGE 16
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_ID_OFFSET 32
 #define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_BATTERY_VOLTAGE_RANGE 16
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_BATTERY_VOLTAGE_OFFSET 48
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_BATTERY_VOLTAGE_OFFSET 0
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_BATTERY_CURRENT_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_BATTERY_CURRENT_OFFSET 16
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_CAPACITOR_VOLTAGE_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_CAPACITOR_VOLTAGE_OFFSET 32
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_HEATSINK_TEMPERATURE_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_HEATSINK_TEMPERATURE_OFFSET 48
 
 uint8_t CAN_motorcontroller_motorStatus_PDO1_checkDataIsUnread(void){
 	return CAN_checkDataIsUnread(&CAN_motorcontroller_motorStatus_PDO1);
 }
 uint8_t CAN_motorcontroller_motorStatus_PDO1_checkDataIsStale(void){
-	return CAN_checkDataIsStale(&CAN_motorcontroller_motorStatus_PDO1, 120);
+	return CAN_checkDataIsStale(&CAN_motorcontroller_motorStatus_PDO1, 40);
 }
-uint16_t CAN_motorcontroller_motorStatus_PDO1_Target_Id_get(void){
+float CAN_motorcontroller_motorStatus_PDO1_Battery_Voltage_get(void){
 	// Extract 16-bit signal at bit offset 0
 	uint16_t data = 0;
 	data |= (uint16_t)((CAN_motorcontroller_motorStatus_PDO1.payload->word0 & 0xFFFF) >> 0) << 0;
-	return (data * 1.0) + 0;
+	return (data * 0.0625) + 0;
 }
-float CAN_motorcontroller_motorStatus_PDO1_Target_Iq_get(void){
+float CAN_motorcontroller_motorStatus_PDO1_Battery_Current_get(void){
 	// Extract 16-bit signal at bit offset 16
 	uint16_t data = 0;
 	data |= (uint16_t)((CAN_motorcontroller_motorStatus_PDO1.payload->word1 & 0xFFFF) >> 0) << 0;
-	return (data * 0.01) + 0;
+	return (data * 0.0625) + 0;
 }
-uint16_t CAN_motorcontroller_motorStatus_PDO1_Id_get(void){
+float CAN_motorcontroller_motorStatus_PDO1_Capacitor_Voltage_get(void){
 	// Extract 16-bit signal at bit offset 32
 	uint16_t data = 0;
 	data |= (uint16_t)((CAN_motorcontroller_motorStatus_PDO1.payload->word2 & 0xFFFF) >> 0) << 0;
-	return (data * 1.0) + 0;
+	return (data * 0.0625) + 0;
 }
-float CAN_motorcontroller_motorStatus_PDO1_Battery_voltage_get(void){
+float CAN_motorcontroller_motorStatus_PDO1_Heatsink_Temperature_get(void){
 	// Extract 16-bit signal at bit offset 48
 	uint16_t data = 0;
 	data |= (uint16_t)((CAN_motorcontroller_motorStatus_PDO1.payload->word3 & 0xFFFF) >> 0) << 0;
-	return (data * 0.0625) + 0;
+	return (data * 1) + 0;
+}
+
+#define CAN_motorcontroller_motorStatus_PDO2_ID 0x330
+
+static CAN_message_S CAN_motorcontroller_motorStatus_PDO2={
+	.canID = CAN_motorcontroller_motorStatus_PDO2_ID,
+	.canXID = 0,
+	.dlc = 8,
+	.payload = 0,
+	.canMessageStatus = 0
+};
+
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO2_THROTTLE_INPUT_VOLTAGE_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO2_THROTTLE_INPUT_VOLTAGE_OFFSET 0
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO2_THROTTLE_VALUE_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO2_THROTTLE_VALUE_OFFSET 16
+
+uint8_t CAN_motorcontroller_motorStatus_PDO2_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_motorcontroller_motorStatus_PDO2);
+}
+uint8_t CAN_motorcontroller_motorStatus_PDO2_checkDataIsStale(void){
+	return CAN_checkDataIsStale(&CAN_motorcontroller_motorStatus_PDO2, 40);
+}
+float CAN_motorcontroller_motorStatus_PDO2_Throttle_Input_Voltage_get(void){
+	// Extract 16-bit signal at bit offset 0
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_motorcontroller_motorStatus_PDO2.payload->word0 & 0xFFFF) >> 0) << 0;
+	return (data * 0.0039) + 0;
+}
+float CAN_motorcontroller_motorStatus_PDO2_Throttle_Value_get(void){
+	// Extract 16-bit signal at bit offset 16
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_motorcontroller_motorStatus_PDO2.payload->word1 & 0xFFFF) >> 0) << 0;
+	return (data * 0.00305) + 0;
 }
 
 #define CAN_motorcontroller_motor_status_PDO4_ID 0x271
@@ -3329,6 +3341,7 @@ void CAN_DBC_init(void) {
 	CAN_configureMailbox(&CAN_motorcontroller_SDO_response);
 	CAN_configureMailbox(&CAN_motorcontroller_Emergency);
 	CAN_configureMailbox(&CAN_motorcontroller_motorStatus_PDO1);
+	CAN_configureMailbox(&CAN_motorcontroller_motorStatus_PDO2);
 	CAN_configureMailbox(&CAN_motorcontroller_motor_status_PDO4);
 	CAN_configureMailbox(&CAN_boot_host_mcu);
 }

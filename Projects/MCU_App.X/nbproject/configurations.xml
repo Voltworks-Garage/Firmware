@@ -55,6 +55,7 @@
         <itemPath>canPopulate.h</itemPath>
         <itemPath>lvBattery.h</itemPath>
         <itemPath>tachometer.h</itemPath>
+        <itemPath>ThrottleControl.h</itemPath>
       </logicalFolder>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
@@ -130,6 +131,7 @@
         <itemPath>lvBattery.c</itemPath>
         <itemPath>commandService_config.h</itemPath>
         <itemPath>tachometer.c</itemPath>
+        <itemPath>ThrottleControl.c</itemPath>
       </logicalFolder>
     </logicalFolder>
   </logicalFolder>
