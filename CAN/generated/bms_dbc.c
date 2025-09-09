@@ -1076,14 +1076,14 @@ static CAN_message_S CAN_mcu_command={
 
 #define CAN_MCU_COMMAND_DCDC_ENABLE_RANGE 1
 #define CAN_MCU_COMMAND_DCDC_ENABLE_OFFSET 0
-#define CAN_MCU_COMMAND_EV_CHARGER_ENABLE_RANGE 1
-#define CAN_MCU_COMMAND_EV_CHARGER_ENABLE_OFFSET 1
-#define CAN_MCU_COMMAND_EV_CHARGER_CURRENT_RANGE 13
-#define CAN_MCU_COMMAND_EV_CHARGER_CURRENT_OFFSET 2
+#define CAN_MCU_COMMAND_J1772_PROX_STATUS_RANGE 2
+#define CAN_MCU_COMMAND_J1772_PROX_STATUS_OFFSET 1
+#define CAN_MCU_COMMAND_J1772_PILOT_CURRENT_RANGE 8
+#define CAN_MCU_COMMAND_J1772_PILOT_CURRENT_OFFSET 3
 #define CAN_MCU_COMMAND_PRECHARGE_ENABLE_RANGE 1
-#define CAN_MCU_COMMAND_PRECHARGE_ENABLE_OFFSET 15
+#define CAN_MCU_COMMAND_PRECHARGE_ENABLE_OFFSET 11
 #define CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_RANGE 1
-#define CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_OFFSET 16
+#define CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_OFFSET 12
 
 uint8_t CAN_mcu_command_checkDataIsUnread(void){
 	return CAN_checkDataIsUnread(&CAN_mcu_command);
@@ -1097,28 +1097,28 @@ uint16_t CAN_mcu_command_DCDC_enable_get(void){
 	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x0001) >> 0) << 0;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_mcu_command_ev_charger_enable_get(void){
-	// Extract 1-bit signal at bit offset 1
+uint16_t CAN_mcu_command_J1772_prox_status_get(void){
+	// Extract 2-bit signal at bit offset 1
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x0002) >> 1) << 0;
+	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x0006) >> 1) << 0;
 	return (data * 1.0) + 0;
 }
-float CAN_mcu_command_ev_charger_current_get(void){
-	// Extract 13-bit signal at bit offset 2
+float CAN_mcu_command_J1772_pilot_current_get(void){
+	// Extract 8-bit signal at bit offset 3
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x7FFC) >> 2) << 0;
-	return (data * 0.1) + 0;
+	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x07F8) >> 3) << 0;
+	return (data * 1.0) + 0;
 }
 uint16_t CAN_mcu_command_precharge_enable_get(void){
-	// Extract 1-bit signal at bit offset 15
+	// Extract 1-bit signal at bit offset 11
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x8000) >> 15) << 0;
+	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x0800) >> 11) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_mcu_command_motor_controller_enable_get(void){
-	// Extract 1-bit signal at bit offset 16
+	// Extract 1-bit signal at bit offset 12
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_mcu_command.payload->word1 & 0x0001) >> 0) << 0;
+	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x1000) >> 12) << 0;
 	return (data * 1.0) + 0;
 }
 
@@ -1937,12 +1937,14 @@ static CAN_message_S CAN_bms_power_systems={
 #define CAN_BMS_POWER_SYSTEMS_EV_CHARGER_VOLTAGE_OFFSET 24
 #define CAN_BMS_POWER_SYSTEMS_EV_CHARGER_CURRENT_RANGE 10
 #define CAN_BMS_POWER_SYSTEMS_EV_CHARGER_CURRENT_OFFSET 34
+#define CAN_BMS_POWER_SYSTEMS_J1772_READY_TO_CHARGE_RANGE 1
+#define CAN_BMS_POWER_SYSTEMS_J1772_READY_TO_CHARGE_OFFSET 44
 #define CAN_BMS_POWER_SYSTEMS_HV_PRECHARGE_STATE_RANGE 1
-#define CAN_BMS_POWER_SYSTEMS_HV_PRECHARGE_STATE_OFFSET 44
+#define CAN_BMS_POWER_SYSTEMS_HV_PRECHARGE_STATE_OFFSET 45
 #define CAN_BMS_POWER_SYSTEMS_HV_ISOLATION_VOLTAGE_RANGE 10
-#define CAN_BMS_POWER_SYSTEMS_HV_ISOLATION_VOLTAGE_OFFSET 45
+#define CAN_BMS_POWER_SYSTEMS_HV_ISOLATION_VOLTAGE_OFFSET 46
 #define CAN_BMS_POWER_SYSTEMS_HV_CONTACTOR_STATE_RANGE 1
-#define CAN_BMS_POWER_SYSTEMS_HV_CONTACTOR_STATE_OFFSET 55
+#define CAN_BMS_POWER_SYSTEMS_HV_CONTACTOR_STATE_OFFSET 56
 
 void CAN_bms_power_systems_DCDC_state_set(uint16_t DCDC_state){
 	uint16_t data_scaled = DCDC_state * 1.0;
@@ -1996,26 +1998,114 @@ void CAN_bms_power_systems_EV_charger_current_set(float EV_charger_current){
 	CAN_bms_power_systems.payload->word2 &= ~0x0FFC;
 	CAN_bms_power_systems.payload->word2 |= (data_scaled << 2) & 0x0FFC;
 }
-void CAN_bms_power_systems_HV_precharge_state_set(uint16_t HV_precharge_state){
-	uint16_t data_scaled = HV_precharge_state * 1.0;
+void CAN_bms_power_systems_J1772_ready_to_charge_set(uint16_t J1772_ready_to_charge){
+	uint16_t data_scaled = J1772_ready_to_charge * 1.0;
 	// Set 1-bit signal at bit offset 44
 	CAN_bms_power_systems.payload->word2 &= ~0x1000;
 	CAN_bms_power_systems.payload->word2 |= (data_scaled << 12) & 0x1000;
 }
+void CAN_bms_power_systems_HV_precharge_state_set(uint16_t HV_precharge_state){
+	uint16_t data_scaled = HV_precharge_state * 1.0;
+	// Set 1-bit signal at bit offset 45
+	CAN_bms_power_systems.payload->word2 &= ~0x2000;
+	CAN_bms_power_systems.payload->word2 |= (data_scaled << 13) & 0x2000;
+}
 void CAN_bms_power_systems_HV_isolation_voltage_set(float HV_isolation_voltage){
 	uint16_t data_scaled = (uint16_t)(HV_isolation_voltage * 10.0f + 0.5f);
-	// Set 10-bit signal at bit offset 45
-	CAN_bms_power_systems.payload->word2 &= ~0xE000;
-	CAN_bms_power_systems.payload->word2 |= (data_scaled << 13) & 0xE000;
-	CAN_bms_power_systems.payload->word3 &= ~0x007F;
-	CAN_bms_power_systems.payload->word3 |= (data_scaled >> 3) & 0x007F;
+	// Set 10-bit signal at bit offset 46
+	CAN_bms_power_systems.payload->word2 &= ~0xC000;
+	CAN_bms_power_systems.payload->word2 |= (data_scaled << 14) & 0xC000;
+	CAN_bms_power_systems.payload->word3 &= ~0x00FF;
+	CAN_bms_power_systems.payload->word3 |= (data_scaled >> 2) & 0x00FF;
 }
 void CAN_bms_power_systems_HV_contactor_state_set(uint16_t HV_contactor_state){
 	uint16_t data_scaled = HV_contactor_state * 1.0;
-	// Set 1-bit signal at bit offset 55
-	CAN_bms_power_systems.payload->word3 &= ~0x0080;
-	CAN_bms_power_systems.payload->word3 |= (data_scaled << 7) & 0x0080;
+	// Set 1-bit signal at bit offset 56
+	CAN_bms_power_systems.payload->word3 &= ~0x0100;
+	CAN_bms_power_systems.payload->word3 |= (data_scaled << 8) & 0x0100;
 }
+uint8_t CAN_bms_power_systems_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_bms_power_systems);
+}
+uint8_t CAN_bms_power_systems_checkDataIsStale(void){
+	return CAN_checkDataIsStale(&CAN_bms_power_systems, 20);
+}
+uint16_t CAN_bms_power_systems_DCDC_state_get(void){
+	// Extract 1-bit signal at bit offset 0
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_power_systems.payload->word0 & 0x0001) >> 0) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_power_systems_DCDC_fault_get(void){
+	// Extract 1-bit signal at bit offset 1
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_power_systems.payload->word0 & 0x0002) >> 1) << 0;
+	return (data * 1.0) + 0;
+}
+float CAN_bms_power_systems_DCDC_voltage_get(void){
+	// Extract 10-bit signal at bit offset 2
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_power_systems.payload->word0 & 0x0FFC) >> 2) << 0;
+	return (data * 0.1) + 0;
+}
+float CAN_bms_power_systems_DCDC_current_get(void){
+	// Extract 10-bit signal at bit offset 12
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_power_systems.payload->word0 & 0xF000) >> 12) << 0;
+	data |= (uint16_t)((CAN_bms_power_systems.payload->word1 & 0x003F) >> 0) << 4;
+	return (data * 0.1) + 0;
+}
+uint16_t CAN_bms_power_systems_EV_charger_state_get(void){
+	// Extract 1-bit signal at bit offset 22
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_power_systems.payload->word1 & 0x0040) >> 6) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_power_systems_EV_charger_fault_get(void){
+	// Extract 1-bit signal at bit offset 23
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_power_systems.payload->word1 & 0x0080) >> 7) << 0;
+	return (data * 1.0) + 0;
+}
+float CAN_bms_power_systems_EV_charger_voltage_get(void){
+	// Extract 10-bit signal at bit offset 24
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_power_systems.payload->word1 & 0xFF00) >> 8) << 0;
+	data |= (uint16_t)((CAN_bms_power_systems.payload->word2 & 0x0003) >> 0) << 8;
+	return (data * 0.1) + 0;
+}
+float CAN_bms_power_systems_EV_charger_current_get(void){
+	// Extract 10-bit signal at bit offset 34
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_power_systems.payload->word2 & 0x0FFC) >> 2) << 0;
+	return (data * 0.1) + -50;
+}
+uint16_t CAN_bms_power_systems_J1772_ready_to_charge_get(void){
+	// Extract 1-bit signal at bit offset 44
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_power_systems.payload->word2 & 0x1000) >> 12) << 0;
+	return (data * 1) + 0;
+}
+uint16_t CAN_bms_power_systems_HV_precharge_state_get(void){
+	// Extract 1-bit signal at bit offset 45
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_power_systems.payload->word2 & 0x2000) >> 13) << 0;
+	return (data * 1.0) + 0;
+}
+float CAN_bms_power_systems_HV_isolation_voltage_get(void){
+	// Extract 10-bit signal at bit offset 46
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_power_systems.payload->word2 & 0xC000) >> 14) << 0;
+	data |= (uint16_t)((CAN_bms_power_systems.payload->word3 & 0x00FF) >> 0) << 2;
+	return (data * 0.1) + 0;
+}
+uint16_t CAN_bms_power_systems_HV_contactor_state_get(void){
+	// Extract 1-bit signal at bit offset 56
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_power_systems.payload->word3 & 0x0100) >> 8) << 0;
+	return (data * 1.0) + 0;
+}
+
 void CAN_bms_power_systems_dlc_set(uint8_t dlc){
 	CAN_bms_power_systems.dlc = dlc;
 }

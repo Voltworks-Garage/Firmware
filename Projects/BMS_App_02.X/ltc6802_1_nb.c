@@ -143,11 +143,11 @@ typedef struct {
     
     // Cell balancing data
     uint16_t min_voltage;
-    uint8_t min_cell_number;
+    uint16_t min_cell_number;
     uint16_t max_voltage;
-    uint8_t max_cell_number;
-    uint8_t cells_to_balance[MAX_BALANCE_CELLS];
-    uint8_t num_cells_to_balance;
+    uint16_t max_cell_number;
+    uint16_t cells_to_balance[MAX_BALANCE_CELLS];
+    uint16_t num_cells_to_balance;
     bool balancing_active;
     
 } LTC6802_1_Module_S;
@@ -549,7 +549,7 @@ LTC6802_1_Error_E LTC6802_1_Resume(void) {
 
 
 
-LTC6802_1_Error_E LTC6802_1_StartCellBalancing(const uint8_t* cells_to_balance, uint8_t num_cells) {
+LTC6802_1_Error_E LTC6802_1_StartCellBalancing(const uint16_t* cells_to_balance, uint16_t num_cells) {
     // Validate inputs
     if (num_cells > MAX_BALANCE_CELLS) {
         num_cells = MAX_BALANCE_CELLS; // Limit to maximum
@@ -557,18 +557,18 @@ LTC6802_1_Error_E LTC6802_1_StartCellBalancing(const uint8_t* cells_to_balance, 
     
     // Copy the cell list to internal storage
     ltc_module.num_cells_to_balance = num_cells;
-    for (uint8_t i = 0; i < num_cells; i++) {
+    for (uint16_t i = 0; i < num_cells; i++) {
         ltc_module.cells_to_balance[i] = cells_to_balance[i];
     }
     
     // Clear all discharge cells first
-    for (uint8_t i = 0; i < LTC6802_1_NUM_STACKS; i++) {
+    for (uint16_t i = 0; i < LTC6802_1_NUM_STACKS; i++) {
         ltc_module.config.discharge_cells[i] = 0;
     }
     
     // Set balancing for cells identified in cells_to_balance array
-    for (uint8_t i = 0; i < ltc_module.num_cells_to_balance; i++) {
-        uint8_t cell_id = ltc_module.cells_to_balance[i];
+    for (uint16_t i = 0; i < ltc_module.num_cells_to_balance; i++) {
+        uint16_t cell_id = ltc_module.cells_to_balance[i];
         
         if (cell_id >= LTC6802_1_TOTAL_CELLS) {
             continue; // Skip invalid cell IDs
@@ -578,8 +578,8 @@ LTC6802_1_Error_E LTC6802_1_StartCellBalancing(const uint8_t* cells_to_balance, 
         // Each stack handles 12 cells (0-11), so we need to map:
         // Global cells 0-11 → Stack 0, local cells 0-11
         // Global cells 12-23 → Stack 1, local cells 0-11
-        uint8_t stack_id = cell_id / LTC6802_1_CELLS_PER_STACK;       // Which stack (0 or 1)
-        uint8_t local_cell_id = cell_id % LTC6802_1_CELLS_PER_STACK;  // Cell within stack (0-11)
+        uint16_t stack_id = cell_id / LTC6802_1_CELLS_PER_STACK;       // Which stack (0 or 1)
+        uint16_t local_cell_id = cell_id % LTC6802_1_CELLS_PER_STACK;  // Cell within stack (0-11)
         
         // Set the bit for this cell in the appropriate stack
         ltc_module.config.discharge_cells[stack_id] |= (1U << local_cell_id);

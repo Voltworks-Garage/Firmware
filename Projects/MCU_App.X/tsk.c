@@ -96,12 +96,25 @@ void Tsk_init(void) {
     WATCHDOG_TimerClear();
     WATCHDOG_TimerSoftwareEnable();
 }
-
+    static uint16_t idleLoopsPerMs = 0;
 /**
  * Tsk is for continuously running tasks, will run when scheduler is Idle.
  */
 void Tsk(void) {
-    j1772Control_Run_cont();
+    static uint32_t idleCounter = 0;
+    static uint32_t lastTickTime = 0;
+
+    
+    uint32_t currentTick = SysTick_Get();
+    
+    idleCounter++;
+    
+    if (currentTick != lastTickTime) {
+        idleLoopsPerMs = (uint16_t)idleCounter;
+        idleCounter = 0;
+        lastTickTime = currentTick;
+    }
+    
 }
 
 /**
@@ -116,11 +129,7 @@ void Tsk_1ms(void) {
 
     // This is where we repspond to the SYNC data. TODO: Find somewhere better to do this.
     if(CAN_motorcontroller_SYNC_checkDataIsUnread() && !CAN_motorcontroller_SYNC_checkDataIsStale()){
-        static uint32_t last_time = 0;
-        uint32_t now = SysTick_Get();
-        CAN_mcu_mcu_debug_debug_value_1_u30_set(now - last_time);
         CAN_mcu_motorControllerRequest_send();
-        last_time = now;
     }
     
     
@@ -174,6 +183,8 @@ void Tsk_100ms(void) {
     TaskType *tasks = Tsk_GetConfig();
     CAN_mcu_mcu_debug_task_100ms_cpu_percent_set(CPUUsage_GetTaskCPUPercent(&tasks[3]));
     CAN_mcu_mcu_debug_task_100ms_peak_cpu_percent_set(CPUUsage_GetTaskPeakCPU(&tasks[3]));
+
+    CAN_mcu_mcu_debug_debug_value_1_u16_set(idleLoopsPerMs);
     
     CAN_populate_100ms();
     CAN_send_100ms();

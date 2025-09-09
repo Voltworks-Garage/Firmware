@@ -20,8 +20,6 @@
 #define THROTTLE_CONTROL_STATES(state)\
 state(throttle_idle)\
 state(throttle_active)\
-state(throttle_eco_mode)\
-state(throttle_sport_mode)\
 
 #define STATE_FORM(WORD) WORD##_state,
 #define FUNCTION_FORM(WORD) static void WORD(THROTTLE_CONTROL_entry_types_E entry_type);
@@ -111,8 +109,6 @@ void ThrottleControl_Init(void) {
 void ThrottleControl_Run_1ms(void) {
 
     takeLowPassFilterInt(rawThrottleInputVoltagemV, IO_GET_VOLTAGE_THROTTLE_mV());
-    CAN_mcu_mcu_debug_debug_value_1_u16_set(getLowPassFilterInt(rawThrottleInputVoltagemV));
-    CAN_mcu_mcu_debug_debug_value_1_u24_set(commandedThrottleInputValue);
 
     if (!throttleEnabled) {
         return;
@@ -145,10 +141,10 @@ void ThrottleControl_Halt(void) {
 
 void ThrottleControl_Enable(bool state) {
     if (state == true){
-        throttle_nextState = throttle_sport_mode_state;
+        throttle_nextState = throttle_active_state;
     }
     else {
-        throttle_nextState = throttle_nextState;
+        throttle_nextState = throttle_idle_state;
     }
 }
 
@@ -157,7 +153,7 @@ void throttle_idle(THROTTLE_CONTROL_entry_types_E entry_type) {
         case ENTRY:
             throttleOutputPercent = THROTTLE_IDLE_OUTPUT;
             throttleOutputValue = 0;
-            CAN_mcu_motorControllerRequest_Throttle_Value_set(throttleOutputValue);
+            CAN_mcu_motorControllerRequest_Throttle_Value_set(THROTTLE_OUTPUT_LOW);
             CAN_mcu_motorControllerRequest_FS1_Switch_set(false);
             CAN_mcu_motorControllerRequest_Forward_Switch_set(false);
             CAN_mcu_motorControllerRequest_Reverse_Switch_set(false);
@@ -165,8 +161,7 @@ void throttle_idle(THROTTLE_CONTROL_entry_types_E entry_type) {
             CAN_mcu_motorControllerRequest_Handbrake_Switch_set(false);
             break;
         case EXIT:
-            CAN_mcu_motorControllerRequest_FS1_Switch_set(true);
-            CAN_mcu_motorControllerRequest_Forward_Switch_set(true);
+
             break;
         case RUN:
             break;
@@ -178,51 +173,22 @@ void throttle_idle(THROTTLE_CONTROL_entry_types_E entry_type) {
 void throttle_active(THROTTLE_CONTROL_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
+            
+            CAN_mcu_motorControllerRequest_Forward_Switch_set(true);
+            
             throttleOutputPercent = THROTTLE_NORMAL_OUTPUT;
             break;
         case EXIT:
             CAN_mcu_motorControllerRequest_Throttle_Value_set(THROTTLE_OUTPUT_LOW);
             break;
         case RUN:
+            CAN_mcu_motorControllerRequest_FS1_Switch_set(true);
             CAN_mcu_motorControllerRequest_Throttle_Value_set(throttleOutputValue);
             break;
         default:
             break;
     }
 }
-
-void throttle_eco_mode(THROTTLE_CONTROL_entry_types_E entry_type) {
-    switch (entry_type) {
-        case ENTRY:
-            throttleOutputPercent = THROTTLE_ECO_OUTPUT;
-            break;
-        case EXIT:
-            CAN_mcu_motorControllerRequest_Throttle_Value_set(THROTTLE_OUTPUT_LOW);
-            break;
-        case RUN:
-            CAN_mcu_motorControllerRequest_Throttle_Value_set(throttleOutputValue);
-            break;
-        default:
-            break;
-    }
-}
-
-void throttle_sport_mode(THROTTLE_CONTROL_entry_types_E entry_type) {
-    switch (entry_type) {
-        case ENTRY:
-            throttleOutputPercent = THROTTLE_SPORT_OUTPUT;
-            break;
-        case EXIT:
-            CAN_mcu_motorControllerRequest_Throttle_Value_set(THROTTLE_OUTPUT_LOW);
-            break;
-        case RUN:
-            CAN_mcu_motorControllerRequest_Throttle_Value_set(throttleOutputValue);
-            break;
-        default:
-            break;
-    }
-}
-
 
 static void getThrottleInputCommand(void){
 
@@ -231,11 +197,13 @@ static void getThrottleInputCommand(void){
     // Input sanitizing
     if (value < THROTTLE_RAW_BOTTOM_DEAD_ZONE_UPPER) {
         commandedThrottleInputValue = THROTTLE_DEMAND_LOW;
+        return;
     }
 
     // Input sanitizing
     if (value > THROTTLE_RAW_TOP_DEAD_ZONE_LOWER) {
         commandedThrottleInputValue = THROTTLE_DEMAND_LOW;
+        return;
     }
 
     commandedThrottleInputValue = map(value,

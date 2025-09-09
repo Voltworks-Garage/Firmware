@@ -268,14 +268,14 @@ void charging(STATE_MACHINE_entry_types_E entry_type) {
         case ENTRY:
             break;
         case EXIT:
-            CAN_mcu_command_ev_charger_current_set(0);
-            CAN_mcu_command_ev_charger_enable_set(0);
+            CAN_mcu_command_J1772_pilot_current_set(0);
+            CAN_mcu_command_J1772_prox_status_set(0);
             break;
         case RUN:
             switch (j1772getProxState()) {
                 case J1772_CONNECTED:
-                    CAN_mcu_command_ev_charger_current_set(j1772getPilotCurrent());
-                    CAN_mcu_command_ev_charger_enable_set(1);
+                    CAN_mcu_command_J1772_pilot_current_set(j1772getPilotCurrent());
+                    CAN_mcu_command_J1772_prox_status_set(j1772getProxState());
                     break;
                 case J1772_DISCONNECTED:
                 case J1772_REQUEST_DISCONNECT:

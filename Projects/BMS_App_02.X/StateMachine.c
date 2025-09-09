@@ -8,6 +8,7 @@
 #include "pinSetup.h"
 #include "sleep.h"
 #include "dcdc.h"
+#include "bms.h"
 #include "can_iso_tp_lite.h"
 #include "watchdog.h"
 #include "Events.h"

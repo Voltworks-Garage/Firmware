@@ -47,7 +47,7 @@ static movingAverageInt_S * x = &x##Object
 /**
  * @brief Creates an integer low pass filter object
  * @param x: name of the average object
- * @param y: Fc Cutoff Frequency in Hz
+ * @param y: Fc Cutoff Frequency in Hz (Fc < Fs/2) to meet nyquist
  * @param z: Fs Sample time in Hz
  * @return none
  */

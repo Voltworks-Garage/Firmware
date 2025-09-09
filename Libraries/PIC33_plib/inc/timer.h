@@ -9,19 +9,27 @@
 
 #include <xc.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 /**
- * Enable timer 1 with highest resolution possible
+ * Initialize timer 1 with highest resolution possible
  * @param time: timer period in microseconds
  * @param clockfreq: peripheral clock frequency in Hz
  * @return 0 on success, 1 on failure
  */
-uint8_t timer1_enable(uint32_t time, uint32_t clockfreq);
+uint8_t timer1_init(uint32_t time, uint32_t clockfreq);
 
 /**
- * Disable timer 1
+ * Enable or disable timer 1 interrupt
+ * @param enable: true to enable interrupt, false to disable
  */
-void timer1_disable(void);
+void timer1_enableInterrupt(bool enable);
+
+/**
+ * Enable or disable timer 1
+ * @param enable: true to enable timer, false to disable
+ */
+void timer1_enable(bool enable);
 
 /**
  * Get timer 1 frequency in Hz
@@ -31,17 +39,24 @@ void timer1_disable(void);
 uint32_t timer1_getFrequency(uint32_t clockfreq);
 
 /**
- * Enable timer 2 with highest resolution possible
+ * Initialize timer 2 with highest resolution possible
  * @param time: timer period in microseconds
  * @param clockfreq: peripheral clock frequency in Hz
  * @return 0 on success, 1 on failure
  */
-uint8_t timer2_enable(uint32_t time, uint32_t clockfreq);
+uint8_t timer2_init(uint32_t time, uint32_t clockfreq);
 
 /**
- * Disable timer 2
+ * Enable or disable timer 2 interrupt
+ * @param enable: true to enable interrupt, false to disable
  */
-void timer2_disable(void);
+void timer2_enableInterrupt(bool enable);
+
+/**
+ * Enable or disable timer 2
+ * @param enable: true to enable timer, false to disable
+ */
+void timer2_enable(bool enable);
 
 /**
  * Get timer 2 frequency in Hz
@@ -51,17 +66,24 @@ void timer2_disable(void);
 uint32_t timer2_getFrequency(uint32_t clockfreq);
 
 /**
- * Enable timer 3 with highest resolution possible
+ * Initialize timer 3 with highest resolution possible
  * @param time: timer period in microseconds
  * @param clockfreq: peripheral clock frequency in Hz
  * @return 0 on success, 1 on failure
  */
-uint8_t timer3_enable(uint32_t time, uint32_t clockfreq);
+uint8_t timer3_init(uint32_t time, uint32_t clockfreq);
 
 /**
- * Disable timer 3
+ * Enable or disable timer 3 interrupt
+ * @param enable: true to enable interrupt, false to disable
  */
-void timer3_disable(void);
+void timer3_enableInterrupt(bool enable);
+
+/**
+ * Enable or disable timer 3
+ * @param enable: true to enable timer, false to disable
+ */
+void timer3_enable(bool enable);
 
 /**
  * Get timer 3 frequency in Hz
@@ -71,17 +93,24 @@ void timer3_disable(void);
 uint32_t timer3_getFrequency(uint32_t clockfreq);
 
 /**
- * Enable timer 4 with highest resolution possible
+ * Initialize timer 4 with highest resolution possible
  * @param time: timer period in microseconds
  * @param clockfreq: peripheral clock frequency in Hz
  * @return 0 on success, 1 on failure
  */
-uint8_t timer4_enable(uint32_t time, uint32_t clockfreq);
+uint8_t timer4_init(uint32_t time, uint32_t clockfreq);
 
 /**
- * Disable timer 4
+ * Enable or disable timer 4 interrupt
+ * @param enable: true to enable interrupt, false to disable
  */
-void timer4_disable(void);
+void timer4_enableInterrupt(bool enable);
+
+/**
+ * Enable or disable timer 4
+ * @param enable: true to enable timer, false to disable
+ */
+void timer4_enable(bool enable);
 
 /**
  * Get timer 4 frequency in Hz
@@ -89,5 +118,49 @@ void timer4_disable(void);
  * @return frequency in Hz, 0 if timer disabled
  */
 uint32_t timer4_getFrequency(uint32_t clockfreq);
+
+/**
+ * Set callback function for timer 1 interrupt
+ * @param callback: function pointer to user interrupt handler
+ */
+void timer1_setCallback(void (*callback)(void));
+
+/**
+ * Set callback function for timer 2 interrupt
+ * @param callback: function pointer to user interrupt handler
+ */
+void timer2_setCallback(void (*callback)(void));
+
+/**
+ * Set callback function for timer 3 interrupt
+ * @param callback: function pointer to user interrupt handler
+ */
+void timer3_setCallback(void (*callback)(void));
+
+/**
+ * Set callback function for timer 4 interrupt
+ * @param callback: function pointer to user interrupt handler
+ */
+void timer4_setCallback(void (*callback)(void));
+
+/**
+ * Inline functions for clearing timer interrupt flags
+ * These can be copied to other files without needing xc.h include
+ */
+static inline void timer1_clearInterruptFlag(void) {
+    IFS0bits.T1IF = 0;
+}
+
+static inline void timer2_clearInterruptFlag(void) {
+    IFS0bits.T2IF = 0;
+}
+
+static inline void timer3_clearInterruptFlag(void) {
+    IFS0bits.T3IF = 0;
+}
+
+static inline void timer4_clearInterruptFlag(void) {
+    IFS1bits.T4IF = 0;
+}
 
 #endif /* TIMER_H */

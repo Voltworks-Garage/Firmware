@@ -305,7 +305,7 @@ LTC6802_1_Error_E LTC6802_1_SetVoltageThresholds8(uint8_t overvoltage_threshold,
  * @param num_cells Number of cells in the array
  * @return ERROR_NONE if successful
  */
-LTC6802_1_Error_E LTC6802_1_StartCellBalancing(const uint8_t* cells_to_balance, uint8_t num_cells);
+LTC6802_1_Error_E LTC6802_1_StartCellBalancing(const uint16_t* cells_to_balance, uint16_t num_cells);
 
 /**
  * @brief Clear all cell balancing and write to hardware

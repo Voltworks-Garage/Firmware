@@ -124,6 +124,12 @@ class PendingSDORequest:
     is_write: bool
     timestamp: float
     data_sent: bytes = b''
+    # Segmented transfer state
+    is_segmented: bool = False
+    total_size: int = 0
+    received_data: bytes = b''
+    next_toggle: int = 0  # 0 or 1 for toggle bit
+    segment_number: int = 0
 
 
 @dataclass
@@ -2146,6 +2152,104 @@ class CANopenSDOTab(BaseTab):
         except Exception as e:
             self._log_message(f"❌ ERROR: Failed to send read request: {e}")
     
+    def _send_sdo_upload_segment(self, node_id: int, toggle_bit: int):
+        """Send SDO upload segment request"""
+        try:
+            cmd = 0x60  # Upload segment request
+            if toggle_bit:
+                cmd |= 0x10  # Toggle bit
+            
+            data = bytes([cmd, 0, 0, 0, 0, 0, 0, 0])  # Only command byte is used
+            
+            tx_id = 0x600 + node_id
+            
+            # Send message
+            msg = can.Message(arbitration_id=tx_id, data=data, is_extended_id=False)
+            self.app.bus.send(msg)
+            
+            self._log_message(f"    📤 SEGMENT REQ: Toggle={toggle_bit} - TX: 0x{tx_id:03X} → {data.hex().upper()}")
+            
+        except Exception as e:
+            self._log_message(f"❌ ERROR: Failed to send segment request: {e}")
+    
+    def _handle_upload_segment_response(self, request: PendingSDORequest, cmd: int, data: list, response_time: float):
+        """Handle segmented upload response"""
+        try:
+            # Check toggle bit
+            toggle_bit = 1 if (cmd & 0x10) else 0
+            if toggle_bit != request.next_toggle:
+                self._log_message(f"❌ SEGMENT ERROR: Toggle bit mismatch (expected {request.next_toggle}, got {toggle_bit})")
+                return
+            
+            # Check if this is the last segment
+            is_last = bool(cmd & 0x01)
+            
+            # Get number of bytes that don't contain data
+            if is_last:
+                unused_bytes = (cmd >> 1) & 0x07
+                data_bytes = 7 - unused_bytes
+            else:
+                data_bytes = 7
+            
+            # Extract segment data
+            segment_data = bytes(data[1:1+data_bytes])
+            request.received_data += segment_data
+            request.segment_number += 1
+            
+            self._log_message(f"    📥 SEGMENT {request.segment_number}: {len(segment_data)} bytes, last={is_last}")
+            
+            # Update UI progress if not last segment
+            if not is_last and request.total_size > 0:
+                progress = (len(request.received_data) / request.total_size) * 100
+                self.current_value_var.set(f"Transferring... {progress:.0f}%")
+            
+            if is_last:
+                # Transfer complete - decode and display the full data
+                self._complete_segmented_upload(request, response_time)
+            else:
+                # Request next segment with toggled bit
+                request.next_toggle = 1 - request.next_toggle
+                self._send_sdo_upload_segment(request.node_id, request.next_toggle)
+                
+        except Exception as e:
+            self._log_message(f"❌ SEGMENT ERROR: {e}")
+    
+    def _complete_segmented_upload(self, request: PendingSDORequest, response_time: float):
+        """Complete a segmented upload and display the result"""
+        try:
+            raw_data = request.received_data
+            
+            # Try to decode the value for display
+            try:
+                if self.selected_object and self.selected_object.data_type:
+                    decoded_value = DataTypeConverter.decode_value(raw_data, self.selected_object.data_type)
+                    if isinstance(decoded_value, str):
+                        self.current_value_var.set(decoded_value)
+                        self._log_message(f"📥 SEGMENTED READ OK: '{decoded_value}' ({len(raw_data)} bytes, {response_time:.3f}s)")
+                    elif isinstance(decoded_value, bytes):
+                        self.current_value_var.set(f"0x{decoded_value.hex().upper()}")
+                        self._log_message(f"📥 SEGMENTED READ OK: 0x{decoded_value.hex().upper()} ({len(raw_data)} bytes, {response_time:.3f}s)")
+                    else:
+                        self.current_value_var.set(str(decoded_value))
+                        self._log_message(f"📥 SEGMENTED READ OK: {decoded_value} ({len(raw_data)} bytes, {response_time:.3f}s)")
+                else:
+                    raw_display = raw_data.hex().upper()
+                    self.current_value_var.set(f"0x{raw_display}")
+                    self._log_message(f"📥 SEGMENTED READ OK: 0x{raw_display} ({len(raw_data)} bytes, {response_time:.3f}s)")
+            except Exception as e:
+                # If decoding fails, show raw hex
+                raw_display = raw_data.hex().upper()
+                self.current_value_var.set(f"0x{raw_display}")
+                self._log_message(f"📥 SEGMENTED READ OK: 0x{raw_display} (decode error: {e}) ({len(raw_data)} bytes, {response_time:.3f}s)")
+            
+            # Clean up the request
+            rx_id = 0x580 + request.node_id
+            if rx_id in self.pending_requests:
+                del self.pending_requests[rx_id]
+                
+        except Exception as e:
+            self._log_message(f"❌ SEGMENTED READ ERROR: {e}")
+    
     def _send_sdo_download(self, node_id: int, index: int, sub_index: int, data: bytes):
         """Send SDO download initiate message"""
         try:
@@ -2164,8 +2268,29 @@ class CANopenSDOTab(BaseTab):
                     sub_index              # Sub-index
                 ]) + data + b'\x00' * (4 - len(data))  # Data padded to 4 bytes
             else:
-                # Segmented transfer (not implemented)
-                raise NotImplementedError("Segmented SDO transfers not supported")
+                # Segmented transfer - download initiate
+                cmd = 0x21  # Download initiate, segmented
+                if len(data) <= 0xFFFFFFFF:  # Size indicated
+                    cmd |= 0x01  # Size indicated bit
+                
+                # Build download initiate message with size
+                can_data = bytes([
+                    cmd,                    # Command specifier
+                    index & 0xFF,          # Index low byte
+                    (index >> 8) & 0xFF,   # Index high byte
+                    sub_index,              # Sub-index
+                    len(data) & 0xFF,       # Size byte 0
+                    (len(data) >> 8) & 0xFF,  # Size byte 1
+                    (len(data) >> 16) & 0xFF, # Size byte 2
+                    (len(data) >> 24) & 0xFF  # Size byte 3
+                ])
+                
+                # Store data for segmented transfer
+                request.is_segmented = True
+                request.total_size = len(data)
+                request.data_sent = data
+                request.next_toggle = 0  # Start with toggle bit 0
+                request.segment_number = 0
             
             tx_id = 0x600 + node_id
             rx_id = 0x580 + node_id
@@ -2187,8 +2312,12 @@ class CANopenSDOTab(BaseTab):
             
             # Log the request
             obj_name = self.selected_object.name if self.selected_object else "Unknown"
-            value_display = data.hex().upper() if len(data) <= 4 else f"{data[:4].hex().upper()}..."
-            self._log_message(f"📤 WRITE: Node {node_id} - 0x{index:04X}:{sub_index:02X} ({obj_name}) = {value_display}")
+            if len(data) <= 4:
+                value_display = data.hex().upper()
+                self._log_message(f"📤 WRITE: Node {node_id} - 0x{index:04X}:{sub_index:02X} ({obj_name}) = {value_display}")
+            else:
+                value_display = f"{data[:4].hex().upper()}..." if len(data) > 4 else data.hex().upper()
+                self._log_message(f"📤 SEGMENTED WRITE: Node {node_id} - 0x{index:04X}:{sub_index:02X} ({obj_name}) = {value_display} ({len(data)} bytes)")
             self._log_message(f"    TX: 0x{tx_id:03X} → {can_data.hex().upper()}")
             
             # Start timeout timer if not already running
@@ -2197,6 +2326,69 @@ class CANopenSDOTab(BaseTab):
             
         except Exception as e:
             self._log_message(f"❌ ERROR: Failed to send write request: {e}")
+    
+    def _send_sdo_download_segment(self, node_id: int, toggle_bit: int, data_segment: bytes, is_last: bool):
+        """Send SDO download segment"""
+        try:
+            cmd = 0x00  # Download segment
+            if toggle_bit:
+                cmd |= 0x10  # Toggle bit
+            if is_last:
+                cmd |= 0x01  # Last segment
+                # Calculate unused bytes
+                if len(data_segment) < 7:
+                    unused_bytes = 7 - len(data_segment)
+                    cmd |= (unused_bytes << 1)
+            
+            # Pad segment to 7 bytes if needed
+            padded_data = data_segment + b'\x00' * (7 - len(data_segment))
+            can_data = bytes([cmd]) + padded_data
+            
+            tx_id = 0x600 + node_id
+            
+            # Send message
+            msg = can.Message(arbitration_id=tx_id, data=can_data, is_extended_id=False)
+            self.app.bus.send(msg)
+            
+            self._log_message(f"    📤 SEGMENT {toggle_bit}: {len(data_segment)} bytes, last={is_last}")
+            
+        except Exception as e:
+            self._log_message(f"❌ ERROR: Failed to send download segment: {e}")
+    
+    def _handle_download_segment_response(self, request: PendingSDORequest, cmd: int, data: list, response_time: float):
+        """Handle segmented download response"""
+        try:
+            # Check toggle bit
+            toggle_bit = 1 if (cmd & 0x10) else 0
+            if toggle_bit != request.next_toggle:
+                self._log_message(f"❌ SEGMENT ERROR: Toggle bit mismatch (expected {request.next_toggle}, got {toggle_bit})")
+                return
+            
+            # Calculate next segment
+            bytes_sent = request.segment_number * 7
+            remaining_data = request.data_sent[bytes_sent:]
+            
+            if len(remaining_data) == 0:
+                # All segments sent, transfer complete
+                self._log_message(f"📥 SEGMENTED WRITE OK: {request.total_size} bytes transferred ({response_time:.3f}s)")
+                
+                # Clean up the request
+                rx_id = 0x580 + request.node_id
+                if rx_id in self.pending_requests:
+                    del self.pending_requests[rx_id]
+            else:
+                # Send next segment
+                request.segment_number += 1
+                request.next_toggle = 1 - request.next_toggle
+                
+                segment_size = min(7, len(remaining_data))
+                segment_data = remaining_data[:segment_size]
+                is_last = len(remaining_data) <= 7
+                
+                self._send_sdo_download_segment(request.node_id, request.next_toggle, segment_data, is_last)
+                
+        except Exception as e:
+            self._log_message(f"❌ SEGMENT ERROR: {e}")
     
     def _clear_log(self):
         """Clear the communication log"""
@@ -2308,7 +2500,7 @@ class CANopenSDOTab(BaseTab):
                 
                 self.can_preview_var.set(f"{preview} | {cmd_desc} {index_desc} {sub_desc} {data_desc}")
             else:
-                self.can_preview_var.set("Segmented transfer (not supported)")
+                self.can_preview_var.set(f"Segmented transfer: {len(encoded_data)} bytes")
                 
         except Exception as e:
             self.can_preview_var.set(f"Preview error: {str(e)}")
@@ -2383,7 +2575,26 @@ class CANopenSDOTab(BaseTab):
         if request.is_write:
             # Write response
             if (cmd & 0xE0) == 0x60:  # Download initiate response
-                self._log_message(f"📥 WRITE OK: Success ({response_time:.3f}s)")
+                if request.is_segmented:
+                    # Start segmented download
+                    self._log_message(f"📥 SEGMENTED WRITE: Starting transfer ({response_time:.3f}s)")
+                    
+                    # Send first segment
+                    request.segment_number = 1
+                    request.next_toggle = 0  # Start with toggle bit 0
+                    
+                    segment_size = min(7, len(request.data_sent))
+                    segment_data = request.data_sent[:segment_size]
+                    is_last = len(request.data_sent) <= 7
+                    
+                    self._send_sdo_download_segment(request.node_id, request.next_toggle, segment_data, is_last)
+                else:
+                    self._log_message(f"📥 WRITE OK: Success ({response_time:.3f}s)")
+            elif (cmd & 0xE0) == 0x20:  # Download segment response
+                if request.is_segmented:
+                    self._handle_download_segment_response(request, cmd, data, response_time)
+                else:
+                    self._log_message(f"📥 WRITE RESPONSE: Unexpected segment response ({response_time:.3f}s)")
             else:
                 self._log_message(f"📥 WRITE RESPONSE: Unexpected format ({response_time:.3f}s)")
         else:
@@ -2421,7 +2632,35 @@ class CANopenSDOTab(BaseTab):
                         raw_display = raw_data.hex().upper()
                         self._log_message(f"📥 READ OK: 0x{raw_display} ({response_time:.3f}s)")
                 else:
-                    self._log_message(f"📥 READ RESPONSE: Segmented transfer not supported ({response_time:.3f}s)")
+                    # Segmented transfer - initiate
+                    size_indicated = cmd & 0x01
+                    if size_indicated:
+                        # Size is indicated in bytes 4-7
+                        total_size = struct.unpack('<I', bytes(data[4:8]))[0]
+                    else:
+                        total_size = 0  # Size unknown
+                    
+                    # Update request to track segmented transfer
+                    request.is_segmented = True
+                    request.total_size = total_size
+                    request.received_data = b''
+                    request.next_toggle = 0  # Start with toggle bit 0
+                    request.segment_number = 0
+                    
+                    self._log_message(f"📥 SEGMENTED READ: Starting transfer, size={total_size} bytes ({response_time:.3f}s)")
+                    
+                    # Update UI to show transfer in progress
+                    self.current_value_var.set("Transferring...")
+                    
+                    # Send first segment request
+                    self._send_sdo_upload_segment(request.node_id, request.next_toggle)
+            elif (cmd & 0xE0) == 0x00:  # Upload segment response
+                self._log_message(f"    🔍 DEBUG: Segment response detected, cmd=0x{cmd:02X}")
+                if request and request.is_segmented:
+                    self._log_message(f"    🔍 DEBUG: Calling segment handler for segmented request")
+                    self._handle_upload_segment_response(request, cmd, data, response_time)
+                else:
+                    self._log_message(f"📥 READ RESPONSE: Unexpected segment response (request={request}, segmented={request.is_segmented if request else 'N/A'}) ({response_time:.3f}s)")
             else:
                 self._log_message(f"📥 READ RESPONSE: Unexpected format ({response_time:.3f}s)")
         

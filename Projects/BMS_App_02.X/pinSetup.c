@@ -126,7 +126,7 @@ void PinSetup_Init(void) {
     ADC_SetPin(PROMIXITY_MONINOTR_AI);
 
     /*PWM*/
-    timer4_enable(234375, CLOCK_SystemFrequencyGet()); //set period high enough to scale the clock for 100Hz PWM
+    timer4_init(234375, CLOCK_SystemFrequencyGet()); //set period high enough to scale the clock for 100Hz PWM
     pwmOCinit(CONTACTOR_1_PWM, CLOCK_PeripheralFrequencyGet(), OC_CLOCK_T4CLK);
     pwmOCwriteFreq(CONTACTOR_1_PWM, 100); //100Hz
     pwmOCinit(CONTACTOR_2_PWM, CLOCK_PeripheralFrequencyGet(), OC_CLOCK_T4CLK);

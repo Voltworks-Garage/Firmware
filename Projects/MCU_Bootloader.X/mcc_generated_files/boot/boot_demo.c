@@ -66,6 +66,7 @@ Copyright (c) [2012-2022] Microchip Technology Inc.
 #include "mcc_generated_files/uart1.h"
 #include "reset_control.h"
 #include "mcc_generated_files/reset_types.h"
+#include "mcc_generated_files/watchdog.h"
 
 #define DOWNLOADED_IMAGE    0u
 #define EXECUTION_IMAGE     0u
@@ -125,6 +126,7 @@ void BOOT_DEMO_Tasks(void)
             TMR1_Stop();
             CAN_SLEEP_SetHigh();
             CAN1_Sleep();
+            WATCHDOG_TimerSoftwareEnable();
             BOOT_StartApplication();
         }
     }

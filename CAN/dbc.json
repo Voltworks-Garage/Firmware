@@ -571,16 +571,16 @@
                             "units": "bool"
                         },
                         {
-                            "name": "ev_charger_enable",
-                            "length": 1,
+                            "name": "J1772_prox_status",
+                            "length": 2,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "bool"
+                            "units": "enum"
                         },
                         {
-                            "name": "ev_charger_current",
-                            "length": 13,
-                            "scale": 0.1,
+                            "name": "J1772_pilot_current",
+                            "length": 8,
+                            "scale": 1.0,
                             "offset": 0,
                             "units": "A"
                         },
@@ -650,6 +650,13 @@
                             "scale": 1.0,
                             "offset": 0,
                             "units": "bool"
+                        },
+                        {
+                            "name": "Footbrake_Value",
+                            "length": 16,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": ""
                         }
                     ]
                 },
@@ -1111,7 +1118,8 @@
                     "freq": 10,
                     "consumers": [
                         "mcu",
-                        "dash"
+                        "dash",
+                        "bms"
                     ],
                     "signals": [
                         {
@@ -1169,6 +1177,13 @@
                             "scale": 0.1,
                             "offset": -50,
                             "units": "A"
+                        },
+                        {
+                            "name": "J1772_ready_to_charge",
+                            "length": 1,
+                            "scale": 1,
+                            "offset": 0,
+                            "units": "bool"
                         },
                         {
                             "name": "HV_precharge_state",

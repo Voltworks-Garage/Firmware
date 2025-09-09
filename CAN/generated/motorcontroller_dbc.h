@@ -21,8 +21,8 @@ typedef enum{
 uint8_t CAN_mcu_command_checkDataIsUnread(void);
 uint8_t CAN_mcu_command_checkDataIsStale(void);
 uint16_t CAN_mcu_command_DCDC_enable_get(void);
-uint16_t CAN_mcu_command_ev_charger_enable_get(void);
-float CAN_mcu_command_ev_charger_current_get(void);
+uint16_t CAN_mcu_command_J1772_prox_status_get(void);
+float CAN_mcu_command_J1772_pilot_current_get(void);
 uint16_t CAN_mcu_command_precharge_enable_get(void);
 uint16_t CAN_mcu_command_motor_controller_enable_get(void);
 
@@ -33,6 +33,7 @@ uint16_t CAN_mcu_motorControllerRequest_Reverse_Switch_get(void);
 uint16_t CAN_mcu_motorControllerRequest_FS1_Switch_get(void);
 uint16_t CAN_mcu_motorControllerRequest_Seat_Switch_get(void);
 uint16_t CAN_mcu_motorControllerRequest_Handbrake_Switch_get(void);
+uint16_t CAN_mcu_motorControllerRequest_Footbrake_Value_get(void);
 
 #define CAN_mcu_mcu_debug_interval() 10
 #define CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES 4

@@ -19,15 +19,13 @@ typedef enum prox_status_E {
 
 void j1772Control_Init(void);
 
-void j1772Control_Run_cont(void);
-
 void j1772Control_Run_100ms(void);
 
 void j1772Control_Halt(void);
 
 prox_status_E j1772getProxState(void);
 
-uint8_t j1772getPilotCurrent(void);
+uint16_t j1772getPilotCurrent(void);
 
 #endif	/* J1772_H */
 

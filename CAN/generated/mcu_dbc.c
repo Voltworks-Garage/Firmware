@@ -633,14 +633,14 @@ static CAN_message_S CAN_mcu_command={
 
 #define CAN_MCU_COMMAND_DCDC_ENABLE_RANGE 1
 #define CAN_MCU_COMMAND_DCDC_ENABLE_OFFSET 0
-#define CAN_MCU_COMMAND_EV_CHARGER_ENABLE_RANGE 1
-#define CAN_MCU_COMMAND_EV_CHARGER_ENABLE_OFFSET 1
-#define CAN_MCU_COMMAND_EV_CHARGER_CURRENT_RANGE 13
-#define CAN_MCU_COMMAND_EV_CHARGER_CURRENT_OFFSET 2
+#define CAN_MCU_COMMAND_J1772_PROX_STATUS_RANGE 2
+#define CAN_MCU_COMMAND_J1772_PROX_STATUS_OFFSET 1
+#define CAN_MCU_COMMAND_J1772_PILOT_CURRENT_RANGE 8
+#define CAN_MCU_COMMAND_J1772_PILOT_CURRENT_OFFSET 3
 #define CAN_MCU_COMMAND_PRECHARGE_ENABLE_RANGE 1
-#define CAN_MCU_COMMAND_PRECHARGE_ENABLE_OFFSET 15
+#define CAN_MCU_COMMAND_PRECHARGE_ENABLE_OFFSET 11
 #define CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_RANGE 1
-#define CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_OFFSET 16
+#define CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_OFFSET 12
 
 void CAN_mcu_command_DCDC_enable_set(uint16_t DCDC_enable){
 	uint16_t data_scaled = DCDC_enable * 1.0;
@@ -648,29 +648,29 @@ void CAN_mcu_command_DCDC_enable_set(uint16_t DCDC_enable){
 	CAN_mcu_command.payload->word0 &= ~0x0001;
 	CAN_mcu_command.payload->word0 |= data_scaled & 0x0001;
 }
-void CAN_mcu_command_ev_charger_enable_set(uint16_t ev_charger_enable){
-	uint16_t data_scaled = ev_charger_enable * 1.0;
-	// Set 1-bit signal at bit offset 1
-	CAN_mcu_command.payload->word0 &= ~0x0002;
-	CAN_mcu_command.payload->word0 |= (data_scaled << 1) & 0x0002;
+void CAN_mcu_command_J1772_prox_status_set(uint16_t J1772_prox_status){
+	uint16_t data_scaled = J1772_prox_status * 1.0;
+	// Set 2-bit signal at bit offset 1
+	CAN_mcu_command.payload->word0 &= ~0x0006;
+	CAN_mcu_command.payload->word0 |= (data_scaled << 1) & 0x0006;
 }
-void CAN_mcu_command_ev_charger_current_set(float ev_charger_current){
-	uint16_t data_scaled = (uint16_t)(ev_charger_current * 10.0f + 0.5f);
-	// Set 13-bit signal at bit offset 2
-	CAN_mcu_command.payload->word0 &= ~0x7FFC;
-	CAN_mcu_command.payload->word0 |= (data_scaled << 2) & 0x7FFC;
+void CAN_mcu_command_J1772_pilot_current_set(float J1772_pilot_current){
+	uint16_t data_scaled = (uint16_t)(J1772_pilot_current * 1.0f + 0.5f);
+	// Set 8-bit signal at bit offset 3
+	CAN_mcu_command.payload->word0 &= ~0x07F8;
+	CAN_mcu_command.payload->word0 |= (data_scaled << 3) & 0x07F8;
 }
 void CAN_mcu_command_precharge_enable_set(uint16_t precharge_enable){
 	uint16_t data_scaled = precharge_enable * 1.0;
-	// Set 1-bit signal at bit offset 15
-	CAN_mcu_command.payload->word0 &= ~0x8000;
-	CAN_mcu_command.payload->word0 |= (data_scaled << 15) & 0x8000;
+	// Set 1-bit signal at bit offset 11
+	CAN_mcu_command.payload->word0 &= ~0x0800;
+	CAN_mcu_command.payload->word0 |= (data_scaled << 11) & 0x0800;
 }
 void CAN_mcu_command_motor_controller_enable_set(uint16_t motor_controller_enable){
 	uint16_t data_scaled = motor_controller_enable * 1.0;
-	// Set 1-bit signal at bit offset 16
-	CAN_mcu_command.payload->word1 &= ~0x0001;
-	CAN_mcu_command.payload->word1 |= data_scaled & 0x0001;
+	// Set 1-bit signal at bit offset 12
+	CAN_mcu_command.payload->word0 &= ~0x1000;
+	CAN_mcu_command.payload->word0 |= (data_scaled << 12) & 0x1000;
 }
 void CAN_mcu_command_dlc_set(uint8_t dlc){
 	CAN_mcu_command.dlc = dlc;
@@ -705,6 +705,8 @@ static CAN_message_S CAN_mcu_motorControllerRequest={
 #define CAN_MCU_MOTORCONTROLLERREQUEST_SEAT_SWITCH_OFFSET 19
 #define CAN_MCU_MOTORCONTROLLERREQUEST_HANDBRAKE_SWITCH_RANGE 1
 #define CAN_MCU_MOTORCONTROLLERREQUEST_HANDBRAKE_SWITCH_OFFSET 20
+#define CAN_MCU_MOTORCONTROLLERREQUEST_FOOTBRAKE_VALUE_RANGE 16
+#define CAN_MCU_MOTORCONTROLLERREQUEST_FOOTBRAKE_VALUE_OFFSET 21
 
 void CAN_mcu_motorControllerRequest_Throttle_Value_set(uint16_t Throttle_Value){
 	uint16_t data_scaled = Throttle_Value * 1.0;
@@ -741,6 +743,14 @@ void CAN_mcu_motorControllerRequest_Handbrake_Switch_set(uint16_t Handbrake_Swit
 	// Set 1-bit signal at bit offset 20
 	CAN_mcu_motorControllerRequest.payload->word1 &= ~0x0010;
 	CAN_mcu_motorControllerRequest.payload->word1 |= (data_scaled << 4) & 0x0010;
+}
+void CAN_mcu_motorControllerRequest_Footbrake_Value_set(uint16_t Footbrake_Value){
+	uint16_t data_scaled = Footbrake_Value * 1.0;
+	// Set 16-bit signal at bit offset 21
+	CAN_mcu_motorControllerRequest.payload->word1 &= ~0xFFE0;
+	CAN_mcu_motorControllerRequest.payload->word1 |= (data_scaled << 5) & 0xFFE0;
+	CAN_mcu_motorControllerRequest.payload->word2 &= ~0x001F;
+	CAN_mcu_motorControllerRequest.payload->word2 |= (data_scaled >> 11) & 0x001F;
 }
 void CAN_mcu_motorControllerRequest_dlc_set(uint8_t dlc){
 	CAN_mcu_motorControllerRequest.dlc = dlc;
@@ -1628,12 +1638,14 @@ static CAN_message_S CAN_bms_power_systems={
 #define CAN_BMS_POWER_SYSTEMS_EV_CHARGER_VOLTAGE_OFFSET 24
 #define CAN_BMS_POWER_SYSTEMS_EV_CHARGER_CURRENT_RANGE 10
 #define CAN_BMS_POWER_SYSTEMS_EV_CHARGER_CURRENT_OFFSET 34
+#define CAN_BMS_POWER_SYSTEMS_J1772_READY_TO_CHARGE_RANGE 1
+#define CAN_BMS_POWER_SYSTEMS_J1772_READY_TO_CHARGE_OFFSET 44
 #define CAN_BMS_POWER_SYSTEMS_HV_PRECHARGE_STATE_RANGE 1
-#define CAN_BMS_POWER_SYSTEMS_HV_PRECHARGE_STATE_OFFSET 44
+#define CAN_BMS_POWER_SYSTEMS_HV_PRECHARGE_STATE_OFFSET 45
 #define CAN_BMS_POWER_SYSTEMS_HV_ISOLATION_VOLTAGE_RANGE 10
-#define CAN_BMS_POWER_SYSTEMS_HV_ISOLATION_VOLTAGE_OFFSET 45
+#define CAN_BMS_POWER_SYSTEMS_HV_ISOLATION_VOLTAGE_OFFSET 46
 #define CAN_BMS_POWER_SYSTEMS_HV_CONTACTOR_STATE_RANGE 1
-#define CAN_BMS_POWER_SYSTEMS_HV_CONTACTOR_STATE_OFFSET 55
+#define CAN_BMS_POWER_SYSTEMS_HV_CONTACTOR_STATE_OFFSET 56
 
 uint8_t CAN_bms_power_systems_checkDataIsUnread(void){
 	return CAN_checkDataIsUnread(&CAN_bms_power_systems);
@@ -1691,23 +1703,29 @@ float CAN_bms_power_systems_EV_charger_current_get(void){
 	data |= (uint16_t)((CAN_bms_power_systems.payload->word2 & 0x0FFC) >> 2) << 0;
 	return (data * 0.1) + -50;
 }
-uint16_t CAN_bms_power_systems_HV_precharge_state_get(void){
+uint16_t CAN_bms_power_systems_J1772_ready_to_charge_get(void){
 	// Extract 1-bit signal at bit offset 44
 	uint16_t data = 0;
 	data |= (uint16_t)((CAN_bms_power_systems.payload->word2 & 0x1000) >> 12) << 0;
+	return (data * 1) + 0;
+}
+uint16_t CAN_bms_power_systems_HV_precharge_state_get(void){
+	// Extract 1-bit signal at bit offset 45
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_power_systems.payload->word2 & 0x2000) >> 13) << 0;
 	return (data * 1.0) + 0;
 }
 float CAN_bms_power_systems_HV_isolation_voltage_get(void){
-	// Extract 10-bit signal at bit offset 45
+	// Extract 10-bit signal at bit offset 46
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_power_systems.payload->word2 & 0xE000) >> 13) << 0;
-	data |= (uint16_t)((CAN_bms_power_systems.payload->word3 & 0x007F) >> 0) << 3;
+	data |= (uint16_t)((CAN_bms_power_systems.payload->word2 & 0xC000) >> 14) << 0;
+	data |= (uint16_t)((CAN_bms_power_systems.payload->word3 & 0x00FF) >> 0) << 2;
 	return (data * 0.1) + 0;
 }
 uint16_t CAN_bms_power_systems_HV_contactor_state_get(void){
-	// Extract 1-bit signal at bit offset 55
+	// Extract 1-bit signal at bit offset 56
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_power_systems.payload->word3 & 0x0080) >> 7) << 0;
+	data |= (uint16_t)((CAN_bms_power_systems.payload->word3 & 0x0100) >> 8) << 0;
 	return (data * 1.0) + 0;
 }
 

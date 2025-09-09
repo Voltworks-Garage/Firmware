@@ -19,14 +19,14 @@ static CAN_message_S CAN_mcu_command={
 
 #define CAN_MCU_COMMAND_DCDC_ENABLE_RANGE 1
 #define CAN_MCU_COMMAND_DCDC_ENABLE_OFFSET 0
-#define CAN_MCU_COMMAND_EV_CHARGER_ENABLE_RANGE 1
-#define CAN_MCU_COMMAND_EV_CHARGER_ENABLE_OFFSET 1
-#define CAN_MCU_COMMAND_EV_CHARGER_CURRENT_RANGE 13
-#define CAN_MCU_COMMAND_EV_CHARGER_CURRENT_OFFSET 2
+#define CAN_MCU_COMMAND_J1772_PROX_STATUS_RANGE 2
+#define CAN_MCU_COMMAND_J1772_PROX_STATUS_OFFSET 1
+#define CAN_MCU_COMMAND_J1772_PILOT_CURRENT_RANGE 8
+#define CAN_MCU_COMMAND_J1772_PILOT_CURRENT_OFFSET 3
 #define CAN_MCU_COMMAND_PRECHARGE_ENABLE_RANGE 1
-#define CAN_MCU_COMMAND_PRECHARGE_ENABLE_OFFSET 15
+#define CAN_MCU_COMMAND_PRECHARGE_ENABLE_OFFSET 11
 #define CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_RANGE 1
-#define CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_OFFSET 16
+#define CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_OFFSET 12
 
 uint8_t CAN_mcu_command_checkDataIsUnread(void){
 	return CAN_checkDataIsUnread(&CAN_mcu_command);
@@ -40,28 +40,28 @@ uint16_t CAN_mcu_command_DCDC_enable_get(void){
 	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x0001) >> 0) << 0;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_mcu_command_ev_charger_enable_get(void){
-	// Extract 1-bit signal at bit offset 1
+uint16_t CAN_mcu_command_J1772_prox_status_get(void){
+	// Extract 2-bit signal at bit offset 1
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x0002) >> 1) << 0;
+	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x0006) >> 1) << 0;
 	return (data * 1.0) + 0;
 }
-float CAN_mcu_command_ev_charger_current_get(void){
-	// Extract 13-bit signal at bit offset 2
+float CAN_mcu_command_J1772_pilot_current_get(void){
+	// Extract 8-bit signal at bit offset 3
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x7FFC) >> 2) << 0;
-	return (data * 0.1) + 0;
+	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x07F8) >> 3) << 0;
+	return (data * 1.0) + 0;
 }
 uint16_t CAN_mcu_command_precharge_enable_get(void){
-	// Extract 1-bit signal at bit offset 15
+	// Extract 1-bit signal at bit offset 11
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x8000) >> 15) << 0;
+	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x0800) >> 11) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_mcu_command_motor_controller_enable_get(void){
-	// Extract 1-bit signal at bit offset 16
+	// Extract 1-bit signal at bit offset 12
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_mcu_command.payload->word1 & 0x0001) >> 0) << 0;
+	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x1000) >> 12) << 0;
 	return (data * 1.0) + 0;
 }
 
@@ -87,6 +87,8 @@ static CAN_message_S CAN_mcu_motorControllerRequest={
 #define CAN_MCU_MOTORCONTROLLERREQUEST_SEAT_SWITCH_OFFSET 19
 #define CAN_MCU_MOTORCONTROLLERREQUEST_HANDBRAKE_SWITCH_RANGE 1
 #define CAN_MCU_MOTORCONTROLLERREQUEST_HANDBRAKE_SWITCH_OFFSET 20
+#define CAN_MCU_MOTORCONTROLLERREQUEST_FOOTBRAKE_VALUE_RANGE 16
+#define CAN_MCU_MOTORCONTROLLERREQUEST_FOOTBRAKE_VALUE_OFFSET 21
 
 uint8_t CAN_mcu_motorControllerRequest_checkDataIsUnread(void){
 	return CAN_checkDataIsUnread(&CAN_mcu_motorControllerRequest);
@@ -125,6 +127,13 @@ uint16_t CAN_mcu_motorControllerRequest_Handbrake_Switch_get(void){
 	// Extract 1-bit signal at bit offset 20
 	uint16_t data = 0;
 	data |= (uint16_t)((CAN_mcu_motorControllerRequest.payload->word1 & 0x0010) >> 4) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_motorControllerRequest_Footbrake_Value_get(void){
+	// Extract 16-bit signal at bit offset 21
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_motorControllerRequest.payload->word1 & 0xFFE0) >> 5) << 0;
+	data |= (uint16_t)((CAN_mcu_motorControllerRequest.payload->word2 & 0x001F) >> 0) << 11;
 	return (data * 1.0) + 0;
 }
 

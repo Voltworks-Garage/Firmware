@@ -100,8 +100,8 @@ void CAN_mcu_status_send(void);
 #define CAN_MCU_STATUS_NUM_MUX_VALUES 5
 #define CAN_mcu_command_interval() 100
 void CAN_mcu_command_DCDC_enable_set(uint16_t DCDC_enable);
-void CAN_mcu_command_ev_charger_enable_set(uint16_t ev_charger_enable);
-void CAN_mcu_command_ev_charger_current_set(float ev_charger_current);
+void CAN_mcu_command_J1772_prox_status_set(uint16_t J1772_prox_status);
+void CAN_mcu_command_J1772_pilot_current_set(float J1772_pilot_current);
 void CAN_mcu_command_precharge_enable_set(uint16_t precharge_enable);
 void CAN_mcu_command_motor_controller_enable_set(uint16_t motor_controller_enable);
 void CAN_mcu_command_dlc_set(uint8_t dlc);
@@ -116,6 +116,7 @@ void CAN_mcu_motorControllerRequest_Reverse_Switch_set(uint16_t Reverse_Switch);
 void CAN_mcu_motorControllerRequest_FS1_Switch_set(uint16_t FS1_Switch);
 void CAN_mcu_motorControllerRequest_Seat_Switch_set(uint16_t Seat_Switch);
 void CAN_mcu_motorControllerRequest_Handbrake_Switch_set(uint16_t Handbrake_Switch);
+void CAN_mcu_motorControllerRequest_Footbrake_Value_set(uint16_t Footbrake_Value);
 void CAN_mcu_motorControllerRequest_dlc_set(uint8_t dlc);
 
 
@@ -207,6 +208,7 @@ uint16_t CAN_bms_power_systems_EV_charger_state_get(void);
 uint16_t CAN_bms_power_systems_EV_charger_fault_get(void);
 float CAN_bms_power_systems_EV_charger_voltage_get(void);
 float CAN_bms_power_systems_EV_charger_current_get(void);
+uint16_t CAN_bms_power_systems_J1772_ready_to_charge_get(void);
 uint16_t CAN_bms_power_systems_HV_precharge_state_get(void);
 float CAN_bms_power_systems_HV_isolation_voltage_get(void);
 uint16_t CAN_bms_power_systems_HV_contactor_state_get(void);

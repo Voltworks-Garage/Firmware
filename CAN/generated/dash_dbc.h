@@ -106,8 +106,8 @@ uint16_t CAN_mcu_status_J1772_controller_current_get(void);
 uint8_t CAN_mcu_command_checkDataIsUnread(void);
 uint8_t CAN_mcu_command_checkDataIsStale(void);
 uint16_t CAN_mcu_command_DCDC_enable_get(void);
-uint16_t CAN_mcu_command_ev_charger_enable_get(void);
-float CAN_mcu_command_ev_charger_current_get(void);
+uint16_t CAN_mcu_command_J1772_prox_status_get(void);
+float CAN_mcu_command_J1772_pilot_current_get(void);
 uint16_t CAN_mcu_command_precharge_enable_get(void);
 uint16_t CAN_mcu_command_motor_controller_enable_get(void);
 
@@ -179,6 +179,7 @@ uint16_t CAN_bms_power_systems_EV_charger_state_get(void);
 uint16_t CAN_bms_power_systems_EV_charger_fault_get(void);
 float CAN_bms_power_systems_EV_charger_voltage_get(void);
 float CAN_bms_power_systems_EV_charger_current_get(void);
+uint16_t CAN_bms_power_systems_J1772_ready_to_charge_get(void);
 uint16_t CAN_bms_power_systems_HV_precharge_state_get(void);
 float CAN_bms_power_systems_HV_isolation_voltage_get(void);
 uint16_t CAN_bms_power_systems_HV_contactor_state_get(void);

@@ -21,8 +21,8 @@ typedef enum{
 uint8_t CAN_mcu_command_checkDataIsUnread(void);
 uint8_t CAN_mcu_command_checkDataIsStale(void);
 uint16_t CAN_mcu_command_DCDC_enable_get(void);
-uint16_t CAN_mcu_command_ev_charger_enable_get(void);
-float CAN_mcu_command_ev_charger_current_get(void);
+uint16_t CAN_mcu_command_J1772_prox_status_get(void);
+float CAN_mcu_command_J1772_pilot_current_get(void);
 uint16_t CAN_mcu_command_precharge_enable_get(void);
 uint16_t CAN_mcu_command_motor_controller_enable_get(void);
 

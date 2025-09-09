@@ -3,34 +3,31 @@
  *******************************************************************************/
 #include "j1772.h"
 #include "IO.h"
-#include "movingAverage.h"
+#include "movingAverageInt.h"
+#include "SysTick.h"
+#include "mcu_dbc.h"
+#include "timer.h"
+#include "ADC.h"
+#include "pinSetup.h"
+#include "mcc_generated_files/clock.h"
 
 /******************************************************************************
  * Constants
  *******************************************************************************/
-#define J1772_DEBUG_ENABLE 0
-#if J1772_DEBUG_ENABLE
-#include <stdio.h>
-#include "uart.h"
 
-static uint8_t debugEnable = 1;
-#define j1772Service_print(...) if(debugEnable){char tempArray[125]={};sprintf(tempArray,__VA_ARGS__);Uart1Write(tempArray);}
-#else
-#define j1772Service_print(...)
-#endif
 /******************************************************************************
  * Macros
  *******************************************************************************/
 
 /*Proximty Range values in milliVolts*/
-#define PROX_DISCONNECT_UPPER 2600
-#define PROX_DISCONNECT_LOWER 2400
+#define PROX_DISCONNECT_UPPER 3200
+#define PROX_DISCONNECT_LOWER 2600
 
-#define PROX_CONNECT_UPPER 1300
-#define PROX_CONNECT_LOWER 1100
+#define PROX_CONNECT_UPPER 1100
+#define PROX_CONNECT_LOWER 700
 
-#define PROX_REQUEST_DISCONNECT_UPPER 1950
-#define PROX_REQUEST_DISCONNECT_LOWER 1750
+#define PROX_REQUEST_DISCONNECT_UPPER 2000
+#define PROX_REQUEST_DISCONNECT_LOWER 1600
 
 #define PROXIMITY_AVERAGE_WINDOW_SIZE 8
 
@@ -49,14 +46,19 @@ static uint8_t j1772run = 1;
 
 static prox_status_E proximity = J1772_SNA_PROX;
 
-NEW_AVERAGE(proximityAverage, PROXIMITY_AVERAGE_WINDOW_SIZE);
+NEW_AVERAGE_INT(proximityAverage, PROXIMITY_AVERAGE_WINDOW_SIZE);
 
-NEW_LOW_PASS_FILTER(pilotFilter, 1.0, 10.0);
+NEW_LOW_PASS_FILTER_INT(pilotFilter, 0.1, 10.0);
 
-static float pilotVoltagePeak = 0;
-static float pilotVoltageFiltered = 0;
-static uint8_t pilotDutyCycle = 0;
-static uint8_t pilotEncodedCurrent = 0;
+static uint16_t pilotDutyFiltered = 0;
+static uint16_t pilotDutyCycle = 0;
+static uint16_t pilotEncodedCurrent = 0;
+
+static volatile uint16_t pilotDutyInterrupt = 0;
+static volatile uint16_t pilotDutyCounter = 0;
+
+NEW_TIMER(J1772_SNA_TIMER, 3000);
+bool sna_timer_flag = false;
 /******************************************************************************
  * Function Prototypes
  *******************************************************************************/
@@ -67,82 +69,77 @@ static uint8_t pilotEncodedCurrent = 0;
 
 
 void j1772Control_Init(void) {
-    pilotVoltagePeak = 0;
-    pilotVoltageFiltered = 0;
+    timer3_enableInterrupt(true);
+    timer3_enable(true);
+
+    pilotDutyFiltered = 0;
     pilotDutyCycle = 0;
     pilotEncodedCurrent = 0;
     j1772run = 1;
 }
 
-void j1772Control_Run_cont(void) {
-    if (j1772run) {
-        float pilot_instantaneousVoltage = IO_GET_VOLTAGE_PILOT();
-        pilotVoltageFiltered = takeLowPassFilter(pilotFilter, pilot_instantaneousVoltage);
-        
-        /*If the value is above 50mV, we assume that we are on a "HIGH" cycle of
-          the PWM. This will represent the peak value of the signal.*/
-        pilotVoltagePeak = (pilot_instantaneousVoltage > 50) ? pilot_instantaneousVoltage : 0;
-        
-        /*If peak voltage greater than 1V, then we can attempt to calculate 
-          the duty cycle*/
-        if (pilotVoltagePeak > 1){
-            pilotDutyCycle = (uint16_t)(pilotVoltageFiltered * 100 / pilotVoltagePeak);
-        }
-        
-        /*If the filtered voltage is less than 1V, assume the signal is low 
-          and there is no duty cycle*/
-        if (pilotVoltageFiltered < 1){
-            pilotDutyCycle = 0;
-        }
-        
-    }
-}
 
 void j1772Control_Run_100ms(void) {
     if (j1772run) {
-        /*Take moving average of Proximity value*/
-        uint16_t currentProxAve = takeMovingAverage(proximityAverage, IO_GET_VOLTAGE_PROXIMITY());
 
-        j1772Service_print("PILOT Voltage: %d\nPROX Voltage: %d\n\n", pilotVoltagePeak, currentProxAve);
+        //calculate the duty cycle interrupt version
+        timer3_enableInterrupt(false);
+        pilotDutyCycle = (uint32_t)pilotDutyInterrupt*100/pilotDutyCounter;
+        pilotDutyInterrupt = 0;
+        pilotDutyCounter = 0;
+        pilotDutyFiltered = takeLowPassFilterInt(pilotFilter, pilotDutyCycle);
+        timer3_enableInterrupt(true);
+        
+        CAN_mcu_mcu_debug_debug_value_1_u30_set(pilotDutyFiltered);
+
+        /*Take moving average of Proximity value*/
+        uint16_t currentProxAve = takeMovingAverageInt(proximityAverage, (uint16_t)(IO_GET_VOLTAGE_PROXIMITY()*1000));
 
         /*Determine the state of the Proximity Detector*/
-        switch (currentProxAve*1000) {
+        switch (currentProxAve) {
             case PROX_DISCONNECT_LOWER ... PROX_DISCONNECT_UPPER:
                 proximity = J1772_DISCONNECTED;
-                j1772Service_print("Disconnected\n")
-                IO_SET_PILOT_EN(LOW);
-                /*Do something*/
+                sna_timer_flag = false;
                 break;
             case PROX_CONNECT_LOWER ... PROX_CONNECT_UPPER:
                 proximity = J1772_CONNECTED;
-                j1772Service_print("Connected\n")
-                IO_SET_PILOT_EN(HIGH);
+                sna_timer_flag = false;
                 break;
             case PROX_REQUEST_DISCONNECT_LOWER ... PROX_REQUEST_DISCONNECT_UPPER:
                 proximity = J1772_REQUEST_DISCONNECT;
-                j1772Service_print("Request Disconnect\n")
-                IO_SET_PILOT_EN(LOW);
+                sna_timer_flag = false;
                 break;
             default:
-                proximity = J1772_SNA_PROX;
+                if (!sna_timer_flag){
+                    SysTick_TimerStart(J1772_SNA_TIMER);
+                    sna_timer_flag = true;
+                }
+                if (SysTick_TimeOut(J1772_SNA_TIMER)){
+                    proximity = J1772_SNA_PROX;
+                }
                 break;
         }
 
 
-        /*Run the Pilot Signal State Machine*/
-        switch (pilotDutyCycle) {
-            case 0 ... 9:
-                pilotEncodedCurrent = 0;
-                break;
-            case 10 ... 84:
-                pilotEncodedCurrent = pilotDutyCycle * 0.6;
-                break;
-            case 85 ... 100:
-                pilotEncodedCurrent = (pilotDutyCycle - 64)*2.5;
-                break;
-            default:
-                pilotEncodedCurrent = 0;
-                break;
+        /*Run the Pilot Signal State Machine with hysteresis protection*/
+        static uint16_t lastPilotDutyFiltered = 0;
+        
+        if (abs(pilotDutyFiltered - lastPilotDutyFiltered) >= 2) {
+            switch (pilotDutyFiltered) {
+                case 0 ... 9:
+                    pilotEncodedCurrent = 0;
+                    break;
+                case 10 ... 84:
+                    pilotEncodedCurrent = pilotDutyFiltered * 0.6;
+                    break;
+                case 85 ... 100:
+                    pilotEncodedCurrent = (pilotDutyFiltered - 64)*2.5;
+                    break;
+                default:
+                    pilotEncodedCurrent = 0;
+                    break;
+            }
+            lastPilotDutyFiltered = pilotDutyFiltered;
         }
     }
 }
@@ -150,12 +147,12 @@ void j1772Control_Run_100ms(void) {
 void j1772Control_Halt(void) {
     IO_SET_PILOT_EN(LOW);
     j1772run = 0;
-    pilotVoltagePeak = 0;
-    pilotVoltageFiltered = 0;
+    timer3_enable(false);
+    pilotDutyFiltered = 0;
     pilotDutyCycle = 0;
     pilotEncodedCurrent = 0;
-    clearMovingAverage(proximityAverage);
-    clearLowPassFilter(pilotFilter);   
+    clearMovingAverageInt(proximityAverage);
+    clearLowPassFilterInt(pilotFilter);   
     proximity = J1772_SNA_PROX;
 }
 
@@ -163,6 +160,15 @@ prox_status_E j1772getProxState(void) {
     return proximity;
 }
 
-uint8_t j1772getPilotCurrent(void) {
+uint16_t j1772getPilotCurrent(void) {
     return pilotEncodedCurrent;
+}
+
+void __attribute__((interrupt, auto_psv)) _T3Interrupt(void) {
+    timer3_clearInterruptFlag();
+    if(ADC_GetValue(PILOT_MONITOR_AI) > 200){
+        pilotDutyInterrupt++;
+    }
+    pilotDutyCounter++;
+
 }

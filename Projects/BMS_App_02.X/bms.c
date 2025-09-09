@@ -20,6 +20,10 @@
 #define BMS_MAX_CHARGE_VOLTAGE_ALLOWED (LTC6802_1_TOTAL_CELLS * 4.2f)
 #define BMS_MAX_CHARGE_CURRENT_ALLOWED (30)
 
+// Cell voltage safety thresholds
+#define CELL_VOLTAGE_MAX_MV 4250    // Maximum safe cell voltage (4.25V)
+#define CELL_VOLTAGE_MIN_MV 3000    // Minimum safe cell voltage (3.00V)
+
 /******************************************************************************
  * State Machine Definition
  *******************************************************************************/
@@ -71,22 +75,23 @@ static uint32_t bms_voltageTargetmV = BMS_MAX_CHARGE_VOLTAGE_ALLOWED * 1000;
 static uint32_t bms_currentTargetmA = BMS_MAX_CHARGE_CURRENT_ALLOWED * 1000;
 static uint16_t bms_highestCellVoltagemV = 0;
 static uint16_t bms_lowestCellVoltagemV = 0;
-static uint8_t bms_balance_early_hysterisis = 0;
-static uint8_t cells_to_balance[MAX_BALANCE_CELLS];
-static uint8_t num_cells_to_balance = 0;
-static uint8_t balancing_state = 0;
+static uint16_t bms_balance_early_hysterisis = 0;
+static uint16_t cells_to_balance[MAX_BALANCE_CELLS];
+static uint16_t num_cells_to_balance = 0;
+static uint16_t balancing_state = 0;
 
 // BMS voltage calculation variables
 static float bms_stackVoltage[LTC6802_1_NUM_STACKS] = {0.0f};
 static float bms_packVoltage = 0.0f;
+static bool bms_cellVoltageError = false;
 
 /******************************************************************************
  * Private Function Prototypes
  *******************************************************************************/
 static void bms_taperCurrentCommandForBalancing(void);
-static uint8_t bms_calculateCellsToBalance(void);
+static uint16_t bms_calculateCellsToBalance(void);
 static void bms_calculateStackVoltages(void);
-
+void bms_CheckCellVoltageThresholds(void);
 
 /******************************************************************************
  * Public Function Implementations
@@ -132,11 +137,11 @@ void BMS_Run_1ms(void) {
 
 void BMS_Run_10ms(void) {
 
-    // If we are getting a charge request, that means we are in a charging state. (negative logic)
-    if (CAN_bms_charger_request_start_charge_not_request_get()){
-        bms_balancingAllowed = false;
-    } else {
+    // If the EV_Charger Fets are on, we are in a charging state. Allow balancing.
+    if (CAN_bms_power_systems_EV_charger_state_get()){
         bms_balancingAllowed = true;
+    } else {
+        bms_balancingAllowed = false;
     }
 
     CAN_bms_status_max_charge_current_mA_set(bms_currentTargetmA);
@@ -185,6 +190,9 @@ static void bms_running(BMS_entry_types_E entry_type) {
             break;
         case RUN:
             // Main BMS operation - process available data
+
+            //Check min/max voltages for all cells.
+            bms_CheckCellVoltageThresholds();
             
             // Calculate stack and pack voltages from individual cell data
             bms_calculateStackVoltages();
@@ -197,11 +205,11 @@ static void bms_running(BMS_entry_types_E entry_type) {
                     // If balancing is not active, start it with current decisions
                     if(!LTC6802_1_IsBalancingActive()){
                         // Calculate which cells need balancing
-                        uint8_t num_cells = bms_calculateCellsToBalance();
+                        bms_calculateCellsToBalance();
                         // If a cell is over the balance threshold, start to taper the current
                         bms_taperCurrentCommandForBalancing();
                         // Start balancing with the selected cells
-                        LTC6802_1_StartCellBalancing(cells_to_balance, num_cells);
+                        LTC6802_1_StartCellBalancing(cells_to_balance, num_cells_to_balance);
                         SysTick_TimerStart(balancing_timer);
                         balancing_state++;
                     }
@@ -263,6 +271,7 @@ static void bms_running(BMS_entry_types_E entry_type) {
             
             break;
         case EXIT:
+            BMS_ClearAllCellBalancing();
             break;
         default:
             break;
@@ -313,44 +322,29 @@ void BMS_SetBalancingIsAllowed(bool allowed){
 }
 
 
-static uint8_t bms_calculateCellsToBalance(void) {
-    uint8_t i, j;
+
+static uint16_t bms_calculateCellsToBalance(void) {
+    uint16_t i, j;
     uint16_t cell_voltage;
     uint16_t top_voltages[MAX_BALANCE_CELLS] = {0};
-    uint8_t top_indices[MAX_BALANCE_CELLS] = {0};
-    uint16_t min_voltage = 0xFFFF;
-    uint16_t max_voltage = 0;
+    uint16_t top_indices[MAX_BALANCE_CELLS] = {0};
+
     uint16_t cell_delta = 0;
     
-    // Find min and max voltages
-    for (i = 0; i < LTC6802_1_TOTAL_CELLS; i++) {
-        cell_voltage = LTC6802_1_GetCellVoltage(i);
-        if (cell_voltage != 0) {  // 0 indicates invalid data from LTC driver
-            if (cell_voltage < min_voltage) {
-                min_voltage = cell_voltage;
-                bms_lowestCellVoltagemV = cell_voltage;
-            }
-            if (cell_voltage > max_voltage) {
-                max_voltage = cell_voltage;
-                bms_highestCellVoltagemV = cell_voltage;
-            }
-        }
-    }
     cell_delta = bms_highestCellVoltagemV - bms_lowestCellVoltagemV;
 
-
     // Check if all cells are below the minimum threshold for balancing
-    if (max_voltage < (MINIMUM_BALANCE_VOLTAGE_MV - cell_delta)){
+    if (bms_highestCellVoltagemV < (MINIMUM_BALANCE_VOLTAGE_MV - cell_delta)){
         return 0;  // No balancing needed
     }
     
     // Check if all cells are within threshold
-    if ((max_voltage - min_voltage) <= BALANCE_VOLTAGE_THRESHOLD_MV) {
+    if (cell_delta <= BALANCE_VOLTAGE_THRESHOLD_MV) {
         return 0;  // No balancing needed
     }
     
     // Find the highest voltage cells that need balancing
-    uint16_t balance_threshold = min_voltage + BALANCE_VOLTAGE_THRESHOLD_MV;
+    uint16_t balance_threshold = bms_lowestCellVoltagemV + BALANCE_VOLTAGE_THRESHOLD_MV;
     
     for (i = 0; i < LTC6802_1_TOTAL_CELLS; i++) {
         cell_voltage = LTC6802_1_GetCellVoltage(i);
@@ -412,8 +406,8 @@ static void bms_taperCurrentCommandForBalancing(void){
             bms_currentTargetmA = bms_currentTargetmA / 2;  // 0.5 multiplier
         }
 
-        // Round up to nearest 100mA because that is the minimum resolution of the charger.
-        bms_currentTargetmA = ((bms_currentTargetmA + 99) / 100) * 100;
+        // Round down to nearest 100mA because that is the minimum resolution of the charger.
+        bms_currentTargetmA = (bms_currentTargetmA / 100) * 100;
     } else {
         cell_charge_voltage_hysterisis = 50;
     }
@@ -457,5 +451,33 @@ float BMS_GetStackVoltage(uint8_t stack_id) {
 
 float BMS_GetPackVoltage(void) {
     return bms_packVoltage;
+}
+
+void bms_CheckCellVoltageThresholds(void) {
+    uint16_t cell_voltage;
+    uint16_t min_voltage = 0xFFFF;
+    uint16_t max_voltage = 0;
+
+    bool cellVoltageError = false;
+    
+    // Find min and max voltages
+    for (uint16_t i = 0; i < LTC6802_1_TOTAL_CELLS; i++) {
+        cell_voltage = LTC6802_1_GetCellVoltage(i);
+        if ( cell_voltage == 0 ){
+            cellVoltageError = true;
+            continue;
+        }
+        if (cell_voltage < min_voltage) {
+            min_voltage = cell_voltage;
+            bms_lowestCellVoltagemV = cell_voltage;
+        }
+        if (cell_voltage > max_voltage) {
+            max_voltage = cell_voltage;
+            bms_highestCellVoltagemV = cell_voltage;
+        }
+    }
+    
+    bms_cellVoltageError = cellVoltageError;
+
 }
 

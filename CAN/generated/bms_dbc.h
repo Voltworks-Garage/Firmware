@@ -80,8 +80,8 @@ uint16_t CAN_mcu_status_J1772_controller_current_get(void);
 uint8_t CAN_mcu_command_checkDataIsUnread(void);
 uint8_t CAN_mcu_command_checkDataIsStale(void);
 uint16_t CAN_mcu_command_DCDC_enable_get(void);
-uint16_t CAN_mcu_command_ev_charger_enable_get(void);
-float CAN_mcu_command_ev_charger_current_get(void);
+uint16_t CAN_mcu_command_J1772_prox_status_get(void);
+float CAN_mcu_command_J1772_pilot_current_get(void);
 uint16_t CAN_mcu_command_precharge_enable_get(void);
 uint16_t CAN_mcu_command_motor_controller_enable_get(void);
 
@@ -186,9 +186,25 @@ void CAN_bms_power_systems_EV_charger_state_set(uint16_t EV_charger_state);
 void CAN_bms_power_systems_EV_charger_fault_set(uint16_t EV_charger_fault);
 void CAN_bms_power_systems_EV_charger_voltage_set(float EV_charger_voltage);
 void CAN_bms_power_systems_EV_charger_current_set(float EV_charger_current);
+void CAN_bms_power_systems_J1772_ready_to_charge_set(uint16_t J1772_ready_to_charge);
 void CAN_bms_power_systems_HV_precharge_state_set(uint16_t HV_precharge_state);
 void CAN_bms_power_systems_HV_isolation_voltage_set(float HV_isolation_voltage);
 void CAN_bms_power_systems_HV_contactor_state_set(uint16_t HV_contactor_state);
+uint8_t CAN_bms_power_systems_checkDataIsUnread(void);
+uint8_t CAN_bms_power_systems_checkDataIsStale(void);
+uint16_t CAN_bms_power_systems_DCDC_state_get(void);
+uint16_t CAN_bms_power_systems_DCDC_fault_get(void);
+float CAN_bms_power_systems_DCDC_voltage_get(void);
+float CAN_bms_power_systems_DCDC_current_get(void);
+uint16_t CAN_bms_power_systems_EV_charger_state_get(void);
+uint16_t CAN_bms_power_systems_EV_charger_fault_get(void);
+float CAN_bms_power_systems_EV_charger_voltage_get(void);
+float CAN_bms_power_systems_EV_charger_current_get(void);
+uint16_t CAN_bms_power_systems_J1772_ready_to_charge_get(void);
+uint16_t CAN_bms_power_systems_HV_precharge_state_get(void);
+float CAN_bms_power_systems_HV_isolation_voltage_get(void);
+uint16_t CAN_bms_power_systems_HV_contactor_state_get(void);
+
 void CAN_bms_power_systems_dlc_set(uint8_t dlc);
 
 

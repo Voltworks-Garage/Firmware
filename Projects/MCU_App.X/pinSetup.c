@@ -18,6 +18,7 @@
 #include "pps.h"
 #include "mcc_generated_files/clock.h"
 #include "sleep.h"
+#include "timer.h"
 #include <xc.h>
 
 // *****************************************************************************
@@ -163,6 +164,8 @@ void PinSetup_Init(void) {
     uint32_t clock_freq = CLOCK_PeripheralFrequencyGet()/256; // Peripheral clock divided by prescaler);
    pwmOCinit(KICKSTAND_SWITCH_IN, clock_freq, OC_CLOCK_T4CLK);
 
+   /*Timers*/
+    timer3_init(10, CLOCK_SystemFrequencyGet());
 
 
     /*UART*/

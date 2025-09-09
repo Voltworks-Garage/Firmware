@@ -22,6 +22,7 @@
         <itemPath>../../RTOS/Scheduler/cpu_usage.h</itemPath>
         <itemPath>../../Libraries/Standard/movingAverageInt.h</itemPath>
         <itemPath>../../RTOS/Scheduler/tsk_cfg.h</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/inc/timer.h</itemPath>
       </logicalFolder>
       <logicalFolder name="MCC Generated Files"
                      displayName="MCC Generated Files"
@@ -93,6 +94,7 @@
         <itemPath>../../Libraries/CommandService/commandService.c</itemPath>
         <itemPath>../../RTOS/Scheduler/cpu_usage.c</itemPath>
         <itemPath>../../Libraries/Standard/movingAverageInt.c</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/src/timer.c</itemPath>
       </logicalFolder>
       <logicalFolder name="MCC Generated Files"
                      displayName="MCC Generated Files"
@@ -140,6 +142,8 @@
     <Elem>../../Libraries/CommandService</Elem>
     <Elem>../../Libraries/Standard</Elem>
     <Elem>../../RTOS/Scheduler</Elem>
+    <Elem>../../Libraries/PIC33_plib/src</Elem>
+    <Elem>../../Libraries/PIC33_plib/inc</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
