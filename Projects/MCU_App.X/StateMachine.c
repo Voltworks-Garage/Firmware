@@ -180,10 +180,14 @@ void idle(STATE_MACHINE_entry_types_E entry_type) {
             if (SysTick_TimeOut(idleTimer)) {
                 sm_nextState = goingToSleep_state;
             }
-            // Connection of charged triggers charging
-            if (j1772getProxState() == J1772_CONNECTED) {
+            
+            // BMS triggers charging state.
+            if (CAN_bms_power_systems_J1772_ready_to_charge_get()
+                && !CAN_bms_power_systems_checkDataIsStale()) {
                 sm_nextState = charging_state;
             }
+
+            // Diagnostic mode triggers diag state.
             switch (CommandService_GetEvent()) {
                 case COMMAND_SERVICE_TYPE_TESTER_PRESENT:
                 case COMMAND_SERVICE_TYPE_IO_CONTROL:
@@ -266,19 +270,27 @@ void running(STATE_MACHINE_entry_types_E entry_type) {
 void charging(STATE_MACHINE_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
+            j1772chargingStateSet(true);
             break;
         case EXIT:
-            CAN_mcu_command_J1772_pilot_current_set(0);
-            CAN_mcu_command_J1772_prox_status_set(0);
+            j1772chargingStateSet(false);
             break;
         case RUN:
+
+            // BMS triggers charging end.
+            if (!CAN_bms_power_systems_J1772_ready_to_charge_get()
+                || CAN_bms_power_systems_checkDataIsStale()) {
+                sm_nextState = idle_state;
+            }
+
+            // If the J1772 is disconnected, stop charging.
+            // This is a safety in case the BMS doesn't cut charging for some reason.
             switch (j1772getProxState()) {
                 case J1772_CONNECTED:
-                    CAN_mcu_command_J1772_pilot_current_set(j1772getPilotCurrent());
-                    CAN_mcu_command_J1772_prox_status_set(j1772getProxState());
+                case J1772_REQUEST_DISCONNECT:
+                    // stay in charging state
                     break;
                 case J1772_DISCONNECTED:
-                case J1772_REQUEST_DISCONNECT:
                 case J1772_SNA_PROX:
                 default:
                     sm_nextState = idle_state;

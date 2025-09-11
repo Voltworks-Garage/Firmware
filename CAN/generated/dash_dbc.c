@@ -2349,7 +2349,7 @@ uint16_t CAN_bms_debug_byte1_get(void){
 	return (data * 1) + 0;
 }
 
-#define CAN_bms_charger_request_ID 0x18005074
+#define CAN_bms_charger_request_ID 0x1806E5F4
 
 static CAN_message_S CAN_bms_charger_request={
 	.canID = CAN_bms_charger_request_ID,

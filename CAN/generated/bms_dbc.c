@@ -2287,7 +2287,7 @@ void CAN_bms_boot_response_send(void){
 
 static CAN_payload_S CAN_bms_charger_request_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 static volatile uint8_t CAN_bms_charger_request_status = 0;
-#define CAN_bms_charger_request_ID 0x18005074
+#define CAN_bms_charger_request_ID 0x1806E5F4
 
 static CAN_message_S CAN_bms_charger_request={
 	.canID = CAN_bms_charger_request_ID,
@@ -3376,7 +3376,7 @@ uint16_t CAN_motorcontroller_motor_status_PDO4_Max_Torque_Left_Motor_get(void){
 /**********************************************************
  * charger NODE MESSAGES
  */
-#define CAN_charger_status_ID 0x19005075
+#define CAN_charger_status_ID 0x18FF50E5
 
 static CAN_message_S CAN_charger_status={
 	.canID = CAN_charger_status_ID,

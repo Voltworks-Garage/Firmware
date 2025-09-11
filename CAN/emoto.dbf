@@ -199,7 +199,7 @@
 [START_SIGNALS] byte7,8,8,0.0,U,255,0,1,0,1.0,
 [END_MSG]
 
-[START_MSG] bms_charger_request,402673780,8,8,1,X
+[START_MSG] bms_charger_request,403105268,8,8,1,X
 [START_SIGNALS] output_voltage_high_byte,8,1,0.0,U,255,0,1,0,1.0,
 [START_SIGNALS] output_voltage_low_byte,8,2,0.0,U,255,0,1,0,1.0,
 [START_SIGNALS] output_current_high_byte,8,3,0.0,U,255,0,1,0,1.0,
@@ -328,7 +328,7 @@
 [START_SIGNALS] Max_Torque_Left_Motor,16,6,0.0,U,65535,0,1,0,0.001,?
 [END_MSG]
 
-[START_MSG] charger_status,419450997,8,11,1,X
+[START_MSG] charger_status,419385573,8,11,1,X
 [START_SIGNALS] output_voltage_high_byte,8,1,0.0,U,255,0,1,0,1.0,
 [START_SIGNALS] output_voltage_low_byte,8,2,0.0,U,255,0,1,0,1.0,
 [START_SIGNALS] output_current_high_byte,8,3,0.0,U,255,0,1,0,1.0,

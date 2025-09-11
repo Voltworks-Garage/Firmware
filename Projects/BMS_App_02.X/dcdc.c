@@ -46,7 +46,7 @@ NEW_LOW_PASS_FILTER(dcdc_voltage, 10.0, 1000.0);
 NEW_LOW_PASS_FILTER(dcdc_current, 10.0, 1000.0);
 NEW_LOW_PASS_FILTER(vbus_voltage, 10.0, 1000.0);
 NEW_TIMER(precharge_timer,5000);
-NEW_TIMER(gateDriveChargeTimer, 400);
+NEW_TIMER(gateDriveChargeTimer, 400); //TODO: remove this when unneeded
 
 /******************************************************************************
  * Internal Variables
@@ -155,8 +155,8 @@ static void precharge(DCDC_entry_types_E entry_type) {
             break;
             
         case RUN:
-            if ((getLowPassFilter(dcdc_voltage) > getLowPassFilter(vbus_voltage) * 0.90)
-                && (SysTick_TimeOut(gateDriveChargeTimer))) {
+            if (getLowPassFilter(dcdc_voltage) > getLowPassFilter(vbus_voltage) * 0.90) {
+                IO_SET_DCDC_EN(HIGH);
                 nextState = enable_state;
             }
             else if (dcdcCommandFromMcu == 0) {
@@ -180,7 +180,7 @@ static void enable(DCDC_entry_types_E entry_type) {
 
     switch (entry_type) {
         case ENTRY:
-            IO_SET_DCDC_EN(HIGH);
+            
             break;
             
         case RUN:

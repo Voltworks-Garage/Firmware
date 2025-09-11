@@ -254,9 +254,9 @@ void LTC6802_1_Run(void) {
             IO_SET_SPI_CS(HIGH);
             uint8_t tx_index, rx_index;
             // Get current transaction indices
-            spi1GetTransactionIndices(&tx_index, &rx_index);
-            CAN_bms_debug_word1_set(tx_index);
-            CAN_bms_debug_byte1_set(rx_index);
+            // spi1GetTransactionIndices(&tx_index, &rx_index);
+            // CAN_bms_debug_word1_set(tx_index);
+            // CAN_bms_debug_byte1_set(rx_index);
             
             // Reset the SPI buffered transaction state machine to recover from stuck state
             spi1ResetBufferedTransaction();

@@ -22,6 +22,7 @@
 
 #define EV_CHARGER_STATES(state)\
 state(idle) /* init state for startup code */ \
+state(j1772_handshake) /* waiting for J1772 connection */ \
 state(precharging)\
 state(negotiating)\
 state(charging)\
@@ -78,7 +79,8 @@ static EV_CHARGER_states_E curState = idle_state; /* initialize current state */
 static EV_CHARGER_states_E nextState = idle_state; /* initialize current state */
 
 NEW_TIMER(chargerMiaTimer, 1500); /*Timer for state machine*/
-NEW_TIMER(precharge_timer, 3000); /*Timer for pre-charge state*/
+NEW_TIMER(wait_for_charge_timer, 5000); /*Timer for waiting for charge to start*/
+NEW_TIMER(precharge_timer, 5000); /*Timer for pre-charge state*/
 
 static uint16_t chargeVoltageTarget = 24 * 4.2 * CHARGER_VOLTAGE_SCALING; //24 cells, 4.2v each, 0.1V/bit
 static uint16_t chargeCurrentTarget = 5 * CHARGER_CURRENT_SCALING;
@@ -117,6 +119,8 @@ void EV_CHARGER_Run_10ms(void) {
     takeLowPassFilter(vbus_voltage, IO_GET_VBUS_VOLTAGE());
     takeLowPassFilter(charger_voltage, IO_GET_EV_CHARGER_VOLTAGE());
     takeLowPassFilter(charger_current, IO_GET_EV_CHARGER_CURRENT());
+
+    CAN_bms_debug_byte1_set((uint8_t)curState);
 
     // Always check if this data is stale.
     if (!CAN_mcu_command_checkDataIsStale()){
@@ -161,9 +165,7 @@ void idle(EV_CHARGER_entry_types_E entry_type) {
 
             // If J1772 EVSE detected, 
             if (J1772_prox_status == J1772_CONNECTED) {
-                // allow EVSE charger to close relays.
-                CAN_bms_power_systems_J1772_ready_to_charge_set(1);
-                nextState = precharging_state;
+                nextState = j1772_handshake_state;
             }
 
             break;
@@ -173,6 +175,40 @@ void idle(EV_CHARGER_entry_types_E entry_type) {
             break;
     }
 
+}
+
+void j1772_handshake(EV_CHARGER_entry_types_E entry_type) {
+    switch (entry_type) {
+        case ENTRY:
+            // allow EVSE charger to close relays.
+            CAN_bms_power_systems_J1772_ready_to_charge_set(1);
+            SysTick_TimerStart(wait_for_charge_timer);
+            break;
+
+        case RUN:
+            // If no charge request, stop cancel charging
+            if (J1772_prox_status == J1772_REQUEST_DISCONNECT ||
+                J1772_prox_status == J1772_DISCONNECTED) {
+                nextState = idle_state;
+            }
+
+            // If charger appears on the CAN bus, move to pre-charging state
+            if (!CAN_charger_status_checkDataIsStale()){
+                nextState = precharging_state;
+            }
+
+            // If the charger does not appear on the CAN bus, cancel charging, and move to faulted to prevent toggling the EVSE.
+            if (SysTick_TimeOut(wait_for_charge_timer)){
+                nextState = faulted_state;
+            }
+
+            break;
+
+        case EXIT:
+            break;
+        default:
+            break;
+    }
 }
 
 void precharging(EV_CHARGER_entry_types_E entry_type) {
@@ -186,6 +222,7 @@ void precharging(EV_CHARGER_entry_types_E entry_type) {
         case RUN:
             // If precharging is successful, move to next state.
             if (getLowPassFilter(charger_voltage) > getLowPassFilter(vbus_voltage) * 0.90) {
+                IO_SET_EV_CHARGER_EN(HIGH); //Enable the charger efuse here so precharge doesn't fail
                 nextState = negotiating_state;
             }
 
@@ -213,6 +250,7 @@ void negotiating(EV_CHARGER_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
             IO_SET_EV_CHARGER_EN(HIGH);
+            SysTick_TimerStart(wait_for_charge_timer);
             break;
 
         case RUN:
@@ -225,6 +263,11 @@ void negotiating(EV_CHARGER_entry_types_E entry_type) {
             // If no errors from the charger, start charging
             if (!checkChargerErrors()) {
                 nextState = charging_state;
+            }
+
+            // If errors wont clear in time, go to faulted state
+            if(SysTick_TimeOut(wait_for_charge_timer)){
+                nextState = faulted_state;
             }
             break;
 
@@ -255,8 +298,8 @@ void charging(EV_CHARGER_entry_types_E entry_type) {
             }
 
             // If any errors from the charger, stop charging
-            if (!checkChargerErrors()) {
-                nextState = stopping_state;
+            if (checkChargerErrors()) {
+                nextState = faulted_state;
             }
 
             //Always set the charge request to BMS or MCU command, whichever is less.
@@ -384,8 +427,8 @@ void EV_CHARGER_calculate_max_dc_current_from_pilot(void) {
     // Calculate AC power: P = V * I
     uint32_t ac_power_watts = (uint32_t)ac_voltage * J1772_pilot_current;
     
-    // Get current DC bus voltage (in mV, convert to V)
-    uint32_t dc_voltage = getLowPassFilter(vbus_voltage) / 1000;
+    // Get current DC bus voltage. Cast to int is okay since accuracy isn't critical here.
+    uint32_t dc_voltage = getLowPassFilter(vbus_voltage);
     
     // Prevent division by zero
     if (dc_voltage == 0) {

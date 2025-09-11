@@ -44,18 +44,18 @@
  *******************************************************************************/
 static uint8_t j1772run = 1;
 
+NEW_AVERAGE_INT(proximityAverage, PROXIMITY_AVERAGE_WINDOW_SIZE);
 static prox_status_E proximity = J1772_SNA_PROX;
 
-NEW_AVERAGE_INT(proximityAverage, PROXIMITY_AVERAGE_WINDOW_SIZE);
-
 NEW_LOW_PASS_FILTER_INT(pilotFilter, 0.1, 10.0);
-
 static uint16_t pilotDutyFiltered = 0;
 static uint16_t pilotDutyCycle = 0;
 static uint16_t pilotEncodedCurrent = 0;
 
 static volatile uint16_t pilotDutyInterrupt = 0;
 static volatile uint16_t pilotDutyCounter = 0;
+
+static bool vehicleChargingState = false;
 
 NEW_TIMER(J1772_SNA_TIMER, 3000);
 bool sna_timer_flag = false;
@@ -114,7 +114,7 @@ void j1772Control_Run_100ms(void) {
                     SysTick_TimerStart(J1772_SNA_TIMER);
                     sna_timer_flag = true;
                 }
-                if (SysTick_TimeOut(J1772_SNA_TIMER)){
+                if (SysTick_TimeOut(J1772_SNA_TIMER) && sna_timer_flag){
                     proximity = J1772_SNA_PROX;
                 }
                 break;
@@ -142,6 +142,19 @@ void j1772Control_Run_100ms(void) {
             lastPilotDutyFiltered = pilotDutyFiltered;
         }
     }
+
+    // Always send the current state to the CAN bus.
+    CAN_mcu_command_J1772_pilot_current_set(j1772getPilotCurrent());
+    CAN_mcu_command_J1772_prox_status_set(j1772getProxState());
+
+    // Always listen to the BMS to start/stop charging when in charging state.
+    if (CAN_bms_power_systems_J1772_ready_to_charge_get() &&
+        !CAN_bms_power_systems_checkDataIsStale() &&
+        vehicleChargingState) {
+        IO_SET_PILOT_EN(HIGH);
+    } else {
+        IO_SET_PILOT_EN(LOW);
+    }
 }
 
 void j1772Control_Halt(void) {
@@ -162,6 +175,10 @@ prox_status_E j1772getProxState(void) {
 
 uint16_t j1772getPilotCurrent(void) {
     return pilotEncodedCurrent;
+}
+
+void j1772chargingStateSet(bool charging) {
+    vehicleChargingState = charging;
 }
 
 void __attribute__((interrupt, auto_psv)) _T3Interrupt(void) {

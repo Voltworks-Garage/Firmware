@@ -9,6 +9,7 @@
 #define	J1772_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef enum prox_status_E {
     J1772_DISCONNECTED,
@@ -26,6 +27,8 @@ void j1772Control_Halt(void);
 prox_status_E j1772getProxState(void);
 
 uint16_t j1772getPilotCurrent(void);
+
+void j1772chargingStateSet(bool charging);
 
 #endif	/* J1772_H */
 

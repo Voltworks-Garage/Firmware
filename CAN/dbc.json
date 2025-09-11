@@ -1335,7 +1335,7 @@
                 },
                 {
                     "name": "charger_request",
-                    "id": "0x18005074",
+                    "id": "0x1806E5F4",
                     "x_id": 1,
                     "freq": 1000,
                     "consumers": [
@@ -2199,7 +2199,7 @@
             "messages": [
                 {
                     "name": "status",
-                    "id": "0x19005075",
+                    "id": "0x18FF50E5",
                     "x_id": 1,
                     "freq": 1000,
                     "consumers": [
