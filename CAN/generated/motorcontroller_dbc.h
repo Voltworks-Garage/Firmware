@@ -58,8 +58,18 @@ float CAN_mcu_mcu_debug_task_1000ms_peak_cpu_percent_get(void);
  * bms NODE MESSAGES
  */
 #define CAN_bms_debug_interval() 10
+#define CAN_BMS_DEBUG_NUM_MUX_VALUES 3
 uint8_t CAN_bms_debug_checkDataIsUnread(void);
 uint8_t CAN_bms_debug_checkDataIsStale(void);
+uint16_t CAN_bms_debug_multiplex_get(void);
+float CAN_bms_debug_task_1ms_cpu_percent_get(void);
+float CAN_bms_debug_task_10ms_cpu_percent_get(void);
+float CAN_bms_debug_task_100ms_cpu_percent_get(void);
+float CAN_bms_debug_task_1000ms_cpu_percent_get(void);
+float CAN_bms_debug_task_1ms_peak_cpu_percent_get(void);
+float CAN_bms_debug_task_10ms_peak_cpu_percent_get(void);
+float CAN_bms_debug_task_100ms_peak_cpu_percent_get(void);
+float CAN_bms_debug_task_1000ms_peak_cpu_percent_get(void);
 uint16_t CAN_bms_debug_bool0_get(void);
 uint16_t CAN_bms_debug_bool1_get(void);
 float CAN_bms_debug_float1_get(void);

@@ -1038,7 +1038,7 @@
                             "multiplex": 3
                         },
                         {
-                            "name": "charge_enabled",
+                            "name": "charge_allowed",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
@@ -1046,7 +1046,7 @@
                             "multiplex": 3
                         },
                         {
-                            "name": "discharge_enabled",
+                            "name": "discharge_allowed",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
@@ -1216,46 +1216,123 @@
                     "consumers": [],
                     "signals": [
                         {
+                            "name": "multiplex",
+                            "length": 2,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": ""
+                        },
+                        {
+                            "name": "task_1ms_cpu_percent",
+                            "length": 8,
+                            "scale": 1,
+                            "offset": 0,
+                            "units": "%",
+                            "multiplex": 0
+                        },
+                        {
+                            "name": "task_10ms_cpu_percent",
+                            "length": 8,
+                            "scale": 1,
+                            "offset": 0,
+                            "units": "%",
+                            "multiplex": 0
+                        },
+                        {
+                            "name": "task_100ms_cpu_percent",
+                            "length": 8,
+                            "scale": 1,
+                            "offset": 0,
+                            "units": "%",
+                            "multiplex": 0
+                        },
+                        {
+                            "name": "task_1000ms_cpu_percent",
+                            "length": 8,
+                            "scale": 1,
+                            "offset": 0,
+                            "units": "%",
+                            "multiplex": 0
+                        },
+                                                {
+                            "name": "task_1ms_peak_cpu_percent",
+                            "length": 8,
+                            "scale": 1,
+                            "offset": 0,
+                            "units": "%",
+                            "multiplex": 0
+                        },
+                        {
+                            "name": "task_10ms_peak_cpu_percent",
+                            "length": 8,
+                            "scale": 1,
+                            "offset": 0,
+                            "units": "%",
+                            "multiplex": 0
+                        },
+                        {
+                            "name": "task_100ms_peak_cpu_percent",
+                            "length": 8,
+                            "scale": 1,
+                            "offset": 0,
+                            "units": "%",
+                            "multiplex": 0
+                        },
+                        {
+                            "name": "task_1000ms_peak_cpu_percent",
+                            "length": 8,
+                            "scale": 1,
+                            "offset": 0,
+                            "units": "%",
+                            "multiplex": 1
+                        },
+                        {
                             "name": "bool0",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "bool"
+                            "units": "bool",
+                            "multiplex": 1
                         },
                         {
                             "name": "bool1",
                             "length": 1,
                             "scale": 1.0,
                             "offset": 0,
-                            "units": "bool"
+                            "units": "bool",
+                            "multiplex": 1
                         },
                         {
                             "name": "float1",
                             "length": 16,
                             "scale": 0.01,
                             "offset": 0,
-                            "units": "V"
+                            "units": "V",
+                            "multiplex": 1
                         },
                         {
                             "name": "float2",
                             "length": 16,
                             "scale": 0.01,
                             "offset": 0,
-                            "units": "V"
+                            "units": "V",
+                            "multiplex": 1
                         },
                         {
                             "name": "word1",
                             "length": 16,
                             "scale": 1,
                             "offset": 0,
-                            "units": ""
+                            "units": "",
+                            "multiplex": 1
                         },
                         {
                             "name": "byte1",
                             "length": 8,
                             "scale":  1,
                             "offset": 0,
-                            "units": ""
+                            "units": "",
+                            "multiplex": 2
                         }
                     ]
                 },

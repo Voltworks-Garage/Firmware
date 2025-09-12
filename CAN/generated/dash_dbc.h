@@ -158,8 +158,8 @@ uint16_t CAN_bms_status_max_charge_current_mA_get(void);
 uint32_t CAN_bms_status_max_charge_voltage_mV_get(void);
 uint16_t CAN_bms_status_contactors_closed_get(void);
 uint16_t CAN_bms_status_precharge_active_get(void);
-uint16_t CAN_bms_status_charge_enabled_get(void);
-uint16_t CAN_bms_status_discharge_enabled_get(void);
+uint16_t CAN_bms_status_charge_allowed_get(void);
+uint16_t CAN_bms_status_discharge_allowed_get(void);
 uint16_t CAN_bms_status_fault_summary_get(void);
 uint16_t CAN_bms_status_is_balancing_get(void);
 uint16_t CAN_bms_status_cell_A_balancing_get(void);
@@ -185,8 +185,18 @@ float CAN_bms_power_systems_HV_isolation_voltage_get(void);
 uint16_t CAN_bms_power_systems_HV_contactor_state_get(void);
 
 #define CAN_bms_debug_interval() 10
+#define CAN_BMS_DEBUG_NUM_MUX_VALUES 3
 uint8_t CAN_bms_debug_checkDataIsUnread(void);
 uint8_t CAN_bms_debug_checkDataIsStale(void);
+uint16_t CAN_bms_debug_multiplex_get(void);
+float CAN_bms_debug_task_1ms_cpu_percent_get(void);
+float CAN_bms_debug_task_10ms_cpu_percent_get(void);
+float CAN_bms_debug_task_100ms_cpu_percent_get(void);
+float CAN_bms_debug_task_1000ms_cpu_percent_get(void);
+float CAN_bms_debug_task_1ms_peak_cpu_percent_get(void);
+float CAN_bms_debug_task_10ms_peak_cpu_percent_get(void);
+float CAN_bms_debug_task_100ms_peak_cpu_percent_get(void);
+float CAN_bms_debug_task_1000ms_peak_cpu_percent_get(void);
 uint16_t CAN_bms_debug_bool0_get(void);
 uint16_t CAN_bms_debug_bool1_get(void);
 float CAN_bms_debug_float1_get(void);

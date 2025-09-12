@@ -128,8 +128,8 @@ void CAN_bms_status_max_charge_current_mA_set(uint16_t max_charge_current_mA);
 void CAN_bms_status_max_charge_voltage_mV_set(uint32_t max_charge_voltage_mV);
 void CAN_bms_status_contactors_closed_set(uint16_t contactors_closed);
 void CAN_bms_status_precharge_active_set(uint16_t precharge_active);
-void CAN_bms_status_charge_enabled_set(uint16_t charge_enabled);
-void CAN_bms_status_discharge_enabled_set(uint16_t discharge_enabled);
+void CAN_bms_status_charge_allowed_set(uint16_t charge_allowed);
+void CAN_bms_status_discharge_allowed_set(uint16_t discharge_allowed);
 void CAN_bms_status_fault_summary_set(uint16_t fault_summary);
 void CAN_bms_status_is_balancing_set(uint16_t is_balancing);
 void CAN_bms_status_cell_A_balancing_set(uint16_t cell_A_balancing);
@@ -160,8 +160,8 @@ uint16_t CAN_bms_status_max_charge_current_mA_get(void);
 uint32_t CAN_bms_status_max_charge_voltage_mV_get(void);
 uint16_t CAN_bms_status_contactors_closed_get(void);
 uint16_t CAN_bms_status_precharge_active_get(void);
-uint16_t CAN_bms_status_charge_enabled_get(void);
-uint16_t CAN_bms_status_discharge_enabled_get(void);
+uint16_t CAN_bms_status_charge_allowed_get(void);
+uint16_t CAN_bms_status_discharge_allowed_get(void);
 uint16_t CAN_bms_status_fault_summary_get(void);
 uint16_t CAN_bms_status_is_balancing_get(void);
 uint16_t CAN_bms_status_cell_A_balancing_get(void);
@@ -212,6 +212,14 @@ void CAN_bms_power_systems_send(void);
 
 
 #define CAN_bms_debug_interval() 10
+void CAN_bms_debug_task_1ms_cpu_percent_set(float task_1ms_cpu_percent);
+void CAN_bms_debug_task_10ms_cpu_percent_set(float task_10ms_cpu_percent);
+void CAN_bms_debug_task_100ms_cpu_percent_set(float task_100ms_cpu_percent);
+void CAN_bms_debug_task_1000ms_cpu_percent_set(float task_1000ms_cpu_percent);
+void CAN_bms_debug_task_1ms_peak_cpu_percent_set(float task_1ms_peak_cpu_percent);
+void CAN_bms_debug_task_10ms_peak_cpu_percent_set(float task_10ms_peak_cpu_percent);
+void CAN_bms_debug_task_100ms_peak_cpu_percent_set(float task_100ms_peak_cpu_percent);
+void CAN_bms_debug_task_1000ms_peak_cpu_percent_set(float task_1000ms_peak_cpu_percent);
 void CAN_bms_debug_bool0_set(uint16_t bool0);
 void CAN_bms_debug_bool1_set(uint16_t bool1);
 void CAN_bms_debug_float1_set(float float1);
@@ -224,6 +232,7 @@ void CAN_bms_debug_dlc_set(uint8_t dlc);
 void CAN_bms_debug_send(void);
 
 
+#define CAN_BMS_DEBUG_NUM_MUX_VALUES 3
 void CAN_bms_boot_response_type_set(uint16_t type);
 void CAN_bms_boot_response_code_set(uint16_t code);
 void CAN_bms_boot_response_byte1_set(uint16_t byte1);

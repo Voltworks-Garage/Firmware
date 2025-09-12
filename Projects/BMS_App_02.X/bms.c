@@ -71,11 +71,13 @@ static bool bms_balancingAllowed = false;
 static bool bms_chargingAllowed = true;
 static bool bms_dischargeAllowed = true;
 static bool bms_lowVoltageWarning = false;
-static uint32_t bms_maxDischargeCurrentAllowedmA = 0;
-static uint32_t bms_maxChargeCurrentAllowedmA = 0;
+static uint32_t bms_maxDischargeCurrentAllowedmA = 60 * 1000; // 60A default
+static uint32_t bms_maxChargeCurrentAllowedmA = BMS_MAX_CHARGE_CURRENT_ALLOWED * 1000;
 
 static uint32_t bms_voltageTargetmV = BMS_MAX_CHARGE_VOLTAGE_ALLOWED * 1000;
-static uint32_t bms_currentTargetmA = BMS_MAX_CHARGE_CURRENT_ALLOWED * 1000;
+
+static bool bms_packIsCharged = false;
+
 
 NEW_TIMER(error_timer, 3000); // 3000ms timer for BMS error operation
 NEW_TIMER(balancing_timer, 10000); // 10 second timer for balancing operations
@@ -103,9 +105,11 @@ static void bms_calculateStackVoltages(void);
 static void bms_CheckCellVoltageThresholds(void);
 static void bms_runBalancingStateMachine(void);
 static void bms_setCANBalancingStatusMessages(void);
+void bms_ClearAllCellBalancing(void);
+
 
 /******************************************************************************
- * Public Function Implementations
+ * State Machine Public Function Implementations
  *******************************************************************************/
 
 void BMS_Init(void) {
@@ -155,9 +159,11 @@ void BMS_Run_10ms(void) {
         bms_balancingAllowed = false;
     }
 
-    CAN_bms_status_max_charge_current_mA_set(bms_currentTargetmA);
+    CAN_bms_status_max_charge_current_mA_set(bms_maxChargeCurrentAllowedmA);
     CAN_bms_status_max_charge_voltage_mV_set(bms_voltageTargetmV);
-    
+
+    CAN_bms_status_discharge_allowed_set(BMS_GetDischargingAllowed());
+    CAN_bms_status_charge_allowed_set(BMS_GetChargingAllowed());
 
     /* This only happens during state transition
      * State transitions thus have priority over posting new events
@@ -197,7 +203,7 @@ static void bms_running(BMS_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
             SysTick_TimerStart(led_timer);
-            BMS_ClearAllCellBalancing();
+            bms_ClearAllCellBalancing();
             break;
         case RUN:
             // Main BMS operation - process available data
@@ -225,7 +231,7 @@ static void bms_running(BMS_entry_types_E entry_type) {
             
             break;
         case EXIT:
-            BMS_ClearAllCellBalancing();
+            bms_ClearAllCellBalancing();
             break;
         default:
             break;
@@ -253,29 +259,6 @@ static void bms_error(BMS_entry_types_E entry_type) {
             break;
     }
 }
-
-
-uint16_t BMS_GetCellVoltage(uint8_t cellId) {
-    // Direct pass-through to driver with staleness detection
-    return LTC6802_1_GetCellVoltage(cellId);
-}
-
-float BMS_GetTemperatureVoltage(uint8_t tempId) {
-    // Direct pass-through to driver with staleness detection
-    return LTC6802_1_GetTemperatureVoltage(tempId);
-}
-
-void BMS_ClearAllCellBalancing(void) {
-    // Direct pass-through to driver
-    LTC6802_1_ClearAllCellBalancing();
-    num_cells_to_balance = 0;
-}
-
-void BMS_SetBalancingIsAllowed(bool allowed){
-    bms_balancingAllowed = allowed;
-}
-
-
 
 static uint16_t bms_calculateCellsToBalance(void) {
     uint16_t i, j;
@@ -329,6 +312,12 @@ static uint16_t bms_calculateCellsToBalance(void) {
     return num_cells_to_balance;
 }
 
+void bms_ClearAllCellBalancing(void) {
+    // Direct pass-through to driver
+    LTC6802_1_ClearAllCellBalancing();
+    num_cells_to_balance = 0;
+}
+
 static void bms_runBalancingStateMachine(void){
 
     // Handle balancing decisions
@@ -350,7 +339,7 @@ static void bms_runBalancingStateMachine(void){
             case 1:
                 // After balancing, take a measurement break to allow voltages to settle
                 if (SysTick_TimeOut(balancing_timer)){
-                    BMS_ClearAllCellBalancing();
+                    bms_ClearAllCellBalancing();
                     SysTick_TimerStart(measuring_timer);
                     balancing_state++;
                 }
@@ -366,7 +355,7 @@ static void bms_runBalancingStateMachine(void){
         }
     } else {
         balancing_state = 0;
-        BMS_ClearAllCellBalancing();
+        bms_ClearAllCellBalancing();
     }
 }
 
@@ -408,29 +397,29 @@ static void bms_taperCurrentCommandForBalancing(void){
 
         // As the cell_delta increases, decrease the charge current.
         if (cell_delta <= 50) {
-            bms_currentTargetmA = 5000;
+            bms_maxChargeCurrentAllowedmA = 5000;
         } else if (cell_delta <= 100) {
-            bms_currentTargetmA = 2000;
+            bms_maxChargeCurrentAllowedmA = 2000;
         } else if (cell_delta <= 200) {
-            bms_currentTargetmA = 1000;
+            bms_maxChargeCurrentAllowedmA = 1000;
         } else {
-            bms_currentTargetmA = 500;
+            bms_maxChargeCurrentAllowedmA = 500;
         }   
 
         // As the charge voltage approaches full, decrease the charge current .
         uint16_t cellVoltageRemaining = 4200 - bms_highestCellVoltagemV;
         if (cellVoltageRemaining <= 25) {
-            bms_currentTargetmA = bms_currentTargetmA / 10;  // 0.1 multiplier
+            bms_maxChargeCurrentAllowedmA = bms_maxChargeCurrentAllowedmA / 10;  // 0.1 multiplier
         } else if (cellVoltageRemaining <= 50) {
-            bms_currentTargetmA = bms_currentTargetmA / 4;  // 0.25 multiplier
+            bms_maxChargeCurrentAllowedmA = bms_maxChargeCurrentAllowedmA / 4;  // 0.25 multiplier
         } else if (cellVoltageRemaining <= 75) {
-            bms_currentTargetmA = bms_currentTargetmA / 2;  // 0.5 multiplier
+            bms_maxChargeCurrentAllowedmA = bms_maxChargeCurrentAllowedmA / 2;  // 0.5 multiplier
         }
 
         // Round down to nearest 100mA because that is the minimum resolution of the charger.
-        bms_currentTargetmA = (bms_currentTargetmA / 100) * 100;
+        bms_maxChargeCurrentAllowedmA = (bms_maxChargeCurrentAllowedmA / 100) * 100;
     } else {
-        cell_charge_voltage_hysterisis = 50;
+        cell_charge_voltage_hysterisis = 200;
     }
 }
 
@@ -463,17 +452,6 @@ static void bms_calculateStackVoltages(void) {
     bms_packVoltage = (float)pack_voltage_raw / 1000.0f; // Convert mV to V
 }
 
-float BMS_GetStackVoltage(uint8_t stack_id) {
-    if (stack_id >= LTC6802_1_NUM_STACKS) {
-        return 0.0f;
-    }
-    return bms_stackVoltage[stack_id];
-}
-
-float BMS_GetPackVoltage(void) {
-    return bms_packVoltage;
-}
-
 static void bms_CheckCellVoltageThresholds(void) {
     uint16_t cell_voltage;
     uint16_t min_voltage = 0xFFFF;
@@ -493,20 +471,72 @@ static void bms_CheckCellVoltageThresholds(void) {
         if (cell_voltage < min_voltage) {
             min_voltage = cell_voltage;
             bms_lowestCellVoltagemV = cell_voltage;
-            cellVoltageError |= true;
-            dischargeError |= true;
         }
         if (cell_voltage > max_voltage) {
             max_voltage = cell_voltage;
             bms_highestCellVoltagemV = cell_voltage;
-            cellVoltageError |= true;
-            chargeError |= true;
         }
+    }
+
+    if (bms_lowestCellVoltagemV < CELL_VOLTAGE_CRITICAL_MIN_MV) {
+        // Critical low voltage - disable all charging and discharging
+        dischargeError = true;
+        chargeError = true;
+        bms_lowVoltageWarning = true;
+    } else if (bms_lowestCellVoltagemV < CELL_VOLTAGE_MIN_MV) {
+        // Low voltage warning - disable discharging
+        dischargeError = true;
+        bms_lowVoltageWarning = true;
+    } else {
+        bms_lowVoltageWarning = false;
+    }
+
+    if (bms_highestCellVoltagemV > CELL_VOLTAGE_MAX_MV) {
+        // High voltage - disable charging
+        chargeError = true;
     }
     
     bms_cellVoltageError = cellVoltageError;
-    bms_dischargeAllowed = dischargeError;
-    bms_chargingAllowed = chargeError;
+    bms_dischargeAllowed = !dischargeError;
+    bms_chargingAllowed = !chargeError;
 
 }
 
+
+/******************************************************************************
+ * Public Function Implementations
+ *******************************************************************************/
+
+float BMS_GetStackVoltage(uint8_t stack_id) {
+    if (stack_id >= LTC6802_1_NUM_STACKS) {
+        return 0.0f;
+    }
+    return bms_stackVoltage[stack_id];
+}
+
+float BMS_GetPackVoltage(void) {
+    return bms_packVoltage;
+}
+
+uint16_t BMS_GetCellVoltage(uint8_t cellId) {
+    // Direct pass-through to driver with staleness detection
+    return LTC6802_1_GetCellVoltage(cellId);
+}
+
+float BMS_GetTemperatureVoltage(uint8_t tempId) {
+    // Direct pass-through to driver with staleness detection
+    return LTC6802_1_GetTemperatureVoltage(tempId);
+}
+
+bool BMS_GetChargingAllowed(void) {
+    return bms_chargingAllowed && !bms_cellVoltageError;
+}
+
+bool BMS_GetDischargingAllowed(void) {
+    return bms_dischargeAllowed && !bms_cellVoltageError;
+}
+
+bool BMS_GetPackIsCharged(void) {
+    // Consider the pack fully charged if all cells are above 4.15V
+    return bms_packIsCharged;
+}

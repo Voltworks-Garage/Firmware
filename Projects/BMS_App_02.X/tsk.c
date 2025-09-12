@@ -158,6 +158,17 @@ void Tsk_100ms(void) {
     CONTACTOR_Run_100ms();
     IO_SET_DEBUG_LED_EN(TOGGLE); //Toggle Debug LED at 10Hz for scheduler running status
 
+    // Populate task CPU usage
+    TaskType *tasks = Tsk_GetConfig();
+    CAN_bms_debug_task_1ms_cpu_percent_set(CPUUsage_GetTaskCPUPercent(&tasks[1]));
+    CAN_bms_debug_task_1ms_peak_cpu_percent_set(CPUUsage_GetTaskPeakCPU(&tasks[1]));
+    CAN_bms_debug_task_10ms_cpu_percent_set(CPUUsage_GetTaskCPUPercent(&tasks[2]));
+    CAN_bms_debug_task_10ms_peak_cpu_percent_set(CPUUsage_GetTaskPeakCPU(&tasks[2]));
+    CAN_bms_debug_task_100ms_cpu_percent_set(CPUUsage_GetTaskCPUPercent(&tasks[3]));
+    CAN_bms_debug_task_100ms_peak_cpu_percent_set(CPUUsage_GetTaskPeakCPU(&tasks[3]));
+    CAN_bms_debug_task_1000ms_cpu_percent_set(CPUUsage_GetTaskCPUPercent(&tasks[4]));
+    CAN_bms_debug_task_1000ms_peak_cpu_percent_set(CPUUsage_GetTaskPeakCPU(&tasks[4]));
+
     CAN_send_100ms();
 }
 

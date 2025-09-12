@@ -26,6 +26,7 @@ state(j1772_handshake) /* waiting for J1772 connection */ \
 state(precharging)\
 state(negotiating)\
 state(charging)\
+state(complete)\
 state(stopping)\
 state(faulted)\
 
@@ -302,6 +303,14 @@ void charging(EV_CHARGER_entry_types_E entry_type) {
                 nextState = faulted_state;
             }
 
+            // If the BMS disallows charging, stop charging and fault
+            if (CAN_bms_status_charge_allowed_get() == 0){
+                nextState = faulted_state;
+            }
+
+            // If the pack is fully charged, stop charging
+            //TODO: implement this
+
             //Always set the charge request to BMS or MCU command, whichever is less.
             uint32_t charging_current = MIN(maximumChargerCurrentAllowedmA,
                                             CAN_bms_status_max_charge_current_mA_get());
@@ -322,6 +331,25 @@ void charging(EV_CHARGER_entry_types_E entry_type) {
 
         case EXIT:
             EV_CHARGER_charge_request_set(0);
+            break;
+        default:
+            break;
+    }
+}
+
+void complete(EV_CHARGER_entry_types_E entry_type) {
+    switch (entry_type) {
+        case ENTRY:
+            EV_CHARGER_charge_request_set(0);
+            IO_SET_EV_CHARGER_EN(LOW);
+            CAN_bms_power_systems_J1772_ready_to_charge_set(0);
+            break;
+        case RUN:
+
+            //Stay here until next sleep cycle.
+
+            break;
+        case EXIT:
             break;
         default:
             break;

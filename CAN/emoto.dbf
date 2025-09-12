@@ -152,8 +152,8 @@
 [START_SIGNALS] max_charge_voltage_mV,18,3,3.0,U,262143,0,1,0,1.0,mV,M3
 [START_SIGNALS] contactors_closed,1,5,5.0,B,1,0,1,0,1.0,bool,M3
 [START_SIGNALS] precharge_active,1,5,6.0,B,1,0,1,0,1.0,bool,M3
-[START_SIGNALS] charge_enabled,1,5,7.0,B,1,0,1,0,1.0,bool,M3
-[START_SIGNALS] discharge_enabled,1,6,0.0,B,1,0,1,0,1.0,bool,M3
+[START_SIGNALS] charge_allowed,1,5,7.0,B,1,0,1,0,1.0,bool,M3
+[START_SIGNALS] discharge_allowed,1,6,0.0,B,1,0,1,0,1.0,bool,M3
 [START_SIGNALS] fault_summary,12,6,1.0,U,4095,0,1,0,1.0,bitfield,M3
 [START_SIGNALS] is_balancing,1,7,5.0,B,1,0,1,0,1.0,bool,M3
 [START_SIGNALS] cell_A_balancing,5,7,6.0,U,31,0,1,0,1.0,,M3
@@ -178,13 +178,22 @@
 [START_SIGNALS] HV_contactor_state,1,8,0.0,B,1,0,1,0,1.0,bool
 [END_MSG]
 
-[START_MSG] bms_debug,1827,8,6,1,S
-[START_SIGNALS] bool0,1,1,0.0,B,1,0,1,0,1.0,bool
-[START_SIGNALS] bool1,1,1,1.0,B,1,0,1,0,1.0,bool
-[START_SIGNALS] float1,16,1,2.0,U,65535,0,1,0,0.01,V
-[START_SIGNALS] float2,16,3,2.0,U,65535,0,1,0,0.01,V
-[START_SIGNALS] word1,16,5,2.0,U,65535,0,1,0,1,
-[START_SIGNALS] byte1,8,7,2.0,U,255,0,1,0,1,
+[START_MSG] bms_debug,1827,8,15,1,S
+[START_SIGNALS] multiplex,2,1,0.0,U,3,0,1,0,1.0,,m
+[START_SIGNALS] task_1ms_cpu_percent,8,1,2.0,U,255,0,1,0,1,%,M0
+[START_SIGNALS] task_10ms_cpu_percent,8,2,2.0,U,255,0,1,0,1,%,M0
+[START_SIGNALS] task_100ms_cpu_percent,8,3,2.0,U,255,0,1,0,1,%,M0
+[START_SIGNALS] task_1000ms_cpu_percent,8,4,2.0,U,255,0,1,0,1,%,M0
+[START_SIGNALS] task_1ms_peak_cpu_percent,8,5,2.0,U,255,0,1,0,1,%,M0
+[START_SIGNALS] task_10ms_peak_cpu_percent,8,6,2.0,U,255,0,1,0,1,%,M0
+[START_SIGNALS] task_100ms_peak_cpu_percent,8,7,2.0,U,255,0,1,0,1,%,M0
+[START_SIGNALS] task_1000ms_peak_cpu_percent,8,1,2.0,U,255,0,1,0,1,%,M1
+[START_SIGNALS] bool0,1,2,2.0,B,1,0,1,0,1.0,bool,M1
+[START_SIGNALS] bool1,1,2,3.0,B,1,0,1,0,1.0,bool,M1
+[START_SIGNALS] float1,16,2,4.0,U,65535,0,1,0,0.01,V,M1
+[START_SIGNALS] float2,16,4,4.0,U,65535,0,1,0,0.01,V,M1
+[START_SIGNALS] word1,16,6,4.0,U,65535,0,1,0,1,,M1
+[START_SIGNALS] byte1,8,1,2.0,U,255,0,1,0,1,,M2
 [END_MSG]
 
 [START_MSG] bms_boot_response,162,8,9,1,S
