@@ -129,6 +129,8 @@ void LightsControl_Halt(void){
 
     IO_SET_TAILLIGHT_EN(LOW);
     IO_SET_BRAKE_LIGHT_EN(LOW);
+
+    IO_SET_J1772_CONTROLLER_EN(LOW); //RUNNING_LIGHTS
 }
 
 void lights_idle(LIGHTS_CONTROL_entry_types_E entry_type) {
@@ -142,6 +144,7 @@ void lights_idle(LIGHTS_CONTROL_entry_types_E entry_type) {
             IO_SET_HEADLIGHT_HI_EN(LOW);
             IO_SET_TAILLIGHT_EN(LOW);
             IO_SET_BRAKE_LIGHT_EN(LOW);
+            IO_SET_J1772_CONTROLLER_EN(LOW); //RUNNING_LIGHTS
             break;
         case EXIT:
             break;
@@ -168,6 +171,7 @@ void lights_active(LIGHTS_CONTROL_entry_types_E entry_type) {
             IO_SET_HEADLIGHT_HI_EN(LOW);
             IO_SET_TAILLIGHT_EN(LOW);
             IO_SET_BRAKE_LIGHT_EN(LOW);
+            IO_SET_J1772_CONTROLLER_EN(LOW); //RUNNING_LIGHTS
             break;
         case RUN:
             if (!IO_GET_SW_EN()) {
@@ -201,12 +205,15 @@ void lights_active(LIGHTS_CONTROL_entry_types_E entry_type) {
 
             // IO_SET_HEADLIGHT_LO_EN(true);
             IO_SET_TAILLIGHT_EN(true);
+
+            IO_SET_J1772_CONTROLLER_EN(HIGH); //RUNNING_LIGHTS
             
+            // Handle High Beam Button
             highBeamEnabled = false;
             if (IgnitionControl_GetHighBeamButtonStatus() == BUTTON_PRESSED) {
                 highBeamEnabled = true;
             }
-            IO_SET_HEADLIGHT_LO_EN(highBeamEnabled);
+            IO_SET_HEADLIGHT_HI_EN(highBeamEnabled);
 
             break;
         default:

@@ -40,28 +40,6 @@ void CAN_dash_command_dlc_set(uint8_t dlc);
 void CAN_dash_command_send(void);
 
 
-#define CAN_dash_data1_interval() 10
-void CAN_dash_data1_speed_set(uint16_t speed);
-void CAN_dash_data1_odometer_set(uint16_t odometer);
-void CAN_dash_data1_tripA_set(uint16_t tripA);
-void CAN_dash_data1_tripB_set(uint16_t tripB);
-void CAN_dash_data1_dlc_set(uint8_t dlc);
-
-
-void CAN_dash_data1_send(void);
-
-
-#define CAN_dash_data2_interval() 10
-void CAN_dash_data2_runningTime_set(uint16_t runningTime);
-void CAN_dash_data2_odometer_set(uint16_t odometer);
-void CAN_dash_data2_tripA_set(uint16_t tripA);
-void CAN_dash_data2_tripB_set(uint16_t tripB);
-void CAN_dash_data2_dlc_set(uint8_t dlc);
-
-
-void CAN_dash_data2_send(void);
-
-
 /**********************************************************
  * mcu NODE MESSAGES
  */
@@ -107,29 +85,29 @@ uint16_t CAN_mcu_status_heated_seat_fault_get(void);
 uint16_t CAN_mcu_status_charge_controller_fault_get(void);
 uint16_t CAN_mcu_status_motor_controller_fault_get(void);
 uint16_t CAN_mcu_status_bms_controller_fault_get(void);
-uint16_t CAN_mcu_status_spare_1_controller_fault_get(void);
+uint16_t CAN_mcu_status_J1772_controller_fault_get(void);
 uint16_t CAN_mcu_status_ic_controller_fault_get(void);
-float CAN_mcu_status_fan_current_get(void);
-float CAN_mcu_status_pump_current_get(void);
-float CAN_mcu_status_taillight_current_get(void);
-float CAN_mcu_status_brakelight_current_get(void);
-float CAN_mcu_status_lowbeam_current_get(void);
-float CAN_mcu_status_highbeam_current_get(void);
-float CAN_mcu_status_horn_current_get(void);
-float CAN_mcu_status_aux_port_current_get(void);
-float CAN_mcu_status_heated_grips_current_get(void);
-float CAN_mcu_status_heated_seat_current_get(void);
-float CAN_mcu_status_charge_controller_current_get(void);
-float CAN_mcu_status_motor_controller_current_get(void);
-float CAN_mcu_status_bms_controller_current_get(void);
-float CAN_mcu_status_spare_1_controller_current_get(void);
+uint16_t CAN_mcu_status_fan_current_get(void);
+uint16_t CAN_mcu_status_pump_current_get(void);
+uint16_t CAN_mcu_status_taillight_current_get(void);
+uint16_t CAN_mcu_status_brakelight_current_get(void);
+uint16_t CAN_mcu_status_lowbeam_current_get(void);
+uint16_t CAN_mcu_status_highbeam_current_get(void);
+uint16_t CAN_mcu_status_horn_current_get(void);
+uint16_t CAN_mcu_status_aux_port_current_get(void);
+uint16_t CAN_mcu_status_heated_grips_current_get(void);
+uint16_t CAN_mcu_status_heated_seat_current_get(void);
+uint16_t CAN_mcu_status_charge_controller_current_get(void);
+uint16_t CAN_mcu_status_motor_controller_current_get(void);
+uint16_t CAN_mcu_status_bms_controller_current_get(void);
+uint16_t CAN_mcu_status_J1772_controller_current_get(void);
 
 #define CAN_mcu_command_interval() 100
 uint8_t CAN_mcu_command_checkDataIsUnread(void);
 uint8_t CAN_mcu_command_checkDataIsStale(void);
 uint16_t CAN_mcu_command_DCDC_enable_get(void);
-uint16_t CAN_mcu_command_ev_charger_enable_get(void);
-float CAN_mcu_command_ev_charger_current_get(void);
+uint16_t CAN_mcu_command_J1772_prox_status_get(void);
+float CAN_mcu_command_J1772_pilot_current_get(void);
 uint16_t CAN_mcu_command_precharge_enable_get(void);
 uint16_t CAN_mcu_command_motor_controller_enable_get(void);
 
@@ -140,20 +118,17 @@ uint8_t CAN_mcu_mcu_debug_checkDataIsStale(void);
 uint16_t CAN_mcu_mcu_debug_Multiplex_get(void);
 float CAN_mcu_mcu_debug_cpu_usage_percent_get(void);
 float CAN_mcu_mcu_debug_cpu_peak_percent_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_3_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_4_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_5_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_6_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_7_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_8_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_9_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_10_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_11_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_12_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_13_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_14_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_15_get(void);
-uint16_t CAN_mcu_mcu_debug_debug_value_16_get(void);
+uint16_t CAN_mcu_mcu_debug_debug_value_1_u16_get(void);
+uint32_t CAN_mcu_mcu_debug_debug_value_1_u24_get(void);
+float CAN_mcu_mcu_debug_task_1ms_cpu_percent_get(void);
+float CAN_mcu_mcu_debug_task_10ms_cpu_percent_get(void);
+float CAN_mcu_mcu_debug_task_100ms_cpu_percent_get(void);
+float CAN_mcu_mcu_debug_task_1000ms_cpu_percent_get(void);
+uint32_t CAN_mcu_mcu_debug_debug_value_1_u30_get(void);
+float CAN_mcu_mcu_debug_task_1ms_peak_cpu_percent_get(void);
+float CAN_mcu_mcu_debug_task_10ms_peak_cpu_percent_get(void);
+float CAN_mcu_mcu_debug_task_100ms_peak_cpu_percent_get(void);
+float CAN_mcu_mcu_debug_task_1000ms_peak_cpu_percent_get(void);
 
 /**********************************************************
  * bms NODE MESSAGES
@@ -183,8 +158,8 @@ uint16_t CAN_bms_status_max_charge_current_mA_get(void);
 uint32_t CAN_bms_status_max_charge_voltage_mV_get(void);
 uint16_t CAN_bms_status_contactors_closed_get(void);
 uint16_t CAN_bms_status_precharge_active_get(void);
-uint16_t CAN_bms_status_charge_enabled_get(void);
-uint16_t CAN_bms_status_discharge_enabled_get(void);
+uint16_t CAN_bms_status_charge_allowed_get(void);
+uint16_t CAN_bms_status_discharge_allowed_get(void);
 uint16_t CAN_bms_status_fault_summary_get(void);
 uint16_t CAN_bms_status_is_balancing_get(void);
 uint16_t CAN_bms_status_cell_A_balancing_get(void);
@@ -204,13 +179,24 @@ uint16_t CAN_bms_power_systems_EV_charger_state_get(void);
 uint16_t CAN_bms_power_systems_EV_charger_fault_get(void);
 float CAN_bms_power_systems_EV_charger_voltage_get(void);
 float CAN_bms_power_systems_EV_charger_current_get(void);
+uint16_t CAN_bms_power_systems_J1772_ready_to_charge_get(void);
 uint16_t CAN_bms_power_systems_HV_precharge_state_get(void);
 float CAN_bms_power_systems_HV_isolation_voltage_get(void);
 uint16_t CAN_bms_power_systems_HV_contactor_state_get(void);
 
 #define CAN_bms_debug_interval() 10
+#define CAN_BMS_DEBUG_NUM_MUX_VALUES 3
 uint8_t CAN_bms_debug_checkDataIsUnread(void);
 uint8_t CAN_bms_debug_checkDataIsStale(void);
+uint16_t CAN_bms_debug_multiplex_get(void);
+float CAN_bms_debug_task_1ms_cpu_percent_get(void);
+float CAN_bms_debug_task_10ms_cpu_percent_get(void);
+float CAN_bms_debug_task_100ms_cpu_percent_get(void);
+float CAN_bms_debug_task_1000ms_cpu_percent_get(void);
+float CAN_bms_debug_task_1ms_peak_cpu_percent_get(void);
+float CAN_bms_debug_task_10ms_peak_cpu_percent_get(void);
+float CAN_bms_debug_task_100ms_peak_cpu_percent_get(void);
+float CAN_bms_debug_task_1000ms_peak_cpu_percent_get(void);
 uint16_t CAN_bms_debug_bool0_get(void);
 uint16_t CAN_bms_debug_bool1_get(void);
 float CAN_bms_debug_float1_get(void);

@@ -21,6 +21,7 @@
 #include <xc.h>
 #include "mcc_generated_files/clock.h"
 #include "ic.h"
+#include "timer.h"
 
 // *****************************************************************************
 // *****************************************************************************
@@ -123,11 +124,13 @@ void PinSetup_Init(void) {
     ADC_SetPin(MUX_3_AI);
     ADC_SetPin(PILOT_MONITOR_AI);
     ADC_SetPin(PROMIXITY_MONINOTR_AI);
+
     /*PWM*/
-    pwmOCinit(CONTACTOR_1_PWM);
-    pwmOCwriteFreq(CONTACTOR_1_PWM, 3000); //10kHz
-    pwmOCinit(CONTACTOR_2_PWM);
-    pwmOCwriteFreq(CONTACTOR_2_PWM, 3000); //20kHz
+    timer4_init(234375, CLOCK_SystemFrequencyGet()); //set period high enough to scale the clock for 100Hz PWM
+    pwmOCinit(CONTACTOR_1_PWM, CLOCK_PeripheralFrequencyGet(), OC_CLOCK_T4CLK);
+    pwmOCwriteFreq(CONTACTOR_1_PWM, 100); //100Hz
+    pwmOCinit(CONTACTOR_2_PWM, CLOCK_PeripheralFrequencyGet(), OC_CLOCK_T4CLK);
+    pwmOCwriteFreq(CONTACTOR_2_PWM, 100); //100Hz
     
     // Configure Input Capture for PILOT PWM signal
     IC_Config_S pilotConfig = {

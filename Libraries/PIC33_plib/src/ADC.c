@@ -92,6 +92,12 @@ volatile uint16_t * const ADC_2_buffer[16] = {
 };
 #endif
 
+// Lookup table for pin-to-buffer mapping (all pins 0-31)
+static uint16_t ADC_pin_to_buffer[32];
+
+// Function to rebuild the lookup table
+static void ADC_RebuildLookupTable(void);
+
 // *****************************************************************************
 // *****************************************************************************
 // Section: Function Definitions
@@ -99,6 +105,43 @@ volatile uint16_t * const ADC_2_buffer[16] = {
 // *****************************************************************************
 
 static void ADC_selectPin(ADC_pinNumber_E thisPin, uint8_t state);
+
+static void ADC_RebuildLookupTable(void) {
+    uint16_t i, pin;
+    // Initialize all entries as invalid
+    for(i = 0; i < 32; i++) {
+        ADC_pin_to_buffer[i] = 0xFFFF;  // Invalid marker
+    }
+    
+#ifdef ADC2
+    // Build lookup table for ADC2 pins (0-15)
+    uint16_t buffer_index = 0;
+    for(pin = 0; pin < 16; pin++) {
+        if(ADC_2_Module.ADC_activePinBits & (1 << pin)) {
+            ADC_pin_to_buffer[pin] = buffer_index;
+            buffer_index++;
+        }
+    }
+    
+    // Build lookup table for ADC1 pins (16-31)  
+    buffer_index = 0;
+    for(pin = 16; pin < 32; pin++) {
+        if(ADC_1_Module.ADC_activePinBits & (1 << (pin - 16))) {
+            ADC_pin_to_buffer[pin] = buffer_index;
+            buffer_index++;
+        }
+    }
+#else
+    // Single ADC1 - pins 0-15
+    uint16_t buffer_index = 0;
+    for(pin = 0; pin < 16; pin++) {
+        if(ADC_1_Module.ADC_activePinBits & (1 << pin)) {
+            ADC_pin_to_buffer[pin] = buffer_index;
+            buffer_index++;
+        }
+    }
+#endif
+}
 
 void ADC_Init(void) {
 
@@ -174,6 +217,7 @@ uint8_t ADC_SetPin(ADC_pinNumber_E newPin) {
         AD1CSSH = ADC_1_Module.ADC_activePinBits; /*add pin to input sweep*/
         AD1CON2bits.SMPI = ADC_1_Module.ADC_numberActivePins - 1; /*Number of pins to sweep*/
         ADC_1_ON();
+        ADC_RebuildLookupTable();
         return 0;
     } else {
         uint16_t pinMask = 1 << newPin;
@@ -188,6 +232,7 @@ uint8_t ADC_SetPin(ADC_pinNumber_E newPin) {
         AD2CSSL = ADC_2_Module.ADC_activePinBits; /*add pin to input sweep*/
         AD2CON2bits.SMPI = ADC_2_Module.ADC_numberActivePins - 1; /*Number of pins to sweep*/
         ADC_2_ON();
+        ADC_RebuildLookupTable();
         return 0;
     }
 #else
@@ -203,6 +248,7 @@ uint8_t ADC_SetPin(ADC_pinNumber_E newPin) {
     AD1CSSL = ADC_1_Module.ADC_activePinBits; /*add pin to input sweep*/
     AD1CON2bits.SMPI = ADC_1_Module.ADC_numberActivePins - 1; /*Number of pins to sweep*/
     ADC_1_ON();
+    ADC_RebuildLookupTable();
     return 0;
 #endif
 }
@@ -228,43 +274,22 @@ uint8_t ADC_RemovePin(ADC_pinNumber_E thisPin) {
 }
 
 uint16_t ADC_GetValue(ADC_pinNumber_E thisPin) {
+    // Use lookup table for O(1) access
+    uint16_t buffer_index = ADC_pin_to_buffer[thisPin];
+    
+    // Check if pin is valid
+    if (buffer_index == 0xFFFF) {
+        return 0;  // Invalid pin
+    }
+    
 #ifdef ADC2
     if (thisPin > 15) {
-        thisPin = thisPin - 16;
-        uint16_t ADC_activePinBitsBeforeThisPin = 0;
-        uint16_t mask = 0x0001;
-        /*For each input, read ADC1BUFx value into correct pin buffer*/
-        uint8_t i = 0;
-        for (i = 0; i < thisPin; i++) {
-            if (ADC_1_Module.ADC_activePinBits & (mask << i)) {
-                ADC_activePinBitsBeforeThisPin++;
-            }
-        }
-        return *ADC_1_buffer[ADC_activePinBitsBeforeThisPin];
+        return *ADC_1_buffer[buffer_index];
     } else {
-        uint16_t ADC_activePinBitsBeforeThisPin = 0;
-        uint16_t mask = 0x0001;
-        /*For each input, read ADC2BUFx value into correct pin buffer*/
-        uint8_t i = 0;
-        for (i = 0; i < thisPin; i++) {
-            if (ADC_2_Module.ADC_activePinBits & (mask << i)) {
-                ADC_activePinBitsBeforeThisPin++;
-            }
-        }
-        return *ADC_2_buffer[ADC_activePinBitsBeforeThisPin];
+        return *ADC_2_buffer[buffer_index];
     }
 #else
-    uint16_t ADC_activePinBitsBeforeThisPin = 0;
-    uint16_t mask = 0x0001;
-    /*For each input, read ADC1BUFx value into correct pin buffer*/
-    uint8_t i = 0;
-    for (i = 0; i < thisPin; i++) {
-        if (ADC_1_Module.ADC_activePinBits & (mask << i)) {
-            ADC_activePinBitsBeforeThisPin++;
-        }
-    }
-    uint16_t val = *ADC_1_buffer[ADC_activePinBitsBeforeThisPin];
-    return val;
+    return *ADC_1_buffer[buffer_index];
 #endif
 }
 

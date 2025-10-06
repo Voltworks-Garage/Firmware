@@ -71,7 +71,7 @@ NEW_LOW_PASS_FILTER(lvBatteryCurrent, 1.0, 100.0);
 
 #define CHARGE_MONITOR_TIME 30000  // 30 seconds
 NEW_TIMER(chargeMonitorTimer, CHARGE_MONITOR_TIME);
-NEW_TIMER(dcdcReadyTimer, 2000); // 2 seconds for DCDC to start up
+NEW_TIMER(dcdcReadyTimer, 5000); // 2 seconds for DCDC to start up
 NEW_TIMER(faultTimer, 10000);
 
 /******************************************************************************
@@ -171,7 +171,7 @@ void battery_and_dcdc_on(LV_BATTERY_entry_types_E entry_type) {
             CAN_mcu_command_DCDC_enable_set(1);
             IO_SET_BATT_EN(HIGH);
             IO_SET_DCDC_EN(HIGH);
-            CAN_mcu_mcu_debug_debug_value_3_set(0);
+
             break;
         case EXIT:
             CAN_mcu_command_DCDC_enable_set(0);
@@ -181,7 +181,6 @@ void battery_and_dcdc_on(LV_BATTERY_entry_types_E entry_type) {
             faultCount++;
             if ((IO_GET_DCDC_FAULT() == true)){// || (CAN_bms_power_systems_DCDC_state_get() == false)) {
                 lv_battery_nextState = faulted_state;
-                CAN_mcu_mcu_debug_debug_value_3_set(faultCount);
             }
             break;
         default:

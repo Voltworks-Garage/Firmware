@@ -14,6 +14,7 @@
 #include "tsk.h"					
 #include "tsk_cfg.h"
 #include "SysTick.h"
+#include "cpu_usage.h"
 #include "movingAverage.h"
 
 //Direct low level access
@@ -107,6 +108,14 @@ void Tsk_init(void) {
 }
 
 /**
+ * Tsk is for continuously running tasks, will run when scheduler is Idle.
+ */
+void Tsk(void) {
+    Nop();
+}
+
+
+/**
  * Runs every 1ms
  */
 void Tsk_1ms(void) {
@@ -149,6 +158,17 @@ void Tsk_100ms(void) {
     CONTACTOR_Run_100ms();
     IO_SET_DEBUG_LED_EN(TOGGLE); //Toggle Debug LED at 10Hz for scheduler running status
 
+    // Populate task CPU usage
+    TaskType *tasks = Tsk_GetConfig();
+    CAN_bms_debug_task_1ms_cpu_percent_set(CPUUsage_GetTaskCPUPercent(&tasks[1]));
+    CAN_bms_debug_task_1ms_peak_cpu_percent_set(CPUUsage_GetTaskPeakCPU(&tasks[1]));
+    CAN_bms_debug_task_10ms_cpu_percent_set(CPUUsage_GetTaskCPUPercent(&tasks[2]));
+    CAN_bms_debug_task_10ms_peak_cpu_percent_set(CPUUsage_GetTaskPeakCPU(&tasks[2]));
+    CAN_bms_debug_task_100ms_cpu_percent_set(CPUUsage_GetTaskCPUPercent(&tasks[3]));
+    CAN_bms_debug_task_100ms_peak_cpu_percent_set(CPUUsage_GetTaskPeakCPU(&tasks[3]));
+    CAN_bms_debug_task_1000ms_cpu_percent_set(CPUUsage_GetTaskCPUPercent(&tasks[4]));
+    CAN_bms_debug_task_1000ms_peak_cpu_percent_set(CPUUsage_GetTaskPeakCPU(&tasks[4]));
+
     CAN_send_100ms();
 }
 
@@ -184,6 +204,9 @@ void Tsk_Run(uint32_t SystemClock) {
 
     SysTick_Init(SystemClock);
 
+    Tsk_InitCPUMeasurement();
+    CPUUsage_Init();
+
     tsk_configPtr = Tsk_GetConfig(); // Get a pointer to the task configuration
     
     SysTick_Set(tsk_configPtr[0].LastTick);// Set the Tick to the first task to allow for the phase offset
@@ -204,7 +227,9 @@ void Tsk_Run(uint32_t SystemClock) {
             for (tsk_currentIndex = 0; tsk_currentIndex < NumTasks; tsk_currentIndex++) {
 
                 if ((tick - tsk_configPtr[tsk_currentIndex].LastTick) >= tsk_configPtr[tsk_currentIndex].Interval) {
+                    CPUUsage_StartTaskTiming(&tsk_configPtr[tsk_currentIndex]);
                     (*tsk_configPtr[tsk_currentIndex].Func)(); // Execute Task
+                    CPUUsage_EndTaskTiming(&tsk_configPtr[tsk_currentIndex]);
 
                     tsk_configPtr[tsk_currentIndex].LastTick = tick; // Save last tick the task was ran.
                 }

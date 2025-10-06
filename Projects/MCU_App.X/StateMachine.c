@@ -2,6 +2,7 @@
  * Includes
  *******************************************************************************/
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "StateMachine.h"
 #include "CAN.h"
@@ -20,6 +21,9 @@
 #include "can_iso_tp_lite.h"
 #include "mcc_generated_files/watchdog.h"
 #include "CommandService.h"
+#include "tachometer.h"
+#include "ThrottleControl.h"
+#include "BatteryGauge.h"
 
 
 /******************************************************************************
@@ -81,8 +85,8 @@ static STATE_MACHINE_states_E sm_nextState = boot_state; /* initialize next stat
 uint8_t sm_keepAwakeFlag = 0;
 
 NEW_TIMER(idleTimer, 60000);
-NEW_TIMER(SwEnTimer, 1);
-NEW_TIMER(diagTimer, 60000);
+NEW_TIMER(diagTimer, 10*60000); //10 minute diag timer.
+NEW_TIMER(tachTimer, 1500);
 
 /******************************************************************************
  * Function Prototypes
@@ -95,9 +99,16 @@ void resume_all_tasks(void);
 void StateMachine_Init(void) {
     state_functions[sm_curState](ENTRY);
 }
-
+extern CAN_message_S CAN_motorcontroller_SYNC;
 void StateMachine_Run(void) {
 
+    bool unread = CAN_motorcontroller_SYNC_checkDataIsUnread();
+    bool fresh = !CAN_motorcontroller_SYNC_checkDataIsStale();
+
+
+    if(unread && fresh){
+        CAN_mcu_motorControllerRequest_send();
+    }
     CAN_mcu_status_vehicleState_set(sm_curState);
                 
     /* This only happens during state transition
@@ -129,6 +140,10 @@ void boot(STATE_MACHINE_entry_types_E entry_type) {
             HornControl_Init();
             j1772Control_Init();
             LvBattery_Init();
+            tachometer_init();
+            ThrottleControl_Init();
+            batteryGauge_init();
+        
 
             //Get HV support ready.
             IO_SET_BMS_CONTROLLER_EN(HIGH);
@@ -151,6 +166,9 @@ void idle(STATE_MACHINE_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
             SysTick_TimerStart(idleTimer);
+            SysTick_TimerStart(tachTimer);
+            tachometer_set_percent(100);
+            batteryGauge_set_percent(100);
             break;
 
         case EXIT:
@@ -165,10 +183,14 @@ void idle(STATE_MACHINE_entry_types_E entry_type) {
             if (SysTick_TimeOut(idleTimer)) {
                 sm_nextState = goingToSleep_state;
             }
-            // Connection of charged triggers charging
-            if (j1772getProxState() == J1772_CONNECTED) {
+            
+            // BMS triggers charging state.
+            if (CAN_bms_power_systems_J1772_ready_to_charge_get()
+                && !CAN_bms_power_systems_checkDataIsStale()) {
                 sm_nextState = charging_state;
             }
+
+            // Diagnostic mode triggers diag state.
             switch (CommandService_GetEvent()) {
                 case COMMAND_SERVICE_TYPE_TESTER_PRESENT:
                 case COMMAND_SERVICE_TYPE_IO_CONTROL:
@@ -181,15 +203,28 @@ void idle(STATE_MACHINE_entry_types_E entry_type) {
                     break;
             }
 
-            // // If the kill switch is pressed, go to goingToSleep and prepare for sleep.
-            // if (IgnitionControl_GetKillSwitchStatus() == BUTTON_PRESSED) {
-            //     sm_nextState = goingToSleep_state;
-            // }
+            // If the kill switch is pressed, go to goingToSleep and prepare for sleep.
+            if (IgnitionControl_GetKillSwitchStatus() == BUTTON_PRESSED) {
+                sm_nextState = goingToSleep_state;
+            }
+
+            // If the brake switch is pressed, stay awake.
+            if (IgnitionControl_GetRightBrakeButtonStatus() == BUTTON_PRESSED) {
+                SysTick_TimerStart(idleTimer);
+            }
 
             // If the start button is held, go to running state.
             // Clear the hold flag to prevent re-entry.
             if (IgnitionControl_GetStartButtonIsHeld(true)) {
                 sm_nextState = running_state;
+            }
+
+            if(SysTick_TimeOut(tachTimer)){
+                tachometer_set_percent(0);
+                batteryGauge_set_percent(0);
+                // tach += 10;
+                // if(tach > 100) tach = 0;
+                // SysTick_TimerStart(tachTimer);
             }
 
             break;
@@ -220,18 +255,25 @@ void silent_wake(STATE_MACHINE_entry_types_E entry_type) {
 void running(STATE_MACHINE_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
-            IO_SET_HEADLIGHT_HI_EN(HIGH);
-            CAN_mcu_command_motor_controller_enable_set(1);
+            IO_SET_HEADLIGHT_LO_EN(HIGH);
+            //CAN_mcu_command_motor_controller_enable_set(1);
+            ThrottleControl_Enable(true);
             break;
         case EXIT:
-            IO_SET_HEADLIGHT_HI_EN(LOW);
-            CAN_mcu_command_motor_controller_enable_set(0);
+            IO_SET_HEADLIGHT_LO_EN(LOW);
+            //CAN_mcu_command_motor_controller_enable_set(0);
+            ThrottleControl_Enable(false);
             break;
         case RUN:
             // If the start button is held, go to idle state.
             // Clear the hold flag to prevent re-entry.
             if (IgnitionControl_GetStartButtonIsHeld(true)) {
                 sm_nextState = idle_state;
+            }
+
+            // If the kill switch is pressed, go to goingToSleep and prepare for sleep.
+            if (IgnitionControl_GetKillSwitchStatus() == BUTTON_PRESSED) {
+                sm_nextState = goingToSleep_state;
             }
             break;
         default:
@@ -242,19 +284,27 @@ void running(STATE_MACHINE_entry_types_E entry_type) {
 void charging(STATE_MACHINE_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
+            j1772chargingStateSet(true);
             break;
         case EXIT:
-            CAN_mcu_command_ev_charger_current_set(0);
-            CAN_mcu_command_ev_charger_enable_set(0);
+            j1772chargingStateSet(false);
             break;
         case RUN:
+
+            // BMS triggers charging end.
+            if (!CAN_bms_power_systems_J1772_ready_to_charge_get()
+                || CAN_bms_power_systems_checkDataIsStale()) {
+                sm_nextState = idle_state;
+            }
+
+            // If the J1772 is disconnected, stop charging.
+            // This is a safety in case the BMS doesn't cut charging for some reason.
             switch (j1772getProxState()) {
                 case J1772_CONNECTED:
-                    CAN_mcu_command_ev_charger_current_set(j1772getPilotCurrent());
-                    CAN_mcu_command_ev_charger_enable_set(1);
+                case J1772_REQUEST_DISCONNECT:
+                    // stay in charging state
                     break;
                 case J1772_DISCONNECTED:
-                case J1772_REQUEST_DISCONNECT:
                 case J1772_SNA_PROX:
                 default:
                     sm_nextState = idle_state;
@@ -306,6 +356,9 @@ void sleep(STATE_MACHINE_entry_types_E entry_type) {
             j1772Control_Halt();
             IgnitionControl_Halt();
             LvBattery_Halt();
+            tachometer_halt();
+            ThrottleControl_Halt();
+            batteryGauge_halt();
 
             //shut down external controllers
             IO_SET_IC_CONTROLLER_SLEEP_EN(HIGH);
@@ -333,6 +386,7 @@ void sleep(STATE_MACHINE_entry_types_E entry_type) {
             // } else {
                 sm_nextState = boot_state;
             // }
+
 
             break;
         default:
@@ -376,7 +430,10 @@ void halt_all_tasks(void) {
     HornControl_Halt();
     j1772Control_Halt();
     IgnitionControl_Halt();
-    LvBattery_Halt();
+    // LvBattery_Halt();
+    tachometer_halt();
+    ThrottleControl_Halt();
+    batteryGauge_halt();
 }
 void resume_all_tasks(void) {
     LightsControl_Init();
@@ -384,7 +441,10 @@ void resume_all_tasks(void) {
     HornControl_Init();
     j1772Control_Init();
     IgnitionControl_Init();
-    LvBattery_Init();
+    // LvBattery_Init();
+    tachometer_init();
+    ThrottleControl_Init();
+    batteryGauge_init();
 }
 
 /*** End of File **************************************************************/

@@ -48,18 +48,32 @@ typedef enum _oc_pin_number {
     PWM_PIN_RP57,
     PWM_PIN_RP100,
     PWM_PIN_RP101,
+    PWM_PIN_RP126,
+    PWM_PIN_RP127,
     NUMBER_OF_OC_PINS,
 } oc_pin_number;
+
+typedef enum _oc_clock_source {
+    OC_CLOCK_T2CLK = 0x00, /*Timer2 clock*/
+    OC_CLOCK_T3CLK = 0x01, /*Timer3 clock*/
+    OC_CLOCK_T4CLK = 0x02, /*Timer4 clock*/
+    OC_CLOCK_T5CLK = 0x03, /*Timer5 clock*/
+    OC_CLOCK_T1CLK = 0x04, /*Timer1 clock*/
+    OC_CLOCK_PTOGX = 0x05, /*PTOG clock*/
+    OC_CLOCK_RESERVED = 0x06, /*Fosc clock*/
+    OC_CLOCK_PERIPHERAL = 0x07, /*peripheral clock*/
+} oc_clock_source;
 
 
 /**
  * 
  * @param pin: assigns a PWM output to pins
- * 7, 11, 12, 14, 15, 16, 17, 18, 21 or 22
+ * @param system_freq: system frequency in Hz
+ * @param clock_source: clock source for the PWM module, 0x07 is peripheral clock
  * @return success (1) if the module has been added, failure (0) if
  * the pin is invalid or there are no more modules available
  */
-uint8_t pwmOCinit(oc_pin_number pin);
+uint8_t pwmOCinit(oc_pin_number pin, uint32_t clock_freq, oc_clock_source clock_source);
 
 
 /**

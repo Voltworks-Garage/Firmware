@@ -7,7 +7,7 @@
 /**********************************************************
  * mcu NODE MESSAGES
  */
-#define CAN_mcu_command_ID 0x712
+#define CAN_mcu_command_ID 0x389
 
 static CAN_message_S CAN_mcu_command={
 	.canID = CAN_mcu_command_ID,
@@ -19,14 +19,14 @@ static CAN_message_S CAN_mcu_command={
 
 #define CAN_MCU_COMMAND_DCDC_ENABLE_RANGE 1
 #define CAN_MCU_COMMAND_DCDC_ENABLE_OFFSET 0
-#define CAN_MCU_COMMAND_EV_CHARGER_ENABLE_RANGE 1
-#define CAN_MCU_COMMAND_EV_CHARGER_ENABLE_OFFSET 1
-#define CAN_MCU_COMMAND_EV_CHARGER_CURRENT_RANGE 13
-#define CAN_MCU_COMMAND_EV_CHARGER_CURRENT_OFFSET 2
+#define CAN_MCU_COMMAND_J1772_PROX_STATUS_RANGE 2
+#define CAN_MCU_COMMAND_J1772_PROX_STATUS_OFFSET 1
+#define CAN_MCU_COMMAND_J1772_PILOT_CURRENT_RANGE 8
+#define CAN_MCU_COMMAND_J1772_PILOT_CURRENT_OFFSET 3
 #define CAN_MCU_COMMAND_PRECHARGE_ENABLE_RANGE 1
-#define CAN_MCU_COMMAND_PRECHARGE_ENABLE_OFFSET 15
+#define CAN_MCU_COMMAND_PRECHARGE_ENABLE_OFFSET 11
 #define CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_RANGE 1
-#define CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_OFFSET 16
+#define CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_OFFSET 12
 
 uint8_t CAN_mcu_command_checkDataIsUnread(void){
 	return CAN_checkDataIsUnread(&CAN_mcu_command);
@@ -40,32 +40,32 @@ uint16_t CAN_mcu_command_DCDC_enable_get(void){
 	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x0001) >> 0) << 0;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_mcu_command_ev_charger_enable_get(void){
-	// Extract 1-bit signal at bit offset 1
+uint16_t CAN_mcu_command_J1772_prox_status_get(void){
+	// Extract 2-bit signal at bit offset 1
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x0002) >> 1) << 0;
+	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x0006) >> 1) << 0;
 	return (data * 1.0) + 0;
 }
-float CAN_mcu_command_ev_charger_current_get(void){
-	// Extract 13-bit signal at bit offset 2
+float CAN_mcu_command_J1772_pilot_current_get(void){
+	// Extract 8-bit signal at bit offset 3
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x7FFC) >> 2) << 0;
-	return (data * 0.1) + 0;
+	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x07F8) >> 3) << 0;
+	return (data * 1.0) + 0;
 }
 uint16_t CAN_mcu_command_precharge_enable_get(void){
-	// Extract 1-bit signal at bit offset 15
+	// Extract 1-bit signal at bit offset 11
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x8000) >> 15) << 0;
+	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x0800) >> 11) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_mcu_command_motor_controller_enable_get(void){
-	// Extract 1-bit signal at bit offset 16
+	// Extract 1-bit signal at bit offset 12
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_mcu_command.payload->word1 & 0x0001) >> 0) << 0;
+	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x1000) >> 12) << 0;
 	return (data * 1.0) + 0;
 }
 
-#define CAN_mcu_motorControllerRequest_ID 0x700
+#define CAN_mcu_motorControllerRequest_ID 0x201
 
 static CAN_message_S CAN_mcu_motorControllerRequest={
 	.canID = CAN_mcu_motorControllerRequest_ID,
@@ -75,26 +75,367 @@ static CAN_message_S CAN_mcu_motorControllerRequest={
 	.canMessageStatus = 0
 };
 
-#define CAN_MCU_MOTORCONTROLLERREQUEST_REQUESTTYPE_RANGE 8
-#define CAN_MCU_MOTORCONTROLLERREQUEST_REQUESTTYPE_OFFSET 0
+#define CAN_MCU_MOTORCONTROLLERREQUEST_THROTTLE_VALUE_RANGE 16
+#define CAN_MCU_MOTORCONTROLLERREQUEST_THROTTLE_VALUE_OFFSET 0
+#define CAN_MCU_MOTORCONTROLLERREQUEST_FORWARD_SWITCH_RANGE 1
+#define CAN_MCU_MOTORCONTROLLERREQUEST_FORWARD_SWITCH_OFFSET 16
+#define CAN_MCU_MOTORCONTROLLERREQUEST_REVERSE_SWITCH_RANGE 1
+#define CAN_MCU_MOTORCONTROLLERREQUEST_REVERSE_SWITCH_OFFSET 17
+#define CAN_MCU_MOTORCONTROLLERREQUEST_FS1_SWITCH_RANGE 1
+#define CAN_MCU_MOTORCONTROLLERREQUEST_FS1_SWITCH_OFFSET 18
+#define CAN_MCU_MOTORCONTROLLERREQUEST_SEAT_SWITCH_RANGE 1
+#define CAN_MCU_MOTORCONTROLLERREQUEST_SEAT_SWITCH_OFFSET 19
+#define CAN_MCU_MOTORCONTROLLERREQUEST_HANDBRAKE_SWITCH_RANGE 1
+#define CAN_MCU_MOTORCONTROLLERREQUEST_HANDBRAKE_SWITCH_OFFSET 20
+#define CAN_MCU_MOTORCONTROLLERREQUEST_FOOTBRAKE_VALUE_RANGE 16
+#define CAN_MCU_MOTORCONTROLLERREQUEST_FOOTBRAKE_VALUE_OFFSET 21
 
 uint8_t CAN_mcu_motorControllerRequest_checkDataIsUnread(void){
 	return CAN_checkDataIsUnread(&CAN_mcu_motorControllerRequest);
 }
-uint8_t CAN_mcu_motorControllerRequest_checkDataIsStale(void){
-	return CAN_checkDataIsStale(&CAN_mcu_motorControllerRequest, 2);
-}
-uint16_t CAN_mcu_motorControllerRequest_requestType_get(void){
-	// Extract 8-bit signal at bit offset 0
+uint16_t CAN_mcu_motorControllerRequest_Throttle_Value_get(void){
+	// Extract 16-bit signal at bit offset 0
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_mcu_motorControllerRequest.payload->word0 & 0x00FF) >> 0) << 0;
+	data |= (uint16_t)((CAN_mcu_motorControllerRequest.payload->word0 & 0xFFFF) >> 0) << 0;
 	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_motorControllerRequest_Forward_Switch_get(void){
+	// Extract 1-bit signal at bit offset 16
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_motorControllerRequest.payload->word1 & 0x0001) >> 0) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_motorControllerRequest_Reverse_Switch_get(void){
+	// Extract 1-bit signal at bit offset 17
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_motorControllerRequest.payload->word1 & 0x0002) >> 1) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_motorControllerRequest_FS1_Switch_get(void){
+	// Extract 1-bit signal at bit offset 18
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_motorControllerRequest.payload->word1 & 0x0004) >> 2) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_motorControllerRequest_Seat_Switch_get(void){
+	// Extract 1-bit signal at bit offset 19
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_motorControllerRequest.payload->word1 & 0x0008) >> 3) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_motorControllerRequest_Handbrake_Switch_get(void){
+	// Extract 1-bit signal at bit offset 20
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_motorControllerRequest.payload->word1 & 0x0010) >> 4) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_motorControllerRequest_Footbrake_Value_get(void){
+	// Extract 16-bit signal at bit offset 21
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_motorControllerRequest.payload->word1 & 0xFFE0) >> 5) << 0;
+	data |= (uint16_t)((CAN_mcu_motorControllerRequest.payload->word2 & 0x001F) >> 0) << 11;
+	return (data * 1.0) + 0;
+}
+
+static CAN_payload_S CAN_mcu_mcu_debug_payloads[4] __attribute__((aligned(sizeof(CAN_payload_S))));
+static uint8_t CAN_mcu_mcu_debug_mux = 0;
+#define CAN_mcu_mcu_debug_ID 0x38A
+
+static CAN_message_S CAN_mcu_mcu_debug={
+	.canID = CAN_mcu_mcu_debug_ID,
+	.canXID = 0,
+	.dlc = 8,
+	.payload = 0,
+	.canMessageStatus = 0
+};
+
+#define CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE 2
+#define CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET 0
+#define CAN_MCU_MCU_DEBUG_M2_CPU_USAGE_PERCENT_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M2_CPU_USAGE_PERCENT_OFFSET 2
+#define CAN_MCU_MCU_DEBUG_M2_CPU_PEAK_PERCENT_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M2_CPU_PEAK_PERCENT_OFFSET 10
+#define CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_1_U16_RANGE 16
+#define CAN_MCU_MCU_DEBUG_M0_DEBUG_VALUE_1_U16_OFFSET 2
+#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_1_U24_RANGE 24
+#define CAN_MCU_MCU_DEBUG_M1_DEBUG_VALUE_1_U24_OFFSET 2
+#define CAN_MCU_MCU_DEBUG_M1_TASK_1MS_CPU_PERCENT_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M1_TASK_1MS_CPU_PERCENT_OFFSET 26
+#define CAN_MCU_MCU_DEBUG_M1_TASK_10MS_CPU_PERCENT_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M1_TASK_10MS_CPU_PERCENT_OFFSET 34
+#define CAN_MCU_MCU_DEBUG_M0_TASK_100MS_CPU_PERCENT_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M0_TASK_100MS_CPU_PERCENT_OFFSET 18
+#define CAN_MCU_MCU_DEBUG_M0_TASK_1000MS_CPU_PERCENT_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M0_TASK_1000MS_CPU_PERCENT_OFFSET 26
+#define CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_1_U30_RANGE 30
+#define CAN_MCU_MCU_DEBUG_M2_DEBUG_VALUE_1_U30_OFFSET 18
+#define CAN_MCU_MCU_DEBUG_M3_TASK_1MS_PEAK_CPU_PERCENT_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M3_TASK_1MS_PEAK_CPU_PERCENT_OFFSET 2
+#define CAN_MCU_MCU_DEBUG_M3_TASK_10MS_PEAK_CPU_PERCENT_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M3_TASK_10MS_PEAK_CPU_PERCENT_OFFSET 10
+#define CAN_MCU_MCU_DEBUG_M2_TASK_100MS_PEAK_CPU_PERCENT_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M2_TASK_100MS_PEAK_CPU_PERCENT_OFFSET 48
+#define CAN_MCU_MCU_DEBUG_M2_TASK_1000MS_PEAK_CPU_PERCENT_RANGE 8
+#define CAN_MCU_MCU_DEBUG_M2_TASK_1000MS_PEAK_CPU_PERCENT_OFFSET 56
+
+uint8_t CAN_mcu_mcu_debug_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_mcu_mcu_debug);
+}
+uint8_t CAN_mcu_mcu_debug_checkDataIsStale(void){
+	return CAN_checkDataIsStale(&CAN_mcu_mcu_debug, 20);
+}
+uint16_t CAN_mcu_mcu_debug_Multiplex_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 2-bit signal at bit offset 0
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug.payload->word0 & 0x0003) >> 0) << 0;
+	return (data * 1.0) + 0;
+}
+float CAN_mcu_mcu_debug_cpu_usage_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 2
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[2].word0 & 0x03FC) >> 2) << 0;
+	return (data * 0.5) + 0;
+}
+float CAN_mcu_mcu_debug_cpu_peak_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 10
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[2].word0 & 0xFC00) >> 10) << 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[2].word1 & 0x0003) >> 0) << 6;
+	return (data * 0.5) + 0;
+}
+uint16_t CAN_mcu_mcu_debug_debug_value_1_u16_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 16-bit signal at bit offset 2
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[0].word0 & 0xFFFC) >> 2) << 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[0].word1 & 0x0003) >> 0) << 14;
+	return (data * 1.0) + 0;
+}
+uint32_t CAN_mcu_mcu_debug_debug_value_1_u24_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 24-bit signal at bit offset 2
+	uint32_t data = 0;
+	data |= (uint32_t)((CAN_mcu_mcu_debug_payloads[1].word0 & 0xFFFC) >> 2) << 0;
+	data |= (uint32_t)((CAN_mcu_mcu_debug_payloads[1].word1 & 0x03FF) >> 0) << 14;
+	return (data * 1.0) + 0;
+}
+float CAN_mcu_mcu_debug_task_1ms_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 26
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[1].word1 & 0xFC00) >> 10) << 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[1].word2 & 0x0003) >> 0) << 6;
+	return (data * 1) + 0;
+}
+float CAN_mcu_mcu_debug_task_10ms_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 34
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[1].word2 & 0x03FC) >> 2) << 0;
+	return (data * 1) + 0;
+}
+float CAN_mcu_mcu_debug_task_100ms_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 18
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[0].word1 & 0x03FC) >> 2) << 0;
+	return (data * 1) + 0;
+}
+float CAN_mcu_mcu_debug_task_1000ms_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 26
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[0].word1 & 0xFC00) >> 10) << 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[0].word2 & 0x0003) >> 0) << 6;
+	return (data * 1) + 0;
+}
+uint32_t CAN_mcu_mcu_debug_debug_value_1_u30_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 30-bit signal at bit offset 18
+	uint32_t data = 0;
+	data |= (uint32_t)((CAN_mcu_mcu_debug_payloads[2].word1 & 0xFFFC) >> 2) << 0;
+	data |= (uint32_t)((CAN_mcu_mcu_debug_payloads[2].word2 & 0xFFFF) >> 0) << 14;
+	return (data * 1.0) + 0;
+}
+float CAN_mcu_mcu_debug_task_1ms_peak_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 2
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[3].word0 & 0x03FC) >> 2) << 0;
+	return (data * 1) + 0;
+}
+float CAN_mcu_mcu_debug_task_10ms_peak_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 10
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[3].word0 & 0xFC00) >> 10) << 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[3].word1 & 0x0003) >> 0) << 6;
+	return (data * 1) + 0;
+}
+float CAN_mcu_mcu_debug_task_100ms_peak_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 48
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[2].word3 & 0x00FF) >> 0) << 0;
+	return (data * 1) + 0;
+}
+float CAN_mcu_mcu_debug_task_1000ms_peak_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_mcu_mcu_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_mcu_mcu_debug.payload, CAN_MCU_MCU_DEBUG_MULTIPLEX_OFFSET, CAN_MCU_MCU_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_mcu_mcu_debug_payloads[mux_value] = *CAN_mcu_mcu_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 56
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_mcu_debug_payloads[2].word3 & 0xFF00) >> 8) << 0;
+	return (data * 1) + 0;
 }
 
 /**********************************************************
  * bms NODE MESSAGES
  */
-#define CAN_bms_debug_ID 0x723
+static CAN_payload_S CAN_bms_debug_payloads[3] __attribute__((aligned(sizeof(CAN_payload_S))));
+static uint8_t CAN_bms_debug_mux = 0;
+#define CAN_bms_debug_ID 0x38D
 
 static CAN_message_S CAN_bms_debug={
 	.canID = CAN_bms_debug_ID,
@@ -104,18 +445,36 @@ static CAN_message_S CAN_bms_debug={
 	.canMessageStatus = 0
 };
 
-#define CAN_BMS_DEBUG_BOOL0_RANGE 1
-#define CAN_BMS_DEBUG_BOOL0_OFFSET 0
-#define CAN_BMS_DEBUG_BOOL1_RANGE 1
-#define CAN_BMS_DEBUG_BOOL1_OFFSET 1
-#define CAN_BMS_DEBUG_FLOAT1_RANGE 16
-#define CAN_BMS_DEBUG_FLOAT1_OFFSET 2
-#define CAN_BMS_DEBUG_FLOAT2_RANGE 16
-#define CAN_BMS_DEBUG_FLOAT2_OFFSET 18
-#define CAN_BMS_DEBUG_WORD1_RANGE 16
-#define CAN_BMS_DEBUG_WORD1_OFFSET 34
-#define CAN_BMS_DEBUG_BYTE1_RANGE 8
-#define CAN_BMS_DEBUG_BYTE1_OFFSET 50
+#define CAN_BMS_DEBUG_MULTIPLEX_RANGE 2
+#define CAN_BMS_DEBUG_MULTIPLEX_OFFSET 0
+#define CAN_BMS_DEBUG_M0_TASK_1MS_CPU_PERCENT_RANGE 8
+#define CAN_BMS_DEBUG_M0_TASK_1MS_CPU_PERCENT_OFFSET 2
+#define CAN_BMS_DEBUG_M0_TASK_10MS_CPU_PERCENT_RANGE 8
+#define CAN_BMS_DEBUG_M0_TASK_10MS_CPU_PERCENT_OFFSET 10
+#define CAN_BMS_DEBUG_M0_TASK_100MS_CPU_PERCENT_RANGE 8
+#define CAN_BMS_DEBUG_M0_TASK_100MS_CPU_PERCENT_OFFSET 18
+#define CAN_BMS_DEBUG_M0_TASK_1000MS_CPU_PERCENT_RANGE 8
+#define CAN_BMS_DEBUG_M0_TASK_1000MS_CPU_PERCENT_OFFSET 26
+#define CAN_BMS_DEBUG_M0_TASK_1MS_PEAK_CPU_PERCENT_RANGE 8
+#define CAN_BMS_DEBUG_M0_TASK_1MS_PEAK_CPU_PERCENT_OFFSET 34
+#define CAN_BMS_DEBUG_M0_TASK_10MS_PEAK_CPU_PERCENT_RANGE 8
+#define CAN_BMS_DEBUG_M0_TASK_10MS_PEAK_CPU_PERCENT_OFFSET 42
+#define CAN_BMS_DEBUG_M0_TASK_100MS_PEAK_CPU_PERCENT_RANGE 8
+#define CAN_BMS_DEBUG_M0_TASK_100MS_PEAK_CPU_PERCENT_OFFSET 50
+#define CAN_BMS_DEBUG_M1_TASK_1000MS_PEAK_CPU_PERCENT_RANGE 8
+#define CAN_BMS_DEBUG_M1_TASK_1000MS_PEAK_CPU_PERCENT_OFFSET 2
+#define CAN_BMS_DEBUG_M1_BOOL0_RANGE 1
+#define CAN_BMS_DEBUG_M1_BOOL0_OFFSET 10
+#define CAN_BMS_DEBUG_M1_BOOL1_RANGE 1
+#define CAN_BMS_DEBUG_M1_BOOL1_OFFSET 11
+#define CAN_BMS_DEBUG_M1_FLOAT1_RANGE 16
+#define CAN_BMS_DEBUG_M1_FLOAT1_OFFSET 12
+#define CAN_BMS_DEBUG_M1_FLOAT2_RANGE 16
+#define CAN_BMS_DEBUG_M1_FLOAT2_OFFSET 28
+#define CAN_BMS_DEBUG_M1_WORD1_RANGE 16
+#define CAN_BMS_DEBUG_M1_WORD1_OFFSET 44
+#define CAN_BMS_DEBUG_M2_BYTE1_RANGE 8
+#define CAN_BMS_DEBUG_M2_BYTE1_OFFSET 2
 
 uint8_t CAN_bms_debug_checkDataIsUnread(void){
 	return CAN_checkDataIsUnread(&CAN_bms_debug);
@@ -123,44 +482,370 @@ uint8_t CAN_bms_debug_checkDataIsUnread(void){
 uint8_t CAN_bms_debug_checkDataIsStale(void){
 	return CAN_checkDataIsStale(&CAN_bms_debug, 20);
 }
-uint16_t CAN_bms_debug_bool0_get(void){
-	// Extract 1-bit signal at bit offset 0
+uint16_t CAN_bms_debug_multiplex_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_bms_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_MULTIPLEX_OFFSET, CAN_BMS_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_BMS_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_bms_debug_payloads[mux_value] = *CAN_bms_debug.payload;
+		}
+	}
+	
+	// Extract 2-bit signal at bit offset 0
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_debug.payload->word0 & 0x0001) >> 0) << 0;
+	data |= (uint16_t)((CAN_bms_debug.payload->word0 & 0x0003) >> 0) << 0;
+	return (data * 1.0) + 0;
+}
+float CAN_bms_debug_task_1ms_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_bms_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_MULTIPLEX_OFFSET, CAN_BMS_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_BMS_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_bms_debug_payloads[mux_value] = *CAN_bms_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 2
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_debug_payloads[0].word0 & 0x03FC) >> 2) << 0;
+	return (data * 1) + 0;
+}
+float CAN_bms_debug_task_10ms_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_bms_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_MULTIPLEX_OFFSET, CAN_BMS_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_BMS_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_bms_debug_payloads[mux_value] = *CAN_bms_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 10
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_debug_payloads[0].word0 & 0xFC00) >> 10) << 0;
+	data |= (uint16_t)((CAN_bms_debug_payloads[0].word1 & 0x0003) >> 0) << 6;
+	return (data * 1) + 0;
+}
+float CAN_bms_debug_task_100ms_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_bms_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_MULTIPLEX_OFFSET, CAN_BMS_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_BMS_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_bms_debug_payloads[mux_value] = *CAN_bms_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 18
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_debug_payloads[0].word1 & 0x03FC) >> 2) << 0;
+	return (data * 1) + 0;
+}
+float CAN_bms_debug_task_1000ms_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_bms_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_MULTIPLEX_OFFSET, CAN_BMS_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_BMS_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_bms_debug_payloads[mux_value] = *CAN_bms_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 26
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_debug_payloads[0].word1 & 0xFC00) >> 10) << 0;
+	data |= (uint16_t)((CAN_bms_debug_payloads[0].word2 & 0x0003) >> 0) << 6;
+	return (data * 1) + 0;
+}
+float CAN_bms_debug_task_1ms_peak_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_bms_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_MULTIPLEX_OFFSET, CAN_BMS_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_BMS_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_bms_debug_payloads[mux_value] = *CAN_bms_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 34
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_debug_payloads[0].word2 & 0x03FC) >> 2) << 0;
+	return (data * 1) + 0;
+}
+float CAN_bms_debug_task_10ms_peak_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_bms_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_MULTIPLEX_OFFSET, CAN_BMS_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_BMS_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_bms_debug_payloads[mux_value] = *CAN_bms_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 42
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_debug_payloads[0].word2 & 0xFC00) >> 10) << 0;
+	data |= (uint16_t)((CAN_bms_debug_payloads[0].word3 & 0x0003) >> 0) << 6;
+	return (data * 1) + 0;
+}
+float CAN_bms_debug_task_100ms_peak_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_bms_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_MULTIPLEX_OFFSET, CAN_BMS_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_BMS_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_bms_debug_payloads[mux_value] = *CAN_bms_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 50
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_debug_payloads[0].word3 & 0x03FC) >> 2) << 0;
+	return (data * 1) + 0;
+}
+float CAN_bms_debug_task_1000ms_peak_cpu_percent_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_bms_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_MULTIPLEX_OFFSET, CAN_BMS_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_BMS_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_bms_debug_payloads[mux_value] = *CAN_bms_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 2
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_debug_payloads[1].word0 & 0x03FC) >> 2) << 0;
+	return (data * 1) + 0;
+}
+uint16_t CAN_bms_debug_bool0_get(void){
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_bms_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_MULTIPLEX_OFFSET, CAN_BMS_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_BMS_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_bms_debug_payloads[mux_value] = *CAN_bms_debug.payload;
+		}
+	}
+	
+	// Extract 1-bit signal at bit offset 10
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_debug_payloads[1].word0 & 0x0400) >> 10) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_debug_bool1_get(void){
-	// Extract 1-bit signal at bit offset 1
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_bms_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_MULTIPLEX_OFFSET, CAN_BMS_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_BMS_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_bms_debug_payloads[mux_value] = *CAN_bms_debug.payload;
+		}
+	}
+	
+	// Extract 1-bit signal at bit offset 11
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_debug.payload->word0 & 0x0002) >> 1) << 0;
+	data |= (uint16_t)((CAN_bms_debug_payloads[1].word0 & 0x0800) >> 11) << 0;
 	return (data * 1.0) + 0;
 }
 float CAN_bms_debug_float1_get(void){
-	// Extract 16-bit signal at bit offset 2
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_bms_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_MULTIPLEX_OFFSET, CAN_BMS_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_BMS_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_bms_debug_payloads[mux_value] = *CAN_bms_debug.payload;
+		}
+	}
+	
+	// Extract 16-bit signal at bit offset 12
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_debug.payload->word0 & 0xFFFC) >> 2) << 0;
-	data |= (uint16_t)((CAN_bms_debug.payload->word1 & 0x0003) >> 0) << 14;
+	data |= (uint16_t)((CAN_bms_debug_payloads[1].word0 & 0xF000) >> 12) << 0;
+	data |= (uint16_t)((CAN_bms_debug_payloads[1].word1 & 0x0FFF) >> 0) << 4;
 	return (data * 0.01) + 0;
 }
 float CAN_bms_debug_float2_get(void){
-	// Extract 16-bit signal at bit offset 18
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_bms_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_MULTIPLEX_OFFSET, CAN_BMS_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_BMS_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_bms_debug_payloads[mux_value] = *CAN_bms_debug.payload;
+		}
+	}
+	
+	// Extract 16-bit signal at bit offset 28
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_debug.payload->word1 & 0xFFFC) >> 2) << 0;
-	data |= (uint16_t)((CAN_bms_debug.payload->word2 & 0x0003) >> 0) << 14;
+	data |= (uint16_t)((CAN_bms_debug_payloads[1].word1 & 0xF000) >> 12) << 0;
+	data |= (uint16_t)((CAN_bms_debug_payloads[1].word2 & 0x0FFF) >> 0) << 4;
 	return (data * 0.01) + 0;
 }
 uint16_t CAN_bms_debug_word1_get(void){
-	// Extract 16-bit signal at bit offset 34
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_bms_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_MULTIPLEX_OFFSET, CAN_BMS_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_BMS_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_bms_debug_payloads[mux_value] = *CAN_bms_debug.payload;
+		}
+	}
+	
+	// Extract 16-bit signal at bit offset 44
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_debug.payload->word2 & 0xFFFC) >> 2) << 0;
-	data |= (uint16_t)((CAN_bms_debug.payload->word3 & 0x0003) >> 0) << 14;
+	data |= (uint16_t)((CAN_bms_debug_payloads[1].word2 & 0xF000) >> 12) << 0;
+	data |= (uint16_t)((CAN_bms_debug_payloads[1].word3 & 0x0FFF) >> 0) << 4;
 	return (data * 1) + 0;
 }
 uint16_t CAN_bms_debug_byte1_get(void){
-	// Extract 8-bit signal at bit offset 50
+	// Check for unread data and update payload arrays if needed
+	if (*CAN_bms_debug.canMessageStatus) {
+		// Unread data received - determine which mux payload to update
+		uint16_t mux_value = get_bits((size_t*)CAN_bms_debug.payload, CAN_BMS_DEBUG_MULTIPLEX_OFFSET, CAN_BMS_DEBUG_MULTIPLEX_RANGE);
+		// Copy unread payload data to appropriate mux payload array
+		if (mux_value < CAN_BMS_DEBUG_NUM_MUX_VALUES) {
+			// Copy the entire payload structure to the appropriate mux array
+			CAN_bms_debug_payloads[mux_value] = *CAN_bms_debug.payload;
+		}
+	}
+	
+	// Extract 8-bit signal at bit offset 2
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_debug.payload->word3 & 0x03FC) >> 2) << 0;
+	data |= (uint16_t)((CAN_bms_debug_payloads[2].word0 & 0x03FC) >> 2) << 0;
 	return (data * 1) + 0;
+}
+
+#define CAN_bms_SDO_request_ID 0x601
+
+static CAN_message_S CAN_bms_SDO_request={
+	.canID = CAN_bms_SDO_request_ID,
+	.canXID = 0,
+	.dlc = 8,
+	.payload = 0,
+	.canMessageStatus = 0
+};
+
+#define CAN_BMS_SDO_REQUEST_SIZE_RANGE 1
+#define CAN_BMS_SDO_REQUEST_SIZE_OFFSET 0
+#define CAN_BMS_SDO_REQUEST_EXPIDITED_XFER_RANGE 1
+#define CAN_BMS_SDO_REQUEST_EXPIDITED_XFER_OFFSET 1
+#define CAN_BMS_SDO_REQUEST_N_BYTES_RANGE 2
+#define CAN_BMS_SDO_REQUEST_N_BYTES_OFFSET 2
+#define CAN_BMS_SDO_REQUEST_RESERVED_RANGE 1
+#define CAN_BMS_SDO_REQUEST_RESERVED_OFFSET 4
+#define CAN_BMS_SDO_REQUEST_CCS_RANGE 3
+#define CAN_BMS_SDO_REQUEST_CCS_OFFSET 5
+#define CAN_BMS_SDO_REQUEST_INDEX_RANGE 16
+#define CAN_BMS_SDO_REQUEST_INDEX_OFFSET 8
+#define CAN_BMS_SDO_REQUEST_SUBINDEX_RANGE 8
+#define CAN_BMS_SDO_REQUEST_SUBINDEX_OFFSET 24
+#define CAN_BMS_SDO_REQUEST_BYTE_4_RANGE 8
+#define CAN_BMS_SDO_REQUEST_BYTE_4_OFFSET 32
+#define CAN_BMS_SDO_REQUEST_BYTE_5_RANGE 8
+#define CAN_BMS_SDO_REQUEST_BYTE_5_OFFSET 40
+#define CAN_BMS_SDO_REQUEST_BYTE_6_RANGE 8
+#define CAN_BMS_SDO_REQUEST_BYTE_6_OFFSET 48
+#define CAN_BMS_SDO_REQUEST_BYTE_7_RANGE 8
+#define CAN_BMS_SDO_REQUEST_BYTE_7_OFFSET 56
+
+uint8_t CAN_bms_SDO_request_checkDataIsUnread(void){
+	return CAN_checkDataIsUnread(&CAN_bms_SDO_request);
+}
+uint16_t CAN_bms_SDO_request_size_get(void){
+	// Extract 1-bit signal at bit offset 0
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word0 & 0x0001) >> 0) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_SDO_request_expidited_xfer_get(void){
+	// Extract 1-bit signal at bit offset 1
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word0 & 0x0002) >> 1) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_SDO_request_n_bytes_get(void){
+	// Extract 2-bit signal at bit offset 2
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word0 & 0x000C) >> 2) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_SDO_request_reserved_get(void){
+	// Extract 1-bit signal at bit offset 4
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word0 & 0x0010) >> 4) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_SDO_request_ccs_get(void){
+	// Extract 3-bit signal at bit offset 5
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word0 & 0x00E0) >> 5) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_SDO_request_index_get(void){
+	// Extract 16-bit signal at bit offset 8
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word0 & 0xFF00) >> 8) << 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word1 & 0x00FF) >> 0) << 8;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_SDO_request_subindex_get(void){
+	// Extract 8-bit signal at bit offset 24
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word1 & 0xFF00) >> 8) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_SDO_request_byte_4_get(void){
+	// Extract 8-bit signal at bit offset 32
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word2 & 0x00FF) >> 0) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_SDO_request_byte_5_get(void){
+	// Extract 8-bit signal at bit offset 40
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word2 & 0xFF00) >> 8) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_SDO_request_byte_6_get(void){
+	// Extract 8-bit signal at bit offset 48
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word3 & 0x00FF) >> 0) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_SDO_request_byte_7_get(void){
+	// Extract 8-bit signal at bit offset 56
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_SDO_request.payload->word3 & 0xFF00) >> 8) << 0;
+	return (data * 1.0) + 0;
 }
 
 /**********************************************************
@@ -178,11 +863,11 @@ static CAN_message_S CAN_motorcontroller_heartbeat={
 	.canMessageStatus = &CAN_motorcontroller_heartbeat_status
 };
 
-#define CAN_MOTORCONTROLLER_HEARTBEAT_HEARTBEAT_RANGE 16
-#define CAN_MOTORCONTROLLER_HEARTBEAT_HEARTBEAT_OFFSET 0
+#define CAN_MOTORCONTROLLER_HEARTBEAT_MODE_RANGE 16
+#define CAN_MOTORCONTROLLER_HEARTBEAT_MODE_OFFSET 0
 
-void CAN_motorcontroller_heartbeat_heartbeat_set(uint16_t heartbeat){
-	uint16_t data_scaled = heartbeat * 1.0;
+void CAN_motorcontroller_heartbeat_Mode_set(uint16_t Mode){
+	uint16_t data_scaled = Mode * 1.0;
 	// Set 16-bit signal at bit offset 0
 	CAN_motorcontroller_heartbeat.payload->word0 &= ~0xFFFF;
 	CAN_motorcontroller_heartbeat.payload->word0 |= data_scaled & 0xFFFF;
@@ -208,15 +893,7 @@ static CAN_message_S CAN_motorcontroller_SYNC={
 	.canMessageStatus = &CAN_motorcontroller_SYNC_status
 };
 
-#define CAN_MOTORCONTROLLER_SYNC_SYNC_DUMMY_RANGE 16
-#define CAN_MOTORCONTROLLER_SYNC_SYNC_DUMMY_OFFSET 0
 
-void CAN_motorcontroller_SYNC_SYNC_dummy_set(uint16_t SYNC_dummy){
-	uint16_t data_scaled = SYNC_dummy * 1.0;
-	// Set 16-bit signal at bit offset 0
-	CAN_motorcontroller_SYNC.payload->word0 &= ~0xFFFF;
-	CAN_motorcontroller_SYNC.payload->word0 |= data_scaled & 0xFFFF;
-}
 void CAN_motorcontroller_SYNC_dlc_set(uint8_t dlc){
 	CAN_motorcontroller_SYNC.dlc = dlc;
 }
@@ -224,6 +901,118 @@ void CAN_motorcontroller_SYNC_send(void){
 	// Update message status for self-consumption
 	*CAN_motorcontroller_SYNC.canMessageStatus = 1;
 	CAN_write(&CAN_motorcontroller_SYNC);
+}
+
+static CAN_payload_S CAN_motorcontroller_SDO_response_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_motorcontroller_SDO_response_status = 0;
+#define CAN_motorcontroller_SDO_response_ID 0x581
+
+static CAN_message_S CAN_motorcontroller_SDO_response={
+	.canID = CAN_motorcontroller_SDO_response_ID,
+	.canXID = 0,
+	.dlc = 8,
+	.payload = &CAN_motorcontroller_SDO_response_payload,
+	.canMessageStatus = &CAN_motorcontroller_SDO_response_status
+};
+
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_SIZE_RANGE 1
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_SIZE_OFFSET 0
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_EXPIDITED_XFER_RANGE 1
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_EXPIDITED_XFER_OFFSET 1
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_N_BYTES_RANGE 2
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_N_BYTES_OFFSET 2
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_RESERVED_RANGE 1
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_RESERVED_OFFSET 4
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_CCS_RANGE 3
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_CCS_OFFSET 5
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_INDEX_RANGE 16
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_INDEX_OFFSET 8
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_SUBINDEX_RANGE 8
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_SUBINDEX_OFFSET 24
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_4_RANGE 8
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_4_OFFSET 32
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_5_RANGE 8
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_5_OFFSET 40
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_6_RANGE 8
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_6_OFFSET 48
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_7_RANGE 8
+#define CAN_MOTORCONTROLLER_SDO_RESPONSE_BYTE_7_OFFSET 56
+
+void CAN_motorcontroller_SDO_response_size_set(uint16_t size){
+	uint16_t data_scaled = size * 1.0;
+	// Set 1-bit signal at bit offset 0
+	CAN_motorcontroller_SDO_response.payload->word0 &= ~0x0001;
+	CAN_motorcontroller_SDO_response.payload->word0 |= data_scaled & 0x0001;
+}
+void CAN_motorcontroller_SDO_response_expidited_xfer_set(uint16_t expidited_xfer){
+	uint16_t data_scaled = expidited_xfer * 1.0;
+	// Set 1-bit signal at bit offset 1
+	CAN_motorcontroller_SDO_response.payload->word0 &= ~0x0002;
+	CAN_motorcontroller_SDO_response.payload->word0 |= (data_scaled << 1) & 0x0002;
+}
+void CAN_motorcontroller_SDO_response_n_bytes_set(uint16_t n_bytes){
+	uint16_t data_scaled = n_bytes * 1.0;
+	// Set 2-bit signal at bit offset 2
+	CAN_motorcontroller_SDO_response.payload->word0 &= ~0x000C;
+	CAN_motorcontroller_SDO_response.payload->word0 |= (data_scaled << 2) & 0x000C;
+}
+void CAN_motorcontroller_SDO_response_reserved_set(uint16_t reserved){
+	uint16_t data_scaled = reserved * 1.0;
+	// Set 1-bit signal at bit offset 4
+	CAN_motorcontroller_SDO_response.payload->word0 &= ~0x0010;
+	CAN_motorcontroller_SDO_response.payload->word0 |= (data_scaled << 4) & 0x0010;
+}
+void CAN_motorcontroller_SDO_response_ccs_set(uint16_t ccs){
+	uint16_t data_scaled = ccs * 1.0;
+	// Set 3-bit signal at bit offset 5
+	CAN_motorcontroller_SDO_response.payload->word0 &= ~0x00E0;
+	CAN_motorcontroller_SDO_response.payload->word0 |= (data_scaled << 5) & 0x00E0;
+}
+void CAN_motorcontroller_SDO_response_index_set(uint16_t index){
+	uint16_t data_scaled = index * 1.0;
+	// Set 16-bit signal at bit offset 8
+	CAN_motorcontroller_SDO_response.payload->word0 &= ~0xFF00;
+	CAN_motorcontroller_SDO_response.payload->word0 |= (data_scaled << 8) & 0xFF00;
+	CAN_motorcontroller_SDO_response.payload->word1 &= ~0x00FF;
+	CAN_motorcontroller_SDO_response.payload->word1 |= (data_scaled >> 8) & 0x00FF;
+}
+void CAN_motorcontroller_SDO_response_subindex_set(uint16_t subindex){
+	uint16_t data_scaled = subindex * 1.0;
+	// Set 8-bit signal at bit offset 24
+	CAN_motorcontroller_SDO_response.payload->word1 &= ~0xFF00;
+	CAN_motorcontroller_SDO_response.payload->word1 |= (data_scaled << 8) & 0xFF00;
+}
+void CAN_motorcontroller_SDO_response_byte_4_set(uint16_t byte_4){
+	uint16_t data_scaled = byte_4 * 1.0;
+	// Set 8-bit signal at bit offset 32
+	CAN_motorcontroller_SDO_response.payload->word2 &= ~0x00FF;
+	CAN_motorcontroller_SDO_response.payload->word2 |= data_scaled & 0x00FF;
+}
+void CAN_motorcontroller_SDO_response_byte_5_set(uint16_t byte_5){
+	uint16_t data_scaled = byte_5 * 1.0;
+	// Set 8-bit signal at bit offset 40
+	CAN_motorcontroller_SDO_response.payload->word2 &= ~0xFF00;
+	CAN_motorcontroller_SDO_response.payload->word2 |= (data_scaled << 8) & 0xFF00;
+}
+void CAN_motorcontroller_SDO_response_byte_6_set(uint16_t byte_6){
+	uint16_t data_scaled = byte_6 * 1.0;
+	// Set 8-bit signal at bit offset 48
+	CAN_motorcontroller_SDO_response.payload->word3 &= ~0x00FF;
+	CAN_motorcontroller_SDO_response.payload->word3 |= data_scaled & 0x00FF;
+}
+void CAN_motorcontroller_SDO_response_byte_7_set(uint16_t byte_7){
+	uint16_t data_scaled = byte_7 * 1.0;
+	// Set 8-bit signal at bit offset 56
+	CAN_motorcontroller_SDO_response.payload->word3 &= ~0xFF00;
+	CAN_motorcontroller_SDO_response.payload->word3 |= (data_scaled << 8) & 0xFF00;
+}
+void CAN_motorcontroller_SDO_response_dlc_set(uint8_t dlc){
+	CAN_motorcontroller_SDO_response.dlc = dlc;
+}
+void CAN_motorcontroller_SDO_response_send(void){
+	// Update message status for self-consumption
+	*CAN_motorcontroller_SDO_response.canMessageStatus = 1;
+	CAN_write(&CAN_motorcontroller_SDO_response);
 }
 
 static CAN_payload_S CAN_motorcontroller_Emergency_payload __attribute__((aligned(sizeof(CAN_payload_S))));
@@ -256,176 +1045,144 @@ void CAN_motorcontroller_Emergency_send(void){
 	CAN_write(&CAN_motorcontroller_Emergency);
 }
 
-static CAN_payload_S CAN_motorcontroller_motorStatus_payload __attribute__((aligned(sizeof(CAN_payload_S))));
-static volatile uint8_t CAN_motorcontroller_motorStatus_status = 0;
-#define CAN_motorcontroller_motorStatus_ID 0x731
+static CAN_payload_S CAN_motorcontroller_motorStatus_PDO1_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_motorcontroller_motorStatus_PDO1_status = 0;
+#define CAN_motorcontroller_motorStatus_PDO1_ID 0x391
 
-static CAN_message_S CAN_motorcontroller_motorStatus={
-	.canID = CAN_motorcontroller_motorStatus_ID,
+static CAN_message_S CAN_motorcontroller_motorStatus_PDO1={
+	.canID = CAN_motorcontroller_motorStatus_PDO1_ID,
 	.canXID = 0,
 	.dlc = 8,
-	.payload = &CAN_motorcontroller_motorStatus_payload,
-	.canMessageStatus = &CAN_motorcontroller_motorStatus_status
+	.payload = &CAN_motorcontroller_motorStatus_PDO1_payload,
+	.canMessageStatus = &CAN_motorcontroller_motorStatus_PDO1_status
 };
 
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_MOTORSPEED_RANGE 8
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_MOTORSPEED_OFFSET 0
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_MOTORCURRENT_RANGE 8
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_MOTORCURRENT_OFFSET 8
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_IPHASEA_RANGE 8
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_IPHASEA_OFFSET 16
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_IPHASEB_RANGE 8
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_IPHASEB_OFFSET 24
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_IPHASEC_RANGE 8
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_IPHASEC_OFFSET 32
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_VPHASEA_RANGE 8
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_VPHASEA_OFFSET 40
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_VPHASEB_RANGE 8
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_VPHASEB_OFFSET 48
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_VPHASEC_RANGE 8
-#define CAN_MOTORCONTROLLER_MOTORSTATUS_VPHASEC_OFFSET 56
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_BATTERY_VOLTAGE_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_BATTERY_VOLTAGE_OFFSET 0
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_BATTERY_CURRENT_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_BATTERY_CURRENT_OFFSET 16
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_CAPACITOR_VOLTAGE_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_CAPACITOR_VOLTAGE_OFFSET 32
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_HEATSINK_TEMPERATURE_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO1_HEATSINK_TEMPERATURE_OFFSET 48
 
-void CAN_motorcontroller_motorStatus_motorSpeed_set(uint16_t motorSpeed){
-	uint16_t data_scaled = motorSpeed * 1.0;
-	// Set 8-bit signal at bit offset 0
-	CAN_motorcontroller_motorStatus.payload->word0 &= ~0x00FF;
-	CAN_motorcontroller_motorStatus.payload->word0 |= data_scaled & 0x00FF;
+void CAN_motorcontroller_motorStatus_PDO1_Battery_Voltage_set(float Battery_Voltage){
+	uint16_t data_scaled = (uint16_t)(Battery_Voltage * 16.0f + 0.5f);
+	// Set 16-bit signal at bit offset 0
+	CAN_motorcontroller_motorStatus_PDO1.payload->word0 &= ~0xFFFF;
+	CAN_motorcontroller_motorStatus_PDO1.payload->word0 |= data_scaled & 0xFFFF;
 }
-void CAN_motorcontroller_motorStatus_motorCurrent_set(float motorCurrent){
-	uint16_t data_scaled = (uint16_t)(motorCurrent * 100.0f + 0.5f);
-	// Set 8-bit signal at bit offset 8
-	CAN_motorcontroller_motorStatus.payload->word0 &= ~0xFF00;
-	CAN_motorcontroller_motorStatus.payload->word0 |= (data_scaled << 8) & 0xFF00;
+void CAN_motorcontroller_motorStatus_PDO1_Battery_Current_set(float Battery_Current){
+	uint16_t data_scaled = (uint16_t)(Battery_Current * 16.0f + 0.5f);
+	// Set 16-bit signal at bit offset 16
+	CAN_motorcontroller_motorStatus_PDO1.payload->word1 &= ~0xFFFF;
+	CAN_motorcontroller_motorStatus_PDO1.payload->word1 |= data_scaled & 0xFFFF;
 }
-void CAN_motorcontroller_motorStatus_IphaseA_set(uint16_t IphaseA){
-	uint16_t data_scaled = IphaseA * 1.0;
-	// Set 8-bit signal at bit offset 16
-	CAN_motorcontroller_motorStatus.payload->word1 &= ~0x00FF;
-	CAN_motorcontroller_motorStatus.payload->word1 |= data_scaled & 0x00FF;
+void CAN_motorcontroller_motorStatus_PDO1_Capacitor_Voltage_set(float Capacitor_Voltage){
+	uint16_t data_scaled = (uint16_t)(Capacitor_Voltage * 16.0f + 0.5f);
+	// Set 16-bit signal at bit offset 32
+	CAN_motorcontroller_motorStatus_PDO1.payload->word2 &= ~0xFFFF;
+	CAN_motorcontroller_motorStatus_PDO1.payload->word2 |= data_scaled & 0xFFFF;
 }
-void CAN_motorcontroller_motorStatus_IphaseB_set(uint16_t IphaseB){
-	uint16_t data_scaled = IphaseB * 1.0;
-	// Set 8-bit signal at bit offset 24
-	CAN_motorcontroller_motorStatus.payload->word1 &= ~0xFF00;
-	CAN_motorcontroller_motorStatus.payload->word1 |= (data_scaled << 8) & 0xFF00;
+void CAN_motorcontroller_motorStatus_PDO1_Heatsink_Temperature_set(float Heatsink_Temperature){
+	uint16_t data_scaled = (uint16_t)(Heatsink_Temperature * 1.0f + 0.5f);
+	// Set 16-bit signal at bit offset 48
+	CAN_motorcontroller_motorStatus_PDO1.payload->word3 &= ~0xFFFF;
+	CAN_motorcontroller_motorStatus_PDO1.payload->word3 |= data_scaled & 0xFFFF;
 }
-void CAN_motorcontroller_motorStatus_IphaseC_set(uint16_t IphaseC){
-	uint16_t data_scaled = IphaseC * 1.0;
-	// Set 8-bit signal at bit offset 32
-	CAN_motorcontroller_motorStatus.payload->word2 &= ~0x00FF;
-	CAN_motorcontroller_motorStatus.payload->word2 |= data_scaled & 0x00FF;
+void CAN_motorcontroller_motorStatus_PDO1_dlc_set(uint8_t dlc){
+	CAN_motorcontroller_motorStatus_PDO1.dlc = dlc;
 }
-void CAN_motorcontroller_motorStatus_VphaseA_set(uint16_t VphaseA){
-	uint16_t data_scaled = VphaseA * 1.0;
-	// Set 8-bit signal at bit offset 40
-	CAN_motorcontroller_motorStatus.payload->word2 &= ~0xFF00;
-	CAN_motorcontroller_motorStatus.payload->word2 |= (data_scaled << 8) & 0xFF00;
-}
-void CAN_motorcontroller_motorStatus_VphaseB_set(uint16_t VphaseB){
-	uint16_t data_scaled = VphaseB * 1.0;
-	// Set 8-bit signal at bit offset 48
-	CAN_motorcontroller_motorStatus.payload->word3 &= ~0x00FF;
-	CAN_motorcontroller_motorStatus.payload->word3 |= data_scaled & 0x00FF;
-}
-void CAN_motorcontroller_motorStatus_VphaseC_set(uint16_t VphaseC){
-	uint16_t data_scaled = VphaseC * 1.0;
-	// Set 8-bit signal at bit offset 56
-	CAN_motorcontroller_motorStatus.payload->word3 &= ~0xFF00;
-	CAN_motorcontroller_motorStatus.payload->word3 |= (data_scaled << 8) & 0xFF00;
-}
-void CAN_motorcontroller_motorStatus_dlc_set(uint8_t dlc){
-	CAN_motorcontroller_motorStatus.dlc = dlc;
-}
-void CAN_motorcontroller_motorStatus_send(void){
+void CAN_motorcontroller_motorStatus_PDO1_send(void){
 	// Update message status for self-consumption
-	*CAN_motorcontroller_motorStatus.canMessageStatus = 1;
-	CAN_write(&CAN_motorcontroller_motorStatus);
+	*CAN_motorcontroller_motorStatus_PDO1.canMessageStatus = 1;
+	CAN_write(&CAN_motorcontroller_motorStatus_PDO1);
 }
 
-static CAN_payload_S CAN_motorcontroller_response_payload __attribute__((aligned(sizeof(CAN_payload_S))));
-static volatile uint8_t CAN_motorcontroller_response_status = 0;
-#define CAN_motorcontroller_response_ID 0x6FF
+static CAN_payload_S CAN_motorcontroller_motorStatus_PDO2_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_motorcontroller_motorStatus_PDO2_status = 0;
+#define CAN_motorcontroller_motorStatus_PDO2_ID 0x330
 
-static CAN_message_S CAN_motorcontroller_response={
-	.canID = CAN_motorcontroller_response_ID,
+static CAN_message_S CAN_motorcontroller_motorStatus_PDO2={
+	.canID = CAN_motorcontroller_motorStatus_PDO2_ID,
 	.canXID = 0,
 	.dlc = 8,
-	.payload = &CAN_motorcontroller_response_payload,
-	.canMessageStatus = &CAN_motorcontroller_response_status
+	.payload = &CAN_motorcontroller_motorStatus_PDO2_payload,
+	.canMessageStatus = &CAN_motorcontroller_motorStatus_PDO2_status
 };
 
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE1_RANGE 8
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE1_OFFSET 0
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE2_RANGE 8
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE2_OFFSET 8
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE3_RANGE 8
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE3_OFFSET 16
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE4_RANGE 8
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE4_OFFSET 24
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE5_RANGE 8
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE5_OFFSET 32
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE6_RANGE 8
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE6_OFFSET 40
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE7_RANGE 8
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE7_OFFSET 48
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE8_RANGE 8
-#define CAN_MOTORCONTROLLER_RESPONSE_BYTE8_OFFSET 56
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO2_THROTTLE_INPUT_VOLTAGE_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO2_THROTTLE_INPUT_VOLTAGE_OFFSET 0
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO2_THROTTLE_VALUE_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTORSTATUS_PDO2_THROTTLE_VALUE_OFFSET 16
 
-void CAN_motorcontroller_response_byte1_set(uint16_t byte1){
-	uint16_t data_scaled = byte1 * 1.0;
-	// Set 8-bit signal at bit offset 0
-	CAN_motorcontroller_response.payload->word0 &= ~0x00FF;
-	CAN_motorcontroller_response.payload->word0 |= data_scaled & 0x00FF;
+void CAN_motorcontroller_motorStatus_PDO2_Throttle_Input_Voltage_set(float Throttle_Input_Voltage){
+	uint16_t data_scaled = (uint16_t)(Throttle_Input_Voltage * 256.4102564102564f + 0.5f);
+	// Set 16-bit signal at bit offset 0
+	CAN_motorcontroller_motorStatus_PDO2.payload->word0 &= ~0xFFFF;
+	CAN_motorcontroller_motorStatus_PDO2.payload->word0 |= data_scaled & 0xFFFF;
 }
-void CAN_motorcontroller_response_byte2_set(uint16_t byte2){
-	uint16_t data_scaled = byte2 * 1.0;
-	// Set 8-bit signal at bit offset 8
-	CAN_motorcontroller_response.payload->word0 &= ~0xFF00;
-	CAN_motorcontroller_response.payload->word0 |= (data_scaled << 8) & 0xFF00;
+void CAN_motorcontroller_motorStatus_PDO2_Throttle_Value_set(float Throttle_Value){
+	uint16_t data_scaled = (uint16_t)(Throttle_Value * 327.86885245901635f + 0.5f);
+	// Set 16-bit signal at bit offset 16
+	CAN_motorcontroller_motorStatus_PDO2.payload->word1 &= ~0xFFFF;
+	CAN_motorcontroller_motorStatus_PDO2.payload->word1 |= data_scaled & 0xFFFF;
 }
-void CAN_motorcontroller_response_byte3_set(uint16_t byte3){
-	uint16_t data_scaled = byte3 * 1.0;
-	// Set 8-bit signal at bit offset 16
-	CAN_motorcontroller_response.payload->word1 &= ~0x00FF;
-	CAN_motorcontroller_response.payload->word1 |= data_scaled & 0x00FF;
+void CAN_motorcontroller_motorStatus_PDO2_dlc_set(uint8_t dlc){
+	CAN_motorcontroller_motorStatus_PDO2.dlc = dlc;
 }
-void CAN_motorcontroller_response_byte4_set(uint16_t byte4){
-	uint16_t data_scaled = byte4 * 1.0;
-	// Set 8-bit signal at bit offset 24
-	CAN_motorcontroller_response.payload->word1 &= ~0xFF00;
-	CAN_motorcontroller_response.payload->word1 |= (data_scaled << 8) & 0xFF00;
-}
-void CAN_motorcontroller_response_byte5_set(uint16_t byte5){
-	uint16_t data_scaled = byte5 * 1.0;
-	// Set 8-bit signal at bit offset 32
-	CAN_motorcontroller_response.payload->word2 &= ~0x00FF;
-	CAN_motorcontroller_response.payload->word2 |= data_scaled & 0x00FF;
-}
-void CAN_motorcontroller_response_byte6_set(uint16_t byte6){
-	uint16_t data_scaled = byte6 * 1.0;
-	// Set 8-bit signal at bit offset 40
-	CAN_motorcontroller_response.payload->word2 &= ~0xFF00;
-	CAN_motorcontroller_response.payload->word2 |= (data_scaled << 8) & 0xFF00;
-}
-void CAN_motorcontroller_response_byte7_set(uint16_t byte7){
-	uint16_t data_scaled = byte7 * 1.0;
-	// Set 8-bit signal at bit offset 48
-	CAN_motorcontroller_response.payload->word3 &= ~0x00FF;
-	CAN_motorcontroller_response.payload->word3 |= data_scaled & 0x00FF;
-}
-void CAN_motorcontroller_response_byte8_set(uint16_t byte8){
-	uint16_t data_scaled = byte8 * 1.0;
-	// Set 8-bit signal at bit offset 56
-	CAN_motorcontroller_response.payload->word3 &= ~0xFF00;
-	CAN_motorcontroller_response.payload->word3 |= (data_scaled << 8) & 0xFF00;
-}
-void CAN_motorcontroller_response_dlc_set(uint8_t dlc){
-	CAN_motorcontroller_response.dlc = dlc;
-}
-void CAN_motorcontroller_response_send(void){
+void CAN_motorcontroller_motorStatus_PDO2_send(void){
 	// Update message status for self-consumption
-	*CAN_motorcontroller_response.canMessageStatus = 1;
-	CAN_write(&CAN_motorcontroller_response);
+	*CAN_motorcontroller_motorStatus_PDO2.canMessageStatus = 1;
+	CAN_write(&CAN_motorcontroller_motorStatus_PDO2);
+}
+
+static CAN_payload_S CAN_motorcontroller_motor_status_PDO4_payload __attribute__((aligned(sizeof(CAN_payload_S))));
+static volatile uint8_t CAN_motorcontroller_motor_status_PDO4_status = 0;
+#define CAN_motorcontroller_motor_status_PDO4_ID 0x271
+
+static CAN_message_S CAN_motorcontroller_motor_status_PDO4={
+	.canID = CAN_motorcontroller_motor_status_PDO4_ID,
+	.canXID = 0,
+	.dlc = 8,
+	.payload = &CAN_motorcontroller_motor_status_PDO4_payload,
+	.canMessageStatus = &CAN_motorcontroller_motor_status_PDO4_status
+};
+
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MOTOR_TORQUE_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MOTOR_TORQUE_OFFSET 0
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MOTOR_VELOCITY_RANGE 32
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MOTOR_VELOCITY_OFFSET 16
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MOTOR_AC_CURRENT_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MOTOR_AC_CURRENT_OFFSET 48
+
+void CAN_motorcontroller_motor_status_PDO4_Motor_Torque_set(uint16_t Motor_Torque){
+	uint16_t data_scaled = Motor_Torque * 1000.0;
+	// Set 16-bit signal at bit offset 0
+	CAN_motorcontroller_motor_status_PDO4.payload->word0 &= ~0xFFFF;
+	CAN_motorcontroller_motor_status_PDO4.payload->word0 |= data_scaled & 0xFFFF;
+}
+void CAN_motorcontroller_motor_status_PDO4_Motor_Velocity_set(uint32_t Motor_Velocity){
+	uint32_t data_scaled = Motor_Velocity * 1.0;
+	// Set 32-bit signal at bit offset 16
+	CAN_motorcontroller_motor_status_PDO4.payload->word1 &= ~0xFFFF;
+	CAN_motorcontroller_motor_status_PDO4.payload->word1 |= data_scaled & 0xFFFF;
+	CAN_motorcontroller_motor_status_PDO4.payload->word2 &= ~0xFFFF;
+	CAN_motorcontroller_motor_status_PDO4.payload->word2 |= (data_scaled >> 16) & 0xFFFF;
+}
+void CAN_motorcontroller_motor_status_PDO4_Motor_AC_Current_set(float Motor_AC_Current){
+	uint16_t data_scaled = (uint16_t)(Motor_AC_Current * 1.0f + 0.5f);
+	// Set 16-bit signal at bit offset 48
+	CAN_motorcontroller_motor_status_PDO4.payload->word3 &= ~0xFFFF;
+	CAN_motorcontroller_motor_status_PDO4.payload->word3 |= data_scaled & 0xFFFF;
+}
+void CAN_motorcontroller_motor_status_PDO4_dlc_set(uint8_t dlc){
+	CAN_motorcontroller_motor_status_PDO4.dlc = dlc;
+}
+void CAN_motorcontroller_motor_status_PDO4_send(void){
+	// Update message status for self-consumption
+	*CAN_motorcontroller_motor_status_PDO4.canMessageStatus = 1;
+	CAN_write(&CAN_motorcontroller_motor_status_PDO4);
 }
 
 /**********************************************************
@@ -437,15 +1194,17 @@ void CAN_motorcontroller_response_send(void){
 void CAN_DBC_init(void) {
 	CAN_configureMailbox(&CAN_mcu_command);
 	CAN_configureMailbox(&CAN_mcu_motorControllerRequest);
+	CAN_configureMailbox(&CAN_mcu_mcu_debug);
 	CAN_configureMailbox(&CAN_bms_debug);
+	CAN_configureMailbox(&CAN_bms_SDO_request);
 }
 
 void CAN_send_1ms(void){
-	// No messages to send at this interval
+	CAN_motorcontroller_SYNC_send();
 }
 
 void CAN_send_10ms(void){
-	CAN_motorcontroller_motorStatus_send();
+	// No messages to send at this interval
 }
 
 void CAN_send_100ms(void){
@@ -458,6 +1217,11 @@ void CAN_send_1000ms(void){
 
 void CAN_send_30ms(void){
 	CAN_motorcontroller_heartbeat_send();
-	CAN_motorcontroller_SYNC_send();
 	CAN_motorcontroller_Emergency_send();
+}
+
+void CAN_send_20ms(void){
+	CAN_motorcontroller_motorStatus_PDO1_send();
+	CAN_motorcontroller_motorStatus_PDO2_send();
+	CAN_motorcontroller_motor_status_PDO4_send();
 }

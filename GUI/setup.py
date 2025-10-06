@@ -30,9 +30,11 @@ setup(
     python_requires=">=3.7",
     install_requires=[
         "python-can>=4.0.0",
+        "matplotlib>=3.0.0",  # For signal graphing functionality
     ],
     extras_require={
         "gui": ["tkinter"],  # Usually included with Python
+        "graphing": ["matplotlib>=3.0.0"],  # Optional graphing features
     },
     entry_points={
         "console_scripts": [

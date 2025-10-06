@@ -20,10 +20,12 @@ try:
     from ..core import CANMessageManager, BusmasterDBFParser
     from ..core.table_view import CANTableView
     from .base_tab import BaseTab
+    from .graphing_window import GraphingWindow
 except ImportError:
     from can_tool.core import CANMessageManager, BusmasterDBFParser
     from can_tool.core.table_view import CANTableView
     from can_tool.gui.base_tab import BaseTab
+    from can_tool.gui.graphing_window import GraphingWindow
 
 
 class CANApp:
@@ -48,6 +50,13 @@ class CANApp:
         self.gui_refresh_rate_ms = 100
         self.pending_gui_updates = set()  # Track which messages need GUI updates
         self.gui_update_timer = None
+        
+        # Bus status monitoring (5Hz = 200ms)
+        self.bus_status_timer = None
+        self.last_bus_state = None
+        
+        # Graphing window
+        self.graphing_window = None
         
         self.create_widgets()
         self.initialize_plugins()
@@ -86,6 +95,7 @@ class CANApp:
 
         ttk.Button(control_frame, text="Connect", command=self.connect).pack(side=tk.LEFT, padx=5)
         ttk.Button(control_frame, text="Disconnect", command=self.disconnect).pack(side=tk.LEFT, padx=5)
+        ttk.Button(control_frame, text="Wake Bus", command=self.send_wake_message).pack(side=tk.LEFT, padx=5)
         ttk.Button(control_frame, text="Clear Console", command=lambda: self.console.delete("1.0", tk.END)).pack(side=tk.LEFT, padx=5)
         ttk.Button(control_frame, text="Clear RX Table", command=self.clear_rx_table).pack(side=tk.LEFT, padx=5)
         ttk.Checkbutton(control_frame, text="Log RX to Console", variable=self.console_rx_enabled).pack(side=tk.LEFT, padx=5)
@@ -156,6 +166,11 @@ class CANApp:
         
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.root.quit)
+        
+        # Tools menu
+        tools_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Tools", menu=tools_menu)
+        tools_menu.add_command(label="Signal Grapher", command=self.open_graphing_window)
         
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
@@ -444,6 +459,9 @@ Plugins:
             self.rx_thread.start()
             self.log(f"✅ Connected to {channel} at {baud} bps.")
             
+            # Start bus status monitoring
+            self._start_bus_status_monitoring()
+            
             # Notify plugins of connection
             for plugin in self.plugins:
                 try:
@@ -467,6 +485,9 @@ Plugins:
             self.root.after_cancel(self.gui_update_timer)
             self.gui_update_timer = None
         self.pending_gui_updates.clear()
+        
+        # Stop bus status monitoring
+        self._stop_bus_status_monitoring()
 
         # Stop all TX messages
         for msg_id in list(self.tx_messages.keys()):
@@ -481,13 +502,30 @@ Plugins:
 
     def read_messages(self):
         """Read CAN messages in a separate thread"""
+        message_batch = []
+        last_batch_time = time.time()
+        
         while self.running and self.bus:
             try:
-                msg = self.bus.recv(0.1)
+                # Read messages with very short timeout to prevent buffer overflow
+                msg = self.bus.recv(0.001)  # 1ms timeout
                 if msg:
-                    self.root.after(0, self.handle_rx_message, msg)
+                    message_batch.append(msg)
+                    
+                # Process batch when we have messages and either:
+                # - batch is full (10 messages), or 
+                # - 10ms have passed since last batch
+                current_time = time.time()
+                if message_batch and (len(message_batch) >= 10 or 
+                                    (current_time - last_batch_time) >= 0.01):
+                    # Send batch to GUI thread
+                    self.root.after_idle(self.handle_rx_message_batch, message_batch.copy())
+                    message_batch.clear()
+                    last_batch_time = current_time
+                    
             except Exception as e:
-                self.root.after(0, lambda: self.log(f"❌ RX error: {e}"))
+                error_msg = f"❌ RX error: {e}"
+                self.root.after(0, lambda msg=error_msg: self.log(msg))
 
     def handle_rx_message(self, msg):
         """Handle received CAN message"""
@@ -508,6 +546,13 @@ Plugins:
         # Update message data immediately (for accurate counting and timing)
         can_msg = self.message_manager.update_message(msg_id, msg.dlc, msg.data)
         
+        # Notify graphing window of received message
+        if self.graphing_window is not None and self.graphing_window.window is not None:
+            try:
+                self.graphing_window.on_can_message_received(msg_id, can_msg)
+            except Exception as e:
+                print(f"Error notifying graphing window of message: {e}")
+        
         # Queue this message for GUI update (throttled)
         self.pending_gui_updates.add(msg_id)
         self._schedule_gui_update()
@@ -524,6 +569,11 @@ Plugins:
                 console_msg += f"\n    Decoded: {signal_str}"
             
             self.log(console_msg)
+    
+    def handle_rx_message_batch(self, messages):
+        """Handle a batch of received CAN messages for better performance"""
+        for msg in messages:
+            self.handle_rx_message(msg)
     
     def _schedule_gui_update(self):
         """Schedule a GUI update if one isn't already pending"""
@@ -1213,3 +1263,102 @@ Plugins:
         
         # Start sending
         send_dbf_message()
+    
+    def send_wake_message(self):
+        """Send a wake message to address 0x000 with no payload"""
+        was_connected = self.running and self.bus is not None
+        
+        # If not connected, try to connect first
+        if not was_connected:
+            if not self.device_var.get():
+                messagebox.showerror("No Device", "Please scan and select a CAN device first.")
+                return
+                
+            self.log("🌅 WAKE: Auto-connecting to send wake message...")
+            self.connect()
+            
+            # Check if connection was successful
+            if not self.running or not self.bus:
+                messagebox.showerror("Connection Failed", "Could not connect to CAN bus for wake message.")
+                return
+        
+        try:
+            # Create wake message: ID 0x000, no data (DLC = 0)
+            msg = can.Message(
+                arbitration_id=0x000,
+                data=[],  # Empty data
+                is_extended_id=False
+            )
+            self.bus.send(msg)
+            
+            # Log the wake message
+            self.log("🌅 WAKE: Sent wake message to 0x000 (DLC=0)")
+            
+            # If we auto-connected, disconnect after sending wake message
+            if not was_connected:
+                self.log("🌅 WAKE: Auto-disconnecting after wake message")
+                # Use a short delay to ensure message is sent before disconnecting
+                self.root.after(100, self.disconnect)
+            
+        except Exception as e:
+            self.log(f"❌ WAKE ERROR: Failed to send wake message: {e}")
+            messagebox.showerror("Wake Error", f"Failed to send wake message: {e}")
+            
+            # If we auto-connected and failed, still disconnect
+            if not was_connected:
+                self.disconnect()
+    
+    def _start_bus_status_monitoring(self):
+        """Start monitoring bus status"""
+        if self.bus_status_timer is None and self.bus:
+            self._update_bus_status()
+    
+    def _stop_bus_status_monitoring(self):
+        """Stop monitoring bus status"""
+        if self.bus_status_timer is not None:
+            self.root.after_cancel(self.bus_status_timer)
+            self.bus_status_timer = None
+        self.last_bus_state = None
+        # Reset status display to unknown
+        self.table_view.update_bus_status_display(None)
+    
+    def _update_bus_status(self):
+        """Update bus status from CAN interface"""
+        if not self.running or not self.bus:
+            return
+        
+        try:
+            # Get current bus state
+            current_state = self.bus.state
+            
+            # Only update display if state changed
+            if current_state != self.last_bus_state:
+                self.table_view.update_bus_status_display(current_state)
+                self.last_bus_state = current_state
+                
+            # Schedule next update (200ms = 5Hz)
+            self.bus_status_timer = self.root.after(200, self._update_bus_status)
+            
+        except Exception as e:
+            # Some CAN interfaces might not support state queries
+            # Log once and stop monitoring to avoid spam
+            if self.last_bus_state is not None:  # Only log if we were monitoring
+                self.log(f"⚠️  Bus status monitoring disabled: {e}")
+            self.last_bus_state = None
+            self.bus_status_timer = None
+    
+    def open_graphing_window(self):
+        """Open the signal graphing window"""
+        if self.graphing_window is None or self.graphing_window.window is None:
+            try:
+                self.graphing_window = GraphingWindow(self)
+                self.log("📊 Signal graphing window opened")
+            except Exception as e:
+                error_msg = f"Failed to open graphing window: {e}"
+                self.log(f"❌ {error_msg}")
+                messagebox.showerror("Graphing Error", error_msg)
+        else:
+            # Bring existing window to front
+            self.graphing_window.window.lift()
+            self.graphing_window.window.focus_set()
+            self.log("📊 Signal graphing window brought to front")

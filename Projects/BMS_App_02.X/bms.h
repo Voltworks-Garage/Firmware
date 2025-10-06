@@ -44,16 +44,6 @@ uint16_t BMS_GetCellVoltage(uint8_t cellId);
  */
 float BMS_GetTemperatureVoltage(uint8_t tempId);
 
-/**
- * @brief Disable all cell balancing
- */
-void BMS_ClearAllCellBalancing(void);
-
-/**
- * @brief Set the global balancing permission (battery yoga instructor mode)
- * @param allowed true to allow balancing (namaste), false to disallow (no zen today)
- */
-void BMS_SetBalancingIsAllowed(bool allowed);
 
 /**
  * @brief Get stack voltage (sum of cells in a stack)
@@ -67,5 +57,23 @@ float BMS_GetStackVoltage(uint8_t stack_id);
  * @return Pack voltage in volts
  */
 float BMS_GetPackVoltage(void);
+
+/**
+ * @brief Get charging allowed status
+ * @return true if charging is allowed, false otherwise
+ */
+bool BMS_GetChargingAllowed(void);
+
+/**
+ * @brief Get discharging allowed status
+ * @return true if discharging is allowed, false otherwise
+ */
+bool BMS_GetDischargingAllowed(void);
+
+/**
+ * @brief Check if the pack is fully charged
+ * @return true if the pack is considered fully charged, false otherwise
+ */
+bool BMS_GetPackIsCharged(void);
 
 #endif // BMS_H

@@ -34,7 +34,7 @@ typedef struct CAN_message_S {
     uint8_t dlc;
     volatile CAN_payload_S * payload;
     volatile uint8_t * canMessageStatus;
-    uint32_t last_received_timestamp;
+    volatile uint32_t last_received_timestamp;
 } CAN_message_S;
 
 /* mode types */
@@ -135,7 +135,7 @@ void CAN_timeStampFunc(CAN_GetTimestamp_t timestamp_func);
  * Checks if message data is stale based on timestamp
  * @param data CAN message to check
  * @param timeout_ms Timeout threshold in milliseconds
- * @return 1 if stale, 0 if fresh or no timestamp function set
+ * @return 1 if stale or no timestamp function set, 0 if fresh
  */
 uint8_t CAN_checkDataIsStale(CAN_message_S * data, uint32_t timeout_ms);
 

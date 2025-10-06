@@ -18,6 +18,7 @@
 #include "pps.h"
 #include "mcc_generated_files/clock.h"
 #include "sleep.h"
+#include "timer.h"
 #include <xc.h>
 
 // *****************************************************************************
@@ -112,6 +113,7 @@ void PinSetup_Init(void) {
     PINS_direction(BATT_EN, OUTPUT);
     PINS_direction(CAN_SLEEP_EN, OUTPUT);
     PINS_direction(IC_CONTROLLER_SLEEP_EN, OUTPUT);
+    PINS_direction(STEERING_COLUMN_LOCK_EN, OUTPUT);
     PINS_direction(IC_CONTROLLER_nFAULT, INPUT);
     PINS_direction(DCDC_nFAULT, INPUT);
     PINS_direction(BATT_nFAULT, INPUT);
@@ -125,7 +127,7 @@ void PinSetup_Init(void) {
     PINS_direction(TURN_RIGHT_SWITCH_IN, INPUT);
     PINS_direction(BRIGHTS_SWITCH_IN, INPUT);
     PINS_direction(HORN_SWITCH_IN, INPUT);
-    PINS_direction(KICKSTAND_SWITCH_IN, INPUT);
+    //PINS_direction(KICKSTAND_SWITCH_IN, OUTPUT);
 
     /*ANALOG*/
     ADC_Init();
@@ -151,8 +153,24 @@ void PinSetup_Init(void) {
 
 
     /*PWM*/
-    pwmOCinit(PWM_1_OUT);
-    pwmOCinit(PWM_2_OUT);
+    pwmOCinit(PWM_1_OUT, CLOCK_PeripheralFrequencyGet(), OC_CLOCK_PERIPHERAL);
+    pwmOCinit(PWM_2_OUT, CLOCK_PeripheralFrequencyGet(), OC_CLOCK_PERIPHERAL);
+    pwmOCinit(CHARGE_PORT_LOCK_PWM, CLOCK_PeripheralFrequencyGet(), OC_CLOCK_PERIPHERAL);
+    // pwmOCinit(KICKSTAND_SWITCH_IN, CLOCK_PeripheralFrequencyGet(), OC_CLOCK_PERIPHERAL);
+    pwmOCwriteFreq(PWM_1_OUT, 2000); //2kHz
+    pwmOCwriteFreq(PWM_2_OUT, 2000); //2kHz
+    pwmOCwriteFreq(CHARGE_PORT_LOCK_PWM, 2000); //2kHz
+    // pwmOCwriteFreq(KICKSTAND_SWITCH_IN, 2000); //2kHz
+    // pwmOCwriteDuty(KICKSTAND_SWITCH_IN, 5);
+
+        // Initialize PWM using Output Compare module with Timer4 clock source
+    uint32_t clock_freq = CLOCK_PeripheralFrequencyGet()/256; // Peripheral clock divided by prescaler);
+   pwmOCinit(KICKSTAND_SWITCH_IN, clock_freq, OC_CLOCK_T4CLK);
+       //pwmOCinit(CHARGE_PORT_LOCK_PWM, clock_freq, OC_CLOCK_T4CLK);
+
+   /*Timers*/
+    timer3_init(10, CLOCK_SystemFrequencyGet());
+
 
     /*UART*/
     Uart1INIT(UART_TX, UART_RX, UART_BAUD_115200, CLOCK_SystemFrequencyGet());

@@ -4,7 +4,7 @@ import canopen
 network = canopen.Network()
 
 # Add some nodes with corresponding Object Dictionaries
-node = canopen.RemoteNode(1, 'C:\Repos\E_Moto\Firmware\SevconController\AC24ls.eds')
+node = canopen.RemoteNode(1, 'C:/REPOS/Voltworks_Garage/Firmware/SevconController/new_EDS.eds')
 network.add_node(node)
 
 # Connect to the CAN bus
@@ -22,11 +22,17 @@ network.connect(bustype='pcan', channel='PCAN_USBBUS1', bitrate=500000)
 name = node.sdo['Product name'].raw
 print(name)
 
-node.sdo["Password Entry"][3].raw = 0
-node.sdo["Password Entry"][2].raw = 0x4bdf
+node.sdo['Event information'][1].raw = 17859
 
-access_level = node.sdo["Password Entry"][1].raw
+fault = node.sdo['Event information'][2].raw
 
-pw = node.sdo["Password Key"].raw
+print(fault)
 
-print(access_level)
+# node.sdo["Password Entry"][3].raw = 0
+# node.sdo["Password Entry"][2].raw = 0x4bdf
+#
+# access_level = node.sdo["Password Entry"][1].raw
+#
+# pw = node.sdo["Password Key"].raw
+#
+# print(access_level)

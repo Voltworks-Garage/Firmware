@@ -19,6 +19,10 @@
         <itemPath>../../Libraries/Drivers/ISO_TP_LITE/can_iso_tp_lite.h</itemPath>
         <itemPath>../../Libraries/Drivers/Buttons/button.h</itemPath>
         <itemPath>../../Libraries/CommandService/commandService.h</itemPath>
+        <itemPath>../../RTOS/Scheduler/cpu_usage.h</itemPath>
+        <itemPath>../../Libraries/Standard/movingAverageInt.h</itemPath>
+        <itemPath>../../RTOS/Scheduler/tsk_cfg.h</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/inc/timer.h</itemPath>
       </logicalFolder>
       <logicalFolder name="MCC Generated Files"
                      displayName="MCC Generated Files"
@@ -38,7 +42,6 @@
         <itemPath>mcc_generated_files/system.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f2" displayName="ProjectSpecific" projectFiles="true">
-        <itemPath>tsk_cfg.h</itemPath>
         <itemPath>SerialDebugger.h</itemPath>
         <itemPath>IO.h</itemPath>
         <itemPath>StateMachine.h</itemPath>
@@ -52,6 +55,8 @@
         <itemPath>can_iso_tp_lite_config.h</itemPath>
         <itemPath>canPopulate.h</itemPath>
         <itemPath>lvBattery.h</itemPath>
+        <itemPath>tachometer.h</itemPath>
+        <itemPath>ThrottleControl.h</itemPath>
       </logicalFolder>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
@@ -87,6 +92,9 @@
         <itemPath>../../Libraries/Drivers/Buttons/button.c</itemPath>
         <itemPath>../../RTOS/Scheduler/SysTick.c</itemPath>
         <itemPath>../../Libraries/CommandService/commandService.c</itemPath>
+        <itemPath>../../RTOS/Scheduler/cpu_usage.c</itemPath>
+        <itemPath>../../Libraries/Standard/movingAverageInt.c</itemPath>
+        <itemPath>../../Libraries/PIC33_plib/src/timer.c</itemPath>
       </logicalFolder>
       <logicalFolder name="MCC Generated Files"
                      displayName="MCC Generated Files"
@@ -124,6 +132,10 @@
         <itemPath>canPopulate.c</itemPath>
         <itemPath>lvBattery.c</itemPath>
         <itemPath>commandService_config.h</itemPath>
+        <itemPath>tachometer.c</itemPath>
+        <itemPath>ThrottleControl.c</itemPath>
+        <itemPath>BatteryGauge.c</itemPath>
+        <itemPath>BatteryGauge.h</itemPath>
       </logicalFolder>
     </logicalFolder>
   </logicalFolder>
@@ -131,6 +143,9 @@
     <Elem>.</Elem>
     <Elem>../../Libraries/CommandService</Elem>
     <Elem>../../Libraries/Standard</Elem>
+    <Elem>../../RTOS/Scheduler</Elem>
+    <Elem>../../Libraries/PIC33_plib/src</Elem>
+    <Elem>../../Libraries/PIC33_plib/inc</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -210,7 +225,7 @@
         <property key="oXC16gcc-sfr-warn" value="false"/>
         <property key="oXC16gcc-smar-io-lvl" value="1"/>
         <property key="oXC16gcc-smart-io-fmt" value=""/>
-        <property key="optimization-level" value="0"/>
+        <property key="optimization-level" value="1"/>
         <property key="post-instruction-scheduling" value="default"/>
         <property key="pre-instruction-scheduling" value="default"/>
         <property key="preprocessor-macros" value=""/>
