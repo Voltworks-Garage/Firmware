@@ -116,7 +116,6 @@ uint8_t tachometer_halt(void) {
 
     pwmOCwriteDuty(KICKSTAND_SWITCH_IN, 0);
 
-    tachometer_enable = 0;
-    
+    tachometer_enable = 0;   
     return 1; // Success
 }

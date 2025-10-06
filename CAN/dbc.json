@@ -5,7 +5,7 @@
             "messages": [
                 {
                     "name": "status",
-                    "id": "0x705",
+                    "id": "0x387",
                     "x_id": 0,
                     "freq": 10,
                     "consumers": [
@@ -65,7 +65,7 @@
                 },
                 {
                     "name": "command",
-                    "id": "0x702",
+                    "id": "0x386",
                     "x_id": 0,
                     "freq": 10,
                     "consumers": [
@@ -116,7 +116,7 @@
             "messages": [
                 {
                     "name": "status",
-                    "id": "0x711",
+                    "id": "0x388",
                     "x_id": 0,
                     "freq": 10,
                     "consumers": [
@@ -559,7 +559,7 @@
                 },
                 {
                     "name": "command",
-                    "id": "0x712",
+                    "id": "0x389",
                     "x_id": 0,
                     "freq": 100,
                     "signals": [
@@ -736,7 +736,7 @@
                 },
                 {
                     "name": "mcu_debug",
-                    "id": "0x713",
+                    "id": "0x38A",
                     "x_id": 0,
                     "freq": 10,
                     "consumers": [],
@@ -861,7 +861,7 @@
             "messages": [
                 {
                     "name": "status",
-                    "id": "0x721",
+                    "id": "0x38B",
                     "x_id": 0,
                     "freq": 10,
                     "consumers": [
@@ -1113,7 +1113,7 @@
                 },
                 {
                     "name": "power_systems",
-                    "id": "0x722",
+                    "id": "0x38C",
                     "x_id": 0,
                     "freq": 10,
                     "consumers": [
@@ -1210,7 +1210,7 @@
                 },
                 {
                     "name": "debug",
-                    "id": "0x723",
+                    "id": "0x38D",
                     "x_id": 0,
                     "freq": 10,
                     "consumers": [],
@@ -1481,7 +1481,7 @@
                 },
                 {
                     "name": "cell_voltages",
-                    "id": "0x725",
+                    "id": "0x38E",
                     "x_id": 0,
                     "freq": 100,
                     "consumers": [
@@ -1692,7 +1692,7 @@
                 },
                 {
                     "name": "cell_temperatures",
-                    "id": "0x726",
+                    "id": "0x38F",
                     "x_id": 0,
                     "freq": 1000,
                     "consumers": [
@@ -2240,32 +2240,25 @@
                     ],
                     "signals": [
                         {
-                            "name": "Capacitor_Voltage",
-                            "length": 16,
-                            "scale": 0.0625,
-                            "offset": 0,
-                            "units": "V"
-                        },
-                        {
-                            "name": "Heatsink_Temperature",
-                            "length": 8,
-                            "scale": 1.0,
-                            "offset": 0,
-                            "units": "degC"
-                        },
-                        {
-                            "name": "Battery_Current",
-                            "length": 16,
-                            "scale": 0.0625,
-                            "offset": 0,
-                            "units": "A"
-                        },
-                        {
-                            "name": "Max_Torque_Left_Motor",
+                            "name": "Motor_Torque",
                             "length": 16,
                             "scale": 0.001,
                             "offset": 0,
-                            "units": "?"
+                            "units": "nM"
+                        },
+                        {
+                            "name": "Motor_Velocity",
+                            "length": 32,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "RPM"
+                        },
+                        {
+                            "name": "Motor_AC_Current",
+                            "length": 16,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "A"
                         }
                     ]
                 }

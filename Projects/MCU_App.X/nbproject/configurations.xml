@@ -134,6 +134,8 @@
         <itemPath>commandService_config.h</itemPath>
         <itemPath>tachometer.c</itemPath>
         <itemPath>ThrottleControl.c</itemPath>
+        <itemPath>BatteryGauge.c</itemPath>
+        <itemPath>BatteryGauge.h</itemPath>
       </logicalFolder>
     </logicalFolder>
   </logicalFolder>

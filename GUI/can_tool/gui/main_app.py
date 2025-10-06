@@ -20,10 +20,12 @@ try:
     from ..core import CANMessageManager, BusmasterDBFParser
     from ..core.table_view import CANTableView
     from .base_tab import BaseTab
+    from .graphing_window import GraphingWindow
 except ImportError:
     from can_tool.core import CANMessageManager, BusmasterDBFParser
     from can_tool.core.table_view import CANTableView
     from can_tool.gui.base_tab import BaseTab
+    from can_tool.gui.graphing_window import GraphingWindow
 
 
 class CANApp:
@@ -52,6 +54,9 @@ class CANApp:
         # Bus status monitoring (5Hz = 200ms)
         self.bus_status_timer = None
         self.last_bus_state = None
+        
+        # Graphing window
+        self.graphing_window = None
         
         self.create_widgets()
         self.initialize_plugins()
@@ -161,6 +166,11 @@ class CANApp:
         
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.root.quit)
+        
+        # Tools menu
+        tools_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Tools", menu=tools_menu)
+        tools_menu.add_command(label="Signal Grapher", command=self.open_graphing_window)
         
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
@@ -535,6 +545,13 @@ Plugins:
         
         # Update message data immediately (for accurate counting and timing)
         can_msg = self.message_manager.update_message(msg_id, msg.dlc, msg.data)
+        
+        # Notify graphing window of received message
+        if self.graphing_window is not None and self.graphing_window.window is not None:
+            try:
+                self.graphing_window.on_can_message_received(msg_id, can_msg)
+            except Exception as e:
+                print(f"Error notifying graphing window of message: {e}")
         
         # Queue this message for GUI update (throttled)
         self.pending_gui_updates.add(msg_id)
@@ -1329,3 +1346,19 @@ Plugins:
                 self.log(f"⚠️  Bus status monitoring disabled: {e}")
             self.last_bus_state = None
             self.bus_status_timer = None
+    
+    def open_graphing_window(self):
+        """Open the signal graphing window"""
+        if self.graphing_window is None or self.graphing_window.window is None:
+            try:
+                self.graphing_window = GraphingWindow(self)
+                self.log("📊 Signal graphing window opened")
+            except Exception as e:
+                error_msg = f"Failed to open graphing window: {e}"
+                self.log(f"❌ {error_msg}")
+                messagebox.showerror("Graphing Error", error_msg)
+        else:
+            # Bring existing window to front
+            self.graphing_window.window.lift()
+            self.graphing_window.window.focus_set()
+            self.log("📊 Signal graphing window brought to front")

@@ -4,7 +4,7 @@
 /**********************************************************
  * dash NODE MESSAGES
  */
-#define CAN_dash_status_ID 0x705
+#define CAN_dash_status_ID 0x387
 
 static CAN_message_S CAN_dash_status={
 	.canID = CAN_dash_status_ID,
@@ -79,7 +79,7 @@ uint16_t CAN_dash_status_driveMode_get(void){
 	return (data * 1.0) + 0;
 }
 
-#define CAN_dash_command_ID 0x702
+#define CAN_dash_command_ID 0x386
 
 static CAN_message_S CAN_dash_command={
 	.canID = CAN_dash_command_ID,
@@ -143,7 +143,7 @@ uint16_t CAN_dash_command_hornRequest_get(void){
 static CAN_payload_S CAN_mcu_status_payloads[5] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_mcu_status_mux = 0;
 static volatile uint8_t CAN_mcu_status_status = 0;
-#define CAN_mcu_status_ID 0x711
+#define CAN_mcu_status_ID 0x388
 
 static CAN_message_S CAN_mcu_status={
 	.canID = CAN_mcu_status_ID,
@@ -621,7 +621,7 @@ void CAN_mcu_status_send(void){
 
 static CAN_payload_S CAN_mcu_command_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 static volatile uint8_t CAN_mcu_command_status = 0;
-#define CAN_mcu_command_ID 0x712
+#define CAN_mcu_command_ID 0x389
 
 static CAN_message_S CAN_mcu_command={
 	.canID = CAN_mcu_command_ID,
@@ -858,7 +858,7 @@ void CAN_mcu_boot_response_send(void){
 static CAN_payload_S CAN_mcu_mcu_debug_payloads[4] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_mcu_mcu_debug_mux = 0;
 static volatile uint8_t CAN_mcu_mcu_debug_status = 0;
-#define CAN_mcu_mcu_debug_ID 0x713
+#define CAN_mcu_mcu_debug_ID 0x38A
 
 static CAN_message_S CAN_mcu_mcu_debug={
 	.canID = CAN_mcu_mcu_debug_ID,
@@ -1011,7 +1011,7 @@ void CAN_mcu_mcu_debug_send(void){
  */
 static CAN_payload_S CAN_bms_status_payloads[5] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_bms_status_mux = 0;
-#define CAN_bms_status_ID 0x721
+#define CAN_bms_status_ID 0x38B
 
 static CAN_message_S CAN_bms_status={
 	.canID = CAN_bms_status_ID,
@@ -1612,7 +1612,7 @@ uint16_t CAN_bms_status_cell_E_balancing_get(void){
 	return (data * 1.0) + 0;
 }
 
-#define CAN_bms_power_systems_ID 0x722
+#define CAN_bms_power_systems_ID 0x38C
 
 static CAN_message_S CAN_bms_power_systems={
 	.canID = CAN_bms_power_systems_ID,
@@ -1731,7 +1731,7 @@ uint16_t CAN_bms_power_systems_HV_contactor_state_get(void){
 
 static CAN_payload_S CAN_bms_debug_payloads[3] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_bms_debug_mux = 0;
-#define CAN_bms_debug_ID 0x723
+#define CAN_bms_debug_ID 0x38D
 
 static CAN_message_S CAN_bms_debug={
 	.canID = CAN_bms_debug_ID,
@@ -2042,7 +2042,7 @@ uint16_t CAN_bms_debug_byte1_get(void){
 
 static CAN_payload_S CAN_bms_cell_voltages_payloads[6] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_bms_cell_voltages_mux = 0;
-#define CAN_bms_cell_voltages_ID 0x725
+#define CAN_bms_cell_voltages_ID 0x38E
 
 static CAN_message_S CAN_bms_cell_voltages={
 	.canID = CAN_bms_cell_voltages_ID,
@@ -2549,7 +2549,7 @@ uint16_t CAN_bms_cell_voltages_cell_24_voltage_get(void){
 
 static CAN_payload_S CAN_bms_cell_temperatures_payloads[7] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_bms_cell_temperatures_mux = 0;
-#define CAN_bms_cell_temperatures_ID 0x726
+#define CAN_bms_cell_temperatures_ID 0x38F
 
 static CAN_message_S CAN_bms_cell_temperatures={
 	.canID = CAN_bms_cell_temperatures_ID,
@@ -3410,14 +3410,12 @@ static CAN_message_S CAN_motorcontroller_motor_status_PDO4={
 	.canMessageStatus = 0
 };
 
-#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_CAPACITOR_VOLTAGE_RANGE 16
-#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_CAPACITOR_VOLTAGE_OFFSET 0
-#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_HEATSINK_TEMPERATURE_RANGE 8
-#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_HEATSINK_TEMPERATURE_OFFSET 16
-#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_BATTERY_CURRENT_RANGE 16
-#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_BATTERY_CURRENT_OFFSET 24
-#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MAX_TORQUE_LEFT_MOTOR_RANGE 16
-#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MAX_TORQUE_LEFT_MOTOR_OFFSET 40
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MOTOR_TORQUE_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MOTOR_TORQUE_OFFSET 0
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MOTOR_VELOCITY_RANGE 32
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MOTOR_VELOCITY_OFFSET 16
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MOTOR_AC_CURRENT_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MOTOR_AC_CURRENT_OFFSET 48
 
 uint8_t CAN_motorcontroller_motor_status_PDO4_checkDataIsUnread(void){
 	return CAN_checkDataIsUnread(&CAN_motorcontroller_motor_status_PDO4);
@@ -3425,31 +3423,24 @@ uint8_t CAN_motorcontroller_motor_status_PDO4_checkDataIsUnread(void){
 uint8_t CAN_motorcontroller_motor_status_PDO4_checkDataIsStale(void){
 	return CAN_checkDataIsStale(&CAN_motorcontroller_motor_status_PDO4, 40);
 }
-float CAN_motorcontroller_motor_status_PDO4_Capacitor_Voltage_get(void){
+uint16_t CAN_motorcontroller_motor_status_PDO4_Motor_Torque_get(void){
 	// Extract 16-bit signal at bit offset 0
 	uint16_t data = 0;
 	data |= (uint16_t)((CAN_motorcontroller_motor_status_PDO4.payload->word0 & 0xFFFF) >> 0) << 0;
-	return (data * 0.0625) + 0;
+	return (data * 0.001) + 0;
 }
-float CAN_motorcontroller_motor_status_PDO4_Heatsink_Temperature_get(void){
-	// Extract 8-bit signal at bit offset 16
-	uint16_t data = 0;
-	data |= (uint16_t)((CAN_motorcontroller_motor_status_PDO4.payload->word1 & 0x00FF) >> 0) << 0;
+uint32_t CAN_motorcontroller_motor_status_PDO4_Motor_Velocity_get(void){
+	// Extract 32-bit signal at bit offset 16
+	uint32_t data = 0;
+	data |= (uint32_t)((CAN_motorcontroller_motor_status_PDO4.payload->word1 & 0xFFFF) >> 0) << 0;
+	data |= (uint32_t)((CAN_motorcontroller_motor_status_PDO4.payload->word2 & 0xFFFF) >> 0) << 16;
 	return (data * 1.0) + 0;
 }
-float CAN_motorcontroller_motor_status_PDO4_Battery_Current_get(void){
-	// Extract 16-bit signal at bit offset 24
+float CAN_motorcontroller_motor_status_PDO4_Motor_AC_Current_get(void){
+	// Extract 16-bit signal at bit offset 48
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_motorcontroller_motor_status_PDO4.payload->word1 & 0xFF00) >> 8) << 0;
-	data |= (uint16_t)((CAN_motorcontroller_motor_status_PDO4.payload->word2 & 0x00FF) >> 0) << 8;
-	return (data * 0.0625) + 0;
-}
-uint16_t CAN_motorcontroller_motor_status_PDO4_Max_Torque_Left_Motor_get(void){
-	// Extract 16-bit signal at bit offset 40
-	uint16_t data = 0;
-	data |= (uint16_t)((CAN_motorcontroller_motor_status_PDO4.payload->word2 & 0xFF00) >> 8) << 0;
-	data |= (uint16_t)((CAN_motorcontroller_motor_status_PDO4.payload->word3 & 0x00FF) >> 0) << 8;
-	return (data * 0.001) + 0;
+	data |= (uint16_t)((CAN_motorcontroller_motor_status_PDO4.payload->word3 & 0xFFFF) >> 0) << 0;
+	return (data * 1.0) + 0;
 }
 
 /**********************************************************

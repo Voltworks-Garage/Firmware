@@ -7,7 +7,6 @@
 *.obj
 *.elf
 *.o.d
-*.mk
 *.generated_files/
 
 # Linker output

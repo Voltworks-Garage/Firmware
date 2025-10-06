@@ -6,7 +6,7 @@
  */
 static CAN_payload_S CAN_dash_status_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 static volatile uint8_t CAN_dash_status_status = 0;
-#define CAN_dash_status_ID 0x705
+#define CAN_dash_status_ID 0x387
 
 static CAN_message_S CAN_dash_status={
 	.canID = CAN_dash_status_ID,
@@ -86,7 +86,7 @@ void CAN_dash_status_send(void){
 
 static CAN_payload_S CAN_dash_command_payload __attribute__((aligned(sizeof(CAN_payload_S))));
 static volatile uint8_t CAN_dash_command_status = 0;
-#define CAN_dash_command_ID 0x702
+#define CAN_dash_command_ID 0x386
 
 static CAN_message_S CAN_dash_command={
 	.canID = CAN_dash_command_ID,
@@ -151,7 +151,7 @@ void CAN_dash_command_send(void){
  */
 static CAN_payload_S CAN_mcu_status_payloads[5] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_mcu_status_mux = 0;
-#define CAN_mcu_status_ID 0x711
+#define CAN_mcu_status_ID 0x388
 
 static CAN_message_S CAN_mcu_status={
 	.canID = CAN_mcu_status_ID,
@@ -1206,7 +1206,7 @@ uint16_t CAN_mcu_status_J1772_controller_current_get(void){
 	return (data * 1) + 0;
 }
 
-#define CAN_mcu_command_ID 0x712
+#define CAN_mcu_command_ID 0x389
 
 static CAN_message_S CAN_mcu_command={
 	.canID = CAN_mcu_command_ID,
@@ -1266,7 +1266,7 @@ uint16_t CAN_mcu_command_motor_controller_enable_get(void){
 
 static CAN_payload_S CAN_mcu_mcu_debug_payloads[4] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_mcu_mcu_debug_mux = 0;
-#define CAN_mcu_mcu_debug_ID 0x713
+#define CAN_mcu_mcu_debug_ID 0x38A
 
 static CAN_message_S CAN_mcu_mcu_debug={
 	.canID = CAN_mcu_mcu_debug_ID,
@@ -1562,7 +1562,7 @@ float CAN_mcu_mcu_debug_task_1000ms_peak_cpu_percent_get(void){
  */
 static CAN_payload_S CAN_bms_status_payloads[5] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_bms_status_mux = 0;
-#define CAN_bms_status_ID 0x721
+#define CAN_bms_status_ID 0x38B
 
 static CAN_message_S CAN_bms_status={
 	.canID = CAN_bms_status_ID,
@@ -2163,7 +2163,7 @@ uint16_t CAN_bms_status_cell_E_balancing_get(void){
 	return (data * 1.0) + 0;
 }
 
-#define CAN_bms_power_systems_ID 0x722
+#define CAN_bms_power_systems_ID 0x38C
 
 static CAN_message_S CAN_bms_power_systems={
 	.canID = CAN_bms_power_systems_ID,
@@ -2282,7 +2282,7 @@ uint16_t CAN_bms_power_systems_HV_contactor_state_get(void){
 
 static CAN_payload_S CAN_bms_debug_payloads[3] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_bms_debug_mux = 0;
-#define CAN_bms_debug_ID 0x723
+#define CAN_bms_debug_ID 0x38D
 
 static CAN_message_S CAN_bms_debug={
 	.canID = CAN_bms_debug_ID,
@@ -2675,7 +2675,7 @@ uint16_t CAN_bms_charger_request_byte_8_get(void){
 
 static CAN_payload_S CAN_bms_cell_voltages_payloads[6] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_bms_cell_voltages_mux = 0;
-#define CAN_bms_cell_voltages_ID 0x725
+#define CAN_bms_cell_voltages_ID 0x38E
 
 static CAN_message_S CAN_bms_cell_voltages={
 	.canID = CAN_bms_cell_voltages_ID,
@@ -3182,7 +3182,7 @@ uint16_t CAN_bms_cell_voltages_cell_24_voltage_get(void){
 
 static CAN_payload_S CAN_bms_cell_temperatures_payloads[7] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_bms_cell_temperatures_mux = 0;
-#define CAN_bms_cell_temperatures_ID 0x726
+#define CAN_bms_cell_temperatures_ID 0x38F
 
 static CAN_message_S CAN_bms_cell_temperatures={
 	.canID = CAN_bms_cell_temperatures_ID,

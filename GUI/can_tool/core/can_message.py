@@ -134,6 +134,8 @@ class CANMessageManager:
             # Store the signal with current timestamp and sorting info for freshness tracking
             msg.accumulated_mux_signals[signal_name] = {
                 'value': signal_data['value'],
+                'raw_value': signal_data.get('raw_value'),  # Include raw value for graphing
+                'units': signal_data.get('units', ''),  # Include units for future use
                 'timestamp': time.time(),
                 'mux_value': signal_data['multiplex_value'],
                 'byte_pos': signal_data['byte_pos'],

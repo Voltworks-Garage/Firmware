@@ -167,6 +167,7 @@ void Tsk_10ms(void) {
 
     
     tachometer_run_10ms(); //Run the Tachometer
+    batteryGauge_run_10ms(); //Run the Battery Gauge
     
     CAN_populate_10ms();
     CAN_send_10ms();

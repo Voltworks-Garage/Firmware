@@ -155,6 +155,11 @@ uint8_t pwmOCinit(oc_pin_number pin, uint32_t clock_freq, oc_clock_source clock_
             _RP126R = currentModule.ppsMap;
             break;
 #endif
+#ifdef _RP127R
+        case PWM_PIN_RP127:
+            _RP127R = currentModule.ppsMap;
+            break;
+#endif
 
         default:
             return 0; /*not a valid pin*/

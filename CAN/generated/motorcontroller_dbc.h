@@ -154,10 +154,9 @@ void CAN_motorcontroller_motorStatus_PDO2_send(void);
 
 
 #define CAN_motorcontroller_motor_status_PDO4_interval() 20
-void CAN_motorcontroller_motor_status_PDO4_Capacitor_Voltage_set(float Capacitor_Voltage);
-void CAN_motorcontroller_motor_status_PDO4_Heatsink_Temperature_set(float Heatsink_Temperature);
-void CAN_motorcontroller_motor_status_PDO4_Battery_Current_set(float Battery_Current);
-void CAN_motorcontroller_motor_status_PDO4_Max_Torque_Left_Motor_set(uint16_t Max_Torque_Left_Motor);
+void CAN_motorcontroller_motor_status_PDO4_Motor_Torque_set(uint16_t Motor_Torque);
+void CAN_motorcontroller_motor_status_PDO4_Motor_Velocity_set(uint32_t Motor_Velocity);
+void CAN_motorcontroller_motor_status_PDO4_Motor_AC_Current_set(float Motor_AC_Current);
 void CAN_motorcontroller_motor_status_PDO4_dlc_set(uint8_t dlc);
 
 

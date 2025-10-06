@@ -7,7 +7,7 @@
 /**********************************************************
  * mcu NODE MESSAGES
  */
-#define CAN_mcu_command_ID 0x712
+#define CAN_mcu_command_ID 0x389
 
 static CAN_message_S CAN_mcu_command={
 	.canID = CAN_mcu_command_ID,
@@ -154,7 +154,7 @@ uint16_t CAN_mcu_boot_response_byte7_get(void){
 
 static CAN_payload_S CAN_mcu_mcu_debug_payloads[4] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_mcu_mcu_debug_mux = 0;
-#define CAN_mcu_mcu_debug_ID 0x713
+#define CAN_mcu_mcu_debug_ID 0x38A
 
 static CAN_message_S CAN_mcu_mcu_debug={
 	.canID = CAN_mcu_mcu_debug_ID,
@@ -450,7 +450,7 @@ float CAN_mcu_mcu_debug_task_1000ms_peak_cpu_percent_get(void){
  */
 static CAN_payload_S CAN_bms_debug_payloads[3] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_bms_debug_mux = 0;
-#define CAN_bms_debug_ID 0x723
+#define CAN_bms_debug_ID 0x38D
 
 static CAN_message_S CAN_bms_debug={
 	.canID = CAN_bms_debug_ID,

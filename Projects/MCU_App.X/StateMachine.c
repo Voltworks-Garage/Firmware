@@ -23,6 +23,7 @@
 #include "CommandService.h"
 #include "tachometer.h"
 #include "ThrottleControl.h"
+#include "BatteryGauge.h"
 
 
 /******************************************************************************
@@ -141,6 +142,7 @@ void boot(STATE_MACHINE_entry_types_E entry_type) {
             LvBattery_Init();
             tachometer_init();
             ThrottleControl_Init();
+            batteryGauge_init();
         
 
             //Get HV support ready.
@@ -166,6 +168,7 @@ void idle(STATE_MACHINE_entry_types_E entry_type) {
             SysTick_TimerStart(idleTimer);
             SysTick_TimerStart(tachTimer);
             tachometer_set_percent(100);
+            batteryGauge_set_percent(100);
             break;
 
         case EXIT:
@@ -205,6 +208,11 @@ void idle(STATE_MACHINE_entry_types_E entry_type) {
                 sm_nextState = goingToSleep_state;
             }
 
+            // If the brake switch is pressed, stay awake.
+            if (IgnitionControl_GetRightBrakeButtonStatus() == BUTTON_PRESSED) {
+                SysTick_TimerStart(idleTimer);
+            }
+
             // If the start button is held, go to running state.
             // Clear the hold flag to prevent re-entry.
             if (IgnitionControl_GetStartButtonIsHeld(true)) {
@@ -213,6 +221,7 @@ void idle(STATE_MACHINE_entry_types_E entry_type) {
 
             if(SysTick_TimeOut(tachTimer)){
                 tachometer_set_percent(0);
+                batteryGauge_set_percent(0);
                 // tach += 10;
                 // if(tach > 100) tach = 0;
                 // SysTick_TimerStart(tachTimer);
@@ -247,12 +256,12 @@ void running(STATE_MACHINE_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
             IO_SET_HEADLIGHT_LO_EN(HIGH);
-            CAN_mcu_command_motor_controller_enable_set(1);
+            //CAN_mcu_command_motor_controller_enable_set(1);
             ThrottleControl_Enable(true);
             break;
         case EXIT:
             IO_SET_HEADLIGHT_LO_EN(LOW);
-            CAN_mcu_command_motor_controller_enable_set(0);
+            //CAN_mcu_command_motor_controller_enable_set(0);
             ThrottleControl_Enable(false);
             break;
         case RUN:
@@ -260,6 +269,11 @@ void running(STATE_MACHINE_entry_types_E entry_type) {
             // Clear the hold flag to prevent re-entry.
             if (IgnitionControl_GetStartButtonIsHeld(true)) {
                 sm_nextState = idle_state;
+            }
+
+            // If the kill switch is pressed, go to goingToSleep and prepare for sleep.
+            if (IgnitionControl_GetKillSwitchStatus() == BUTTON_PRESSED) {
+                sm_nextState = goingToSleep_state;
             }
             break;
         default:
@@ -342,6 +356,9 @@ void sleep(STATE_MACHINE_entry_types_E entry_type) {
             j1772Control_Halt();
             IgnitionControl_Halt();
             LvBattery_Halt();
+            tachometer_halt();
+            ThrottleControl_Halt();
+            batteryGauge_halt();
 
             //shut down external controllers
             IO_SET_IC_CONTROLLER_SLEEP_EN(HIGH);
@@ -416,6 +433,7 @@ void halt_all_tasks(void) {
     // LvBattery_Halt();
     tachometer_halt();
     ThrottleControl_Halt();
+    batteryGauge_halt();
 }
 void resume_all_tasks(void) {
     LightsControl_Init();
@@ -426,6 +444,7 @@ void resume_all_tasks(void) {
     // LvBattery_Init();
     tachometer_init();
     ThrottleControl_Init();
+    batteryGauge_init();
 }
 
 /*** End of File **************************************************************/

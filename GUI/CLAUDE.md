@@ -24,6 +24,7 @@ GUI/
 - **Real-time CAN Communication**: PCAN device support with configurable baud rates
 - **DBF Integration**: Busmaster DBF file parsing for signal definitions and decoding
 - **Message Transmission**: Manual and DBF-based message creation with signal-level control
+- **Signal Graphing**: Real-time signal plotting with multiple y-axes and configurable time windows
 - **Plugin System**: Modular architecture supporting ISO-TP and CANopen plugins
 - **Comprehensive Testing**: Full test suite covering core functionality and GUI components
 
@@ -32,6 +33,7 @@ GUI/
 ### Prerequisites
 ```bash
 pip install python-can>=4.0.0
+pip install matplotlib>=3.0.0    # For signal graphing functionality
 # Optional for CANopen plugin:
 pip install canopen
 ```
@@ -113,6 +115,14 @@ Default configuration in `can_tool/config.py`:
 - Test on different screen resolutions and DPI settings
 - Verify mouse wheel scrolling functionality
 - Ensure proper widget alignment and column stretching
+
+### Signal Graphing Features
+- **Multi-axis Plotting**: Each signal gets its own y-axis with unique color
+- **Time Window Configuration**: Adjustable from 10 seconds to 5 minutes
+- **Real-time Updates**: Configurable update rates (50ms to 500ms)
+- **Signal Selection**: Interactive dialog for adding signals from received messages
+- **Data Management**: Automatic data point limiting (1000 points per signal)
+- **Access**: Available via Tools > Signal Grapher menu
 
 ### Plugin Modifications
 - Test plugin loading/unloading functionality

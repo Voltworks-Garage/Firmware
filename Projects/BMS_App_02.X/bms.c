@@ -206,13 +206,6 @@ static void bms_running(BMS_entry_types_E entry_type) {
             bms_ClearAllCellBalancing();
             break;
         case RUN:
-            // Main BMS operation - process available data
-
-            //Check min/max voltages for all cells.
-            bms_CheckCellVoltageThresholds();
-            
-            // Calculate stack and pack voltages from individual cell data
-            bms_calculateStackVoltages();
             
             // Handle balancing decisions
             bms_runBalancingStateMachine();
@@ -326,10 +319,19 @@ static void bms_runBalancingStateMachine(void){
             case 0:
                 // If balancing is not active, start it with current decisions
                 if(!LTC6802_1_IsBalancingActive()){
+
+                    //Check min/max voltages for all cells.
+                    bms_CheckCellVoltageThresholds();
+                    
+                    // Calculate stack and pack voltages from individual cell data
+                    bms_calculateStackVoltages();
+
                     // Calculate which cells need balancing
                     bms_calculateCellsToBalance();
+
                     // If a cell is over the balance threshold, start to taper the current
                     bms_taperCurrentCommandForBalancing();
+
                     // Start balancing with the selected cells
                     LTC6802_1_StartCellBalancing(cells_to_balance, num_cells_to_balance);
                     SysTick_TimerStart(balancing_timer);
@@ -353,7 +355,13 @@ static void bms_runBalancingStateMachine(void){
             default:
                 break;
         }
-    } else {
+
+    } else { //balancing is not allowed, so just read voltages and clear balancing if active
+        //Check min/max voltages for all cells.
+        bms_CheckCellVoltageThresholds();
+        
+        // Calculate stack and pack voltages from individual cell data
+        bms_calculateStackVoltages();
         balancing_state = 0;
         bms_ClearAllCellBalancing();
     }

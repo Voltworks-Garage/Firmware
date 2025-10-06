@@ -8,7 +8,7 @@
 
 [NUMBER_OF_MESSAGES] 26
 
-[START_MSG] dash_status,1797,8,7,1,S
+[START_MSG] dash_status,903,8,7,1,S
 [START_SIGNALS] heartBeat,4,1,0.0,U,15,0,1,0,1.0,
 [START_SIGNALS] state,3,1,4.0,U,7,0,1,0,1.0,
 [START_SIGNALS] killButton,2,1,7.0,U,3,0,1,0,1.0,
@@ -18,7 +18,7 @@
 [START_SIGNALS] driveMode,3,2,7.0,U,7,0,1,0,1.0,
 [END_MSG]
 
-[START_MSG] dash_command,1794,8,5,1,S
+[START_MSG] dash_command,902,8,5,1,S
 [START_SIGNALS] ignitionRequest,1,1,0.0,B,1,0,1,0,1.0,bool
 [START_SIGNALS] killRequest,1,1,1.0,B,1,0,1,0,1.0,bool
 [START_SIGNALS] batteryEjectRequest,1,1,2.0,B,1,0,1,0,1.0,bool
@@ -26,7 +26,7 @@
 [START_SIGNALS] hornRequest,1,1,4.0,B,1,0,1,0,1.0,bool
 [END_MSG]
 
-[START_MSG] mcu_status,1809,8,54,1,S
+[START_MSG] mcu_status,904,8,54,1,S
 [START_SIGNALS] multiplex,3,1,0.0,U,7,0,1,0,1.0,,m
 [START_SIGNALS] vehicleState,3,1,3.0,U,7,0,1,0,1.0,,M0
 [START_SIGNALS] highBeam,1,1,6.0,B,1,0,1,0,1.0,bool,M0
@@ -83,7 +83,7 @@
 [START_SIGNALS] J1772_controller_current,12,5,7.0,U,4095,0,1,0,1,mA,M4
 [END_MSG]
 
-[START_MSG] mcu_command,1810,8,5,1,S
+[START_MSG] mcu_command,905,8,5,1,S
 [START_SIGNALS] DCDC_enable,1,1,0.0,B,1,0,1,0,1.0,bool
 [START_SIGNALS] J1772_prox_status,2,1,1.0,U,3,0,1,0,1.0,enum
 [START_SIGNALS] J1772_pilot_current,8,1,3.0,U,255,0,1,0,1.0,A
@@ -113,7 +113,7 @@
 [START_SIGNALS] byte7,8,8,0.0,U,255,0,1,0,1.0,
 [END_MSG]
 
-[START_MSG] mcu_mcu_debug,1811,8,14,1,S
+[START_MSG] mcu_mcu_debug,906,8,14,1,S
 [START_SIGNALS] Multiplex,2,1,0.0,U,3,0,1,0,1.0,,m
 [START_SIGNALS] cpu_usage_percent,8,1,2.0,U,255,0,1,0,0.5,%,M2
 [START_SIGNALS] cpu_peak_percent,8,2,2.0,U,255,0,1,0,0.5,%,M2
@@ -130,7 +130,7 @@
 [START_SIGNALS] task_1000ms_peak_cpu_percent,8,8,0.0,U,255,0,1,0,1,%,M2
 [END_MSG]
 
-[START_MSG] bms_status,1825,8,30,1,S
+[START_MSG] bms_status,907,8,30,1,S
 [START_SIGNALS] multiplex,3,1,0.0,U,7,0,1,0,1.0,,m
 [START_SIGNALS] bms_state,4,1,3.0,U,15,0,1,0,1.0,enum,M0
 [START_SIGNALS] pack_voltage,16,1,7.0,U,65535,0,1,0,0.01,V,M0
@@ -163,7 +163,7 @@
 [START_SIGNALS] cell_E_balancing,5,3,2.0,U,31,0,1,0,1.0,,M4
 [END_MSG]
 
-[START_MSG] bms_power_systems,1826,8,12,1,S
+[START_MSG] bms_power_systems,908,8,12,1,S
 [START_SIGNALS] DCDC_state,1,1,0.0,B,1,0,1,0,1.0,bool
 [START_SIGNALS] DCDC_fault,1,1,1.0,B,1,0,1,0,1.0,bool
 [START_SIGNALS] DCDC_voltage,10,1,2.0,U,1023,0,1,0,0.1,V
@@ -178,7 +178,7 @@
 [START_SIGNALS] HV_contactor_state,1,8,0.0,B,1,0,1,0,1.0,bool
 [END_MSG]
 
-[START_MSG] bms_debug,1827,8,15,1,S
+[START_MSG] bms_debug,909,8,15,1,S
 [START_SIGNALS] multiplex,2,1,0.0,U,3,0,1,0,1.0,,m
 [START_SIGNALS] task_1ms_cpu_percent,8,1,2.0,U,255,0,1,0,1,%,M0
 [START_SIGNALS] task_10ms_cpu_percent,8,2,2.0,U,255,0,1,0,1,%,M0
@@ -219,7 +219,7 @@
 [START_SIGNALS] byte_8,8,8,0.0,U,255,0,1,0,1.0,
 [END_MSG]
 
-[START_MSG] bms_cell_voltages,1829,8,25,1,S
+[START_MSG] bms_cell_voltages,910,8,25,1,S
 [START_SIGNALS] multiplex,3,1,0.0,U,7,0,1,0,1.0,,m
 [START_SIGNALS] cell_1_voltage,15,1,3.0,U,32767,0,1,0,1,mV,M0
 [START_SIGNALS] cell_2_voltage,15,3,2.0,U,32767,0,1,0,1,mV,M0
@@ -247,7 +247,7 @@
 [START_SIGNALS] cell_24_voltage,15,7,0.0,U,32767,0,1,0,1,mV,M5
 [END_MSG]
 
-[START_MSG] bms_cell_temperatures,1830,8,29,1,S
+[START_MSG] bms_cell_temperatures,911,8,29,1,S
 [START_SIGNALS] multiplex,3,1,0.0,U,7,0,1,0,1.0,,m
 [START_SIGNALS] stack_1_LTC_internal_temp,12,1,3.0,U,4095,0,1,-40,0.1,degC,M0
 [START_SIGNALS] stack_1_balance_temp,12,2,7.0,U,4095,0,1,-40,0.1,degC,M0
@@ -330,11 +330,10 @@
 [START_SIGNALS] Throttle_Value,16,3,0.0,U,65535,0,1,0,0.00305,%
 [END_MSG]
 
-[START_MSG] motorcontroller_motor_status_PDO4,625,8,4,1,S
-[START_SIGNALS] Capacitor_Voltage,16,1,0.0,U,65535,0,1,0,0.0625,V
-[START_SIGNALS] Heatsink_Temperature,8,3,0.0,U,255,0,1,0,1.0,degC
-[START_SIGNALS] Battery_Current,16,4,0.0,U,65535,0,1,0,0.0625,A
-[START_SIGNALS] Max_Torque_Left_Motor,16,6,0.0,U,65535,0,1,0,0.001,?
+[START_MSG] motorcontroller_motor_status_PDO4,625,8,3,1,S
+[START_SIGNALS] Motor_Torque,16,1,0.0,U,65535,0,1,0,0.001,nM
+[START_SIGNALS] Motor_Velocity,32,3,0.0,U,4294967295,0,1,0,1.0,RPM
+[START_SIGNALS] Motor_AC_Current,16,7,0.0,U,65535,0,1,0,1.0,A
 [END_MSG]
 
 [START_MSG] charger_status,419385573,8,11,1,X

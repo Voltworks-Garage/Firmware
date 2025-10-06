@@ -67,6 +67,8 @@ typedef enum {
     TURN_RIGHT_SWITCH_IN = PG3,
     BRIGHTS_SWITCH_IN = PG12,
     HORN_SWITCH_IN = PG13,
+    STEERING_COLUMN_LOCK_EN = PG15
+    // CHARGE_PORT_SOLENOID_EN = PF8, //Not used as digital output
     // KICKSTAND_SWITCH_IN = PG14 //This was re-used as tachometer PWM output
 } pin_assignments_t;
 
@@ -101,6 +103,7 @@ typedef enum {
 typedef enum {
     PWM_1_OUT = PWM_PIN_RP101,
     PWM_2_OUT = PWM_PIN_RP100,
+    CHARGE_PORT_LOCK_PWM = PWM_PIN_RP127,
     KICKSTAND_SWITCH_IN = PWM_PIN_RP126
 } pwm_assignments_t;
 

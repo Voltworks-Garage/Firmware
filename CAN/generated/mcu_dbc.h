@@ -344,10 +344,9 @@ float CAN_motorcontroller_motorStatus_PDO2_Throttle_Value_get(void);
 #define CAN_motorcontroller_motor_status_PDO4_interval() 20
 uint8_t CAN_motorcontroller_motor_status_PDO4_checkDataIsUnread(void);
 uint8_t CAN_motorcontroller_motor_status_PDO4_checkDataIsStale(void);
-float CAN_motorcontroller_motor_status_PDO4_Capacitor_Voltage_get(void);
-float CAN_motorcontroller_motor_status_PDO4_Heatsink_Temperature_get(void);
-float CAN_motorcontroller_motor_status_PDO4_Battery_Current_get(void);
-uint16_t CAN_motorcontroller_motor_status_PDO4_Max_Torque_Left_Motor_get(void);
+uint16_t CAN_motorcontroller_motor_status_PDO4_Motor_Torque_get(void);
+uint32_t CAN_motorcontroller_motor_status_PDO4_Motor_Velocity_get(void);
+float CAN_motorcontroller_motor_status_PDO4_Motor_AC_Current_get(void);
 
 /**********************************************************
  * charger NODE MESSAGES

@@ -71,8 +71,8 @@ static bool throttleEnabled = false;
 #define THROTTLE_RAW_TOP_DEAD_ZONE_UPPER 3300 //mV
 
 // Sending value outside of this range results in a fault.
-#define THROTTLE_DEMAND_LOW 0 //lower value that the motor controller is expecting
-#define THROTTLE_DEMAND_HIGH 100 //upper value that the motor controller is expecting
+#define THROTTLE_DEMAND_LOW 0 // 0% throttle demand
+#define THROTTLE_DEMAND_HIGH 100 // 100% throttle demand
 
 NEW_LOW_PASS_FILTER_INT(rawThrottleInputVoltagemV, 350, 1000); //350Hz cutoff freq. samples at 1000Hz (1ms task)
 static uint16_t commandedThrottleInputValue = 0; // throttle input command from 0 - 100
@@ -80,7 +80,7 @@ static uint16_t commandedThrottleInputValue = 0; // throttle input command from 
 /* THROTTLE OUTPUT STUFF*/
 
 // Sending value outside of this range results in a fault.
-#define THROTTLE_OUTPUT_LOW 128 //lower value that the motor controller is expecting
+#define THROTTLE_OUTPUT_LOW 127 //lower value that the motor controller is expecting
 #define THROTTLE_OUTPUT_HIGH 2892 //upper value that the motor controller is expecting
 
 static uint16_t throttleOutputValue = 0; //actual value to send to motor controller
@@ -159,6 +159,7 @@ void throttle_idle(THROTTLE_CONTROL_entry_types_E entry_type) {
             CAN_mcu_motorControllerRequest_Reverse_Switch_set(false);
             CAN_mcu_motorControllerRequest_Seat_Switch_set(true);
             CAN_mcu_motorControllerRequest_Handbrake_Switch_set(false);
+            CAN_mcu_motorControllerRequest_Footbrake_Value_set(THROTTLE_OUTPUT_LOW);
             break;
         case EXIT:
 
@@ -173,7 +174,6 @@ void throttle_idle(THROTTLE_CONTROL_entry_types_E entry_type) {
 void throttle_active(THROTTLE_CONTROL_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
-            
             CAN_mcu_motorControllerRequest_Forward_Switch_set(true);
             
             throttleOutputPercent = THROTTLE_NORMAL_OUTPUT;
@@ -182,7 +182,12 @@ void throttle_active(THROTTLE_CONTROL_entry_types_E entry_type) {
             CAN_mcu_motorControllerRequest_Throttle_Value_set(THROTTLE_OUTPUT_LOW);
             break;
         case RUN:
-            CAN_mcu_motorControllerRequest_FS1_Switch_set(true);
+            // Set the FS1 switch based on whether throttle is being commanded or not
+            if(commandedThrottleInputValue == THROTTLE_DEMAND_LOW){
+                CAN_mcu_motorControllerRequest_FS1_Switch_set(false);
+            } else {
+                CAN_mcu_motorControllerRequest_FS1_Switch_set(true);
+            }
             CAN_mcu_motorControllerRequest_Throttle_Value_set(throttleOutputValue);
             break;
         default:

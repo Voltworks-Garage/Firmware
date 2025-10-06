@@ -216,6 +216,8 @@ class BusmasterDBFParser:
                         decoded['multiplex_value'] = multiplex_value
                         decoded['signals'][signal['name']] = {
                             'value': f"Mode {multiplex_value}",
+                            'raw_value': multiplex_value,  # Store the raw numeric value for graphing
+                            'units': signal.get('unit', ''),  # Store units for future use
                             'byte_pos': signal['byte_pos'],
                             'bit_pos': signal['bit_pos'],
                             'multiplex_value': None
@@ -255,6 +257,8 @@ class BusmasterDBFParser:
                 formatted_value = self._format_signal_value(signal, value)
                 decoded['signals'][signal_name] = {
                     'value': formatted_value,
+                    'raw_value': value,  # Store the raw numeric value for graphing
+                    'units': signal.get('unit', ''),  # Store units for future use
                     'byte_pos': signal['byte_pos'],
                     'bit_pos': signal['bit_pos'],
                     'multiplex_value': signal.get('multiplex_value')

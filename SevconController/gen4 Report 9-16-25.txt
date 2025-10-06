@@ -1,0 +1,96 @@
+Node 1 - Controller Report:
+Product: Gen4 Size6 80V 550A
+Software Ver: 0705.0011
+Software Checksum: 0x1297
+Config Checksum: 0x35fc
+Hardware Ver: 0x01050004
+Product Code: 0x07055037
+Serial Number: 1502101730
+
+Current Faults:
+0 : 0x4681 Unit in pre-operational
+
+Event Log:
+0x4201:  0x5319,  16.63,  19.50    6 * Motor slave in wrong state
+0x4202:  0x52c1,   0.00,  14.37  260 * Encoder Fault
+0x4203:  0x4f53,  18.98,  21.53   30 * App Manager Internal SW Error
+0x4204:  0x4881,  17.53,  17.57    2 * Seat Fault
+0x4205:  0x5101,   7.77,  21.65   21 * Line Contactor o/c
+0x4206:  0x5102,  18.04,  20.09    9 * Line Contactor welded
+0x4207:  0x5043,  21.27,  21.27    1 * Static Range Error
+0x4208:  0x3441,   0.02,   0.89    2 * Host SW Upgrade
+0x4209:  0x4f01,   8.25,  20.45   39 * CANopen unexpected slave state
+0x420a:  0x4981,  15.25,  16.33  349 * Throttle Fault
+
+Fault Log:
+ 1. 0x4f53, 0x02 0x00 0x00,  19.82 - Level 3, 13FF, ID 19 - App Manager Internal SW Error
+ 2. 0x4f01, 0x02 0x01 0x01,  19.90 - Level 3, 12FF, ID  1 - CANopen unexpected slave state
+ 3. 0x4f53, 0x02 0x00 0x00,  20.03 - Level 3, 13FF, ID 19 - App Manager Internal SW Error
+ 4. 0x5102, 0x05 0x05 0x00,  20.03 - Level 4,  4FF, ID  2 - Line Contactor welded
+ 5. 0x4f53, 0x02 0x00 0x00,  20.04 - Level 3, 13FF, ID 19 - App Manager Internal SW Error
+ 6. 0x5102, 0x05 0x05 0x00,  20.04 - Level 4,  4FF, ID  2 - Line Contactor welded
+ 7. 0x4f53, 0x02 0x00 0x00,  20.09 - Level 3, 13FF, ID 19 - App Manager Internal SW Error
+ 8. 0x5102, 0x05 0x05 0x00,  20.09 - Level 4,  4FF, ID  2 - Line Contactor welded
+ 9. 0x4f53, 0x02 0x00 0x00,  20.10 - Level 3, 13FF, ID 19 - App Manager Internal SW Error
+10. 0x5101, 0x05 0x01 0x02,  20.10 - Level 4,  4FF, ID  1 - Line Contactor o/c
+11. 0x4f53, 0x02 0x00 0x00,  20.10 - Level 3, 13FF, ID 19 - App Manager Internal SW Error
+12. 0x4f53, 0x02 0x00 0x00,  20.12 - Level 3, 13FF, ID 19 - App Manager Internal SW Error
+13. 0x5101, 0x05 0x01 0x02,  20.12 - Level 4,  4FF, ID  1 - Line Contactor o/c
+14. 0x5101, 0x05 0x01 0x02,  20.14 - Level 4,  4FF, ID  1 - Line Contactor o/c
+15. 0x4f53, 0x02 0x00 0x00,  20.14 - Level 3, 13FF, ID 19 - App Manager Internal SW Error
+16. 0x4f53, 0x02 0x00 0x00,  20.15 - Level 3, 13FF, ID 19 - App Manager Internal SW Error
+17. 0x4f53, 0x02 0x00 0x00,  20.24 - Level 3, 13FF, ID 19 - App Manager Internal SW Error
+18. 0x4f53, 0x02 0x00 0x00,  20.25 - Level 3, 13FF, ID 19 - App Manager Internal SW Error
+19. 0x4f01, 0x02 0x01 0x01,  20.30 - Level 3, 12FF, ID  1 - CANopen unexpected slave state
+20. 0x4f53, 0x02 0x00 0x00,  20.31 - Level 3, 13FF, ID 19 - App Manager Internal SW Error
+21. 0x4f01, 0x02 0x01 0x01,  20.45 - Level 3, 12FF, ID  1 - CANopen unexpected slave state
+22. 0x5101, 0x05 0x01 0x02,  20.52 - Level 4,  4FF, ID  1 - Line Contactor o/c
+23. 0x4f53, 0x02 0x00 0x00,  20.53 - Level 3, 13FF, ID 19 - App Manager Internal SW Error
+24. 0x5101, 0x06 0x02 0x02,  20.79 - Level 4,  4FF, ID  1 - Line Contactor o/c
+25. 0x4f53, 0x02 0x00 0x00,  20.86 - Level 3, 13FF, ID 19 - App Manager Internal SW Error
+26. 0x4f53, 0x02 0x00 0x00,  20.92 - Level 3, 13FF, ID 19 - App Manager Internal SW Error
+27. 0x4f53, 0x02 0x00 0x00,  21.03 - Level 3, 13FF, ID 19 - App Manager Internal SW Error
+28. 0x5043, 0x28 0x70 0x03,  21.27 - Level 4,  1FF, ID  3 - Static Range Error
+29. 0x4f53, 0x02 0x00 0x00,  21.29 - Level 3, 13FF, ID 19 - App Manager Internal SW Error
+30. 0x4f53, 0x02 0x00 0x00,  21.34 - Level 3, 13FF, ID 19 - App Manager Internal SW Error
+31. 0x45ca, 0x01 0x61 0x48,  21.50 - Level 1,  7FF, ID 10 - Vcap cutback for regen torque
+32. 0x45ca, 0x01 0x61 0x48,  21.50 - Level 1,  7FF, ID 10 - Vcap cutback for regen torque
+33. 0x4f53, 0x02 0x00 0x00,  21.53 - Level 3, 13FF, ID 19 - App Manager Internal SW Error
+34. 0x5101, 0x06 0x02 0x02,  21.54 - Level 4,  4FF, ID  1 - Line Contactor o/c
+35. 0x5101, 0x06 0x02 0x02,  21.61 - Level 4,  4FF, ID  1 - Line Contactor o/c
+36. 0x5101, 0x06 0x02 0x02,  21.65 - Level 4,  4FF, ID  1 - Line Contactor o/c
+37. 0x4681, 0x00 0x00 0x00,  21.85 - Level 1, 10FF, ID  1 - Unit in pre-operational
+38. 0x4681, 0x00 0x00 0x00,  21.85 - Level 1, 10FF, ID  1 - Unit in pre-operational
+39. 0x4681, 0x00 0x00 0x00,  21.90 - Level 1, 10FF, ID  1 - Unit in pre-operational
+40. 0x4681, 0x00 0x00 0x00,  21.98 - Level 1, 10FF, ID  1 - Unit in pre-operational
+
+Snapshots (Freeze Frames):
+Not supported
+
+Timing information / Hours counters:
+key hrs:		 22.016666666666666 
+traction hrs:		 0.10416666666666667 
+pump hrs:		 0.0 
+steer hrs:		 2.6333333333333333 
+work hrs:		 0.0 
+charge hrs:		 0.0 
+pulsing hrs:		 0.016666666666666666 
+node hrs:		 22.016666666666666 
+
+Operational Monitor:
+Minimum Battery: 31.125
+Maximum Battery: 98.0
+Minimum Capacitor: 10.0625
+Maximum Capacitor: 97.4375
+Minimum I1: 0.0
+Maximum I1: 287.0
+Minimum I2: 32767.0
+Maximum I2: -32768.0
+Reverse Speed: -434.0
+Forward Speed: 213.0
+Minimum Temperature: 1.1875
+Maximum Temperature: 1.6875
+
+Force Pre-Operational [0x2800]:
+Force system to pre-operational state: Pre-Operational (0x01)
+

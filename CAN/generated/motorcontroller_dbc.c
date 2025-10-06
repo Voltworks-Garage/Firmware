@@ -7,7 +7,7 @@
 /**********************************************************
  * mcu NODE MESSAGES
  */
-#define CAN_mcu_command_ID 0x712
+#define CAN_mcu_command_ID 0x389
 
 static CAN_message_S CAN_mcu_command={
 	.canID = CAN_mcu_command_ID,
@@ -139,7 +139,7 @@ uint16_t CAN_mcu_motorControllerRequest_Footbrake_Value_get(void){
 
 static CAN_payload_S CAN_mcu_mcu_debug_payloads[4] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_mcu_mcu_debug_mux = 0;
-#define CAN_mcu_mcu_debug_ID 0x713
+#define CAN_mcu_mcu_debug_ID 0x38A
 
 static CAN_message_S CAN_mcu_mcu_debug={
 	.canID = CAN_mcu_mcu_debug_ID,
@@ -435,7 +435,7 @@ float CAN_mcu_mcu_debug_task_1000ms_peak_cpu_percent_get(void){
  */
 static CAN_payload_S CAN_bms_debug_payloads[3] __attribute__((aligned(sizeof(CAN_payload_S))));
 static uint8_t CAN_bms_debug_mux = 0;
-#define CAN_bms_debug_ID 0x723
+#define CAN_bms_debug_ID 0x38D
 
 static CAN_message_S CAN_bms_debug={
 	.canID = CAN_bms_debug_ID,
@@ -1149,42 +1149,32 @@ static CAN_message_S CAN_motorcontroller_motor_status_PDO4={
 	.canMessageStatus = &CAN_motorcontroller_motor_status_PDO4_status
 };
 
-#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_CAPACITOR_VOLTAGE_RANGE 16
-#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_CAPACITOR_VOLTAGE_OFFSET 0
-#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_HEATSINK_TEMPERATURE_RANGE 8
-#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_HEATSINK_TEMPERATURE_OFFSET 16
-#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_BATTERY_CURRENT_RANGE 16
-#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_BATTERY_CURRENT_OFFSET 24
-#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MAX_TORQUE_LEFT_MOTOR_RANGE 16
-#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MAX_TORQUE_LEFT_MOTOR_OFFSET 40
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MOTOR_TORQUE_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MOTOR_TORQUE_OFFSET 0
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MOTOR_VELOCITY_RANGE 32
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MOTOR_VELOCITY_OFFSET 16
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MOTOR_AC_CURRENT_RANGE 16
+#define CAN_MOTORCONTROLLER_MOTOR_STATUS_PDO4_MOTOR_AC_CURRENT_OFFSET 48
 
-void CAN_motorcontroller_motor_status_PDO4_Capacitor_Voltage_set(float Capacitor_Voltage){
-	uint16_t data_scaled = (uint16_t)(Capacitor_Voltage * 16.0f + 0.5f);
+void CAN_motorcontroller_motor_status_PDO4_Motor_Torque_set(uint16_t Motor_Torque){
+	uint16_t data_scaled = Motor_Torque * 1000.0;
 	// Set 16-bit signal at bit offset 0
 	CAN_motorcontroller_motor_status_PDO4.payload->word0 &= ~0xFFFF;
 	CAN_motorcontroller_motor_status_PDO4.payload->word0 |= data_scaled & 0xFFFF;
 }
-void CAN_motorcontroller_motor_status_PDO4_Heatsink_Temperature_set(float Heatsink_Temperature){
-	uint16_t data_scaled = (uint16_t)(Heatsink_Temperature * 1.0f + 0.5f);
-	// Set 8-bit signal at bit offset 16
-	CAN_motorcontroller_motor_status_PDO4.payload->word1 &= ~0x00FF;
-	CAN_motorcontroller_motor_status_PDO4.payload->word1 |= data_scaled & 0x00FF;
+void CAN_motorcontroller_motor_status_PDO4_Motor_Velocity_set(uint32_t Motor_Velocity){
+	uint32_t data_scaled = Motor_Velocity * 1.0;
+	// Set 32-bit signal at bit offset 16
+	CAN_motorcontroller_motor_status_PDO4.payload->word1 &= ~0xFFFF;
+	CAN_motorcontroller_motor_status_PDO4.payload->word1 |= data_scaled & 0xFFFF;
+	CAN_motorcontroller_motor_status_PDO4.payload->word2 &= ~0xFFFF;
+	CAN_motorcontroller_motor_status_PDO4.payload->word2 |= (data_scaled >> 16) & 0xFFFF;
 }
-void CAN_motorcontroller_motor_status_PDO4_Battery_Current_set(float Battery_Current){
-	uint16_t data_scaled = (uint16_t)(Battery_Current * 16.0f + 0.5f);
-	// Set 16-bit signal at bit offset 24
-	CAN_motorcontroller_motor_status_PDO4.payload->word1 &= ~0xFF00;
-	CAN_motorcontroller_motor_status_PDO4.payload->word1 |= (data_scaled << 8) & 0xFF00;
-	CAN_motorcontroller_motor_status_PDO4.payload->word2 &= ~0x00FF;
-	CAN_motorcontroller_motor_status_PDO4.payload->word2 |= (data_scaled >> 8) & 0x00FF;
-}
-void CAN_motorcontroller_motor_status_PDO4_Max_Torque_Left_Motor_set(uint16_t Max_Torque_Left_Motor){
-	uint16_t data_scaled = Max_Torque_Left_Motor * 1000.0;
-	// Set 16-bit signal at bit offset 40
-	CAN_motorcontroller_motor_status_PDO4.payload->word2 &= ~0xFF00;
-	CAN_motorcontroller_motor_status_PDO4.payload->word2 |= (data_scaled << 8) & 0xFF00;
-	CAN_motorcontroller_motor_status_PDO4.payload->word3 &= ~0x00FF;
-	CAN_motorcontroller_motor_status_PDO4.payload->word3 |= (data_scaled >> 8) & 0x00FF;
+void CAN_motorcontroller_motor_status_PDO4_Motor_AC_Current_set(float Motor_AC_Current){
+	uint16_t data_scaled = (uint16_t)(Motor_AC_Current * 1.0f + 0.5f);
+	// Set 16-bit signal at bit offset 48
+	CAN_motorcontroller_motor_status_PDO4.payload->word3 &= ~0xFFFF;
+	CAN_motorcontroller_motor_status_PDO4.payload->word3 |= data_scaled & 0xFFFF;
 }
 void CAN_motorcontroller_motor_status_PDO4_dlc_set(uint8_t dlc){
 	CAN_motorcontroller_motor_status_PDO4.dlc = dlc;

@@ -64,6 +64,7 @@ void IO_SET_IC_CONTROLLER_SLEEP_EN(uint8_t state);
 void IO_SET_PUMP_1_EN(uint8_t state);
 void IO_SET_FAN_1_EN(uint8_t state);
 void IO_SET_KICKSTAND_SWITCH_IN(uint8_t state);
+void IO_SET_STEERING_COLUMN_LOCK_EN(uint8_t state);
 
 /**
  * IO_GET_xxxx will return the state of a digital input or output
