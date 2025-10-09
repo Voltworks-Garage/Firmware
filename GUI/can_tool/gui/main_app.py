@@ -384,20 +384,38 @@ Plugins:
                 self.bind_mousewheel_to_widget(child)
 
     def scan_devices(self):
-        """Scan for available PCAN devices"""
+        """Scan for available PCAN and IXXAT devices"""
         def scan_in_thread(scan_btn):
             try:
                 scan_btn.config(text="Scanning...", state="disabled")
                 channels = []
-                for i in range(1, 17):  # PCAN_USBBUS1 to PCAN_USBBUS16
+
+                # Scan for PCAN devices (PCAN_USBBUS1 to PCAN_USBBUS16)
+                for i in range(1, 17):
                     try:
                         channel = f"PCAN_USBBUS{i}"
-                        # Try to get channel status
                         temp_bus = can.interface.Bus(channel=channel, bustype='pcan', bitrate=500000, receive_own_messages=False)
                         temp_bus.shutdown()
-                        channels.append(channel)
+                        display_name = f"PCAN_USBBUS{i}"
+                        channels.append(("pcan", channel, display_name))
                     except:
                         pass
+
+                # Scan for IXXAT devices
+                try:
+                    ixxat_configs = can.detect_available_configs("ixxat")
+                    for cfg in ixxat_configs:
+                        channel_name = cfg.get('channel', 0)
+                        hwid = cfg.get('unique_hardware_id', '')
+                        if hwid:
+                            display_name = f"IXXAT (HW:{hwid}, CH:{channel_name})"
+                        else:
+                            display_name = f"IXXAT (CH:{channel_name})"
+                        channels.append(("ixxat", channel_name, display_name))
+                except Exception as e:
+                    # IXXAT driver might not be installed
+                    pass
+
                 self.root.after(0, lambda: self._scan_complete(channels, scan_btn))
             except Exception as e:
                 self.root.after(0, lambda: self._scan_error(str(e), scan_btn))
@@ -417,12 +435,16 @@ Plugins:
     def _scan_complete(self, channels, scan_btn):
         """Called when device scan completes"""
         self.available_channels = channels
-        self.device_combo.config(values=channels)
+
+        # Extract display names (3rd element in tuple)
+        display_names = [ch[2] for ch in channels]
+
+        self.device_combo.config(values=display_names)
         if channels:
-            self.device_combo.set(channels[0])
-            self.log(f"✅ Found {len(channels)} PCAN device(s): {', '.join(channels)}")
+            self.device_combo.set(display_names[0])
+            self.log(f"✅ Found {len(channels)} device(s)")
         else:
-            self.log("⚠️  No PCAN devices found.")
+            self.log("⚠️  No CAN devices found.")
         if scan_btn:
             scan_btn.config(text="Scan Devices", state="normal")
     
@@ -441,34 +463,48 @@ Plugins:
 
     def connect(self):
         """Connect to CAN bus"""
-        channel = self.device_var.get()
+        selected_display = self.device_var.get()
         baud = self.baud_var.get()
 
-        if not channel:
+        if not selected_display:
             messagebox.showerror("No Device", "Please select a device from the list.")
             return
 
+        # Find the matching channel info from available_channels
+        channel_info = None
+        for ch in self.available_channels:
+            if ch[2] == selected_display:  # Match display name
+                channel_info = ch
+                break
+
+        if not channel_info:
+            messagebox.showerror("Device Error", "Selected device not found in available channels.")
+            return
+
+        bustype = channel_info[0]
+        channel = channel_info[1]
+
         try:
-            self.bus = can.interface.Bus(channel=channel, bustype='pcan', bitrate=int(baud))
+            self.bus = can.interface.Bus(channel=channel, bustype=bustype, bitrate=int(baud))
             self.running = True
-            
+
             # Set bitrate for bus utilization calculations
             self.message_manager.set_bitrate(int(baud))
-            
+
             self.rx_thread = threading.Thread(target=self.read_messages, daemon=True)
             self.rx_thread.start()
-            self.log(f"✅ Connected to {channel} at {baud} bps.")
-            
+            self.log(f"✅ Connected to {selected_display} at {baud} bps.")
+
             # Start bus status monitoring
             self._start_bus_status_monitoring()
-            
+
             # Notify plugins of connection
             for plugin in self.plugins:
                 try:
                     plugin.on_can_connected()
                 except Exception as e:
                     print(f"Error notifying plugin {plugin.tab_name} of connection: {e}")
-                    
+
         except Exception as e:
             self.log(f"❌ Connection failed: {e}")
 
