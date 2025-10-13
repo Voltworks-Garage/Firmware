@@ -1,170 +1,229 @@
-# CAN Tool GUI - Claude Development Guide
+# CAN Tool Core - Claude Development Guide
 
-## Project Overview
+## Module Architecture
 
-The CAN Tool is a modular Python GUI application for CAN bus analysis and communication, specifically designed for Voltworks Garage embedded systems development. It provides real-time CAN message capture, DBF-based signal decoding, message transmission, and extensible plugin architecture.
-
-## Architecture
+The can_tool package is structured as a modular CAN bus analysis application with clear separation of concerns:
 
 ```
-GUI/
-├── can_tool/           # Main application package
-│   ├── main.py         # Entry point and application initialization
-│   ├── config.py       # Configuration management and plugin loading
-│   ├── core/           # Core functionality (DBF parsing, message handling)
-│   ├── gui/            # GUI components and main application window
-│   └── plugins/        # Loadable plugin modules
-├── tests/              # Comprehensive test suite (20+ test files)
-├── Legacy/             # Legacy E-MOTO GUI components
-└── run_can_tool.py     # Launcher script with path setup
+can_tool/
+├── main.py             # Application entry point and initialization
+├── config.py           # Configuration management and plugin loading
+├── core/               # Core business logic
+│   ├── __init__.py     # Core module exports
+│   ├── can_message.py  # CAN message data structures and management
+│   ├── dbf_parser.py   # Busmaster DBF file parsing
+│   ├── table_view.py   # GUI table components for message display
+│   └── config_parser.py # Device configuration parsing
+├── gui/                # User interface components
+│   ├── __init__.py     # GUI module exports
+│   ├── main_app.py     # Main application window (1331 lines)
+│   └── base_tab.py     # Base class for plugin tabs
+└── plugins/            # Loadable plugin modules
+    ├── __init__.py     # Plugin module exports
+    ├── isotp_tab.py    # ISO-TP communication plugin
+    └── canopen_sdo_tab.py # CANopen SDO operations plugin
 ```
 
-## Key Features
+## Core Components
 
-- **Real-time CAN Communication**: PCAN device support with configurable baud rates
-- **DBF Integration**: Busmaster DBF file parsing for signal definitions and decoding
-- **Message Transmission**: Manual and DBF-based message creation with signal-level control
-- **Signal Graphing**: Real-time signal plotting with multiple y-axes and configurable time windows
-- **Plugin System**: Modular architecture supporting ISO-TP and CANopen plugins
-- **Comprehensive Testing**: Full test suite covering core functionality and GUI components
+### Configuration Management (`config.py`)
 
-## Development Setup
+**Key Features:**
+- Plugin registry with lazy loading
+- Cross-platform path handling
+- Default configuration management
+- Runtime plugin enable/disable
 
-### Prerequisites
-```bash
-pip install python-can>=4.0.0
-pip install matplotlib>=3.0.0    # For signal graphing functionality
-# Optional for CANopen plugin:
-pip install canopen
+**Important Functions:**
+- `load_plugins(config, parent_notebook, app_instance)` - Load enabled plugins
+- `Config.get(key, default)` - Get configuration values with dot notation
+- `Config.get_enabled_plugins()` - Return list of active plugins
+
+**Configuration Structure:**
+```python
+DEFAULT_CONFIG = {
+    "dbf_path": "../CAN/emoto.dbf",
+    "plugins": {
+        "isotp_tab": {"enabled": False},
+        "canopen_sdo_tab": {"enabled": True}
+    },
+    "gui": {
+        "refresh_rate_ms": 100,
+        "window_title": "CAN Tool - Modular CAN Bus Analysis"
+    }
+}
 ```
 
-### Running the Application
-```bash
-# Method 1: Direct execution
-python run_can_tool.py
+### Main Application (`main.py`)
 
-# Method 2: Windows batch launcher
-CAN_TOOL.bat
+**Key Functions:**
+- `main()` - Primary entry point with error handling
+- `create_standalone_app(custom_config)` - For embedding in other applications
+- Plugin initialization and cleanup
+- Window configuration and startup logging
 
-# Method 3: Module execution
-python -m can_tool.main
-```
+**Startup Sequence:**
+1. Create Tkinter root window
+2. Load configuration
+3. Validate DBF file existence
+4. Create CANApp instance
+5. Load and initialize plugins
+6. Start main event loop
 
-### Running Tests
-```bash
-cd tests/
-python run_all_tests.py
-```
+### GUI Framework (`gui/main_app.py`)
 
-## Configuration
+**Core Responsibilities:**
+- CAN device scanning and connection management
+- Real-time message reception with batching (10ms/10 messages)
+- Message transmission with periodic scheduling
+- DBF-based signal decoding and encoding
+- Plugin lifecycle management
 
-Default configuration in `can_tool/config.py`:
-- **DBF Path**: `../CAN/emoto.dbf`
-- **ISO-TP Plugin**: Disabled by default
-- **CANopen Plugin**: Enabled by default
-- **GUI Refresh Rate**: 100ms (10 Hz)
+**Performance Optimizations:**
+- GUI updates throttled to 10 Hz to prevent UI freezing
+- Message batching for high-speed CAN traffic
+- Selective table updates for changed messages only
+- Background device scanning with threading
+
+**Key Methods:**
+- `connect()` / `disconnect()` - CAN bus connection management
+- `handle_rx_message(msg)` - Process incoming CAN messages
+- `start_tx_message(msg_id)` / `stop_tx_message(msg_id)` - TX message control
+- `load_dbf_file()` - Runtime DBF file loading
 
 ## Development Guidelines
 
-### Code Standards
-- Follow Python PEP 8 style guidelines
-- Use type hints for function parameters and return values
-- Add docstrings for all public methods and classes
-- Handle exceptions gracefully with user-friendly error messages
+### Adding New Core Features
 
-### GUI Development
-- Use Tkinter with ttk widgets for consistent styling
-- Implement proper threading for CAN operations to prevent UI blocking
-- Use emoji indicators in logging for visual clarity (✅, ❌, ⚠️, 🚀, etc.)
-- Ensure responsive design with proper widget resizing
-
-### CAN Communication
-- Always validate CAN message formats before transmission
-- Use message batching for high-speed CAN traffic processing
-- Implement proper error handling for device connection/disconnection
-- Support both manual and DBF-based message creation
-
-### Plugin Development
-- Inherit from `BaseTab` class for consistent plugin interface
-- Implement proper cleanup methods for resource management
-- Use lazy loading for plugin dependencies
-- Provide clear error messages for missing dependencies
-
-## Testing Protocol
-
-### Test Categories
-- **Core Tests**: DBF parsing, message handling, configuration
-- **GUI Tests**: User interface components, table rendering, scrolling
-- **Integration Tests**: Full application workflow, plugin interaction
-- **Plugin Tests**: Individual plugin functionality and integration
-
-### Adding New Tests
-1. Create test file in `tests/` directory
-2. Follow naming convention: `test_[feature_name].py`
-3. Include both positive and negative test cases
-4. Update `run_all_tests.py` to include new test
-
-## File Modification Protocol
-
-### DBF File Changes
-- Always validate DBF format before applying changes
-- Test signal decoding with representative CAN messages
-- Update relevant test cases when modifying DBF parsing logic
-
-### GUI Component Changes
-- Test on different screen resolutions and DPI settings
-- Verify mouse wheel scrolling functionality
-- Ensure proper widget alignment and column stretching
-
-### Signal Graphing Features
-- **Multi-axis Plotting**: Each signal gets its own y-axis with unique color
-- **Time Window Configuration**: Adjustable from 10 seconds to 5 minutes
-- **Real-time Updates**: Configurable update rates (50ms to 500ms)
-- **Signal Selection**: Interactive dialog for adding signals from received messages
-- **Data Management**: Automatic data point limiting (1000 points per signal)
-- **Access**: Available via Tools > Signal Grapher menu
-
-### Plugin Modifications
-- Test plugin loading/unloading functionality
-- Verify proper cleanup of resources
-- Check error handling for missing dependencies
-
-## Deployment
-
-### Package Installation
-```bash
-# Development installation
-pip install -e .
-
-# Production installation
-pip install .
+#### CAN Message Processing
+```python
+# Always use message batching for performance
+def handle_rx_message_batch(self, messages):
+    for msg in messages:
+        # Update message manager immediately (for accurate timing)
+        can_msg = self.message_manager.update_message(msg.arbitration_id, msg.dlc, msg.data)
+        
+        # Queue GUI update (throttled)
+        self.pending_gui_updates.add(msg.arbitration_id)
+        self._schedule_gui_update()
 ```
 
-### Console Script
-After installation, the tool can be launched using:
-```bash
-can-tool
+#### DBF Integration
+```python
+# Always validate DBF structure before processing
+try:
+    new_dbf_parser = BusmasterDBFParser(filename)
+    self.dbf_parser = new_dbf_parser
+    self.message_manager = CANMessageManager(self.dbf_parser)
+    self.log(f"📁 Loaded DBF file: {os.path.basename(filename)}")
+except Exception as e:
+    self.log(f"❌ Failed to load DBF file: {e}")
 ```
+
+#### Threading Protocol
+- Use `threading.Thread(daemon=True)` for background operations
+- Always use `self.root.after()` to update GUI from worker threads
+- Implement proper cleanup in `disconnect()` method
+
+### Error Handling Standards
+
+**User-Friendly Messages:**
+```python
+# Use emoji indicators for visual clarity
+self.log("✅ Connected to PCAN_USBBUS1 at 500000 bps")
+self.log("❌ Connection failed: Device not found")
+self.log("⚠️  Warning: DBF file not found")
+self.log("🚀 Starting periodic TX: ID 0x123")
+```
+
+**Exception Handling:**
+```python
+try:
+    # CAN operation
+    self.bus.send(msg)
+except Exception as e:
+    error_msg = f"TX Error: {e}"
+    self.log(f"❌ {error_msg}")
+    messagebox.showerror("Transmission Error", error_msg)
+```
+
+### Configuration Protocol
+
+**Adding New Configuration Options:**
+1. Add to `DEFAULT_CONFIG` in `config.py`
+2. Create getter method in `Config` class
+3. Update documentation in `CLAUDE.md`
+4. Add validation if required
+
+**Plugin Configuration:**
+```python
+# Enable/disable plugins at runtime
+config.set("plugins.new_plugin.enabled", True)
+enabled_plugins = config.get_enabled_plugins()
+```
+
+### Import Handling
+
+**Always use dual import pattern for compatibility:**
+```python
+try:
+    from .core import CANMessageManager, BusmasterDBFParser
+    from .gui.base_tab import BaseTab
+except ImportError:
+    from can_tool.core import CANMessageManager, BusmasterDBFParser
+    from can_tool.gui.base_tab import BaseTab
+```
+
+## Testing Integration
+
+### Core Component Testing
+- Test DBF parsing with various file formats
+- Validate message encoding/decoding accuracy
+- Check threading synchronization
+- Verify plugin loading/unloading
+
+### GUI Testing Protocol
+- Test table rendering performance with high message rates
+- Verify scrolling and resizing behavior
+- Check memory usage during long-running sessions
+- Validate user input handling and validation
+
+## Performance Considerations
+
+### Memory Management
+- Clear old messages when memory usage exceeds threshold
+- Proper cleanup of threading resources
+- Plugin resource management in cleanup methods
+
+### GUI Responsiveness
+- Batch message processing (10ms intervals or 10 messages)
+- Throttle GUI updates to 10 Hz maximum
+- Use `after_idle()` for non-critical updates
+
+### CAN Communication Optimization
+- Use short timeouts (1ms) for message reception
+- Implement proper buffer management
+- Handle device disconnection gracefully
 
 ## Common Issues and Solutions
 
-### Import Errors
-- Verify Python path setup in `run_can_tool.py`
-- Check that all required dependencies are installed
-- Use absolute imports in plugin files
+### Plugin Loading Errors
+```python
+# Always provide fallback error handling
+try:
+    plugin_instance = plugin_class(parent_notebook, app_instance)
+    plugins.append(plugin_instance)
+except Exception as e:
+    print(f"❌ Failed to load plugin {plugin_name}: {e}")
+    # Continue without the plugin
+```
 
-### CAN Communication Issues
-- Ensure PCAN drivers are properly installed
-- Check device permissions and availability
-- Verify CAN bus wiring and termination
+### Threading Issues
+- Never update GUI directly from worker threads
+- Use `self.root.after()` for thread-safe GUI updates
+- Implement proper thread cleanup on application exit
 
-### Performance Issues
-- Monitor GUI update frequency (default 10 Hz)
-- Check for memory leaks in message handling
-- Optimize table rendering for large message counts
-
-## Related Files
-
-- Main CLAUDE.md: `../CLAUDE.md` (firmware-wide instructions)
-- CAN DBC documentation: `../CAN/README.md`
-- Build instructions: `../build_commands.sh`
+### Memory Leaks
+- Cancel all `after()` callbacks in cleanup
+- Close CAN bus connections properly
+- Clear message caches periodically

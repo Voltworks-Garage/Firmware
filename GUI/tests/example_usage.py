@@ -18,9 +18,9 @@ def example_core_usage():
     print("=" * 30)
     
     # Import core components
-    from can_tool.core.can_message import CANMessage, CANMessageManager
-    from can_tool.core.dbf_parser import BusmasterDBFParser
-    from can_tool.config import Config
+    from core.can_message import CANMessage, CANMessageManager
+    from core.dbf_parser import BusmasterDBFParser
+    from config import Config
     
     # Create a DBF parser (will warn if file doesn't exist)
     dbf_parser = BusmasterDBFParser("test.dbf")
@@ -45,7 +45,7 @@ def example_custom_config():
     print("\n🔧 Custom Configuration Example")
     print("=" * 35)
     
-    from can_tool.config import Config
+    from config import Config
     
     # Create custom config with ISO-TP disabled
     custom_config = Config({
@@ -71,11 +71,12 @@ def example_gui_usage():
     
     try:
         # This will only work if tkinter is available
-        from can_tool import main, create_standalone_app
+        import main
+        from main import create_standalone_app
         
         print("✅ GUI components available")
         print("To run the full application:")
-        print("   python -m can_tool.main")
+        print("   python main.py")
         print("\nTo create a custom standalone app:")
         print("   root, app = create_standalone_app(custom_config)")
         print("   root.mainloop()")
@@ -91,7 +92,7 @@ def example_plugin_development():
     
     print("To create a custom plugin:")
     print("""
-from can_tool.gui.base_tab import BaseTab
+from gui.base_tab import BaseTab
 
 class MyCustomTab(BaseTab):
     @property
@@ -130,8 +131,8 @@ def main():
         print("\n" + "=" * 50)
         print("🎉 All examples completed successfully!")
         print("\nTo get started:")
-        print("1. For core functionality: Use can_tool.core modules")
-        print("2. For GUI application: Run 'python -m can_tool.main'")
+        print("1. For core functionality: Use core modules")
+        print("2. For GUI application: Run 'python main.py'")
         print("3. For custom integration: Use create_standalone_app()")
         print("4. For plugins: Inherit from BaseTab")
         

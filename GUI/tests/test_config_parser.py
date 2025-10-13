@@ -6,10 +6,10 @@ Test script for config parser
 import sys
 import os
 
-# Add the can_tool directory to Python path
+# Add the parent directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from can_tool.core.config_parser import ConfigParser
+from core.config_parser import ConfigParser
 
 def test_config_parser():
     # Navigate from GUI/ to Firmware/
