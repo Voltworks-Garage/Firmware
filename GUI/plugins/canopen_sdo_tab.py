@@ -32,11 +32,8 @@ except ImportError:
     CANOPEN_AVAILABLE = False
     print("📦 canopen library not available. Install with: pip install canopen")
 
-# Import base class - handle both relative and absolute imports
-try:
-    from ..gui.base_tab import BaseTab
-except ImportError:
-    from can_tool.gui.base_tab import BaseTab
+# Import base class
+from gui.base_tab import BaseTab
 
 
 class CANopenDataTypes(Enum):

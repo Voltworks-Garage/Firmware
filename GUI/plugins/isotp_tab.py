@@ -20,13 +20,9 @@ import struct
 import os
 from typing import Dict, Optional
 
-# Import base class - handle both relative and absolute imports
-try:
-    from ..gui.base_tab import BaseTab
-    from ..core.config_parser import ConfigParser
-except ImportError:
-    from can_tool.gui.base_tab import BaseTab
-    from can_tool.core.config_parser import ConfigParser
+# Import base class
+from gui.base_tab import BaseTab
+from core.config_parser import ConfigParser
 
 
 class ISOTPTab(BaseTab):

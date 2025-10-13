@@ -15,17 +15,11 @@ import time
 import os
 from typing import List, Dict, Any, Optional
 
-# Import core components - handle both relative and absolute imports
-try:
-    from ..core import CANMessageManager, BusmasterDBFParser
-    from ..core.table_view import CANTableView
-    from .base_tab import BaseTab
-    from .graphing_window import GraphingWindow
-except ImportError:
-    from can_tool.core import CANMessageManager, BusmasterDBFParser
-    from can_tool.core.table_view import CANTableView
-    from can_tool.gui.base_tab import BaseTab
-    from can_tool.gui.graphing_window import GraphingWindow
+# Import core components
+from core import CANMessageManager, BusmasterDBFParser
+from core.table_view import CANTableView
+from gui.base_tab import BaseTab
+from gui.graphing_window import GraphingWindow
 
 
 class CANApp:
@@ -233,10 +227,7 @@ class CANApp:
             # Load ISO-TP plugin
             try:
                 # Import the plugin class
-                try:
-                    from ..plugins.isotp_tab import ISOTPTab
-                except ImportError:
-                    from can_tool.plugins.isotp_tab import ISOTPTab
+                from plugins.isotp_tab import ISOTPTab
                 
                 # Check if it's already loaded
                 if not any(plugin.tab_name == "ISO-TP" for plugin in self.plugins):

@@ -86,19 +86,13 @@ class Config:
 def create_plugin_loader():
     """Create a plugin loader function that loads enabled plugins"""
     def _get_isotp_tab():
-        # Import plugins - handle both relative and absolute imports
-        try:
-            from .plugins.isotp_tab import ISOTPTab
-        except ImportError:
-            from can_tool.plugins.isotp_tab import ISOTPTab
+        # Import plugins
+        from plugins.isotp_tab import ISOTPTab
         return ISOTPTab
-    
+
     def _get_canopen_sdo_tab():
-        # Import CANopen SDO plugin - handle both relative and absolute imports
-        try:
-            from .plugins.canopen_sdo_tab import CANopenSDOTab
-        except ImportError:
-            from can_tool.plugins.canopen_sdo_tab import CANopenSDOTab
+        # Import CANopen SDO plugin
+        from plugins.canopen_sdo_tab import CANopenSDOTab
         return CANopenSDOTab
     
     # Registry of available plugins (lazy loading)

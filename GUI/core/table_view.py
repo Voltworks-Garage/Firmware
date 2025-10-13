@@ -10,11 +10,8 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Dict
 
-# Import types - use try/except for both relative and absolute imports
-try:
-    from .can_message import CANMessage, CANMessageManager
-except ImportError:
-    from can_tool.core.can_message import CANMessage, CANMessageManager
+# Import types
+from core.can_message import CANMessage, CANMessageManager
 
 
 class CANTableView:
