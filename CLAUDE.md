@@ -166,12 +166,45 @@ PK3CMD="/mnt/c/Program Files/Microchip/MPLABX/v6.20/mplab_platform/mplab_ipe/pk3
 - `-G[Type][range/path]`: Read functions (GP=Program, GE=EEPROM, GI=ID, GC=Config, GB=Boot, GF=to file)
 - `-?`: Show help screen
 
+## Makefile Generation
+MPLAB X project Makefiles are **automatically regenerated** before each build. This ensures cross-platform compatibility between Windows and macOS environments.
+
+### Why Makefiles Are Not Tracked in Git
+- MPLAB X IDE generates Makefiles differently on Windows vs macOS
+- Tracking them causes merge conflicts between developers on different platforms
+- The `prjMakefilesGenerator` tool regenerates them from the project's `configurations.xml` file
+
+### How It Works
+The build script automatically:
+1. Runs `prjMakefilesGenerator` on the project directory
+2. Generates platform-specific Makefiles in `nbproject/`
+3. Proceeds with the build using the freshly generated Makefiles
+
+This happens transparently - you don't need to do anything special. Just run:
+```bash
+./build_commands.sh BMS_APP
+```
+
+### Manual Makefile Generation (Advanced)
+If you need to regenerate Makefiles manually without building:
+
+**macOS/Linux:**
+```bash
+/Applications/microchip/mplabx/v6.20/mplab_platform/bin/prjMakefilesGenerator.sh Projects/BMS_App_02.X
+```
+
+**Windows (WSL):**
+```bash
+"/mnt/c/Program Files/Microchip/MPLABX/v6.20/mplab_platform/bin/prjMakefilesGenerator.bat" Projects/BMS_App_02.X
+```
+
 ## Notes
 - Uses MPLAB X v6.20 build tools
 - **build_commands.sh is cross-platform** - automatically detects WSL, Git Bash, Cygwin, macOS, and Linux
-- Environment variables MPLAB_MAKE and MPLAB_PK3CMD can override default tool paths
+- Environment variables MPLAB_MAKE, MPLAB_PK3CMD, and MPLAB_MAKEGEN can override default tool paths
 - Full path to make.exe required in WSL environment (handled automatically by script)
 - Full path to pk3cmd.exe required for hardware programming (handled automatically by script)
+- **Makefiles are auto-generated before each build** - ensures platform compatibility
 - Clean step removes previous build artifacts
 - Always verify programming after upload for production builds
 - When powering target with -V, include -C to force connection to target first

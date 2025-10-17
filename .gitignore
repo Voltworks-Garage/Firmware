@@ -70,3 +70,5 @@ memoryfile.xml
 # MPLAB X generated Makefiles
 Projects/*.X/nbproject/Makefile-*.mk
 Projects/*.X/nbproject/Makefile-local-*.mk
+/Projects/DM330018_Starter_Kit_Demo.X/build/
+/Projects/DM330018_Starter_Kit_Demo.X/dist/

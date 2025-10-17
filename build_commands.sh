@@ -31,23 +31,29 @@ fi
 
 # Set tool paths based on platform
 if [[ "$DETECTED_PLATFORM" == "MACOS" ]]; then
-    MAKE_EXE="$MPLABX_BASE/gnuBins/GnuWin32/bin/make"
+    MAKE_EXE="$MPLABX_BASE/mplab_platform/bin/make"
     PK3CMD="$MPLABX_BASE/mplab_platform/mplab_ipe/pk3cmd"
+    MAKEGEN="$MPLABX_BASE/mplab_platform/bin/prjMakefilesGenerator.sh"
 elif [[ "$DETECTED_PLATFORM" == "LINUX" ]]; then
-    MAKE_EXE="$MPLABX_BASE/gnuBins/GnuWin32/bin/make"
+    MAKE_EXE="$MPLABX_BASE/mplab_platform/bin/make"
     PK3CMD="$MPLABX_BASE/mplab_platform/mplab_ipe/pk3cmd"
+    MAKEGEN="$MPLABX_BASE/mplab_platform/bin/prjMakefilesGenerator.sh"
 else
     # Windows-based (WSL, MINGW, CYGWIN)
     MAKE_EXE="$MPLABX_BASE/gnuBins/GnuWin32/bin/make.exe"
     PK3CMD="$MPLABX_BASE/mplab_platform/mplab_ipe/pk3cmd.exe"
+    MAKEGEN="$MPLABX_BASE/mplab_platform/bin/prjMakefilesGenerator.bat"
 fi
 
 # Allow override via environment variables
 MAKE_EXE="${MPLAB_MAKE:-$MAKE_EXE}"
 PK3CMD="${MPLAB_PK3CMD:-$PK3CMD}"
+MAKEGEN="${MPLAB_MAKEGEN:-$MAKEGEN}"
 
 if [ "$1" = "BMS_APP" ] || [ "$1" = "bms_app" ]; then
     echo "Building BMS Application..."
+    echo "Regenerating Makefiles..."
+    "$MAKEGEN" "$PROJECT_BASE/Projects/BMS_App_02.X" 2>&1 | grep -v "^INFO:" | grep -v "^Oct" || true
     cd "$PROJECT_BASE/Projects/BMS_App_02.X"
     "$MAKE_EXE" -f nbproject/Makefile-DEFAULT.mk CONF=DEFAULT clean
     "$MAKE_EXE" -f nbproject/Makefile-DEFAULT.mk CONF=DEFAULT
@@ -55,6 +61,8 @@ if [ "$1" = "BMS_APP" ] || [ "$1" = "bms_app" ]; then
 
 elif [ "$1" = "BMS_BOOT" ] || [ "$1" = "bms_boot" ]; then
     echo "Building BMS Bootloader..."
+    echo "Regenerating Makefiles..."
+    "$MAKEGEN" "$PROJECT_BASE/Projects/BMS_Bootloader_02.X" 2>&1 | grep -v "^INFO:" | grep -v "^Oct" || true
     cd "$PROJECT_BASE/Projects/BMS_Bootloader_02.X"
     "$MAKE_EXE" -f nbproject/Makefile-DEFAULT.mk CONF=DEFAULT clean
     "$MAKE_EXE" -f nbproject/Makefile-DEFAULT.mk CONF=DEFAULT
@@ -62,6 +70,8 @@ elif [ "$1" = "BMS_BOOT" ] || [ "$1" = "bms_boot" ]; then
 
 elif [ "$1" = "MCU_APP" ] || [ "$1" = "mcu_app" ]; then
     echo "Building MCU Application..."
+    echo "Regenerating Makefiles..."
+    "$MAKEGEN" "$PROJECT_BASE/Projects/MCU_App.X" 2>&1 | grep -v "^INFO:" | grep -v "^Oct" || true
     cd "$PROJECT_BASE/Projects/MCU_App.X"
     "$MAKE_EXE" -f nbproject/Makefile-default.mk CONF=default clean
     "$MAKE_EXE" -f nbproject/Makefile-default.mk CONF=default
@@ -69,9 +79,11 @@ elif [ "$1" = "MCU_APP" ] || [ "$1" = "mcu_app" ]; then
 
 elif [ "$1" = "MCU_BOOT" ] || [ "$1" = "mcu_boot" ]; then
     echo "Building MCU Bootloader..."
+    echo "Regenerating Makefiles..."
+    "$MAKEGEN" "$PROJECT_BASE/Projects/MCU_Bootloader.X" 2>&1 | grep -v "^INFO:" | grep -v "^Oct" || true
     cd "$PROJECT_BASE/Projects/MCU_Bootloader.X"
-    "$MAKE_EXE" -f nbproject/Makefile-default.mk CONF=default clean
-    "$MAKE_EXE" -f nbproject/Makefile-default.mk CONF=default
+    "$MAKE_EXE" -f nbproject/Makefile-DEBUG.mk CONF=DEBUG clean
+    "$MAKE_EXE" -f nbproject/Makefile-DEBUG.mk CONF=DEBUG
     echo "MCU Bootloader build complete\!"
 
 elif [ "$1" = "DBC" ] || [ "$1" = "dbc" ]; then
