@@ -54,7 +54,13 @@ if [ "$1" = "BMS_APP" ] || [ "$1" = "bms_app" ]; then
     echo "Building BMS Application..."
     echo "Regenerating Makefiles..."
     if [[ "$MAKEGEN" == *.bat ]]; then
-        cmd.exe /c "\"$MAKEGEN\" \"$PROJECT_BASE/Projects/BMS_App_02.X\"" 2>&1 | grep -v "^INFO:" | grep -v "^Oct" || true
+        WIN_MAKEGEN=$(wslpath -w "$MAKEGEN")
+        WIN_PROJECT=$(wslpath -w "$PROJECT_BASE/Projects/BMS_App_02.X")
+        TEMP_BAT=$(wslpath -w "$PROJECT_BASE")/temp_makegen.bat
+        echo "@echo off" > "$PROJECT_BASE/temp_makegen.bat"
+        echo "call \"$WIN_MAKEGEN\" \"$WIN_PROJECT\"" >> "$PROJECT_BASE/temp_makegen.bat"
+        cmd.exe /c "$TEMP_BAT" 2>&1 | grep -v "^INFO:" | grep -v "^Oct" || true
+        rm -f "$PROJECT_BASE/temp_makegen.bat"
     else
         "$MAKEGEN" "$PROJECT_BASE/Projects/BMS_App_02.X" 2>&1 | grep -v "^INFO:" | grep -v "^Oct" || true
     fi
@@ -67,7 +73,13 @@ elif [ "$1" = "BMS_BOOT" ] || [ "$1" = "bms_boot" ]; then
     echo "Building BMS Bootloader..."
     echo "Regenerating Makefiles..."
     if [[ "$MAKEGEN" == *.bat ]]; then
-        cmd.exe /c "\"$MAKEGEN\" \"$PROJECT_BASE/Projects/BMS_Bootloader_02.X\"" 2>&1 | grep -v "^INFO:" | grep -v "^Oct" || true
+        WIN_MAKEGEN=$(wslpath -w "$MAKEGEN")
+        WIN_PROJECT=$(wslpath -w "$PROJECT_BASE/Projects/BMS_Bootloader_02.X")
+        TEMP_BAT=$(wslpath -w "$PROJECT_BASE")/temp_makegen.bat
+        echo "@echo off" > "$PROJECT_BASE/temp_makegen.bat"
+        echo "call \"$WIN_MAKEGEN\" \"$WIN_PROJECT\"" >> "$PROJECT_BASE/temp_makegen.bat"
+        cmd.exe /c "$TEMP_BAT" 2>&1 | grep -v "^INFO:" | grep -v "^Oct" || true
+        rm -f "$PROJECT_BASE/temp_makegen.bat"
     else
         "$MAKEGEN" "$PROJECT_BASE/Projects/BMS_Bootloader_02.X" 2>&1 | grep -v "^INFO:" | grep -v "^Oct" || true
     fi
@@ -80,7 +92,13 @@ elif [ "$1" = "MCU_APP" ] || [ "$1" = "mcu_app" ]; then
     echo "Building MCU Application..."
     echo "Regenerating Makefiles..."
     if [[ "$MAKEGEN" == *.bat ]]; then
-        cmd.exe /c "\"$MAKEGEN\" \"$PROJECT_BASE/Projects/MCU_App.X\"" 2>&1 | grep -v "^INFO:" | grep -v "^Oct" || true
+        WIN_MAKEGEN=$(wslpath -w "$MAKEGEN")
+        WIN_PROJECT=$(wslpath -w "$PROJECT_BASE/Projects/MCU_App.X")
+        TEMP_BAT=$(wslpath -w "$PROJECT_BASE")/temp_makegen.bat
+        echo "@echo off" > "$PROJECT_BASE/temp_makegen.bat"
+        echo "call \"$WIN_MAKEGEN\" \"$WIN_PROJECT\"" >> "$PROJECT_BASE/temp_makegen.bat"
+        cmd.exe /c "$TEMP_BAT" 2>&1 | grep -v "^INFO:" | grep -v "^Oct" || true
+        rm -f "$PROJECT_BASE/temp_makegen.bat"
     else
         "$MAKEGEN" "$PROJECT_BASE/Projects/MCU_App.X" 2>&1 | grep -v "^INFO:" | grep -v "^Oct" || true
     fi
@@ -93,7 +111,13 @@ elif [ "$1" = "MCU_BOOT" ] || [ "$1" = "mcu_boot" ]; then
     echo "Building MCU Bootloader..."
     echo "Regenerating Makefiles..."
     if [[ "$MAKEGEN" == *.bat ]]; then
-        cmd.exe /c "\"$MAKEGEN\" \"$PROJECT_BASE/Projects/MCU_Bootloader.X\"" 2>&1 | grep -v "^INFO:" | grep -v "^Oct" || true
+        WIN_MAKEGEN=$(wslpath -w "$MAKEGEN")
+        WIN_PROJECT=$(wslpath -w "$PROJECT_BASE/Projects/MCU_Bootloader.X")
+        TEMP_BAT=$(wslpath -w "$PROJECT_BASE")/temp_makegen.bat
+        echo "@echo off" > "$PROJECT_BASE/temp_makegen.bat"
+        echo "call \"$WIN_MAKEGEN\" \"$WIN_PROJECT\"" >> "$PROJECT_BASE/temp_makegen.bat"
+        cmd.exe /c "$TEMP_BAT" 2>&1 | grep -v "^INFO:" | grep -v "^Oct" || true
+        rm -f "$PROJECT_BASE/temp_makegen.bat"
     else
         "$MAKEGEN" "$PROJECT_BASE/Projects/MCU_Bootloader.X" 2>&1 | grep -v "^INFO:" | grep -v "^Oct" || true
     fi
