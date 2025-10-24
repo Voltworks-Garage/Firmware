@@ -163,8 +163,6 @@ void dcdc_support_request(LV_BATTERY_entry_types_E entry_type) {
 }
 
 void battery_and_dcdc_on(LV_BATTERY_entry_types_E entry_type) {
-    
-    static uint16_t faultCount = 0;
                 
     switch (entry_type) {
         case ENTRY:
@@ -178,7 +176,6 @@ void battery_and_dcdc_on(LV_BATTERY_entry_types_E entry_type) {
             IO_SET_DCDC_EN(LOW);
             break;
         case RUN:
-            faultCount++;
             if ((IO_GET_DCDC_FAULT() == true)){// || (CAN_bms_power_systems_DCDC_state_get() == false)) {
                 lv_battery_nextState = faulted_state;
             }

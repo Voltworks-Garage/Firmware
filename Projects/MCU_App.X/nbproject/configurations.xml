@@ -57,6 +57,7 @@
         <itemPath>lvBattery.h</itemPath>
         <itemPath>tachometer.h</itemPath>
         <itemPath>ThrottleControl.h</itemPath>
+        <itemPath>ThermalControl.h</itemPath>
       </logicalFolder>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
@@ -136,6 +137,7 @@
         <itemPath>ThrottleControl.c</itemPath>
         <itemPath>BatteryGauge.c</itemPath>
         <itemPath>BatteryGauge.h</itemPath>
+        <itemPath>ThermalControl.c</itemPath>
       </logicalFolder>
     </logicalFolder>
   </logicalFolder>

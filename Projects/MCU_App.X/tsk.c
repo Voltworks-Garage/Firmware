@@ -41,6 +41,8 @@
 #include "tachometer.h"
 #include "CAN.h"
 #include "ThrottleControl.h"
+#include "batteryGauge.h"
+#include "ThermalControl.h"
 
 /******************************************************************************
  * Constants
@@ -168,6 +170,8 @@ void Tsk_10ms(void) {
     
     tachometer_run_10ms(); //Run the Tachometer
     batteryGauge_run_10ms(); //Run the Battery Gauge
+    ThermalControl_Run_10ms(); //Run Thermal Control System
+    
     
     CAN_populate_10ms();
     CAN_send_10ms();

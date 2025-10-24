@@ -24,6 +24,7 @@
 #include "tachometer.h"
 #include "ThrottleControl.h"
 #include "BatteryGauge.h"
+#include "ThermalControl.h"
 
 
 /******************************************************************************
@@ -143,6 +144,7 @@ void boot(STATE_MACHINE_entry_types_E entry_type) {
             tachometer_init();
             ThrottleControl_Init();
             batteryGauge_init();
+            ThermalControl_Init();
         
 
             //Get HV support ready.
@@ -359,6 +361,7 @@ void sleep(STATE_MACHINE_entry_types_E entry_type) {
             tachometer_halt();
             ThrottleControl_Halt();
             batteryGauge_halt();
+            ThermalControl_Halt();
 
             //shut down external controllers
             IO_SET_IC_CONTROLLER_SLEEP_EN(HIGH);
@@ -434,6 +437,7 @@ void halt_all_tasks(void) {
     tachometer_halt();
     ThrottleControl_Halt();
     batteryGauge_halt();
+    ThermalControl_Halt();
 }
 void resume_all_tasks(void) {
     LightsControl_Init();
@@ -445,6 +449,7 @@ void resume_all_tasks(void) {
     tachometer_init();
     ThrottleControl_Init();
     batteryGauge_init();
+    ThermalControl_Init();
 }
 
 /*** End of File **************************************************************/

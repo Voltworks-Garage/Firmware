@@ -40,6 +40,8 @@ static uint8_t percent_to_duty_cycle(uint8_t percent) {
 }
 
 uint8_t tachometer_init(void) {
+
+    //TODO: put this in pinSetup.c!!!!!!!!!!!!!!!!!
     
     // Configure TIMER4 with prescaler = 64 for good resolution across 50-400Hz range
     T4CON = 0; // Clear timer configuration
@@ -51,7 +53,7 @@ uint8_t tachometer_init(void) {
     tachometer_enable = 1;
     current_percent = TACHOMETER_DEFAULT_PERCENT; // Default percentage
 
-    // Enable charger contactor
+    // Enable power using efuse called charger contactor
     IO_SET_CHARGER_CONTACTOR_EN(HIGH);
 
     pwmOCwriteDuty(KICKSTAND_SWITCH_IN, percent_to_duty_cycle(current_percent));

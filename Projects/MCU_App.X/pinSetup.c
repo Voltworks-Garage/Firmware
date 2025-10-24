@@ -156,17 +156,18 @@ void PinSetup_Init(void) {
     pwmOCinit(PWM_1_OUT, CLOCK_PeripheralFrequencyGet(), OC_CLOCK_PERIPHERAL);
     pwmOCinit(PWM_2_OUT, CLOCK_PeripheralFrequencyGet(), OC_CLOCK_PERIPHERAL);
     pwmOCinit(CHARGE_PORT_LOCK_PWM, CLOCK_PeripheralFrequencyGet(), OC_CLOCK_PERIPHERAL);
-    // pwmOCinit(KICKSTAND_SWITCH_IN, CLOCK_PeripheralFrequencyGet(), OC_CLOCK_PERIPHERAL);
+    pwmOCinit(FAN_PWM_OUT, CLOCK_PeripheralFrequencyGet(), OC_CLOCK_PERIPHERAL);
+    pwmOCinit(PUMP_PWM_OUT, CLOCK_PeripheralFrequencyGet(), OC_CLOCK_PERIPHERAL);
+
     pwmOCwriteFreq(PWM_1_OUT, 2000); //2kHz
     pwmOCwriteFreq(PWM_2_OUT, 2000); //2kHz
     pwmOCwriteFreq(CHARGE_PORT_LOCK_PWM, 2000); //2kHz
-    // pwmOCwriteFreq(KICKSTAND_SWITCH_IN, 2000); //2kHz
-    // pwmOCwriteDuty(KICKSTAND_SWITCH_IN, 5);
+    pwmOCwriteFreq(FAN_PWM_OUT, 2000); //2kHz
+    pwmOCwriteFreq(PUMP_PWM_OUT, 2000); //2kHz
 
         // Initialize PWM using Output Compare module with Timer4 clock source
     uint32_t clock_freq = CLOCK_PeripheralFrequencyGet()/256; // Peripheral clock divided by prescaler);
    pwmOCinit(KICKSTAND_SWITCH_IN, clock_freq, OC_CLOCK_T4CLK);
-       //pwmOCinit(CHARGE_PORT_LOCK_PWM, clock_freq, OC_CLOCK_T4CLK);
 
    /*Timers*/
     timer3_init(10, CLOCK_SystemFrequencyGet());
