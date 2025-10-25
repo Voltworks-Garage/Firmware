@@ -3,12 +3,27 @@
     <type>com.microchip.mplab.nbide.embedded.makeproject</type>
     <configuration>
         <data xmlns="http://www.netbeans.org/ns/make-project/1">
-            <name>RTOS_DEV</name>
-            <creation-uuid>ff62e923-ff9f-4fec-8297-463fe37748a4</creation-uuid>
+            <name>FreeRTOS_DEV</name>
+            <creation-uuid>35a98026-c295-4ad8-be63-863fde1be90c</creation-uuid>
             <make-project-type>0</make-project-type>
+            <c-extensions>c</c-extensions>
+            <cpp-extensions/>
+            <header-extensions>h</header-extensions>
+            <asminc-extensions/>
             <sourceEncoding>ISO-8859-1</sourceEncoding>
             <make-dep-projects/>
-            <sourceRootList/>
+            <sourceRootList>
+                <sourceRootElem>..</sourceRootElem>
+                <sourceRootElem>..\serial</sourceRootElem>
+                <sourceRootElem>..\..\..\Source\portable\MemMang</sourceRootElem>
+                <sourceRootElem>..\ParTest</sourceRootElem>
+                <sourceRootElem>..\..\..\Source\include</sourceRootElem>
+                <sourceRootElem>..\..\Common\Minimal</sourceRootElem>
+                <sourceRootElem>..\..\..\Source</sourceRootElem>
+                <sourceRootElem>..\..\..\Source\portable\MPLAB\PIC24_dsPIC</sourceRootElem>
+                <sourceRootElem>../../RTOS/FreeRTOS/Source</sourceRootElem>
+                <sourceRootElem>../../RTOS/FreeRTOS/Demo/Common/Minimal</sourceRootElem>
+            </sourceRootList>
             <confList>
                 <confElem>
                     <name>default</name>
