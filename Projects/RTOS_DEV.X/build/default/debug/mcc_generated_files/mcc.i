@@ -1,5 +1,0 @@
-# 1 "mcc_generated_files/mcc.c"
-# 1 "C:\\REPOS\\Voltworks_Garage\\Firmware\\Projects\\RTOS_DEV.X"
-# 1 "<built-in>"
-# 1 "<command-line>"
-# 1 "mcc_generated_files/mcc.c"

@@ -67,8 +67,8 @@ memoryfile.xml
 .vscode/
 .vscode/
 
-# MPLAB X generated Makefiles
+# MPLAB X generated Makefiles and build artifacts
 Projects/*.X/nbproject/Makefile-*.mk
 Projects/*.X/nbproject/Makefile-local-*.mk
-/Projects/DM330018_Starter_Kit_Demo.X/build/
-/Projects/DM330018_Starter_Kit_Demo.X/dist/
+Projects/**/*.X/build/
+Projects/**/*.X/dist/
