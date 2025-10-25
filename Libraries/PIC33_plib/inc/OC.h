@@ -46,6 +46,8 @@ typedef enum _oc_pin_number {
     PWM_PIN_RP55,
     PWM_PIN_RP56,
     PWM_PIN_RP57,
+    PWM_PIN_RP96,
+    PWM_PIN_RP97,
     PWM_PIN_RP100,
     PWM_PIN_RP101,
     PWM_PIN_RP126,

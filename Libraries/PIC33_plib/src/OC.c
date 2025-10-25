@@ -7,10 +7,70 @@
 
 #include "OC.h" // include processor files - each processor file is guarded.  
 
-#define NUMBER_OC_MODULES 4
-
 #define AVAILABLE 0
 #define UNAVAILABLE 1
+
+/* OC Register Structure for array-based access */
+typedef struct {
+    volatile uint16_t* CON1;
+    volatile uint16_t* CON2;
+    volatile uint16_t* R;
+    volatile uint16_t* RS;
+    const uint16_t PPS_MAP;
+} OCRegisters;
+
+/* Array of OC register pointers - ifdef protected for each module */
+static OCRegisters oc_regs[] = {
+#ifdef OC1CON1
+    #define OC1_PPS_MAP 0b00010000
+    {&OC1CON1, &OC1CON2, &OC1R, &OC1RS, OC1_PPS_MAP}
+    #undef NUMBER_OC_MODULES
+    #define NUMBER_OC_MODULES 1
+#endif
+#ifdef OC2CON1
+    #define OC2_PPS_MAP 0b00010001
+    ,{&OC2CON1, &OC2CON2, &OC2R, &OC2RS, OC2_PPS_MAP}
+    #undef NUMBER_OC_MODULES
+    #define NUMBER_OC_MODULES 2
+
+#endif
+#ifdef OC3CON1
+    #define OC3_PPS_MAP 0b00010010
+    ,{&OC3CON1, &OC3CON2, &OC3R, &OC3RS, OC3_PPS_MAP}
+    #undef NUMBER_OC_MODULES
+    #define NUMBER_OC_MODULES 3
+#endif
+#ifdef OC4CON1
+    #define OC4_PPS_MAP 0b00010011
+    ,{&OC4CON1, &OC4CON2, &OC4R, &OC4RS, OC4_PPS_MAP}
+    #undef NUMBER_OC_MODULES
+    #define NUMBER_OC_MODULES 4
+#endif
+#ifdef OC5CON1
+    #define OC5_PPS_MAP 0b00010100
+    ,{&OC5CON1, &OC5CON2, &OC5R, &OC5RS, OC5_PPS_MAP}
+    #undef NUMBER_OC_MODULES
+    #define NUMBER_OC_MODULES 5
+#endif
+#ifdef OC6CON1
+    #define OC6_PPS_MAP 0b00010101
+    ,{&OC6CON1, &OC6CON2, &OC6R, &OC6RS, OC6_PPS_MAP}
+    #undef NUMBER_OC_MODULES
+    #define NUMBER_OC_MODULES 6
+#endif
+#ifdef OC7CON1
+    #define OC7_PPS_MAP 0b00010110
+    ,{&OC7CON1, &OC7CON2, &OC7R, &OC7RS, OC7_PPS_MAP}
+    #undef NUMBER_OC_MODULES
+    #define NUMBER_OC_MODULES 7
+#endif
+#ifdef OC8CON1
+    #define OC8_PPS_MAP 0b00010111
+    ,{&OC8CON1, &OC8CON2, &OC8R, &OC8RS, OC8_PPS_MAP}
+    #undef NUMBER_OC_MODULES
+    #define NUMBER_OC_MODULES 8
+#endif
+};
 
 typedef struct _OCmodule {
     uint8_t moduleNumber;
@@ -26,13 +86,18 @@ typedef struct _OCmodule {
 
 static OCmodule modules[NUMBER_OC_MODULES];
 
-/*Peripheral Pin Select Mapping*/
-#define OC1_PPS_MAP 0b00010000
-#define OC2_PPS_MAP 0b00010001
-#define OC3_PPS_MAP 0b00010010
-#define OC4_PPS_MAP 0b00010011
+/* Helper macros for bit field manipulation using Microchip-defined masks */
+#define SET_OC_OCTSEL(module, value) \
+    (*oc_regs[module].CON1 = (*oc_regs[module].CON1 & ~_OC1CON1_OCTSEL_MASK) | \
+     ((value << _OC1CON1_OCTSEL_POSITION) & _OC1CON1_OCTSEL_MASK))
 
-uint8_t ppsMapArr[NUMBER_OC_MODULES] = {OC1_PPS_MAP, OC2_PPS_MAP, OC3_PPS_MAP, OC4_PPS_MAP};
+#define SET_OC_OCM(module, value) \
+    (*oc_regs[module].CON1 = (*oc_regs[module].CON1 & ~_OC1CON1_OCM_MASK) | \
+     ((value << _OC1CON1_OCM_POSITION) & _OC1CON1_OCM_MASK))
+
+#define SET_OC_SYNCSEL(module, value) \
+    (*oc_regs[module].CON2 = (*oc_regs[module].CON2 & ~_OC1CON2_SYNCSEL_MASK) | \
+     ((value << _OC1CON2_SYNCSEL_POSITION) & _OC1CON2_SYNCSEL_MASK))
 
   uint16_t calculate_period(uint32_t clock_freq, uint32_t desired_freq);
   uint16_t calculate_duty(uint32_t period_ticks, uint8_t duty);
@@ -53,7 +118,7 @@ uint8_t pwmOCinit(oc_pin_number pin, uint32_t clock_freq, oc_clock_source clock_
             modules[i].status = UNAVAILABLE;
             modules[i].moduleNumber = i;
             modules[i].Pin = pin;
-            modules[i].ppsMap = ppsMapArr[i];
+            modules[i].ppsMap = oc_regs[i].PPS_MAP;
             modules[i].duty = 0;
             modules[i].freq = 0xFFFFFFFF; /*default to max period*/
             modules[i].clockSource = clock_source;
@@ -140,6 +205,16 @@ uint8_t pwmOCinit(oc_pin_number pin, uint32_t clock_freq, oc_clock_source clock_
             _RP57R = currentModule.ppsMap;
             break;
 #endif
+#ifdef _RP96R
+        case PWM_PIN_RP96:
+            _RP96R = currentModule.ppsMap;
+            break;
+#endif
+#ifdef _RP97R
+        case PWM_PIN_RP97:
+            _RP97R = currentModule.ppsMap;
+            break;
+#endif
 #ifdef _RP100R
         case PWM_PIN_RP100:
             _RP100R = currentModule.ppsMap;
@@ -166,45 +241,22 @@ uint8_t pwmOCinit(oc_pin_number pin, uint32_t clock_freq, oc_clock_source clock_
             break;
     }
 
-    /*configure the module*/
-    switch (currentModule.moduleNumber) {
-        case 0:
-            OC1CON1 = 0; /* It is a good practice to clear off the control bits initially */
-            OC1CON2 = 0;
-            OC1CON1bits.OCTSEL = currentModule.clockSource;
-            OC1CON1bits.OCM = 0b110; /* This selects and starts the PWM mode */
-            OC1R = 0; /*duty cycle*/
-            OC1RS = currentModule.period_ticks; /*period*/
-            OC1CON2bits.SYNCSEL = 0x1F; /*sync source is itslef*/
-            break;
-        case 1:
-            OC2CON1 = 0; /* It is a good practice to clear off the control bits initially */
-            OC2CON2 = 0;
-            OC2CON1bits.OCTSEL = currentModule.clockSource;
-            OC2CON1bits.OCM = 0b110; /* This selects and starts the PWM mode */
-            OC2R = 0; /*duty cycle*/
-            OC2RS = currentModule.period_ticks; /*period*/
-            OC2CON2bits.SYNCSEL = 0x1F; /*sync source is itslef*/
-            break;
-        case 2:
-            OC3CON1 = 0; /* It is a good practice to clear off the control bits initially */
-            OC3CON2 = 0;
-            OC3CON1bits.OCTSEL = currentModule.clockSource;
-            OC3CON1bits.OCM = 0b110; /* This selects and starts the PWM mode */
-            OC3R = 0; /*duty cycle*/
-            OC3RS = currentModule.period_ticks; /*period*/
-            OC3CON2bits.SYNCSEL = 0x1F; /*sync source is itslef*/
-            break;
-        case 3:
-            OC4CON1 = 0; /* It is a good practice to clear off the control bits initially */
-            OC4CON2 = 0;
-            OC4CON1bits.OCTSEL = currentModule.clockSource;
-            OC4CON1bits.OCM = 0b110; /* This selects and starts the PWM mode */
-            OC4R = 0; /*duty cycle*/
-            OC4RS = currentModule.period_ticks; /*period*/
-            OC4CON2bits.SYNCSEL = 0x1F; /*sync source is itslef*/
-            break;
-    }
+    /*configure the module using register array*/
+    uint8_t module_num = currentModule.moduleNumber;
+
+    /* Clear control bits initially */
+    *oc_regs[module_num].CON1 = 0;
+    *oc_regs[module_num].CON2 = 0;
+
+    /* Configure using Microchip-defined bit masks */
+    SET_OC_OCTSEL(module_num, currentModule.clockSource);
+    SET_OC_OCM(module_num, 0b110); /* PWM mode */
+    SET_OC_SYNCSEL(module_num, 0x1F); /* sync source is itself */
+
+    /* Set duty cycle and period */
+    *oc_regs[module_num].R = 0; /* duty cycle */
+    *oc_regs[module_num].RS = currentModule.period_ticks; /* period */
+
     return 1;
 }
 
@@ -227,22 +279,9 @@ uint8_t pwmOCwriteDuty(oc_pin_number pin, uint16_t dutyCycle) {
     }
 
 
-    switch (currentModule) {
-        case 0:
-            OC1R = calculate_duty(modules[0].period_ticks, modules[0].duty); /*duty cycle*/
-            break;
-        case 1:
-            OC2R = calculate_duty(modules[1].period_ticks, modules[1].duty); /*duty cycle*/
-            break;
-        case 2:
-            OC3R = calculate_duty(modules[2].period_ticks, modules[2].duty); /*duty cycle*/
-            break;
-        case 3:
-            OC4R = calculate_duty(modules[3].period_ticks, modules[3].duty); /*duty cycle*/
-            break;
-        default:
-            return 0; /*invalid pin*/
-    }
+    /* Set duty cycle using register array */
+    *oc_regs[currentModule].R = calculate_duty(modules[currentModule].period_ticks,
+                                                 modules[currentModule].duty);
     return 1;
 }
 
@@ -261,26 +300,10 @@ uint8_t pwmOCwriteFreq(oc_pin_number pin, uint16_t frequency) {
         return 0; /*invalid pin*/
     }
 
-    switch (currentModule) {
-        case 0:
-            OC1RS = modules[0].period_ticks; /*period*/
-            OC1R = calculate_duty(modules[0].period_ticks, modules[0].duty); /*duty cycle*/
-            break;
-        case 1:
-            OC2RS = modules[1].period_ticks; /*period*/
-            OC2R = calculate_duty(modules[1].period_ticks, modules[1].duty); /*duty cycle*/
-            break;
-        case 2:
-            OC3RS = modules[2].period_ticks; /*period*/
-            OC3R = calculate_duty(modules[2].period_ticks, modules[2].duty); /*duty cycle*/
-            break;
-        case 3:
-            OC4RS = modules[3].period_ticks; /*period*/
-            OC4R = calculate_duty(modules[3].period_ticks, modules[3].duty); /*duty cycle*/
-            break;
-        default:
-            return 0; /*invalid pin*/
-    }
+    /* Set period and duty cycle using register array */
+    *oc_regs[currentModule].RS = modules[currentModule].period_ticks; /* period */
+    *oc_regs[currentModule].R = calculate_duty(modules[currentModule].period_ticks,
+                                                 modules[currentModule].duty); /* duty cycle */
     return 1;
 }
 
