@@ -126,6 +126,25 @@ elif [ "$1" = "MCU_BOOT" ] || [ "$1" = "mcu_boot" ]; then
     "$MAKE_EXE" -f nbproject/Makefile-DEBUG.mk CONF=DEBUG
     echo "MCU Bootloader build complete\!"
 
+elif [ "$1" = "RTOS_DEV" ] || [ "$1" = "rtos_dev" ]; then
+    echo "Building RTOS Development Project..."
+    echo "Regenerating Makefiles..."
+    if [[ "$MAKEGEN" == *.bat ]]; then
+        WIN_MAKEGEN=$(wslpath -w "$MAKEGEN")
+        WIN_PROJECT=$(wslpath -w "$PROJECT_BASE/Projects/RTOS_DEV.X")
+        TEMP_BAT=$(wslpath -w "$PROJECT_BASE")/temp_makegen.bat
+        echo "@echo off" > "$PROJECT_BASE/temp_makegen.bat"
+        echo "call \"$WIN_MAKEGEN\" \"$WIN_PROJECT\"" >> "$PROJECT_BASE/temp_makegen.bat"
+        cmd.exe /c "$TEMP_BAT" 2>&1 | grep -v "^INFO:" | grep -v "^Oct" || true
+        rm -f "$PROJECT_BASE/temp_makegen.bat"
+    else
+        "$MAKEGEN" "$PROJECT_BASE/Projects/RTOS_DEV.X" 2>&1 | grep -v "^INFO:" | grep -v "^Oct" || true
+    fi
+    cd "$PROJECT_BASE/Projects/RTOS_DEV.X"
+    "$MAKE_EXE" -f nbproject/Makefile-default.mk CONF=default clean
+    "$MAKE_EXE" -f nbproject/Makefile-default.mk CONF=default
+    echo "RTOS Development Project build complete\!"
+
 elif [ "$1" = "DBC" ] || [ "$1" = "dbc" ]; then
     echo "Generating DBC files from JSON..."
     cd "$PROJECT_BASE/CAN"
@@ -183,7 +202,7 @@ elif [ "$1" = "POWER" ] || [ "$1" = "power" ]; then
 elif [ "$1" = "PROGRAM" ] || [ "$1" = "program" ]; then
     if [ -z "$2" ]; then
         echo "Error: Please specify project to program"
-        echo "Available projects: BMS_APP, BMS_BOOT, MCU_APP, MCU_BOOT"
+        echo "Available projects: BMS_APP, BMS_BOOT, MCU_APP, MCU_BOOT, RTOS_DEV"
         echo "Example: bash build_commands.sh PROGRAM BMS_APP"
         exit 1
     fi
@@ -204,9 +223,13 @@ elif [ "$1" = "PROGRAM" ] || [ "$1" = "program" ]; then
         echo "Programming MCU Bootloader..."
         "$PK3CMD" -P33EP512MU810 -F"$PROJECT_BASE/Projects/MCU_Bootloader.X/dist/default/production/MCU_Bootloader.X.production.hex" -M -E -L
         echo "MCU Bootloader programmed successfully\!"
+    elif [ "$2" = "RTOS_DEV" ] || [ "$2" = "rtos_dev" ]; then
+        echo "Programming RTOS Development Project..."
+        "$PK3CMD" -P33EV128GM106 -F"$PROJECT_BASE/Projects/RTOS_DEV.X/dist/default/production/RTOS_DEV.X.production.hex" -M -E -L
+        echo "RTOS Development Project programmed successfully\!"
     else
         echo "Error: Unknown project '$2'"
-        echo "Available projects: BMS_APP, BMS_BOOT, MCU_APP, MCU_BOOT"
+        echo "Available projects: BMS_APP, BMS_BOOT, MCU_APP, MCU_BOOT, RTOS_DEV"
         exit 1
     fi
 
@@ -218,6 +241,7 @@ else
     echo "  BMS_BOOT                             # Build BMS Bootloader"
     echo "  MCU_APP                              # Build MCU Application"
     echo "  MCU_BOOT                             # Build MCU Bootloader"
+    echo "  RTOS_DEV                             # Build RTOS Development Project"
     echo "  DBC                                  # Generate DBC files from JSON"
     echo "  ALL                                  # Build all main projects"
     echo ""
@@ -225,7 +249,7 @@ else
     echo "  POWER [device]                       # Power device at 3.3V and release from reset"
     echo "    Devices: BMS, MCU, P33EP32GP502"
     echo "  PROGRAM [project]                    # Program device with hex file"
-    echo "    Projects: BMS_APP, BMS_BOOT, MCU_APP, MCU_BOOT"
+    echo "    Projects: BMS_APP, BMS_BOOT, MCU_APP, MCU_BOOT, RTOS_DEV"
     echo ""
     echo "Examples:"
     echo "  bash build_commands.sh BMS_APP       # Build BMS Application"
