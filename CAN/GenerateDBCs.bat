@@ -1,2 +1,3 @@
 python dbc_json_to_C_refactored.py
 python dbc_json_to_DBF.py
+python dbc_json_to_esp32.py

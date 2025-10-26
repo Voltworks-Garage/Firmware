@@ -782,9 +782,8 @@ def main() -> None:
     # Process each node
     for node_idx in range(len(nodes)):
         process_single_node(nodes, node_idx)
-    
-    print("DBC files successfully generated! Press enter to quit")
-    input()
+
+    print("DBC files successfully generated!")
 
 
 if __name__ == "__main__":
