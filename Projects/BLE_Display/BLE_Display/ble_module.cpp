@@ -16,21 +16,40 @@ static const char* TAG = "BLE";
 static NimBLECharacteristic *pBatteryCharacteristic = nullptr;
 static NimBLECharacteristic *pUartTxCharacteristic = nullptr;
 static bool deviceConnected = false;
+static uint16_t currentConnHandle = 0;
 
 //Helpers
 static bool isConnectionEncrypted(void);
+static void populateWhitelistFromBonds(void);
 
 // Connection callbacks
 class MyServerCallbacks: public NimBLEServerCallbacks {
   void onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) {
     deviceConnected = true;
-    ESP_LOGI(TAG, "Device connected");
+    currentConnHandle = connInfo.getConnHandle();
+    ESP_LOGI(TAG, "Device connected (handle: %d)", currentConnHandle);
     ESP_LOGI(TAG, "Connected to address: %s", connInfo.getAddress().toString().c_str());
   }
 
   void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) {
     deviceConnected = false;
+    currentConnHandle = 0;
     ESP_LOGI(TAG, "Device disconnected (reason: %d)", reason);
+
+    // Re-enable whitelist if we have bonded devices
+    NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
+    int bondCount = NimBLEDevice::getNumBonds();
+
+    if (bondCount > 0) {
+      // Repopulate whitelist (addresses may have been lost)
+      populateWhitelistFromBonds();
+      pAdvertising->setScanFilter(false, true);  // Only bonded devices can connect
+      ESP_LOGI(TAG, "Advertising to bonded devices only");
+    } else {
+      pAdvertising->setScanFilter(false, false);  // All devices can connect
+      ESP_LOGI(TAG, "Advertising to all devices");
+    }
+
     NimBLEDevice::startAdvertising();  // Restart advertising
   }
 
@@ -39,13 +58,7 @@ class MyServerCallbacks: public NimBLEServerCallbacks {
       ESP_LOGI(TAG, "Device paired and bonded successfully!");
       ESP_LOGI(TAG, "Bonded to: %s", connInfo.getAddress().toString().c_str());
     } else {
-      ESP_LOGW(TAG, "Encryption failed - not bonded");
-
-      // If this device was previously bonded but encryption failed, remove the stale bond
-      if (NimBLEDevice::isBonded(connInfo.getAddress())) {
-        ESP_LOGW(TAG, "Removing stale bond for: %s", connInfo.getAddress().toString().c_str());
-        NimBLEDevice::deleteBond(connInfo.getAddress());
-      }
+      ESP_LOGW(TAG, "Pairing failed or was cancelled");
     }
   }
 
@@ -129,6 +142,23 @@ void BLE_Init(void) {
   NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(UART_SERVICE_UUID);
   pAdvertising->setName("ESP32-S3");
+
+  // If we have bonded devices, enable whitelist for auto-reconnect
+  int bondCount = NimBLEDevice::getNumBonds();
+  if (bondCount > 0) {
+    ESP_LOGI(TAG, "Found %d bonded device(s)", bondCount);
+
+    // Populate whitelist with bonded device addresses
+    populateWhitelistFromBonds();
+
+    // Enable whitelist filtering for connections
+    pAdvertising->setScanFilter(false, true);  // scanRequestWhitelistOnly=false, connectWhitelistOnly=true
+    ESP_LOGI(TAG, "Whitelist enabled - only bonded devices can connect");
+  } else {
+    ESP_LOGI(TAG, "No bonded devices - advertising to all");
+    pAdvertising->setScanFilter(false, false);  // No whitelist filtering
+  }
+
   pAdvertising->start();
 
   ESP_LOGI(TAG, "Device advertising. Ready to connect!");
@@ -166,30 +196,97 @@ void BLE_ClearAllBonds(void) {
   ESP_LOGI(TAG, "All bonds cleared!");
 }
 
-static bool isConnectionEncrypted(void) {
-  NimBLEServer* pServer = NimBLEDevice::getServer();
-  if (pServer != nullptr) {
-    std::vector<uint16_t> connIds = pServer->getPeerDevices();
-    if (!connIds.empty()) {
-      NimBLEConnInfo connInfo = pServer->getPeerInfo(connIds[0]);
-      return connInfo.isEncrypted();
+static void populateWhitelistFromBonds(void) {
+  int bondCount = NimBLEDevice::getNumBonds();
+
+  if (bondCount == 0) {
+    ESP_LOGD(TAG, "No bonded devices to add to whitelist");
+    return;
+  }
+
+  ESP_LOGI(TAG, "Populating whitelist with %d bonded device(s)", bondCount);
+
+  for (int i = 0; i < bondCount; i++) {
+    NimBLEAddress bondedAddr = NimBLEDevice::getBondedAddress(i);
+
+    if (NimBLEDevice::whiteListAdd(bondedAddr)) {
+      ESP_LOGI(TAG, "  Added to whitelist: %s", bondedAddr.toString().c_str());
+    } else {
+      ESP_LOGW(TAG, "  Failed to add to whitelist: %s", bondedAddr.toString().c_str());
     }
   }
+}
+
+static bool isConnectionEncrypted(void) {
+  if (!deviceConnected || currentConnHandle == 0) {
+    return false;
+  }
+
+  NimBLEServer* pServer = NimBLEDevice::getServer();
+  if (pServer != nullptr) {
+    // Use the stored connection handle instead of getPeerDevices
+    NimBLEConnInfo connInfo = pServer->getPeerInfoByHandle(currentConnHandle);
+
+    bool bonded = connInfo.isBonded();
+    bool encrypted = connInfo.isEncrypted();
+    bool authenticated = connInfo.isAuthenticated();
+
+    ESP_LOGD(TAG, "Security state (handle %d) - Bonded: %s, Encrypted: %s, Authenticated: %s",
+             currentConnHandle,
+             bonded ? "YES" : "NO",
+             encrypted ? "YES" : "NO",
+             authenticated ? "YES" : "NO");
+
+    // Return true only if encrypted
+    return encrypted;
+  }
+
+  ESP_LOGD(TAG, "Connection encrypted check failed - no server");
   return false;
 }
 
 
-// void BLE_PrintBondedDevices(void) {
-//   int bondCount = NimBLEDevice::getNumBonds();
-//   Serial.printf("BLE: Number of bonded devices: %d\n", bondCount);
+void BLE_PrintBondedDevices(void) {
+  int bondCount = NimBLEDevice::getNumBonds();
+  ESP_LOGI(TAG, "Number of bonded devices: %d", bondCount);
 
-//   if (bondCount > 0) {
-//     Serial.println("BLE: Bonded device addresses:");
-//     for (int i = 0; i < bondCount; i++) {
-//       NimBLEAddress bondedAddr = NimBLEDevice::getBondedAddress(i);
-//       Serial.printf("  %d: %s\n", i + 1, bondedAddr.toString().c_str());
-//     }
-//   } else {
-//     Serial.println("BLE: No bonded devices");
-//   }
-// }
+  if (bondCount > 0) {
+    ESP_LOGI(TAG, "Bonded device addresses:");
+    for (int i = 0; i < bondCount; i++) {
+      NimBLEAddress bondedAddr = NimBLEDevice::getBondedAddress(i);
+      ESP_LOGI(TAG, "  %d: %s", i + 1, bondedAddr.toString().c_str());
+    }
+  } else {
+    ESP_LOGI(TAG, "No bonded devices");
+  }
+}
+
+void BLE_AllowNewDevices(void) {
+  NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
+  pAdvertising->stop();
+  pAdvertising->setScanFilter(false, false);  // Disable whitelist
+  pAdvertising->start();
+  ESP_LOGI(TAG, "Whitelist disabled - accepting all devices");
+}
+
+void BLE_RestrictToBonded(void) {
+  int bondCount = NimBLEDevice::getNumBonds();
+  if (bondCount == 0) {
+    ESP_LOGW(TAG, "No bonded devices - cannot enable whitelist");
+    return;
+  }
+
+  NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
+  pAdvertising->stop();
+
+  // Populate whitelist before enabling
+  populateWhitelistFromBonds();
+
+  pAdvertising->setScanFilter(false, true);  // Enable connect whitelist
+  pAdvertising->start();
+  ESP_LOGI(TAG, "Whitelist enabled - only bonded devices can connect");
+}
+
+void BLE_PopulateWhitelist(void) {
+  populateWhitelistFromBonds();
+}

@@ -16,6 +16,8 @@ void setup() {
   LCD_Init();
   CAN_Init();
 
+  BLE_RestrictToBonded();
+
   // Show initial test screen
   LCD_ShowTestScreen();
 

@@ -21,7 +21,16 @@ int BLE_GetBondedDeviceCount(void);
 // Clear all bonded devices
 void BLE_ClearAllBonds(void);
 
-// // Print list of bonded devices
-// void BLE_PrintBondedDevices(void);
+// Print list of bonded devices
+void BLE_PrintBondedDevices(void);
+
+// Allow new devices to bond (disable whitelist)
+void BLE_AllowNewDevices(void);
+
+// Restrict to bonded devices only (enable whitelist)
+void BLE_RestrictToBonded(void);
+
+// Manually populate whitelist from bonded devices
+void BLE_PopulateWhitelist(void);
 
 #endif // BLE_MODULE_H
