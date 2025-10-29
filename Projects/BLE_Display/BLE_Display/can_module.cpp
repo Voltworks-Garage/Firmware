@@ -1,11 +1,18 @@
 #include "can_module.h"
 #include "../../../CAN/generated/dash_can_decoder.h"
+#include "esp_log.h"
+
+#define CAN_STBY GPIO_NUM_17
+
+TaskHandle_t RX_TaskHandle = NULL;
 
 // CAN receive task
 static void CAN_RxTask(void* parameter);
 
 void CAN_Init(void) {
   Serial.println("CAN: Initializing...");
+  gpio_set_direction(CAN_STBY, GPIO_MODE_OUTPUT);
+  gpio_set_level(CAN_STBY, 0);
 
   // General configuration with custom queue sizes
   twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(
@@ -23,8 +30,8 @@ void CAN_Init(void) {
 
   // Filter to accept only ID 0x123
   twai_filter_config_t f_config = {
-    .acceptance_code = (0x123 << 21),  // ID in upper 11 bits for standard
-    .acceptance_mask = ~(0x7FF << 21), // Mask all 11 bits (standard ID)
+    .acceptance_code = 0x00000000,//(0x388 << 21),  // ID in upper 11 bits for standard
+    .acceptance_mask = 0xFFFFFFFF,//~(0x7FF << 21), // Mask all 11 bits (standard ID)
     .single_filter = true
   };
 
@@ -40,9 +47,18 @@ void CAN_Init(void) {
   result = twai_start();
   if (result == ESP_OK) {
     Serial.println("CAN: Started successfully");
+    // Create CAN receive task
+    CAN_CreateRxTask();
   } else {
     Serial.printf("CAN: Start failed: %d\n", result);
   }
+}
+
+void CAN_DeInit(){
+  twai_stop();
+  gpio_set_direction(CAN_STBY, GPIO_MODE_DISABLE);
+  vTaskDelete(RX_TaskHandle);
+  RX_TaskHandle = NULL;
 }
 
 bool CAN_SendMessage(uint32_t id, uint8_t* data, uint8_t length) {
@@ -79,7 +95,7 @@ void CAN_CreateRxTask(void) {
     4096,
     NULL,
     1,
-    NULL
+    &RX_TaskHandle
   );
 }
 
@@ -132,7 +148,5 @@ static void CAN_RxTask(void* parameter) {
           break;
       }
     }
-
-    vTaskDelay(pdMS_TO_TICKS(10));  // Small delay to prevent task hogging
   }
 }

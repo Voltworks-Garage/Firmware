@@ -1,14 +1,18 @@
 #ifndef LCD_MODULE_H
 #define LCD_MODULE_H
 
-#include <Arduino.h>
 #include <TFT_eSPI.h>
+// #include <LovyanGFX.hpp>
+// #include <LGFX_AUTODETECT.hpp>
 
 // Initialize LCD module
 void LCD_Init(void);
 
+// DeInitialize LCD module
+void LCD_DeInit(void);
+
 // Get TFT instance for direct drawing operations
-TFT_eSPI* LCD_GetTFT(void);
+// TFT_eSPI* LCD_GetTFT(void);
 
 // Display a test screen
 void LCD_ShowTestScreen(void);

@@ -1,10 +1,7 @@
 #ifndef BLE_MODULE_H
 #define BLE_MODULE_H
 
-#include <Arduino.h>
-#include <BLEDevice.h>
-#include <BLEServer.h>
-#include <BLE2902.h>
+#include <NimBLEDevice.h>
 
 // Initialize BLE module
 void BLE_Init(void);
@@ -17,5 +14,14 @@ bool BLE_IsConnected(void);
 
 // Update battery level (0-100%)
 void BLE_UpdateBatteryLevel(uint8_t level);
+
+// Get number of bonded devices
+int BLE_GetBondedDeviceCount(void);
+
+// Clear all bonded devices
+void BLE_ClearAllBonds(void);
+
+// // Print list of bonded devices
+// void BLE_PrintBondedDevices(void);
 
 #endif // BLE_MODULE_H

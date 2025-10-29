@@ -1,7 +1,6 @@
 #ifndef CAN_MODULE_H
 #define CAN_MODULE_H
 
-#include <Arduino.h>
 #include "driver/twai.h"
 
 // CAN pin definitions
@@ -10,10 +9,12 @@
 
 // CAN queue sizes (default is 5 for both TX and RX)
 #define CAN_TX_QUEUE_LEN 10
-#define CAN_RX_QUEUE_LEN 10
+#define CAN_RX_QUEUE_LEN 32
 
 // Initialize CAN module
 void CAN_Init(void);
+
+void CAN_DeInit(void);
 
 // Send a CAN message
 bool CAN_SendMessage(uint32_t id, uint8_t* data, uint8_t length);
