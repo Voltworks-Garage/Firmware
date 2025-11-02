@@ -24,9 +24,9 @@ void LCD_DeInit(void){
   gpio_set_level(POWER_PIN, 0);
 }
 
-// TFT_eSPI* LCD_GetTFT(void) {
-//   return &tft;
-// }
+TFT_eSPI* LCD_GetTFT(void) {
+  return &tft;
+}
 
 void LCD_ShowTestScreen(void) {
   tft.fillScreen(TFT_BLACK);

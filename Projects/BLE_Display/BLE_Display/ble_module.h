@@ -6,14 +6,18 @@
 // Initialize BLE module
 void BLE_Init(void);
 
-// Send UART data over BLE
+// Send UART data over BLE (Nordic UART Service)
 void BLE_SendUartData(String message);
+
+// Send Begode frame over BLE (HM-10 Service 0xFFE0/0xFFE1)
+// Only sends if streaming is active (after 'V' command received)
+void BLE_SendBegodeFrame(const uint8_t* frame, uint16_t len);
 
 // Check if device is connected
 bool BLE_IsConnected(void);
 
-// Update battery level (0-100%)
-void BLE_UpdateBatteryLevel(uint8_t level);
+// Check if Begode streaming is active (after 'V' command)
+bool BLE_IsBegodeStreaming(void);
 
 // Get number of bonded devices
 int BLE_GetBondedDeviceCount(void);

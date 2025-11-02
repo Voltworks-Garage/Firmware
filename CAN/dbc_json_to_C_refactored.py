@@ -55,7 +55,12 @@ def write_file_headers(dot_h: Any, dot_c: Any, node_name: str) -> None:
     dot_h.write(f"#ifndef {node_name}_DBC_H\n")
     dot_h.write(f"#define {node_name}_DBC_H\n\n")
     dot_h.write("#include <stdint.h>\n")
-    
+
+    # Add extern "C" guard for C++ compatibility
+    dot_h.write("#ifdef __cplusplus\n")
+    dot_h.write("extern \"C\" {\n")
+    dot_h.write("#endif\n\n")
+
     # C file includes
     dot_c.write(f"#include \"{node_name}_dbc.h\"\n")
     dot_c.write("#include \"CAN.h\"\n")
@@ -732,7 +737,13 @@ def write_frequency_send_functions(dot_h: Any, dot_c: Any, send_message_dict: Di
 
 def write_file_footers(dot_h: Any, node_name: str) -> None:
     """Write file footers and close header guards."""
-    dot_h.write(f"\n\n#endif /*{node_name}_DBC_H*/\n")
+    # Close extern "C" guard
+    dot_h.write("\n#ifdef __cplusplus\n")
+    dot_h.write("}\n")
+    dot_h.write("#endif\n")
+
+    # Close header guard
+    dot_h.write(f"\n#endif /*{node_name}_DBC_H*/\n")
 
 
 def process_single_node(nodes: List[Dict[str, Any]], node_idx: int) -> None:

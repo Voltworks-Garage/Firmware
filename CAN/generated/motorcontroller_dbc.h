@@ -2,6 +2,10 @@
 #define motorcontroller_DBC_H
 
 #include <stdint.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum{
     dash,
     mcu,
@@ -178,5 +182,8 @@ void CAN_send_1000ms(void);
 void CAN_send_30ms(void);
 void CAN_send_20ms(void);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*motorcontroller_DBC_H*/

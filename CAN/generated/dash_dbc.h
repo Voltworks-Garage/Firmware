@@ -2,6 +2,10 @@
 #define dash_DBC_H
 
 #include <stdint.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum{
     dash,
     mcu,
@@ -309,5 +313,8 @@ void CAN_send_10ms(void);
 void CAN_send_100ms(void);
 void CAN_send_1000ms(void);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*dash_DBC_H*/

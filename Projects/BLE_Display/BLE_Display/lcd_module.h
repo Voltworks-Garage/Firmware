@@ -12,7 +12,7 @@ void LCD_Init(void);
 void LCD_DeInit(void);
 
 // Get TFT instance for direct drawing operations
-// TFT_eSPI* LCD_GetTFT(void);
+TFT_eSPI* LCD_GetTFT(void);
 
 // Display a test screen
 void LCD_ShowTestScreen(void);
