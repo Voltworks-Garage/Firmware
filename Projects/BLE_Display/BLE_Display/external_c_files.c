@@ -5,3 +5,4 @@
 // Note: dash_dbc.c will find utils.h via the redirect in local utils.h
 #include "../../../Libraries/Standard/utils.c"
 #include "../../../CAN/generated/dash_dbc.c"
+#include "../../../Libraries/Standard/movingAverage.c"

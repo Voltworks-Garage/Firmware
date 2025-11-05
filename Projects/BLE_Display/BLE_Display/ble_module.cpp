@@ -8,17 +8,18 @@ static const char* TAG = "BLE";
 #define UART_RX_CHAR_UUID           "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"  // Receive (write)
 #define UART_TX_CHAR_UUID           "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"  // Transmit (notify)
 
-// Begode/HM-10 Service (for EUC app compatibility)
-#define BEGODE_SERVICE_UUID         "FFE0"
-#define BEGODE_CHAR_UUID            "FFE1"
+// HM-10 Service (for EUC app compatibility)
+#define HM10_SERVICE_UUID           "FFE0"
+#define HM10_CHAR_UUID              "FFE1"
 
 // Module-level variables
 static NimBLECharacteristic *pUartTxCharacteristic = nullptr;
-static NimBLECharacteristic *pBegodeCharacteristic = nullptr;
+static NimBLECharacteristic *pHM10Characteristic = nullptr;
 static bool deviceConnected = false;
 static uint16_t currentConnHandle = 0;
 static bool whitelistEnabled = false;  // Track whitelist state
-static bool begodeStreaming = false;   // Track if Begode streaming is active
+static void (*uartCallback)(const uint8_t* data, uint16_t len) = nullptr;  // Callback when UART data received
+static void (*hm10Callback)(const uint8_t* data, uint16_t len) = nullptr;  // Callback when HM-10 data received
 
 //Helpers
 static bool isConnectionEncrypted(void);
@@ -31,6 +32,16 @@ class MyServerCallbacks: public NimBLEServerCallbacks {
     currentConnHandle = connInfo.getConnHandle();
     ESP_LOGI(TAG, "Device connected (handle: %d)", currentConnHandle);
     ESP_LOGI(TAG, "Connected to address: %s", connInfo.getAddress().toString().c_str());
+    ESP_LOGI(TAG, "Current MTU: %d bytes", connInfo.getMTU());
+
+    // Try to initiate MTU exchange from server side
+    // This requests the client to increase MTU to support 24-byte frames
+    int rc = ble_gattc_exchange_mtu(connInfo.getConnHandle(), NULL, NULL);
+    if (rc == 0) {
+      ESP_LOGI(TAG, "MTU exchange initiated from server");
+    } else {
+      ESP_LOGW(TAG, "MTU exchange failed: %d", rc);
+    }
   }
 
   void onMTUChange(uint16_t MTU, NimBLEConnInfo& connInfo) {
@@ -40,7 +51,6 @@ class MyServerCallbacks: public NimBLEServerCallbacks {
   void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) {
     deviceConnected = false;
     currentConnHandle = 0;
-    begodeStreaming = false;  // Reset streaming on disconnect
     ESP_LOGI(TAG, "Device disconnected (reason: %d)", reason);
 
     // Use the last whitelist setting instead of auto-enabling
@@ -86,74 +96,47 @@ class MyServerCallbacks: public NimBLEServerCallbacks {
 // UART RX callback (receive data from phone)
 class UartCallbacks: public NimBLECharacteristicCallbacks {
   void onWrite(NimBLECharacteristic *pCharacteristic, NimBLEConnInfo& connInfo) {
-    String rxValue = pCharacteristic->getValue().c_str();
+    std::string rxValue = pCharacteristic->getValue();
 
     if (rxValue.length() > 0) {
-      ESP_LOGI(TAG, "Received: %s", rxValue.c_str());
+      ESP_LOGI(TAG, "[UART] RX %d bytes", rxValue.length());
 
-      // Echo back (optional)
-      BLE_SendUartData("Echo: " + String(rxValue.c_str()));
+      // Call user callback if registered - they can queue/process the data as needed
+      if (uartCallback != nullptr) {
+        uartCallback((const uint8_t*)rxValue.data(), rxValue.length());
+      }
     }
   }
 };
 
 
-// Begode RX callback (receive commands from EUC apps)
-class BegodeCallbacks: public NimBLECharacteristicCallbacks {
+// HM-10 RX callback (receive commands from EUC apps)
+class HM10Callbacks: public NimBLECharacteristicCallbacks {
   void onWrite(NimBLECharacteristic *pCharacteristic, NimBLEConnInfo& connInfo) {
     std::string rxValue = pCharacteristic->getValue();
 
     if (rxValue.length() > 0) {
-      ESP_LOGI(TAG, "[Begode] RX: ");
+      ESP_LOGI(TAG, "[HM10] RX: ");
       for (size_t i = 0; i < rxValue.length(); i++) {
         ESP_LOGI(TAG, "0x%02X ", (uint8_t)rxValue[i]);
       }
 
-      // Handle single-byte commands
-      if (rxValue.length() == 1) {
-        uint8_t cmd = rxValue[0];
-        if (cmd == 'V' || cmd == 'v') {
-          ESP_LOGI(TAG, "[Begode] Start streaming command received");
-          begodeStreaming = true;
-
-          // Send initial response sequence like nRF52840 code
-          // 1. Send immediate data frame (will be sent by user code loop)
-          const uint8_t frame[24] = {};
-          pCharacteristic->setValue(frame, 12);
-          pCharacteristic->notify();
-
-          pCharacteristic->setValue(frame, 12);
-          pCharacteristic->notify();
-          
-          // 2. Send firmware string
-          const char* fw = "GW2002001";
-          pCharacteristic->setValue((uint8_t*)fw, strlen(fw));
-          pCharacteristic->notify();
-
-          // 3. Echo 'V'
-          uint8_t ack = 'V';
-          pCharacteristic->setValue(&ack, 1);
-          pCharacteristic->notify();
-
-        } else if (cmd == 'N' || cmd == 'n') {
-          ESP_LOGI(TAG, "[Begode] Name request received");
-          const char* name = "ESP32-S3 (Begode)\r\n";
-          pCharacteristic->setValue((uint8_t*)name, strlen(name));
-          pCharacteristic->notify();
-        }
+      // Call user callback if registered - they can queue/process the data as needed
+      if (hm10Callback != nullptr) {
+        hm10Callback((const uint8_t*)rxValue.data(), rxValue.length());
       }
     }
   }
 
   void onSubscribe(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo, uint16_t subValue) {
     if (subValue == 0) {
-      ESP_LOGI(TAG, "[Begode] Client UNSUBSCRIBED from notifications");
+      ESP_LOGI(TAG, "[HM10] Client UNSUBSCRIBED from notifications");
     } else if (subValue == 1) {
-      ESP_LOGI(TAG, "[Begode] Client SUBSCRIBED to notifications");
+      ESP_LOGI(TAG, "[HM10] Client SUBSCRIBED to notifications");
     } else if (subValue == 2) {
-      ESP_LOGI(TAG, "[Begode] Client SUBSCRIBED to indications");
+      ESP_LOGI(TAG, "[HM10] Client SUBSCRIBED to indications");
     } else if (subValue == 3) {
-      ESP_LOGI(TAG, "[Begode] Client SUBSCRIBED to notifications AND indications");
+      ESP_LOGI(TAG, "[HM10] Client SUBSCRIBED to notifications AND indications");
     }
   }
 };
@@ -162,9 +145,9 @@ void BLE_Init(void) {
   ESP_LOGI(TAG, "Starting setup...");
 
   // Initialize BLE
-  NimBLEDevice::init("ESP32-S3 (Begode)");
+  NimBLEDevice::init("ESP32-S3(Begode)");  // Device name (pretend to be KingSong 18L)
 
-  // Set MTU to support 24-byte Begode frames (need at least 27 bytes: 24 data + 3 overhead)
+  // Set MTU to support 24-byte frames (need at least 27 bytes: 24 data + 3 overhead)
   NimBLEDevice::setMTU(256);
   ESP_LOGI(TAG, "MTU set to 256 bytes");
 
@@ -181,23 +164,110 @@ void BLE_Init(void) {
   NimBLEServer *pServer = NimBLEDevice::createServer();
   pServer->setCallbacks(new MyServerCallbacks());
 
-  // ===== Device Information Service =====
-  NimBLEService *pDevInfoService = pServer->createService("180A");  // Device Information Service
+  // ===== GAP Service (0x1800) - REQUIRED FOR KINGSONG DETECTION =====
+  NimBLEService *pGapService = pServer->createService("1800");
 
-  NimBLECharacteristic *pManufacturerChar = pDevInfoService->createCharacteristic(
-    "2A29",  // Manufacturer Name String
+  NimBLECharacteristic *pDeviceNameChar = pGapService->createCharacteristic(
+    "2A00",  // Device Name
     NIMBLE_PROPERTY::READ
   );
-  pManufacturerChar->setValue("Begode");
+  pDeviceNameChar->setValue("ESP32-S3(Begode)");
+
+  NimBLECharacteristic *pAppearanceChar = pGapService->createCharacteristic(
+    "2A01",  // Appearance
+    NIMBLE_PROPERTY::READ
+  );
+  uint16_t appearance = 0x0000;  // Unknown appearance
+  pAppearanceChar->setValue((uint8_t*)&appearance, 2);
+
+  NimBLECharacteristic *pPeriphPrivacyChar = pGapService->createCharacteristic(
+    "2A02",  // Peripheral Privacy Flag
+    NIMBLE_PROPERTY::READ
+  );
+  uint8_t privacyFlag = 0x00;
+  pPeriphPrivacyChar->setValue(&privacyFlag, 1);
+
+  NimBLECharacteristic *pReconnAddrChar = pGapService->createCharacteristic(
+    "2A03",  // Reconnection Address
+    NIMBLE_PROPERTY::WRITE
+  );
+
+  NimBLECharacteristic *pConnParamsChar = pGapService->createCharacteristic(
+    "2A04",  // Peripheral Preferred Connection Parameters
+    NIMBLE_PROPERTY::READ
+  );
+
+  pGapService->start();
+  ESP_LOGI(TAG, "GAP Service (0x1800) created");
+
+  // ===== GATT Service (0x1801) - REQUIRED FOR KINGSONG DETECTION =====
+  NimBLEService *pGattService = pServer->createService("1801");
+
+  NimBLECharacteristic *pServiceChangedChar = pGattService->createCharacteristic(
+    "2A05",  // Service Changed
+    NIMBLE_PROPERTY::INDICATE
+  );
+
+  pGattService->start();
+  ESP_LOGI(TAG, "GATT Service (0x1801) created");
+
+  // ===== Device Information Service (0x180A) - REQUIRED FOR KINGSONG DETECTION =====
+  NimBLEService *pDevInfoService = pServer->createService("180A");
+
+  // Add all the characteristics that KingSong wheels typically have
+  NimBLECharacteristic *pSystemIdChar = pDevInfoService->createCharacteristic(
+    "2A23",  // System ID
+    NIMBLE_PROPERTY::READ
+  );
 
   NimBLECharacteristic *pModelChar = pDevInfoService->createCharacteristic(
     "2A24",  // Model Number String
     NIMBLE_PROPERTY::READ
   );
-  pModelChar->setValue("X-Way");
+  pModelChar->setValue("ESP32-S3(Begode)");
+
+  NimBLECharacteristic *pSerialChar = pDevInfoService->createCharacteristic(
+    "2A25",  // Serial Number String
+    NIMBLE_PROPERTY::READ
+  );
+  pSerialChar->setValue("KS123456789");
+
+  NimBLECharacteristic *pFirmwareChar = pDevInfoService->createCharacteristic(
+    "2A26",  // Firmware Revision String
+    NIMBLE_PROPERTY::READ
+  );
+  pFirmwareChar->setValue("2.15");
+
+  NimBLECharacteristic *pHardwareChar = pDevInfoService->createCharacteristic(
+    "2A27",  // Hardware Revision String
+    NIMBLE_PROPERTY::READ
+  );
+  pHardwareChar->setValue("1.0");
+
+  NimBLECharacteristic *pSoftwareChar = pDevInfoService->createCharacteristic(
+    "2A28",  // Software Revision String
+    NIMBLE_PROPERTY::READ
+  );
+  pSoftwareChar->setValue("2.15");
+
+  NimBLECharacteristic *pManufacturerChar = pDevInfoService->createCharacteristic(
+    "2A29",  // Manufacturer Name String
+    NIMBLE_PROPERTY::READ
+  );
+  pManufacturerChar->setValue("King Song");
+
+  NimBLECharacteristic *pRegCertChar = pDevInfoService->createCharacteristic(
+    "2A2A",  // IEEE 11073-20601 Regulatory Certification Data List
+    NIMBLE_PROPERTY::READ
+  );
+
+  NimBLECharacteristic *pPnpIdChar = pDevInfoService->createCharacteristic(
+    "2A50",  // PnP ID
+    NIMBLE_PROPERTY::READ
+  );
 
   pDevInfoService->start();
-  ESP_LOGI(TAG, "Device Information Service created");
+  ESP_LOGI(TAG, "Device Information Service (0x180A) created");
 
   // ===== UART Service =====
   NimBLEService *pUartService = pServer->createService(UART_SERVICE_UUID);
@@ -218,25 +288,28 @@ void BLE_Init(void) {
   pUartService->start();
   
 
-  // ===== Begode/HM-10 Service =====
-  NimBLEService *pBegodeService = pServer->createService(BEGODE_SERVICE_UUID);
+  // ===== HM-10 Service =====
+  NimBLEService *pHM10Service = pServer->createService(HM10_SERVICE_UUID);
 
-  // Begode characteristic (RW/Notify like HM-10 - no encryption required)
-  pBegodeCharacteristic = pBegodeService->createCharacteristic(
-    BEGODE_CHAR_UUID,
+  // HM-10 characteristic (RW/Notify like HM-10 - no encryption required)
+  pHM10Characteristic = pHM10Service->createCharacteristic(
+    HM10_CHAR_UUID,
     NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_NR | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::INDICATE
   );
-  pBegodeCharacteristic->setCallbacks(new BegodeCallbacks());
+  pHM10Characteristic->setCallbacks(new HM10Callbacks());
 
-  pBegodeService->start();
+  // Set max value length to support 24-byte HM-10 frames
+  pHM10Characteristic->setValue((uint8_t*)"", 0);  // Initialize empty
 
-  ESP_LOGI(TAG, "Begode/HM-10 service (0xFFE0) created");
+  pHM10Service->start();
+
+  ESP_LOGI(TAG, "HM-10 service (0xFFE0) created");
 
   // ===== Start Advertising =====
   NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
-  // Only advertise Begode service - UART service available via service discovery
-  pAdvertising->addServiceUUID(BEGODE_SERVICE_UUID);
-  pAdvertising->setName("ESP32-S3 (Begode)");  // Shortened name to fit in advertising packet
+  // Only advertise HM-10 service - UART service available via service discovery
+  pAdvertising->addServiceUUID(HM10_SERVICE_UUID);
+  pAdvertising->setName("ESP32-S3(Begode)");  // KingSong 18L for Wheellog compatibility
 
   // If we have bonded devices, enable whitelist for auto-reconnect
   // int bondCount = NimBLEDevice::getNumBonds();
@@ -265,26 +338,47 @@ void BLE_SendUartData(String message) {
   if (deviceConnected && pUartTxCharacteristic != nullptr && isConnectionEncrypted()) {
     pUartTxCharacteristic->setValue(message.c_str());
     pUartTxCharacteristic->notify();
-    ESP_LOGI(TAG, "Sent: %s", message.c_str());
+    ESP_LOGI(TAG, "[UART] Sent: %s", message.c_str());
   }
 }
 
-void BLE_SendBegodeFrame(const uint8_t* frame, uint16_t len) {
-  if (deviceConnected && pBegodeCharacteristic != nullptr && begodeStreaming) {
-    pBegodeCharacteristic->setValue(frame, len/2);
-    pBegodeCharacteristic->notify();
-    pBegodeCharacteristic->setValue(frame + len/2, len/2);
-    bool result = pBegodeCharacteristic->notify();
-    ESP_LOGI(TAG, "[Begode] Sent frame (%d bytes) - notify returned: %d", len, result);
+void BLE_SetUartCallback(void (*callback)(const uint8_t* data, uint16_t len)) {
+  uartCallback = callback;
+}
+
+void BLE_SendHM10Data(const uint8_t* data, uint16_t len) {
+  if (deviceConnected && pHM10Characteristic != nullptr) {
+    // Set the characteristic value (can be larger than MTU for read operations)
+    pHM10Characteristic->setValue(data, len);
+
+    // Send via notify (now that MTU is negotiated)
+    bool result = pHM10Characteristic->notify();
+
+    if (!result) {
+      ESP_LOGW(TAG, "[HM10] Notify failed");
+    } else {
+      // Log frame type for debugging
+      if (len == 20 && data[0] == 0xAA && data[1] == 0x55) {
+        // KingSong 20-byte frame - type at offset 16
+        uint8_t frame_type = data[16];
+        ESP_LOGD(TAG, "[HM10] Sent KingSong frame type 0x%02X (%d bytes)", frame_type, len);
+      } else if (len == 24 && data[0] == 0x55 && data[1] == 0xAA) {
+        // Begode 24-byte frame - type at offset 18
+        uint8_t frame_type = data[18];
+        ESP_LOGD(TAG, "[HM10] Sent Begode frame type 0x%02X (%d bytes)", frame_type, len);
+      } else {
+        ESP_LOGD(TAG, "[HM10] Sent %d bytes (header: 0x%02X 0x%02X)", len, data[0], data[1]);
+      }
+    }
   }
+}
+
+void BLE_SetHM10Callback(void (*callback)(const uint8_t* data, uint16_t len)) {
+  hm10Callback = callback;
 }
 
 bool BLE_IsConnected(void) {
   return deviceConnected;
-}
-
-bool BLE_IsBegodeStreaming(void) {
-  return begodeStreaming;
 }
 
 int BLE_GetBondedDeviceCount(void) {

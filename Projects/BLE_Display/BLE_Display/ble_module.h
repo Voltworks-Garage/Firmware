@@ -9,15 +9,22 @@ void BLE_Init(void);
 // Send UART data over BLE (Nordic UART Service)
 void BLE_SendUartData(String message);
 
-// Send Begode frame over BLE (HM-10 Service 0xFFE0/0xFFE1)
+// Register a callback function to be called when UART data is received
+// Callback receives pointer to data and length
+// User can copy/queue the data in their callback as needed
+void BLE_SetUartCallback(void (*callback)(const uint8_t* data, uint16_t len));
+
+// Send data over BLE (HM-10 Service 0xFFE0/0xFFE1)
 // Only sends if streaming is active (after 'V' command received)
-void BLE_SendBegodeFrame(const uint8_t* frame, uint16_t len);
+void BLE_SendHM10Data(const uint8_t* data, uint16_t len);
+
+// Register a callback function to be called when HM-10 data is received
+// Callback receives pointer to data and length
+// User can copy/queue the data in their callback as needed
+void BLE_SetHM10Callback(void (*callback)(const uint8_t* data, uint16_t len));
 
 // Check if device is connected
 bool BLE_IsConnected(void);
-
-// Check if Begode streaming is active (after 'V' command)
-bool BLE_IsBegodeStreaming(void);
 
 // Get number of bonded devices
 int BLE_GetBondedDeviceCount(void);

@@ -1,27 +1,47 @@
 #include "can.h"
+
+// Set local log level BEFORE including esp_log.h
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+#undef LOG_LOCAL_LEVEL
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+
 #include "esp_log.h"
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "src/msg/messaging.h"
 
 static const char* TAG = "CAN";
 
+// Verify logging is working at compile time
+#if CONFIG_LOG_MAXIMUM_LEVEL < ESP_LOG_INFO
+#warning "CONFIG_LOG_MAXIMUM_LEVEL is too low for INFO logging"
+#endif
+
 #define CAN_STBY GPIO_NUM_17
 
-TaskHandle_t RX_TaskHandle = NULL;
+static TaskHandle_t RX_TaskHandle = NULL;
+static QueueHandle_t q = NULL;
 
-static CAN_message_S RX_Mailboxes[CAN_RX_QUEUE_LEN]; // Array of CAN_message_S structures for RX mailboxes
+static CAN_message_S* RX_Mailboxes[CAN_RX_QUEUE_LEN]; // Array of POINTERS to CAN_message_S structures
 static CAN_payload_S RX_Payloads[CAN_RX_QUEUE_LEN]; // Array of payloads for RX mailboxes
 uint8_t CAN_messageStatuses[CAN_RX_QUEUE_LEN]; // Status flags for each mailbox
 static uint8_t RX_MailboxCount = 0;
+
+// Mutex for protecting shared mailbox data access
+static portMUX_TYPE can_mux = portMUX_INITIALIZER_UNLOCKED;
 
 // CAN receive task
 static void CAN_RxTask(void* parameter);
 
 void CAN_Init(void) {
-  ESP_LOGI(TAG, "Initializing...");
+  ESP_LOGI(TAG, "Initializing CAN...");
   gpio_set_direction(CAN_STBY, GPIO_MODE_OUTPUT);
   gpio_set_level(CAN_STBY, 0);
+
+  q = xQueueCreate(10, sizeof(Message_t));
+
+  MsgBus_Register(MODULE_CAN, q);
 
   // General configuration with custom queue sizes
   twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(
@@ -37,17 +57,13 @@ void CAN_Init(void) {
   // Timing configuration for 500kbit/s
   twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
 
-  // Filter to accept only ID 0x123
-  twai_filter_config_t f_config = {
-    .acceptance_code = 0x00000000,//(0x388 << 21),  // ID in upper 11 bits for standard
-    .acceptance_mask = 0xFFFFFFFF,//~(0x7FF << 21), // Mask all 11 bits (standard ID)
-    .single_filter = true
-  };
+  // Filter to accept all CAN IDs (when both code and mask are 0, all frames accepted)
+  twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
 
   // Install and start TWAI driver
   esp_err_t result = twai_driver_install(&g_config, &t_config, &f_config);
   if (result == ESP_OK) {
-    ESP_LOGI(TAG, "Driver installed");
+    ESP_LOGI(TAG, "TWAI driver installed");
   } else {
     ESP_LOGE(TAG, "Driver install failed: %d", result);
     return;
@@ -55,11 +71,19 @@ void CAN_Init(void) {
 
   result = twai_start();
   if (result == ESP_OK) {
-    ESP_LOGI(TAG, "Started successfully");
+    ESP_LOGI(TAG, "TWAI started successfully");
+
+    // Check driver status
+    twai_status_info_t status;
+    twai_get_status_info(&status);
+    ESP_LOGI(TAG, "Driver state: %d, msgs_to_tx: %lu, msgs_to_rx: %lu, tx_err: %lu, rx_err: %lu",
+             status.state, status.msgs_to_tx, status.msgs_to_rx,
+             status.tx_error_counter, status.rx_error_counter);
+
     // Create CAN receive task
     CAN_CreateRxTask();
   } else {
-    ESP_LOGE(TAG, "Start failed: %d", result);
+    ESP_LOGE(TAG, "TWAI start failed: %d", result);
   }
 }
 
@@ -126,9 +150,14 @@ bool CAN_ReceiveMessage(twai_message_t* message) {
 
 uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
   if (RX_MailboxCount < CAN_RX_QUEUE_LEN) {
-    RX_Mailboxes[RX_MailboxCount] = *newMessage;
+    // Store pointer to the message struct (no copy!)
+    RX_Mailboxes[RX_MailboxCount] = newMessage;
+
+    // Set up payload and status pointers in the caller's struct
     newMessage->payload = &RX_Payloads[RX_MailboxCount];
     newMessage->canMessageStatus = &CAN_messageStatuses[RX_MailboxCount];
+
+    ESP_LOGD(TAG, "Mailbox %d configured for ID=0x%03lX", RX_MailboxCount, newMessage->canID);
     RX_MailboxCount++;
     return 1; // Success
   }
@@ -136,40 +165,75 @@ uint8_t CAN_configureMailbox(CAN_message_S * newMessage) {
 }
 
 void CAN_CreateRxTask(void) {
-  xTaskCreate(
+  ESP_LOGI(TAG, "Creating RX Task... Free heap: %lu bytes", esp_get_free_heap_size());
+
+  BaseType_t result = xTaskCreate(
     CAN_RxTask,
     "CAN_RxTask",
     4096,
     NULL,
-    1,
+    5,
     &RX_TaskHandle
   );
+
+  if (result == pdPASS) {
+    ESP_LOGI(TAG, "RX Task created successfully");
+  } else {
+    ESP_LOGE(TAG, "Failed to create RX Task! result=%d, free heap: %lu", result, esp_get_free_heap_size());
+  }
 }
 
 static void CAN_RxTask(void* parameter) {
+  ESP_LOGI(TAG, "RX Task started");
+
+  // Small delay to let system stabilize
+  vTaskDelay(pdMS_TO_TICKS(100));
+
+  ESP_LOGI(TAG, "RX Task waiting for messages... Configured mailboxes: %d", RX_MailboxCount);
+
   twai_message_t message;
+  uint32_t loop_count = 0;
 
   while (1) {
-    if (CAN_ReceiveMessage(&message)) { //Built in 1ms delay if no messages received
+    // Log task is alive every 5000 iterations (every ~5 seconds)
+    loop_count++;
+    if (loop_count % 5000 == 0) {
+      ESP_LOGD(TAG, "RX Task alive, loop: %lu, free heap: %lu",
+               loop_count, esp_get_free_heap_size());
+    }
+
+    esp_err_t result = twai_receive(&message, pdMS_TO_TICKS(1));
+
+    if (result == ESP_OK) {
+      ESP_LOGI(TAG, "RX: ID=0x%03lX, DLC=%d, Data=%02X %02X %02X %02X %02X %02X %02X %02X",
+                    message.identifier, message.data_length_code,
+                    message.data[0], message.data[1], message.data[2], message.data[3],
+                    message.data[4], message.data[5], message.data[6], message.data[7]);
+
       // Linear search through RX mailboxes to find matching CAN ID
       bool found = false;
       for (uint8_t i = 0; i < RX_MailboxCount; i++) {
-        if (RX_Mailboxes[i].canID == message.identifier) {
+        if (RX_Mailboxes[i]->canID == message.identifier) {
           // Match found - copy data to mailbox payload
-          if (RX_Mailboxes[i].payload != NULL) {
+          if (RX_Mailboxes[i]->payload != NULL) {
+            // Enter critical section to protect shared data
+            taskENTER_CRITICAL(&can_mux);
+
             // Copy message data into the payload structure
-            uint8_t* data = (uint8_t*)RX_Mailboxes[i].payload;
+            uint8_t* data = (uint8_t*)RX_Mailboxes[i]->payload;
             for (uint8_t j = 0; j < message.data_length_code && j < 8; j++) {
               data[j] = message.data[j];
             }
 
             // Update message status and timestamp
-            if (RX_Mailboxes[i].canMessageStatus != NULL) {
-              *RX_Mailboxes[i].canMessageStatus = 1; // Mark as received
+            if (RX_Mailboxes[i]->canMessageStatus != NULL) {
+              *RX_Mailboxes[i]->canMessageStatus = 1; // Mark as received
             }
-            RX_Mailboxes[i].last_received_timestamp = pdTICKS_TO_MS(xTaskGetTickCount());
+            RX_Mailboxes[i]->last_received_timestamp = pdTICKS_TO_MS(xTaskGetTickCount());
 
-            ESP_LOGD(TAG, "RX ID=0x%03X matched mailbox %d", message.identifier, i);
+            taskEXIT_CRITICAL(&can_mux);
+
+            ESP_LOGD(TAG, "Matched mailbox %d", i);
             found = true;
           }
           break;
@@ -177,12 +241,11 @@ static void CAN_RxTask(void* parameter) {
       }
 
       if (!found) {
-        // No matching mailbox - log unknown message
-        ESP_LOGD(TAG, "Unknown ID=0x%03X, DLC=%d, Data=%02X %02X %02X %02X %02X %02X %02X %02X",
-                      message.identifier, message.data_length_code,
-                      message.data[0], message.data[1], message.data[2], message.data[3],
-                      message.data[4], message.data[5], message.data[6], message.data[7]);
+        ESP_LOGW(TAG, "No mailbox configured for ID 0x%03lX", message.identifier);
       }
+    } else if (result != ESP_ERR_TIMEOUT) {
+      // Log errors other than timeout (timeout is normal when no messages)
+      ESP_LOGE(TAG, "Receive error: %d", result);
     }
   }
 }
@@ -219,7 +282,10 @@ uint32_t CAN_getTimeSinceLastReceived(CAN_message_S * data){
 }
 
 uint8_t CAN_checkDataIsUnread(CAN_message_S * data) {
-    uint8_t ret = *(data->canMessageStatus);
+    uint8_t ret;
+    taskENTER_CRITICAL(&can_mux);
+    ret = *(data->canMessageStatus);
     *(data->canMessageStatus) = 0;
+    taskEXIT_CRITICAL(&can_mux);
     return ret;
 }

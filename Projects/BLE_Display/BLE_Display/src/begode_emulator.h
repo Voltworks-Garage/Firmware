@@ -40,15 +40,13 @@ void Begode_SetPWM(uint8_t pwm_percent);
 void Begode_SetDistance(uint32_t distance_m);
 void Begode_IncrementDistance(float distance_m);
 
-// Get pointer to next frame - cycles through frame types automatically
+// Send a begode style frame over HM10, auto incrementing sequence.
 // Returns pointer to internal 24-byte frame buffer (valid until next call)
 // Returns NULL on error
-const uint8_t* Begode_GetFrame(void);
+const uint8_t* Begode_SendFrame(void);
 
-// Handle incoming command byte (e.g., 'V', 'N')
-// Returns pointer to response data and sets response_len
-// Returns NULL if no response needed
-const uint8_t* Begode_HandleCommand(uint8_t command, uint16_t* response_len);
+// Process received frame (if needed)
+void Begode_ReceiveFrame(const uint8_t* frame, uint16_t len);
 
 // Reset frame sequence (useful when starting new streaming session)
 void Begode_ResetSequence(void);

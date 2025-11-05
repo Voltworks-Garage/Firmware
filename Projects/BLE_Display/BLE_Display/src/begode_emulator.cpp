@@ -1,9 +1,14 @@
 #include "begode_emulator.h"
 #include <string.h>
+#include "esp_log.h"
+#include "ble_module.h"
+
+static const char* TAG = "Begode";
 
 // Internal state
 static BegodeVehicleState g_state;
-static uint8_t g_frame_seq = 0;  // 0, 1, 2, 3 cycle
+static uint8_t g_frame_seq = 1;  // 0, 1, 2, 3 cycle
+static bool g_streaming_active = false;
 
 // Internal frame buffer
 static uint8_t g_frame_buffer[24];
@@ -14,20 +19,24 @@ static const char NAME_STRING[] = "NAME:X-WAY\r\n";
 static uint8_t g_response_buffer[24];
 static uint16_t g_response_len = 0;
 
+void Begode_HandleCommand(uint8_t command);
+
 void Begode_Init(void) {
+
+  BLE_SetHM10Callback(Begode_ReceiveFrame);
   memset(&g_state, 0, sizeof(g_state));
 
-  // Set reasonable defaults
-  g_state.speed_mps = 902.0f;              // 230 m/s (~828 km/h)
-  g_state.battery_mv = 58800;           // 58.8V
-  g_state.temperature_c = 69.4f;        // 69.4°C
-  g_state.pwm_limit_percent = 80;       // 80% limit
-  g_state.hardware_pwm_percent = 69;     // 69% PWM
-  g_state.settings_flags = 0x00;        // All settings off
-  g_state.led_mode = 0x00;              // LED mode 0
-  g_state.battery_current_cA = 650;   // 6.50 A
-  g_state.phase_current_cA = 500;     // 5.00 A
-  g_state.total_distance_m = 420;        // 420 meters
+  // Set unique identifiable test values (so we can track where each field appears in DarknessBot)
+  g_state.speed_mps = 11.11f;            // 11.11 m/s = 1111 cm/s (look for ~40 km/h or 11.11 value)
+  g_state.battery_mv = 55500;            // 55.5V = 5550 cV (look for 55.5V)
+  g_state.temperature_c = 33.0f;         // 33°C (look for 33°C)
+  g_state.pwm_limit_percent = 77;        // 77% (look for 77)
+  g_state.hardware_pwm_percent = 44;     // 44% PWM (look for 44)
+  g_state.settings_flags = 0x00;         // All settings off
+  g_state.led_mode = 0x00;               // LED mode 0
+  g_state.battery_current_cA = 2222;     // 22.22 A (look for 22.22A)
+  g_state.phase_current_cA = 3333;       // 33.33 A (look for 33.33A)
+  g_state.total_distance_m = 9999;       // 9999 meters (look for 9.999km)
 
   g_frame_seq = 0;
 }
@@ -73,7 +82,10 @@ void Begode_IncrementDistance(float distance_m) {
   g_state.total_distance_m += (uint32_t)(distance_m + 0.5f);
 }
 
-const uint8_t* Begode_GetFrame(void) {
+const uint8_t* Begode_SendFrame(void) {
+  if(!g_streaming_active) {
+    return NULL;
+  }
   // Clear frame
   memset(g_frame_buffer, 0, 24);
 
@@ -93,8 +105,9 @@ const uint8_t* Begode_GetFrame(void) {
     // Frame 0x00: Live data (voltage, speed, distance, phase current, temperature)
     frame_type = 0x00;
 
-    uint16_t voltage_centi = (uint16_t)(g_state.battery_mv / 10.0);  // 0.01V units
-    int16_t speed_raw_mps = (int16_t)(g_state.speed_mps + 0.5f);   // m/s
+    // DarknessBot multiplies voltage by 2.5, so we divide by 2.5 (multiply by 0.4) when encoding
+    uint16_t voltage_centi = (uint16_t)((g_state.battery_mv * 0.4) / 10.0);  // 0.01V units, adjusted for DarknessBot
+    int16_t speed_raw_cms = (int16_t)(g_state.speed_mps * 100.0f + 0.5f);   // cm/s (centimeters per second!)
     uint32_t dist_total_m = g_state.total_distance_m;              // meters
     int16_t phase_cA = g_state.phase_current_cA;                   // 0.01A
 
@@ -104,8 +117,8 @@ const uint8_t* Begode_GetFrame(void) {
     // Big-endian fields
     g_frame_buffer[2] = (uint8_t)(voltage_centi >> 8);
     g_frame_buffer[3] = (uint8_t)(voltage_centi & 0xFF);
-    g_frame_buffer[4] = (uint8_t)(speed_raw_mps >> 8);
-    g_frame_buffer[5] = (uint8_t)(speed_raw_mps & 0xFF);
+    g_frame_buffer[4] = (uint8_t)(speed_raw_cms >> 8);
+    g_frame_buffer[5] = (uint8_t)(speed_raw_cms & 0xFF);
     g_frame_buffer[6] = (uint8_t)(dist_total_m >> 24);
     g_frame_buffer[7] = (uint8_t)(dist_total_m >> 16);
     g_frame_buffer[8] = (uint8_t)(dist_total_m >> 8);
@@ -139,7 +152,8 @@ const uint8_t* Begode_GetFrame(void) {
     frame_type = 0x01;
 
     uint16_t pwm_limit = g_state.pwm_limit_percent;
-    uint16_t bat_dV = (uint16_t)(g_state.battery_mv / 100);  // 0.1V units
+    // DarknessBot multiplies voltage by 2.5, so we divide by 2.5 (multiply by 0.4) when encoding
+    uint16_t bat_dV = (uint16_t)((g_state.battery_mv * 0.4) / 100);  // 0.1V units, adjusted for DarknessBot
 
     g_frame_buffer[2] = (uint8_t)(pwm_limit >> 8);
     g_frame_buffer[3] = (uint8_t)(pwm_limit & 0xFF);
@@ -164,15 +178,48 @@ const uint8_t* Begode_GetFrame(void) {
   // Advance sequence
   g_frame_seq = (g_frame_seq + 1) & 0x03;
 
+  // Debug: Log what we're sending for all frame types
+  if (frame_type == 0x00) {
+    int16_t speed_raw_cms = (int16_t)((g_frame_buffer[4] << 8) | g_frame_buffer[5]);
+    uint16_t voltage_centi = (g_frame_buffer[2] << 8) | g_frame_buffer[3];
+    uint32_t dist = (g_frame_buffer[6] << 24) | (g_frame_buffer[7] << 16) | (g_frame_buffer[8] << 8) | g_frame_buffer[9];
+    ESP_LOGI(TAG, "Frame 0x00: Volt=%d cV (%.2fV), Speed=%d cm/s, Dist=%u m, Bytes[2-3]=0x%02X%02X",
+             voltage_centi, voltage_centi/100.0f, speed_raw_cms, dist, g_frame_buffer[2], g_frame_buffer[3]);
+  } else if (frame_type == 0x01) {
+    uint16_t pwm_limit = (g_frame_buffer[2] << 8) | g_frame_buffer[3];
+    uint16_t bat_dV = (g_frame_buffer[6] << 8) | g_frame_buffer[7];
+    ESP_LOGI(TAG, "Frame 0x01: PWM_Limit=%u%%, Volt=%u dV (%.1fV), Bytes[6-7]=0x%02X%02X",
+             pwm_limit, bat_dV, bat_dV/10.0f, g_frame_buffer[6], g_frame_buffer[7]);
+  } else if (frame_type == 0x04) {
+    uint32_t dist = (g_frame_buffer[2] << 24) | (g_frame_buffer[3] << 16) | (g_frame_buffer[4] << 8) | g_frame_buffer[5];
+    ESP_LOGI(TAG, "Frame 0x04: Dist=%u m", dist);
+  } else if (frame_type == 0x07) {
+    int16_t batt_cA = (int16_t)((g_frame_buffer[2] << 8) | g_frame_buffer[3]);
+    int16_t hw_pwm = (int16_t)((g_frame_buffer[8] << 8) | g_frame_buffer[9]);
+    ESP_LOGI(TAG, "Frame 0x07: BattCurr=%d cA, HW_PWM=%d%%", batt_cA, hw_pwm);
+  }
+
+  BLE_SendHM10Data(g_frame_buffer, 24);
+
   return g_frame_buffer;
 }
 
-const uint8_t* Begode_HandleCommand(uint8_t command, uint16_t* response_len) {
-  if (response_len == NULL) {
-    return NULL;
+void Begode_ReceiveFrame(const uint8_t* frame, uint16_t len) {
+  if (frame == nullptr || len == 0) {
+    ESP_LOGE(TAG, "Invalid frame received");
+    return;
   }
+  if (len == 1) {
+    ESP_LOGI(TAG, "Received command frame %d", frame[0]);
+    uint8_t command = frame[0];
+    Begode_HandleCommand(command);
 
-  *response_len = 0;
+  } else {
+    ESP_LOGI(TAG, "Received frame of length %d", len);
+  }
+}
+
+void Begode_HandleCommand(uint8_t command) {
 
   if (command == 'V' || command == 'v') {
     // Start streaming command
@@ -180,24 +227,31 @@ const uint8_t* Begode_HandleCommand(uint8_t command, uint16_t* response_len) {
     // 1. First, return a data frame (caller should send this)
     // 2. Then firmware string
     // 3. Then echo 'V'
-
-    // For now, return firmware string + echo combined
-    memcpy(g_response_buffer, FIRMWARE_STRING, strlen(FIRMWARE_STRING));
-    g_response_buffer[strlen(FIRMWARE_STRING)] = 'V';
-    *response_len = strlen(FIRMWARE_STRING) + 1;
+    g_streaming_active = true;
 
     // Reset sequence for new streaming session
     Begode_ResetSequence();
 
-    return g_response_buffer;
+    // First, send a data frame
+    BLE_SendHM10Data(g_frame_buffer, 24);
+
+    // Return firmware string
+    const char* fw = "GW2002001";
+    BLE_SendHM10Data((const uint8_t*)fw, strlen(fw));
+
+    // Finally, echo 'V'
+    BLE_SendHM10Data((const uint8_t*)"V", 1);
+
+
 
   } else if (command == 'N' || command == 'n') {
     // Name request
-    *response_len = strlen(NAME_STRING);
-    return (const uint8_t*)NAME_STRING;
-  }
-
-  return NULL;  // Unknown command
+    memcpy(g_response_buffer, NAME_STRING, strlen(NAME_STRING));
+    g_response_buffer[strlen(NAME_STRING)] = 'N';
+  } else {
+    // Unknown command - no response
+    g_response_len = 0;
+   }
 }
 
 void Begode_ResetSequence(void) {
