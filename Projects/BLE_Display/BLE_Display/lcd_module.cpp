@@ -48,8 +48,10 @@ void LCD_Clear(uint16_t color) {
   tft.fillScreen(color);
 }
 
-void LCD_DrawText(const char* text, int16_t x, int16_t y, uint8_t size, uint16_t color) {
-  tft.setTextColor(color, TFT_BLACK);
+void LCD_DrawText(const char* text, int16_t x, int16_t y, uint8_t size, uint16_t color, uint16_t bg_color) {
+  tft.setTextFont(1);  // ensure built-in font is active
+  tft.setTextDatum(TL_DATUM);
+  tft.setTextColor(color, bg_color);
   tft.setTextSize(size);
   tft.drawString(text, x, y);
 }

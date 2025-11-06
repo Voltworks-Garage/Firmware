@@ -21,6 +21,6 @@ void LCD_ShowTestScreen(void);
 void LCD_Clear(uint16_t color);
 
 // Display text at position
-void LCD_DrawText(const char* text, int16_t x, int16_t y, uint8_t size, uint16_t color);
+void LCD_DrawText(const char* text, int16_t x, int16_t y, uint8_t size, uint16_t color, uint16_t bg_color);
 
 #endif // LCD_MODULE_H

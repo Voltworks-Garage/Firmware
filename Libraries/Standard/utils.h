@@ -11,6 +11,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#ifdef    __cplusplus
+extern "C" {
+#endif
+
 /**
  * Helper function to extract stuffed bits within a CAN data frame
  * @param payload: pointer to a CAN_payload_S type
@@ -35,5 +39,8 @@ uint16_t set_bits(size_t * payload, uint8_t offset, uint8_t range, uint16_t valu
 
 uint8_t crc8ccitt(const uint8_t * data, uint8_t size);
 
+#ifdef    __cplusplus
+}
+#endif
 
 #endif //UTILS_H

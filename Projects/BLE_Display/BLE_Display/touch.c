@@ -35,8 +35,8 @@ void setYpins(void);
 uint16_t map(uint16_t x, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max);
 
 
-NEW_LOW_PASS_FILTER(x_reading_filter, 1000.0f, 10000.0f); // 100 Hz cutoff, 10000 Hz sample rate
-NEW_LOW_PASS_FILTER(y_reading_filter, 1000.0f, 10000.0f); // 100 Hz cutoff, 10000 Hz sample rate
+NEW_LOW_PASS_FILTER(x_reading_filter, 5000.0f, 10000.0f); // 5 kHz cutoff, 10 kHz sample rate
+NEW_LOW_PASS_FILTER(y_reading_filter, 5000.0f, 10000.0f); // 5 kHz cutoff, 10 kHz sample rate
 
 static bool x_y_toggle = false;
 

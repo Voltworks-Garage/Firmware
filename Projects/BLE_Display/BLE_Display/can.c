@@ -1,22 +1,21 @@
 #include "can.h"
 
-// Set local log level BEFORE including esp_log.h
-#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
-#undef LOG_LOCAL_LEVEL
-#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 
-#include "esp_log.h"
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "src/msg/messaging.h"
 
-static const char* TAG = "CAN";
 
-// Verify logging is working at compile time
-#if CONFIG_LOG_MAXIMUM_LEVEL < ESP_LOG_INFO
-#warning "CONFIG_LOG_MAXIMUM_LEVEL is too low for INFO logging"
-#endif
+// #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+// #define LOG_LOCAL_LEVEL ESP_LOG_INFO
+// #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+// #define LOG_LOCAL_LEVEL ESP_LOG_WARN
+// #define LOG_LOCAL_LEVEL ESP_LOG_ERROR
+#define LOG_LOCAL_LEVEL ESP_LOG_NONE
+#include "esp_log.h"
+static const char* TAG = "myCAN";
+
 
 #define CAN_STBY GPIO_NUM_17
 
@@ -36,6 +35,7 @@ static void CAN_RxTask(void* parameter);
 
 void CAN_Init(void) {
   ESP_LOGI(TAG, "Initializing CAN...");
+  esp_log_level_set("myCAN", LOG_LOCAL_LEVEL); // This has to be here to take effect due to .c file type
   gpio_set_direction(CAN_STBY, GPIO_MODE_OUTPUT);
   gpio_set_level(CAN_STBY, 0);
 
@@ -195,12 +195,6 @@ static void CAN_RxTask(void* parameter) {
   uint32_t loop_count = 0;
 
   while (1) {
-    // Log task is alive every 5000 iterations (every ~5 seconds)
-    loop_count++;
-    if (loop_count % 5000 == 0) {
-      ESP_LOGD(TAG, "RX Task alive, loop: %lu, free heap: %lu",
-               loop_count, esp_get_free_heap_size());
-    }
 
     esp_err_t result = twai_receive(&message, pdMS_TO_TICKS(1));
 

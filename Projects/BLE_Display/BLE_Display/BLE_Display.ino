@@ -8,6 +8,7 @@
 #include "src/dash.h"
 #include "src/begode_emulator.h"
 #include "src/kingsong_emulator.h"
+#include "src/cpu_monitor.h"
 
 
 //Library includes
@@ -16,7 +17,7 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 
-#define TASK_MS_DELAY(ms)   TickType_t xLastWakeTime = xTaskGetTickCount();\
+#define TASK_MS_FREQ(ms)   TickType_t xLastWakeTime = xTaskGetTickCount();\
                            const TickType_t xFrequency = pdMS_TO_TICKS(ms);\
 
 // Lightweight tracking for 1ms task only (must be declared before task functions)
@@ -61,7 +62,7 @@ void setup() {
 
   //TODO: move this somewhere else
   // Show initial test screen
-  LCD_ShowTestScreen();
+  // LCD_ShowTestScreen();
 
   createSchedulerTasks();
 
@@ -73,78 +74,79 @@ void loop() {
   // Main loop is empty - all work done in RTOS tasks
 }
 
+// CPU monitors for each task
+static CPUMonitor_t cpu1msMonitor = {0};
+static CPUMonitor_t cpu10msMonitor = {0};
+static CPUMonitor_t cpu100msMonitor = {0};
+static CPUMonitor_t cpu1000msMonitor = {0};
+
+static uint16_t counter = 0;
+
 // 1ms task function
 void task_1ms(void *parameter) {
-  TASK_MS_DELAY(1);
+  TASK_MS_FREQ(1);
+  CPUMonitor_Init(&cpu1msMonitor);
 
   while(1) {
-    // Lightweight 1ms jitter detection - just read tick counter (very fast!)
-    TickType_t now = xTaskGetTickCount();
-    if (task_1ms_last_wake_tick != 0) {
-      uint32_t delta = now - task_1ms_last_wake_tick;
-      if (delta > 1) {  // Should be exactly 1 tick (1ms)
-        uint32_t jitter = delta - 1;
-        if (jitter > task_1ms_max_jitter_ticks) {
-          task_1ms_max_jitter_ticks = jitter;
-        }
-        task_1ms_overrun_count++;
-      }
-    }
-    task_1ms_last_wake_tick = now;
-
     // Serial.println("1ms task running");
     uint8_t buffer[8] = {1,2,3,4,5,6,7,8};
     if (CAN_boot_host_dash_checkDataIsUnread()) {
       CAN_write_simple(0x123, buffer, 8);
     }
-  
+
     Touch_Run_1ms();
 
-
-
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
+
+    // Update CPU statistics
+    CPUMonitor_Update(&cpu1msMonitor);
+    // Serial.println(cpu1msMonitor.period);
   }
 }
 
 // 10ms task function
 void task_10ms(void *parameter) {
-  TASK_MS_DELAY(10);
+  TASK_MS_FREQ(10);
   vTaskDelay(pdMS_TO_TICKS(1)); // Initial delay to stagger tasks
+  CPUMonitor_Init(&cpu10msMonitor);
 
   while(1) {
     // Serial.println("10ms task running");
-    
-    Touch_Run_10ms();
-    Dash_Run_10ms();
 
-        // sample_cpu_stats();
+    Touch_Run_10ms();
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
+
+    // Update CPU statistics
+    CPUMonitor_Update(&cpu10msMonitor);
   }
 }
 
 // 100ms task function
 void task_100ms(void *parameter) {
-  TASK_MS_DELAY(100);
+  TASK_MS_FREQ(100);
   vTaskDelay(pdMS_TO_TICKS(2)); // Initial delay to stagger tasks
+  CPUMonitor_Init(&cpu100msMonitor);
+
   while(1) {
     Serial.println("100ms task running");
     Begode_SendFrame();
     // Kingsong_SendNextPacket();
 
-    sample_cpu_stats();  // Sample CPU stats every 100ms (optimized - no malloc, pointer compares)
-
-        // Serial.println("1ms task running");
     CAN_dash_command_send();
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
+
+    // Update CPU statistics
+    CPUMonitor_Update(&cpu100msMonitor);
   }
 }
 
 // 1000ms task function
 void task_1000ms(void *parameter) {
-  TASK_MS_DELAY(1000);
+  TASK_MS_FREQ(1000);
   vTaskDelay(pdMS_TO_TICKS(3)); // Initial delay to stagger tasks
+  CPUMonitor_Init(&cpu1000msMonitor);
 
   float current_speed = 0.0f;  // Start at 0 m/s
   float target_speed = 15.0f;  // Target 15 m/s (54 km/h)
@@ -177,6 +179,9 @@ void task_1000ms(void *parameter) {
     CAN_dash_status_send();
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
+
+    // Update CPU statistics
+    CPUMonitor_Update(&cpu1000msMonitor);
   }
 }
 
@@ -188,7 +193,7 @@ void createSchedulerTasks() {
     "task_1ms",
     10000,
     NULL,
-    4,
+    configMAX_PRIORITIES-2,
     NULL
   );
 
@@ -197,7 +202,7 @@ void createSchedulerTasks() {
     "task_10ms",
     10000,
     NULL,
-    3,
+    configMAX_PRIORITIES-3 ,
     NULL
   );
 
@@ -206,7 +211,7 @@ void createSchedulerTasks() {
     "task_100ms",
     10000,
     NULL,
-    2,
+    configMAX_PRIORITIES-4,
     NULL
   );
 
@@ -215,143 +220,51 @@ void createSchedulerTasks() {
     "task_1000ms",
     10000,
     NULL,
-    1,
+    configMAX_PRIORITIES-5,
     NULL
   );
 
 }
 
-// Track max CPU usage per task (max 32 tasks) - shared between sample and print
-#define MAX_TRACKED_TASKS 32
-static struct {
-  TaskHandle_t handle;    // Use handle as key - pointer comparison is MUCH faster than strcmp!
-  char name[configMAX_TASK_NAME_LEN];
-  uint32_t maxCpu;        // Peak CPU % seen in any sample
-  uint32_t totalCpu;      // Sum of all samples for averaging
-  uint32_t sampleCount;   // Number of samples taken
-} taskMaxStats[MAX_TRACKED_TASKS] = {0};
-static int numTrackedTasks = 0;
-
-// Sample CPU stats (call every 100ms - uxTaskGetSystemState is HEAVY!)
-void sample_cpu_stats(void) {
-  static uint32_t ulLastTotalRunTime = 0;
-
-  // Pre-allocated buffers - no malloc/free overhead!
-  static TaskStatus_t pxCurrentTaskStatusArray[MAX_TRACKED_TASKS];
-  static TaskStatus_t pxLastTaskStatusArray[MAX_TRACKED_TASKS];
-  static UBaseType_t uxLastArraySize = 0;
-
-  UBaseType_t uxArraySize;
-  uint32_t ulTotalRunTime, ulDeltaTime, ulStatsAsPercentage;
-
-  // Get number of tasks (capped at MAX_TRACKED_TASKS)
-  uxArraySize = uxTaskGetNumberOfTasks();
-  if (uxArraySize > MAX_TRACKED_TASKS) {
-    uxArraySize = MAX_TRACKED_TASKS;
-  }
-
-  // Get detailed stats for all tasks - THIS IS THE HEAVY OPERATION!
-  // It locks the scheduler and iterates all tasks
-  uxArraySize = uxTaskGetSystemState(pxCurrentTaskStatusArray, uxArraySize, &ulTotalRunTime);
-
-  // Calculate delta time since last measurement
-  ulDeltaTime = ulTotalRunTime - ulLastTotalRunTime;
-
-  for (int x = 0; x < uxArraySize; x++) {
-    uint32_t ulTaskDelta = 0;
-    TaskHandle_t taskHandle = pxCurrentTaskStatusArray[x].xHandle;
-
-    // Find matching task in previous snapshot - using HANDLE not string!
-    if (uxLastArraySize > 0) {
-      for (UBaseType_t y = 0; y < uxLastArraySize; y++) {
-        if (pxLastTaskStatusArray[y].xHandle == taskHandle) {  // Pointer comparison - fast!
-          ulTaskDelta = pxCurrentTaskStatusArray[x].ulRunTimeCounter - pxLastTaskStatusArray[y].ulRunTimeCounter;
-          break;
-        }
-      }
-    }
-
-    // Calculate percentage based on delta (avoid divide by zero)
-    if (ulDeltaTime > 0) {
-      ulStatsAsPercentage = (ulTaskDelta * 100) / ulDeltaTime;
-    } else {
-      ulStatsAsPercentage = 0;
-    }
-
-    // Find or create entry for this task's max stats - using HANDLE not string!
-    int taskIdx = -1;
-    for (int i = 0; i < numTrackedTasks; i++) {
-      if (taskMaxStats[i].handle == taskHandle) {  // Pointer comparison - fast!
-        taskIdx = i;
-        break;
-      }
-    }
-    if (taskIdx == -1 && numTrackedTasks < MAX_TRACKED_TASKS) {
-      taskIdx = numTrackedTasks++;
-      taskMaxStats[taskIdx].handle = taskHandle;
-      strncpy(taskMaxStats[taskIdx].name, pxCurrentTaskStatusArray[x].pcTaskName, configMAX_TASK_NAME_LEN - 1);
-      taskMaxStats[taskIdx].maxCpu = 0;
-      taskMaxStats[taskIdx].totalCpu = 0;
-      taskMaxStats[taskIdx].sampleCount = 0;
-    }
-
-    // Update total (for average), max CPU, and sample count
-    if (taskIdx >= 0) {
-      taskMaxStats[taskIdx].totalCpu += ulStatsAsPercentage;
-      taskMaxStats[taskIdx].sampleCount++;
-      if (ulStatsAsPercentage > taskMaxStats[taskIdx].maxCpu) {
-        taskMaxStats[taskIdx].maxCpu = ulStatsAsPercentage;
-      }
-    }
-  }
-
-  // Copy current snapshot to last (no malloc/free - just memcpy!)
-  memcpy(pxLastTaskStatusArray, pxCurrentTaskStatusArray, uxArraySize * sizeof(TaskStatus_t));
-  uxLastArraySize = uxArraySize;
-  ulLastTotalRunTime = ulTotalRunTime;
-}
-
-// Print CPU statistics (call every 1000ms)
+// Print CPU statistics for monitored tasks (call every 1000ms)
 void print_cpu_stats(void) {
-
   Serial.println("\n=== CPU Statistics ===");
+  Serial.println("Task Name\t\tAvg %\tPeak %\tPeak Period (us)\tMax Period (us)");
+  Serial.println("=============================================================================");
 
-  // Print 1ms task timing issues (lightweight - sampled at 1ms resolution!)
-  Serial.printf("1ms Task Jitter: Max=%dms, Overruns=%d (in last 1sec)\n",
-                task_1ms_max_jitter_ticks, task_1ms_overrun_count);
-  task_1ms_max_jitter_ticks = 0;
-  task_1ms_overrun_count = 0;
-  Serial.println();
+  // Print stats for all monitored tasks
+  Serial.printf("%-20s\t%5.2f%%\t%5.2f%%\t%8u\t\t%8u\n",
+                "task_1ms",
+                cpu1msMonitor.cpuUsageAvg,
+                cpu1msMonitor.cpuUsagePeak,
+                cpu1msMonitor.peakPeriod,
+                cpu1msMonitor.maxPeriod);
 
-  Serial.println("All Tasks (sampled every 100ms):");
-  Serial.println("Task Name\t\tAvg %\tPeak %\tStack Free");
-  Serial.println("=========================================================");
+  Serial.printf("%-20s\t%5.2f%%\t%5.2f%%\t%8u\t\t%8u\n",
+                "task_10ms",
+                cpu10msMonitor.cpuUsageAvg,
+                cpu10msMonitor.cpuUsagePeak,
+                cpu10msMonitor.peakPeriod,
+                cpu10msMonitor.maxPeriod);
 
-  // Print stats for all tracked tasks
-  for (int i = 0; i < numTrackedTasks; i++) {
-    // Calculate average CPU over the measurement period
-    uint32_t avgCpu = 0;
-    if (taskMaxStats[i].sampleCount > 0) {
-      avgCpu = taskMaxStats[i].totalCpu / taskMaxStats[i].sampleCount;
-    }
+  Serial.printf("%-20s\t%5.2f%%\t%5.2f%%\t%8u\t\t%8u\n",
+                "task_100ms",
+                cpu100msMonitor.cpuUsageAvg,
+                cpu100msMonitor.cpuUsagePeak,
+                cpu100msMonitor.peakPeriod,
+                cpu100msMonitor.maxPeriod);
 
-    // Get current stack info (need to find the task)
-    TaskHandle_t taskHandle = xTaskGetHandle(taskMaxStats[i].name);
-    UBaseType_t stackFree = 0;
-    if (taskHandle != NULL) {
-      stackFree = uxTaskGetStackHighWaterMark(taskHandle);
-    }
+  Serial.printf("%-20s\t%5.2f%%\t%5.2f%%\t%8u\t\t%8u\n",
+                "task_1000ms",
+                cpu1000msMonitor.cpuUsageAvg,
+                cpu1000msMonitor.cpuUsagePeak,
+                cpu1000msMonitor.peakPeriod,
+                cpu1000msMonitor.maxPeriod);
 
-    Serial.printf("%-20s\t%3d%%\t%3d%%\t%d\n",
-                  taskMaxStats[i].name,
-                  avgCpu,
-                  taskMaxStats[i].maxCpu,
-                  stackFree);
-
-    // Reset stats after printing (shows average/peak over last 1 second)
-    taskMaxStats[i].maxCpu = 0;
-    taskMaxStats[i].totalCpu = 0;
-    taskMaxStats[i].sampleCount = 0;
-  }
+  // Reset peak values after printing (for next measurement window)
+  CPUMonitor_ResetPeak(&cpu1msMonitor);
+  CPUMonitor_ResetPeak(&cpu10msMonitor);
+  CPUMonitor_ResetPeak(&cpu100msMonitor);
+  CPUMonitor_ResetPeak(&cpu1000msMonitor);
 }
 
