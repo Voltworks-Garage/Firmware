@@ -41,9 +41,10 @@ void setup() {
   Serial.begin(921600);
   delay(100);  // Give serial time to initialize
 
-  // Configure ESP-IDF logging
+  // Configure ESP-IDF logging levels (must be set before module initialization)
   // esp_log_level_set("TOUCH", ESP_LOG_VERBOSE);  // Specifically enable TOUCH tag
   // esp_log_level_set("CAN", ESP_LOG_INFO);  // Enable CAN module info logging
+  esp_log_level_set("DASH", ESP_LOG_VERBOSE);  // Enable DASH verbose logging
 
   // Initialize hardware modules
   BLE_Init();
@@ -225,40 +226,44 @@ void task_1000ms(void *parameter) {
 void createSchedulerTasks() {
   
   // Create demo tasks
-  xTaskCreate(
+  xTaskCreatePinnedToCore(
     task_1ms,
     "task_1ms",
     10000,
     NULL,
     configMAX_PRIORITIES-1,
-    NULL
+    NULL,
+    1
   );
 
-  xTaskCreate(
+  xTaskCreatePinnedToCore(
     task_10ms,
     "task_10ms",
     10000,
     NULL,
     configMAX_PRIORITIES-3 ,
-    NULL
+    NULL,
+    1
   );
 
-  xTaskCreate(
+  xTaskCreatePinnedToCore(
     task_100ms,
     "task_100ms",
     10000,
     NULL,
     configMAX_PRIORITIES-4,
-    NULL
+    NULL,
+    1
   );
 
-  xTaskCreate(
+  xTaskCreatePinnedToCore(
     task_1000ms,
     "task_1000ms",
     10000,
     NULL,
     configMAX_PRIORITIES-5,
-    NULL
+    NULL,
+    1
   );
 
 }

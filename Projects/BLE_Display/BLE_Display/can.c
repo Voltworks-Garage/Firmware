@@ -7,12 +7,12 @@
 #include "src/msg/messaging.h"
 
 
-#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+// #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 // #define LOG_LOCAL_LEVEL ESP_LOG_INFO
 // #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 // #define LOG_LOCAL_LEVEL ESP_LOG_WARN
 // #define LOG_LOCAL_LEVEL ESP_LOG_ERROR
-// #define LOG_LOCAL_LEVEL ESP_LOG_NONE
+#define LOG_LOCAL_LEVEL ESP_LOG_NONE
 #include "esp_log.h"
 static const char* TAG = "myCAN";
 

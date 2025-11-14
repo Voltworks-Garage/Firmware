@@ -7,7 +7,15 @@
 #include "FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
+
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+// #define LOG_LOCAL_LEVEL ESP_LOG_INFO
+// #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+// #define LOG_LOCAL_LEVEL ESP_LOG_WARN
+// #define LOG_LOCAL_LEVEL ESP_LOG_ERROR
+// #define LOG_LOCAL_LEVEL ESP_LOG_NONE
 #include "esp_log.h"
+static const char* TAG = "DASH";
 
 #include "src/msg/messaging.h"
 #include "../../../CAN/generated/dash_dbc.h"
@@ -109,6 +117,8 @@ void task_lcd_10ms(void *parameter);
 
 
 void Dash_Init() {
+  esp_log_level_set("DASH", LOG_LOCAL_LEVEL); // This has to be here to take effect due to .c file type
+
   tft = LCD_GetTFT();
   // Initialize temperature sensor
   ESP_ERROR_CHECK(temperature_sensor_install(&temp_sensor_config, &temp_handle));
@@ -138,7 +148,7 @@ void Dash_Init() {
     NULL,
     3,
     NULL,
-    1
+    0
   );
 
 }
@@ -165,13 +175,17 @@ void dash_init(DASH_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
             ESP_LOGI("DASH", "Entering INIT state");
+            {
+              uint32_t imgSize = sizeof(Voltworks_Garage)/sizeof(Voltworks_Garage[0]);
+              ESP_LOGI("DASH", "Image size: %u pixels", imgSize);
+            }
 
             tft->pushImage(80,
                            0,
                            VOLTWORKS_GARAGE_WIDTH,
                            VOLTWORKS_GARAGE_HEIGHT,
-                           Voltworks_Garage,
-                          0xffff);
+                           Voltworks_Garage);
+
             vTaskDelay(pdMS_TO_TICKS(1000));
             break;
         case EXIT:
