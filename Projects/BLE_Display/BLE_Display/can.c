@@ -7,12 +7,12 @@
 #include "src/msg/messaging.h"
 
 
-// #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 // #define LOG_LOCAL_LEVEL ESP_LOG_INFO
 // #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 // #define LOG_LOCAL_LEVEL ESP_LOG_WARN
 // #define LOG_LOCAL_LEVEL ESP_LOG_ERROR
-#define LOG_LOCAL_LEVEL ESP_LOG_NONE
+// #define LOG_LOCAL_LEVEL ESP_LOG_NONE
 #include "esp_log.h"
 static const char* TAG = "myCAN";
 
@@ -27,6 +27,12 @@ static CAN_payload_S RX_Payloads[CAN_RX_QUEUE_LEN]; // Array of payloads for RX 
 uint8_t CAN_messageStatuses[CAN_RX_QUEUE_LEN]; // Status flags for each mailbox
 static uint8_t RX_MailboxCount = 0;
 
+// Global timestamp tracking last received message (any ID)
+static volatile uint32_t last_message_received_timestamp = 0;
+
+// Transmission control flag
+static volatile bool can_tx_enabled = true;
+
 // Mutex for protecting shared mailbox data access
 static portMUX_TYPE can_mux = portMUX_INITIALIZER_UNLOCKED;
 
@@ -34,8 +40,8 @@ static portMUX_TYPE can_mux = portMUX_INITIALIZER_UNLOCKED;
 static void CAN_RxTask(void* parameter);
 
 void CAN_Init(void) {
-  ESP_LOGI(TAG, "Initializing CAN...");
   esp_log_level_set("myCAN", LOG_LOCAL_LEVEL); // This has to be here to take effect due to .c file type
+  ESP_LOGI(TAG, "Initializing CAN...");
   gpio_set_direction(CAN_STBY, GPIO_MODE_OUTPUT);
   gpio_set_level(CAN_STBY, 0);
 
@@ -96,6 +102,11 @@ void CAN_DeInit(){
 
 // DBC-compatible write function (takes CAN_message_S pointer)
 uint8_t CAN_write(CAN_message_S *msg) {
+  // Check if transmission is enabled
+  if (!can_tx_enabled) {
+    return 0;  // Transmission disabled
+  }
+
   if (msg == NULL || msg->payload == NULL) {
     return 0;  // Failure
   }
@@ -122,6 +133,11 @@ uint8_t CAN_write(CAN_message_S *msg) {
 
 // Helper function for simple CAN writes
 bool CAN_write_simple(uint32_t id, uint8_t* data, uint8_t length) {
+  // Check if transmission is enabled
+  if (!can_tx_enabled) {
+    return false;  // Transmission disabled
+  }
+
   if (length > 8) {
     length = 8;  // CAN message max length
   }
@@ -199,6 +215,9 @@ static void CAN_RxTask(void* parameter) {
     esp_err_t result = twai_receive(&message, pdMS_TO_TICKS(1));
 
     if (result == ESP_OK) {
+      // Update global timestamp for ANY message received
+      last_message_received_timestamp = pdTICKS_TO_MS(xTaskGetTickCount());
+
       ESP_LOGI(TAG, "RX: ID=0x%03lX, DLC=%d, Data=%02X %02X %02X %02X %02X %02X %02X %02X",
                     message.identifier, message.data_length_code,
                     message.data[0], message.data[1], message.data[2], message.data[3],
@@ -282,4 +301,34 @@ uint8_t CAN_checkDataIsUnread(CAN_message_S * data) {
     *(data->canMessageStatus) = 0;
     taskEXIT_CRITICAL(&can_mux);
     return ret;
+}
+
+uint32_t CAN_timeSinceLastMessageReceived(void) {
+    uint32_t current_time = pdTICKS_TO_MS(xTaskGetTickCount());
+
+    // If no messages received yet, return max value
+    if (last_message_received_timestamp == 0) {
+        return 0xFFFFFFFF;
+    }
+
+    // Unsigned subtraction naturally handles wrap-around
+    return current_time - last_message_received_timestamp;
+}
+
+void CAN_setMode(CAN_Mode_t mode) {
+    switch (mode) {
+        case CAN_NORMAL_MODE:
+            can_tx_enabled = true;
+            ESP_LOGI(TAG, "CAN normal mode enabled (TX enabled)");
+            break;
+
+        case CAN_LISTEN_MODE:
+            can_tx_enabled = false;
+            ESP_LOGI(TAG, "CAN listen-only mode enabled (TX disabled, ACKs still sent)");
+            break;
+
+        default:
+            ESP_LOGW(TAG, "Invalid CAN mode: %d", mode);
+            break;
+    }
 }

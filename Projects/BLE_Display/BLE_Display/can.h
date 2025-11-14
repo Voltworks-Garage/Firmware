@@ -7,6 +7,12 @@
 extern "C" {
 #endif
 
+// CAN operating modes
+typedef enum {
+    CAN_NORMAL_MODE = 0,  // Normal operation - TX and RX enabled
+    CAN_LISTEN_MODE = 1   // Listen-only - RX enabled, TX disabled (ACKs still sent)
+} CAN_Mode_t;
+
 // CAN message payload structure is also defined in Libraries/PIC33_plib/inc/can.h
 typedef struct {
    uint16_t word0;
@@ -26,8 +32,8 @@ typedef struct CAN_message_S {
 } CAN_message_S;
 
 // CAN pin definitions
-#define CAN_TX_PIN 21
-#define CAN_RX_PIN 18
+#define CAN_TX_PIN GPIO_NUM_21
+#define CAN_RX_PIN GPIO_NUM_18
 
 // CAN queue sizes (default is 5 for both TX and RX)
 #define CAN_TX_QUEUE_LEN 10
@@ -85,6 +91,18 @@ uint32_t CAN_getTimeSinceLastReceived(CAN_message_S * data);
  * @return 1 if unread, 0 if read
  */
 uint8_t CAN_checkDataIsUnread(CAN_message_S * data);
+
+/**
+ * Gets time since last CAN message received (any ID)
+ * @return Time in milliseconds since last message, 0xFFFFFFFF if no messages received yet
+ */
+uint32_t CAN_timeSinceLastMessageReceived(void);
+
+/**
+ * Sets the CAN operating mode
+ * @param mode CAN_NORMAL_MODE (TX/RX enabled) or CAN_LISTEN_MODE (TX disabled, RX/ACK enabled)
+ */
+void CAN_setMode(CAN_Mode_t mode);
 
 #ifdef __cplusplus
 }

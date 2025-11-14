@@ -108,6 +108,7 @@ void CAN_mcu_command_J1772_prox_status_set(uint16_t J1772_prox_status);
 void CAN_mcu_command_J1772_pilot_current_set(float J1772_pilot_current);
 void CAN_mcu_command_precharge_enable_set(uint16_t precharge_enable);
 void CAN_mcu_command_motor_controller_enable_set(uint16_t motor_controller_enable);
+void CAN_mcu_command_go_to_sleep_set(uint16_t go_to_sleep);
 void CAN_mcu_command_dlc_set(uint8_t dlc);
 
 

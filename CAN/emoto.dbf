@@ -83,12 +83,13 @@
 [START_SIGNALS] J1772_controller_current,12,5,7.0,U,4095,0,1,0,1,mA,M4
 [END_MSG]
 
-[START_MSG] mcu_command,905,8,5,1,S
+[START_MSG] mcu_command,905,8,6,1,S
 [START_SIGNALS] DCDC_enable,1,1,0.0,B,1,0,1,0,1.0,bool
 [START_SIGNALS] J1772_prox_status,2,1,1.0,U,3,0,1,0,1.0,enum
 [START_SIGNALS] J1772_pilot_current,8,1,3.0,U,255,0,1,0,1.0,A
 [START_SIGNALS] precharge_enable,1,2,3.0,B,1,0,1,0,1.0,bool
 [START_SIGNALS] motor_controller_enable,1,2,4.0,B,1,0,1,0,1.0,bool
+[START_SIGNALS] go_to_sleep,1,2,5.0,B,1,0,1,0,1.0,bool
 [END_MSG]
 
 [START_MSG] mcu_motorControllerRequest,513,8,7,1,S

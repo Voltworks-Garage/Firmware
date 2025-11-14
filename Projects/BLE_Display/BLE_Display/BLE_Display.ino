@@ -3,6 +3,7 @@
 #include "lcd_module.h"
 #include "can.h"
 #include "touch.h"
+#include <driver/gpio.h>
 
 //Project includes
 #include "src/dash.h"
@@ -16,6 +17,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include <esp_sleep.h>
 
 #define TASK_MS_FREQ(ms)   TickType_t xLastWakeTime = xTaskGetTickCount();\
                            const TickType_t xFrequency = pdMS_TO_TICKS(ms);\
@@ -70,8 +72,43 @@ void setup() {
 }
 
 void loop() {
-  vTaskDelay(pdMS_TO_TICKS(1000));
-  // Main loop is empty - all work done in RTOS tasks
+  // Check if MCU has commanded us to go to sleep
+  if (CAN_mcu_command_go_to_sleep_get() && !CAN_mcu_command_checkDataIsStale()) {
+    Serial.println("Sleep command received - entering deep sleep mode");
+    Serial.flush(); // Ensure message is sent before sleeping
+
+    CAN_setMode(CAN_LISTEN_MODE); // Set CAN to listen-only to avoid bus interference
+    bool actuallyGoingToSleep = true;
+    // Give time for any pending operations to complete
+      vTaskDelay(pdMS_TO_TICKS(1000));
+      if (CAN_timeSinceLastMessageReceived() >= 1000) {
+        Serial.println("No CAN messages received in last 1 second");
+      } else {
+        Serial.println("CAN activity detected recently - aborting sleep");
+        actuallyGoingToSleep = false;
+        CAN_setMode(CAN_NORMAL_MODE); // Restore normal CAN operation
+      }
+
+
+    if (actuallyGoingToSleep) {
+      // Shutdown peripherals to minimize sleep current
+      CAN_DeInit();      // Stop CAN controller, disable STBY pin
+      LCD_DeInit();      // Power off LCD and backlight
+      Touch_DeInit();    // Deinitialize touch controller
+      // Note: BLE radio will automatically power down in deep sleep
+
+      // Configure wake on CAN activity (pin 18/RX goes LOW on CAN bus dominant state)
+      esp_sleep_enable_ext0_wakeup(GPIO_NUM_18, 0); // Wake on LOW (CAN bus activity)
+
+      Serial.println("Deep sleep configured - will wake on CAN activity (GPIO 18)");
+      Serial.flush();
+
+      esp_deep_sleep_start();
+    }
+  }
+
+  vTaskDelay(pdMS_TO_TICKS(100));
+  // Main loop runs every 10Hz (100ms) to check for sleep command
 }
 
 // CPU monitors for each task
@@ -88,6 +125,8 @@ void task_1ms(void *parameter) {
   CPUMonitor_Init(&cpu1msMonitor);
 
   while(1) {
+    CAN_send_1ms();
+
     // Serial.println("1ms task running");
     uint8_t buffer[8] = {1,2,3,4,5,6,7,8};
     if (CAN_boot_host_dash_checkDataIsUnread()) {
@@ -111,6 +150,7 @@ void task_10ms(void *parameter) {
   CPUMonitor_Init(&cpu10msMonitor);
 
   while(1) {
+    CAN_send_10ms();
     // Serial.println("10ms task running");
 
     Touch_Run_10ms();
@@ -129,11 +169,9 @@ void task_100ms(void *parameter) {
   CPUMonitor_Init(&cpu100msMonitor);
 
   while(1) {
-    Serial.println("100ms task running");
+    CAN_send_1000ms();
     Begode_SendFrame();
     // Kingsong_SendNextPacket();
-
-    CAN_dash_command_send();
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
 
@@ -154,6 +192,7 @@ void task_1000ms(void *parameter) {
   bool speed_increasing = true;
 
   while(1) {
+    CAN_send_1000ms();
     print_cpu_stats();
 
     // Slowly ramp speed up and down
@@ -176,8 +215,6 @@ void task_1000ms(void *parameter) {
     // Kingsong_SetSpeed(speed_kmh);
     Begode_SetSpeed(current_speed);
 
-    CAN_dash_status_send();
-
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
 
     // Update CPU statistics
@@ -193,7 +230,7 @@ void createSchedulerTasks() {
     "task_1ms",
     10000,
     NULL,
-    configMAX_PRIORITIES-2,
+    configMAX_PRIORITIES-1,
     NULL
   );
 

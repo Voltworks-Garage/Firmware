@@ -29,6 +29,7 @@ uint16_t CAN_mcu_command_J1772_prox_status_get(void);
 float CAN_mcu_command_J1772_pilot_current_get(void);
 uint16_t CAN_mcu_command_precharge_enable_get(void);
 uint16_t CAN_mcu_command_motor_controller_enable_get(void);
+uint16_t CAN_mcu_command_go_to_sleep_get(void);
 
 #define CAN_mcu_mcu_debug_interval() 10
 #define CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES 4

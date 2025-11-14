@@ -83,7 +83,9 @@ void Begode_IncrementDistance(float distance_m) {
 }
 
 const uint8_t* Begode_SendFrame(void) {
-  if(!g_streaming_active) {
+  if(!g_streaming_active || !BLE_IsConnected()) {
+    g_streaming_active = false;
+    Begode_ResetSequence();
     return NULL;
   }
   // Clear frame

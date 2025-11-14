@@ -597,6 +597,13 @@
                             "scale": 1.0,
                             "offset": 0,
                             "units": "bool"
+                        },
+                        {
+                            "name": "go_to_sleep",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool"
                         }
                     ]
                 },

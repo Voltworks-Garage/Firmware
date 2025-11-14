@@ -27,6 +27,8 @@ static CAN_message_S CAN_mcu_command={
 #define CAN_MCU_COMMAND_PRECHARGE_ENABLE_OFFSET 11
 #define CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_RANGE 1
 #define CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_OFFSET 12
+#define CAN_MCU_COMMAND_GO_TO_SLEEP_RANGE 1
+#define CAN_MCU_COMMAND_GO_TO_SLEEP_OFFSET 13
 
 uint8_t CAN_mcu_command_checkDataIsUnread(void){
 	return CAN_checkDataIsUnread(&CAN_mcu_command);
@@ -62,6 +64,12 @@ uint16_t CAN_mcu_command_motor_controller_enable_get(void){
 	// Extract 1-bit signal at bit offset 12
 	uint16_t data = 0;
 	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x1000) >> 12) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_mcu_command_go_to_sleep_get(void){
+	// Extract 1-bit signal at bit offset 13
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_mcu_command.payload->word0 & 0x2000) >> 13) << 0;
 	return (data * 1.0) + 0;
 }
 

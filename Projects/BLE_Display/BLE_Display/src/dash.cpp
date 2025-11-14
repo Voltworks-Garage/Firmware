@@ -10,6 +10,8 @@
 #include "esp_log.h"
 
 #include "src/msg/messaging.h"
+#include "../../../CAN/generated/dash_dbc.h"
+#include "src/logo.h"
 
 /******************************************************************************
  * State Machine
@@ -34,8 +36,6 @@ typedef enum {
     ENTRY,
     EXIT,
     RUN,
-    TOUCH,
-    NUM_ENTRY_TYPES,
     NONE
 } DASH_entry_types_E;
 
@@ -52,9 +52,16 @@ static DASH_states_E dash_nextState = dash_init_state;
  * Declarations
  *******************************************************************************/
 
-TFT_eSPI* tft = LCD_GetTFT();        // Create TFT instance "tft" 
+TFT_eSPI* tft = NULL;        // Create TFT instance "tft" 
 
 static QueueHandle_t q = NULL;  // Message queue for DASH module
+static Message_t msg = {};  //Global message holder for processing event
+
+//Internal Variables for Display:
+bool ble_connection_status = false;
+uint8_t can_connection_status = 0;
+float battery_percentage = 0;
+float battery_voltage = 0;
 
 // Temperature sensor handle
 temperature_sensor_handle_t temp_handle = NULL;
@@ -63,14 +70,16 @@ temperature_sensor_config_t temp_sensor_config = TEMPERATURE_SENSOR_CONFIG_DEFAU
 #define DASH_HOME_BG_COLOR TFT_NAVY
 #define DASH_HOME_TEXT_COLOR TFT_WHITE
 
-#define ROW_1_X 10
-#define TITLE_LOCATION_Y 10
-#define TEMPERATURE_LOCATION_Y 50
-#define VOLTAGE_LOCATION_Y 90
-#define CURRENT_LOCATION_Y 130
-#define POWER_LOCATION_Y 170
-#define BLE_STATUS_LOCATION_Y 210
-#define BLE_MAC_ADDRESS_LOCATION_Y 250
+#define ROW_SPACING 50
+#define ROW_1 10
+#define ROW_2 (ROW_1 + ROW_SPACING*1)
+#define ROW_3 (ROW_1 + ROW_SPACING*2)
+#define ROW_4 (ROW_1 + ROW_SPACING*3)
+#define ROW_5 (ROW_1 + ROW_SPACING*4)
+#define ROW_6 (ROW_1 + ROW_SPACING*5)
+
+#define COL_1 10
+#define COL_2 150
 
 #define DARKER_GREY 0x18E3
 #define LOOP_DELAY 50  // milliseconds between updates
@@ -87,12 +96,10 @@ typedef struct {
   bool needs_init;
 } ringMeter_t;
 
-
-
 uint32_t runTime = 0;       // time for next update
-
 static ringMeter_t speedMeter = {0};
 
+void messageQueueHandler(void);
 void ringMeter(ringMeter_t *meter);
 float dashCheckTemperatureSensor();
 void drawDashBoard();
@@ -102,6 +109,7 @@ void task_lcd_10ms(void *parameter);
 
 
 void Dash_Init() {
+  tft = LCD_GetTFT();
   // Initialize temperature sensor
   ESP_ERROR_CHECK(temperature_sensor_install(&temp_sensor_config, &temp_handle));
   q = xQueueCreate(10, sizeof(Message_t));
@@ -123,13 +131,14 @@ void Dash_Init() {
   speedMeter.needs_init = true;
 
   // Create LCD task (10ms period)
-  xTaskCreate(
+  xTaskCreatePinnedToCore(
     task_lcd_10ms,
     "task_lcd_10ms",
     10000,
     NULL,
     3,
-    NULL
+    NULL,
+    1
   );
 
 }
@@ -143,26 +152,13 @@ void Dash_Run_10ms() {
       dash_state_functions[dash_curState](ENTRY);
   }
 
+  // Run current state with any events from message queue
+  messageQueueHandler();
+
   // Regular RUN call
   dash_state_functions[dash_curState](RUN);
 
-  // Run current state with any events from message queue
-  Message_t msg;
-  while (xQueueReceive(q, &msg, 0) == pdTRUE) {
-    DASH_entry_types_E thisEvent = NONE;
-    // Process message
-    switch (msg.id) {
-      case MSG_ID_CAN_FRAME:
-        // Handle CAN frame message
-        break;
-      case MSG_ID_BLE_COMMAND:
-        // Handle BLE command message
-        break;
-      default:
-        break;
-    }
-    dash_state_functions[dash_curState](thisEvent);
-  }
+
 }
 
 void dash_init(DASH_entry_types_E entry_type) {
@@ -170,11 +166,20 @@ void dash_init(DASH_entry_types_E entry_type) {
         case ENTRY:
             ESP_LOGI("DASH", "Entering INIT state");
 
+            tft->pushImage(80,
+                           0,
+                           VOLTWORKS_GARAGE_WIDTH,
+                           VOLTWORKS_GARAGE_HEIGHT,
+                           Voltworks_Garage,
+                          0xffff);
+            vTaskDelay(pdMS_TO_TICKS(1000));
             break;
         case EXIT:
             ESP_LOGI("DASH", "Exiting INIT state");
             break;
         case RUN:
+
+            
             // Initialization tasks can be performed here if needed
             dash_nextState = dash_home_state; // Transition to home state
             break;
@@ -188,26 +193,37 @@ void dash_home(DASH_entry_types_E entry_type) {
         case ENTRY:
             ESP_LOGI("DASH", "Entering HOME state");
             tft->fillScreen(DASH_HOME_BG_COLOR);
-            LCD_DrawText("ESP32_s3", ROW_1_X, TITLE_LOCATION_Y, 3, DASH_HOME_TEXT_COLOR, DASH_HOME_BG_COLOR);
-            LCD_DrawText("Temp:", ROW_1_X, TEMPERATURE_LOCATION_Y, 3, DASH_HOME_TEXT_COLOR, DASH_HOME_BG_COLOR);
-            LCD_DrawText("Voltage:", ROW_1_X, VOLTAGE_LOCATION_Y, 2, DASH_HOME_TEXT_COLOR, DASH_HOME_BG_COLOR);
-            LCD_DrawText("Current:", ROW_1_X, CURRENT_LOCATION_Y, 2, DASH_HOME_TEXT_COLOR, DASH_HOME_BG_COLOR);
-            LCD_DrawText("Power:", ROW_1_X, POWER_LOCATION_Y, 2, DASH_HOME_TEXT_COLOR, DASH_HOME_BG_COLOR);
-            LCD_DrawText("BLE Status:", ROW_1_X, BLE_STATUS_LOCATION_Y, 2, DASH_HOME_TEXT_COLOR, DASH_HOME_BG_COLOR);
-            LCD_DrawText("MAC Address:", ROW_1_X, BLE_MAC_ADDRESS_LOCATION_Y, 2, DASH_HOME_TEXT_COLOR, DASH_HOME_BG_COLOR);
+            LCD_DrawText("Voltworks Garage eMOTO", COL_1, ROW_1, 3, DASH_HOME_TEXT_COLOR, DASH_HOME_BG_COLOR);
+            LCD_DrawText("Battery (%):", COL_1, ROW_2, 2, DASH_HOME_TEXT_COLOR, DASH_HOME_BG_COLOR);
+            LCD_DrawText("Voltage (V):", COL_1, ROW_3, 2, DASH_HOME_TEXT_COLOR, DASH_HOME_BG_COLOR);
+            LCD_DrawText("CAN Status:", COL_1, ROW_4, 2, DASH_HOME_TEXT_COLOR, DASH_HOME_BG_COLOR);
+            LCD_DrawText("BLE Status:", COL_1, ROW_5, 2, DASH_HOME_TEXT_COLOR, DASH_HOME_BG_COLOR);
+            LCD_DrawText("Vehicle Status:", COL_1, ROW_6, 2, DASH_HOME_TEXT_COLOR, DASH_HOME_BG_COLOR);
+            LCD_DrawText("Not Connected", COL_2, ROW_5, 2, DASH_HOME_TEXT_COLOR, DASH_HOME_BG_COLOR);
             break;
         case EXIT:
             ESP_LOGI("DASH", "Exiting HOME state");
             break;
         case RUN:
-            // Home screen tasks can be performed here
+            LCD_DrawText("0 Nodes", COL_2, ROW_4, 2, DASH_HOME_TEXT_COLOR, DASH_HOME_BG_COLOR);
+
+            LCD_DrawText("Accesory State", COL_2, ROW_6, 2, DASH_HOME_TEXT_COLOR, DASH_HOME_BG_COLOR);
             {
-                float temperature = dashCheckTemperatureSensor();
-                char tempBuffer[10];
-                snprintf(tempBuffer, sizeof(tempBuffer), "%.2f C", temperature);
-                LCD_DrawText(tempBuffer, 100, TEMPERATURE_LOCATION_Y, 2, DASH_HOME_TEXT_COLOR, DASH_HOME_BG_COLOR);
+              char buf[10];
+              sprintf(buf, "%5.1f", CAN_bms_status_soc_percent_get());
+              LCD_DrawText(buf , COL_2, ROW_2, 2, DASH_HOME_TEXT_COLOR, DASH_HOME_BG_COLOR);
+              sprintf(buf, "%5.1f", CAN_bms_status_pack_voltage_get());
+              LCD_DrawText(buf , COL_2, ROW_3, 2, DASH_HOME_TEXT_COLOR, DASH_HOME_BG_COLOR);
             }
+
+            if (ble_connection_status){
+              LCD_DrawText("Connected    ", COL_2, ROW_5, 2, DASH_HOME_TEXT_COLOR, DASH_HOME_BG_COLOR);
+            } else {
+              LCD_DrawText("Not Connected", COL_2, ROW_5, 2, DASH_HOME_TEXT_COLOR, DASH_HOME_BG_COLOR);
+            }
+
             drawDashBoard();
+
             uint16_t xval, yval;
             if (Touch_GetXY(&xval, &yval)) {
               tft->fillCircle(xval, yval, 5, TFT_RED);
@@ -265,6 +281,25 @@ void dash_error(DASH_entry_types_E entry_type) {
         default:
             break;
     }
+}
+
+void messageQueueHandler(void){
+  while (xQueueReceive(q, &msg, 0) == pdTRUE) {
+    switch(msg.source){
+      case MODULE_BLE:
+        switch (msg.payload[0]){
+          case BLE_CONNECTION:
+            ble_connection_status = msg.payload[1];
+            break;
+          
+          default:
+            break;
+        }
+        break;
+      default:
+        break;
+    }
+  }
 }
 
 float dashCheckTemperatureSensor() {

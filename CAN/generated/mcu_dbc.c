@@ -641,6 +641,8 @@ static CAN_message_S CAN_mcu_command={
 #define CAN_MCU_COMMAND_PRECHARGE_ENABLE_OFFSET 11
 #define CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_RANGE 1
 #define CAN_MCU_COMMAND_MOTOR_CONTROLLER_ENABLE_OFFSET 12
+#define CAN_MCU_COMMAND_GO_TO_SLEEP_RANGE 1
+#define CAN_MCU_COMMAND_GO_TO_SLEEP_OFFSET 13
 
 void CAN_mcu_command_DCDC_enable_set(uint16_t DCDC_enable){
 	uint16_t data_scaled = DCDC_enable * 1.0;
@@ -671,6 +673,12 @@ void CAN_mcu_command_motor_controller_enable_set(uint16_t motor_controller_enabl
 	// Set 1-bit signal at bit offset 12
 	CAN_mcu_command.payload->word0 &= ~0x1000;
 	CAN_mcu_command.payload->word0 |= (data_scaled << 12) & 0x1000;
+}
+void CAN_mcu_command_go_to_sleep_set(uint16_t go_to_sleep){
+	uint16_t data_scaled = go_to_sleep * 1.0;
+	// Set 1-bit signal at bit offset 13
+	CAN_mcu_command.payload->word0 &= ~0x2000;
+	CAN_mcu_command.payload->word0 |= (data_scaled << 13) & 0x2000;
 }
 void CAN_mcu_command_dlc_set(uint8_t dlc){
 	CAN_mcu_command.dlc = dlc;

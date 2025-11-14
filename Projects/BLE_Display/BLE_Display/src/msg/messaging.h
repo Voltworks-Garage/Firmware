@@ -11,16 +11,6 @@ extern "C" {
 #endif
 
 typedef enum {
-    MSG_ID_CAN_FRAME,
-    MSG_ID_BLE_COMMAND,
-    MSG_ID_UI_EVENT,
-    MSG_ID_TOUCH_EVENT,
-    MSG_ID_UI_UPDATE,
-    MSG_ID_APP_STATE,
-    MSG_ID_COUNT
-} MessageId_t;
-
-typedef enum {
     MODULE_CAN,
     MODULE_BLE,
     MODULE_UI,
@@ -31,11 +21,9 @@ typedef enum {
 } ModuleId_t;
 
 typedef struct {
-    MessageId_t id;
     ModuleId_t source;
     ModuleId_t destination;   // MODULE_BROADCAST for pub-sub
     uint8_t payload[32];
-    uint8_t len;
 } Message_t;
 
 /**
@@ -51,7 +39,7 @@ void MsgBus_Register(ModuleId_t module, QueueHandle_t queue);
 /**
  * Subscribe a module to a specific message ID
  */
-void MsgBus_Subscribe(MessageId_t id, ModuleId_t module, QueueHandle_t queue);
+void MsgBus_Subscribe(ModuleId_t sub2module, ModuleId_t module, QueueHandle_t queue);
 void MsgBus_Send(const Message_t *msg);
 void MsgBus_Publish(const Message_t *msg);
 

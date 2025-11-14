@@ -1,5 +1,6 @@
 #include "ble_module.h"
 #include "esp_log.h"
+#include "src/msg/messaging.h"
 
 static const char* TAG = "BLE";
 
@@ -42,6 +43,12 @@ class MyServerCallbacks: public NimBLEServerCallbacks {
     } else {
       ESP_LOGW(TAG, "MTU exchange failed: %d", rc);
     }
+    const Message_t connect_message = {
+      .source = MODULE_BLE,
+      .destination = MODULE_UI,   // MODULE_BROADCAST for pub-sub
+      .payload = {BLE_CONNECTION, 1},
+    };
+    MsgBus_Send(&connect_message);
   }
 
   void onMTUChange(uint16_t MTU, NimBLEConnInfo& connInfo) {
@@ -67,6 +74,13 @@ class MyServerCallbacks: public NimBLEServerCallbacks {
     }
 
     NimBLEDevice::startAdvertising();  // Restart advertising
+
+    const Message_t connect_message = {
+      .source = MODULE_BLE,
+      .destination = MODULE_UI,   // MODULE_BROADCAST for pub-sub
+      .payload = {BLE_CONNECTION, 0},
+    };
+    MsgBus_Send(&connect_message);
   }
 
   void onAuthenticationComplete(NimBLEConnInfo& connInfo) {

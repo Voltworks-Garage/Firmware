@@ -3,6 +3,7 @@
 #include "esp_log.h"
 
 #define POWER_PIN GPIO_NUM_46
+#define BACKLIGHT_PIN GPIO_NUM_16
 
 // Module-level TFT instance
 static TFT_eSPI tft = TFT_eSPI();
@@ -12,16 +13,54 @@ void LCD_Init(void) {
 
   gpio_set_direction(POWER_PIN, GPIO_MODE_OUTPUT);
   gpio_set_level(POWER_PIN, 1);
+  gpio_set_direction(BACKLIGHT_PIN, GPIO_MODE_OUTPUT);
+  gpio_set_level(BACKLIGHT_PIN, 0); // Start with backlight off
 
   tft.init();
   tft.setRotation(3);  // Landscape
-  tft.fillScreen(TFT_BLACK);
+  tft.fillScreen(TFT_WHITE);
+  gpio_set_level(BACKLIGHT_PIN, 1); // Turn on backlight
 
   Serial.println("LCD: Initialization complete");
 }
 
 void LCD_DeInit(void){
+  // Turn off power and backlight first
   gpio_set_level(POWER_PIN, 0);
+  gpio_set_level(BACKLIGHT_PIN, 0);
+
+  // Float all LCD interface pins to prevent current leakage through powered-off display
+  // Based on 8-bit parallel interface (HX8357D)
+
+  // Data pins D0-D7 (GPIO 8-15)
+  for (int gpio = 8; gpio <= 15; gpio++) {
+    gpio_reset_pin((gpio_num_t)gpio);
+    gpio_set_direction((gpio_num_t)gpio, GPIO_MODE_DISABLE);
+    gpio_set_pull_mode((gpio_num_t)gpio, GPIO_FLOATING);
+  }
+
+  // Control pins
+  gpio_reset_pin(GPIO_NUM_39); // RD
+  gpio_reset_pin(GPIO_NUM_40); // WR
+  gpio_reset_pin(GPIO_NUM_41); // RS/DC
+
+  gpio_set_direction(GPIO_NUM_39, GPIO_MODE_DISABLE);
+  gpio_set_direction(GPIO_NUM_40, GPIO_MODE_DISABLE);
+  gpio_set_direction(GPIO_NUM_41, GPIO_MODE_DISABLE);
+
+  gpio_set_pull_mode(GPIO_NUM_39, GPIO_FLOATING);
+  gpio_set_pull_mode(GPIO_NUM_40, GPIO_FLOATING);
+  gpio_set_pull_mode(GPIO_NUM_41, GPIO_FLOATING);
+
+  // Float power pin (has on-board pull-down to keep display off)
+  gpio_reset_pin(POWER_PIN);
+  gpio_set_direction(POWER_PIN, GPIO_MODE_DISABLE);
+  gpio_set_pull_mode(POWER_PIN, GPIO_FLOATING);
+
+  // Float backlight pin
+  gpio_reset_pin(BACKLIGHT_PIN);
+  gpio_set_direction(BACKLIGHT_PIN, GPIO_MODE_DISABLE);
+  gpio_set_pull_mode(BACKLIGHT_PIN, GPIO_FLOATING);
 }
 
 TFT_eSPI* LCD_GetTFT(void) {

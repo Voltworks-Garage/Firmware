@@ -74,7 +74,30 @@ void Touch_Init(void) {
 }
 
 void Touch_DeInit(void) {
+    // Stop ADC sampling
+    if (adc_handle != NULL) {
+        adc_continuous_stop(adc_handle);
+        adc_continuous_deinit(adc_handle);
+        adc_handle = NULL;
+    }
 
+    // Reset all touch pins to floating (high-impedance) to minimize sleep current
+    // Remove any pull-ups/pull-downs and set to input
+    gpio_reset_pin(X_PLUS);
+    gpio_reset_pin(X_MINUS);
+    gpio_reset_pin(Y_PLUS);
+    gpio_reset_pin(Y_MINUS);
+
+    // Explicitly set to floating input (no pull resistors)
+    gpio_set_direction(X_PLUS, GPIO_MODE_DISABLE);
+    gpio_set_direction(X_MINUS, GPIO_MODE_DISABLE);
+    gpio_set_direction(Y_PLUS, GPIO_MODE_DISABLE);
+    gpio_set_direction(Y_MINUS, GPIO_MODE_DISABLE);
+
+    gpio_set_pull_mode(X_PLUS, GPIO_FLOATING);
+    gpio_set_pull_mode(X_MINUS, GPIO_FLOATING);
+    gpio_set_pull_mode(Y_PLUS, GPIO_FLOATING);
+    gpio_set_pull_mode(Y_MINUS, GPIO_FLOATING);
 }
 
 void Touch_Run_1ms(void) {
