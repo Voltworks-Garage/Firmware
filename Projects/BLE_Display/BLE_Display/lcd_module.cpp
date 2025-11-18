@@ -18,7 +18,7 @@ void LCD_Init(void) {
 
   tft.init();
   tft.setRotation(3);  // Landscape
-  tft.fillScreen(TFT_WHITE);
+  tft.fillScreen(TFT_BLACK);
   gpio_set_level(BACKLIGHT_PIN, 1); // Turn on backlight
 
   Serial.println("LCD: Initialization complete");

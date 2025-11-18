@@ -863,49 +863,108 @@ Plugins:
         """Create signal input widgets for a DBF message"""
         msg_info = self.tx_messages[tx_msg_id]
         msg_id = msg_info["msg_id"]
-        
+
         # Get signal definitions from DBF parser
         if msg_id not in self.dbf_parser.messages:
             return
-            
-        signals = self.dbf_parser.messages[msg_id]["signals"]
+
+        msg_def = self.dbf_parser.messages[msg_id]
+        signals = msg_def["signals"]
         if not signals:
             return
-            
+
         # Create signal expansion frame
         signal_frame = ttk.Frame(msg_info["widgets"]["frame"])
         signal_frame.grid(row=1, column=0, columnspan=7, sticky="ew", padx=20, pady=2)
         signal_frame.grid_columnconfigure(1, weight=1)
-        
+
         msg_info["signal_widgets"]["signal_frame"] = signal_frame
-        
+
+        row_idx = 0
+
+        # If this is a multiplexed message, add a mux mode selector
+        if msg_def.get('is_multiplexed', False):
+            # Find all unique multiplex values
+            mux_values = set()
+            for signal in signals:
+                if signal.get('multiplex_value') is not None:
+                    mux_values.add(signal['multiplex_value'])
+
+            if mux_values:
+                # Create mux mode selector
+                mux_label = ttk.Label(signal_frame, text="Multiplex Mode:", width=20, anchor="w", font=('TkDefaultFont', 9, 'bold'))
+                mux_label.grid(row=row_idx, column=0, sticky="w", padx=(5, 10), pady=5)
+
+                mux_var = tk.IntVar(value=sorted(mux_values)[0])
+                mux_combo = ttk.Combobox(signal_frame, textvariable=mux_var,
+                                        values=sorted(mux_values), width=10, state="readonly")
+                mux_combo.grid(row=row_idx, column=1, sticky="w", padx=5, pady=5)
+
+                # Store mux selector
+                msg_info["mux_mode_var"] = mux_var
+                msg_info["signal_widgets"]["mux_selector"] = mux_combo
+
+                # Bind mux mode change to refresh signals
+                mux_var.trace('w', lambda *args, t=tx_msg_id: self._refresh_mux_signals(t))
+
+                row_idx += 1
+
+                # Add separator
+                ttk.Separator(signal_frame, orient='horizontal').grid(row=row_idx, column=0, columnspan=3, sticky="ew", pady=5)
+                row_idx += 1
+
         # Create signal input widgets
-        for i, signal in enumerate(signals):
+        self._populate_signal_widgets(tx_msg_id, signal_frame, row_idx)
+
+    def _populate_signal_widgets(self, tx_msg_id, signal_frame, start_row=0):
+        """Populate signal widgets based on current mux mode"""
+        msg_info = self.tx_messages[tx_msg_id]
+        msg_id = msg_info["msg_id"]
+        msg_def = self.dbf_parser.messages[msg_id]
+        signals = msg_def["signals"]
+
+        # Get current mux mode if applicable
+        current_mux_value = None
+        if msg_def.get('is_multiplexed', False) and "mux_mode_var" in msg_info:
+            current_mux_value = msg_info["mux_mode_var"].get()
+
+        row_idx = start_row
+
+        for signal in signals:
             signal_name = signal['name']
-            
+
+            # Skip multiplexor signal (it will be handled separately)
+            if signal.get('is_multiplexor', False):
+                continue
+
+            # For multiplexed messages, only show signals for the current mux value
+            if msg_def.get('is_multiplexed', False):
+                if signal.get('multiplex_value') != current_mux_value:
+                    continue
+
             # Signal name label
             name_label = ttk.Label(signal_frame, text=f"{signal_name}:", width=20, anchor="w")
-            name_label.grid(row=i, column=0, sticky="w", padx=(5, 10), pady=1)
-            
+            name_label.grid(row=row_idx, column=0, sticky="w", padx=(5, 10), pady=1)
+
             # Signal value input
             if signal['type'] == 'B':  # Boolean signal
                 var = tk.BooleanVar()
                 widget = ttk.Checkbutton(signal_frame, variable=var)
-                widget.grid(row=i, column=1, sticky="w", padx=5, pady=1)
+                widget.grid(row=row_idx, column=1, sticky="w", padx=5, pady=1)
             else:  # Numeric signal
                 var = tk.StringVar(value="0")
                 widget = ttk.Entry(signal_frame, textvariable=var, width=12)
-                widget.grid(row=i, column=1, sticky="w", padx=5, pady=1)
-                
+                widget.grid(row=row_idx, column=1, sticky="w", padx=5, pady=1)
+
                 # Add validation for numeric ranges
                 widget.bind('<KeyRelease>', lambda e, s=signal, v=var: self._validate_signal_value(s, v))
-            
+
             # Signal unit label
             unit_text = signal.get('unit', '')
             if unit_text:
                 unit_label = ttk.Label(signal_frame, text=unit_text, width=8, anchor="w")
-                unit_label.grid(row=i, column=2, sticky="w", padx=5, pady=1)
-            
+                unit_label.grid(row=row_idx, column=2, sticky="w", padx=5, pady=1)
+
             # Store signal widgets and variables
             msg_info["signal_widgets"][signal_name] = {
                 "name_label": name_label,
@@ -914,12 +973,45 @@ Plugins:
                 "signal_def": signal
             }
             msg_info["signal_values"][signal_name] = var
-            
+
             # Bind value changes to update the data field
             if signal['type'] == 'B':
                 var.trace('w', lambda *args, t=tx_msg_id: self._update_data_from_signals(t))
             else:
                 var.trace('w', lambda *args, t=tx_msg_id: self._update_data_from_signals(t))
+
+            row_idx += 1
+
+    def _refresh_mux_signals(self, tx_msg_id):
+        """Refresh signal widgets when mux mode changes"""
+        if tx_msg_id not in self.tx_messages:
+            return
+
+        msg_info = self.tx_messages[tx_msg_id]
+
+        # Clear existing signal widgets (but keep mux selector)
+        widgets_to_remove = []
+        for signal_name, widget_info in msg_info["signal_widgets"].items():
+            if signal_name not in ["signal_frame", "mux_selector"]:
+                widget_info["name_label"].destroy()
+                widget_info["value_widget"].destroy()
+                widgets_to_remove.append(signal_name)
+
+        for signal_name in widgets_to_remove:
+            del msg_info["signal_widgets"][signal_name]
+            if signal_name in msg_info["signal_values"]:
+                del msg_info["signal_values"][signal_name]
+
+        # Repopulate with signals for new mux mode
+        signal_frame = msg_info["signal_widgets"]["signal_frame"]
+
+        # Find the row after the separator
+        start_row = 2  # After mux selector and separator
+
+        self._populate_signal_widgets(tx_msg_id, signal_frame, start_row)
+
+        # Update the data field
+        self._update_data_from_signals(tx_msg_id)
     
     def _destroy_signal_widgets(self, tx_msg_id):
         """Remove signal input widgets for a DBF message"""
@@ -956,15 +1048,28 @@ Plugins:
         """Update the data field from signal values"""
         if tx_msg_id not in self.tx_messages:
             return
-            
+
         msg_info = self.tx_messages[tx_msg_id]
-        if not msg_info["expanded"] or not msg_info["signal_values"]:
+        if not msg_info["expanded"]:
             return
-            
+
         msg_id = msg_info["msg_id"]
-        
+        msg_def = self.dbf_parser.messages[msg_id]
+
         # Collect signal values
         signal_values = {}
+
+        # If this is a multiplexed message, add the multiplexor signal value
+        if msg_def.get('is_multiplexed', False) and "mux_mode_var" in msg_info:
+            current_mux_value = msg_info["mux_mode_var"].get()
+
+            # Add the multiplexor signal value
+            for signal in msg_def["signals"]:
+                if signal.get('is_multiplexor', False):
+                    signal_values[signal['name']] = current_mux_value
+                    break
+
+        # Collect signal values from widgets (only includes current mux group)
         for signal_name, var in msg_info["signal_values"].items():
             try:
                 if isinstance(var, tk.BooleanVar):
@@ -973,10 +1078,10 @@ Plugins:
                     signal_values[signal_name] = float(var.get())
             except (ValueError, tk.TclError):
                 signal_values[signal_name] = 0
-        
+
         # Encode message from signals
         data_bytes = self.dbf_parser.encode_message_from_signals(msg_id, signal_values)
-        
+
         if data_bytes:
             # Update data field
             data_hex = ' '.join(f'{b:02X}' for b in data_bytes)

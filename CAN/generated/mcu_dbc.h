@@ -171,6 +171,8 @@ void CAN_mcu_mcu_debug_send(void);
 #define CAN_BMS_STATUS_NUM_MUX_VALUES 5
 uint8_t CAN_bms_status_checkDataIsUnread(void);
 uint8_t CAN_bms_status_checkDataIsStale(void);
+uint8_t CAN_bms_status_checkMuxUnread(uint8_t mux_index);
+uint8_t CAN_bms_status_checkMuxStale(uint8_t mux_index);
 uint16_t CAN_bms_status_multiplex_get(void);
 uint16_t CAN_bms_status_bms_state_get(void);
 float CAN_bms_status_pack_voltage_get(void);
@@ -222,6 +224,8 @@ uint16_t CAN_bms_power_systems_HV_contactor_state_get(void);
 #define CAN_BMS_DEBUG_NUM_MUX_VALUES 3
 uint8_t CAN_bms_debug_checkDataIsUnread(void);
 uint8_t CAN_bms_debug_checkDataIsStale(void);
+uint8_t CAN_bms_debug_checkMuxUnread(uint8_t mux_index);
+uint8_t CAN_bms_debug_checkMuxStale(uint8_t mux_index);
 uint16_t CAN_bms_debug_multiplex_get(void);
 float CAN_bms_debug_task_1ms_cpu_percent_get(void);
 float CAN_bms_debug_task_10ms_cpu_percent_get(void);
@@ -242,6 +246,8 @@ uint16_t CAN_bms_debug_byte1_get(void);
 #define CAN_BMS_CELL_VOLTAGES_NUM_MUX_VALUES 6
 uint8_t CAN_bms_cell_voltages_checkDataIsUnread(void);
 uint8_t CAN_bms_cell_voltages_checkDataIsStale(void);
+uint8_t CAN_bms_cell_voltages_checkMuxUnread(uint8_t mux_index);
+uint8_t CAN_bms_cell_voltages_checkMuxStale(uint8_t mux_index);
 uint16_t CAN_bms_cell_voltages_multiplex_get(void);
 uint16_t CAN_bms_cell_voltages_cell_1_voltage_get(void);
 uint16_t CAN_bms_cell_voltages_cell_2_voltage_get(void);
@@ -272,6 +278,8 @@ uint16_t CAN_bms_cell_voltages_cell_24_voltage_get(void);
 #define CAN_BMS_CELL_TEMPERATURES_NUM_MUX_VALUES 7
 uint8_t CAN_bms_cell_temperatures_checkDataIsUnread(void);
 uint8_t CAN_bms_cell_temperatures_checkDataIsStale(void);
+uint8_t CAN_bms_cell_temperatures_checkMuxUnread(uint8_t mux_index);
+uint8_t CAN_bms_cell_temperatures_checkMuxStale(uint8_t mux_index);
 uint16_t CAN_bms_cell_temperatures_multiplex_get(void);
 float CAN_bms_cell_temperatures_stack_1_LTC_internal_temp_get(void);
 float CAN_bms_cell_temperatures_stack_1_balance_temp_get(void);

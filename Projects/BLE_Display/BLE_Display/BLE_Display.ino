@@ -1,6 +1,7 @@
 //Hardware Abstraction Layer includes
 #include "ble_module.h"
 #include "lcd_module.h"
+#include "src/display/display.h"
 #include "can.h"
 #include "touch.h"
 #include <driver/gpio.h>
@@ -53,10 +54,11 @@ void setup() {
   Touch_Init();
 
   // Initialize IO
+  LVGL_Init();  // Initialize LVGL (includes state machine init)
   CAN_DBC_init();
   Begode_Init();
   // Kingsong_Init();
-  Dash_Init();
+  // Dash_Init();
 
   //TODO: move this somewhere else
   BLE_AllowNewDevices();

@@ -21,6 +21,12 @@ typedef struct {
    uint16_t word3;
 } CAN_payload_S;
 
+// Forward declaration
+struct CAN_message_S;
+
+// RX callback function pointer type
+typedef void (*CAN_RxCallback_t)(struct CAN_message_S* msg);
+
 // CAN message structure is also defined in Libraries/PIC33_plib/inc/can.h
 typedef struct CAN_message_S {
     uint32_t canID;
@@ -29,6 +35,7 @@ typedef struct CAN_message_S {
     volatile CAN_payload_S * payload;
     volatile uint8_t * canMessageStatus;
     volatile uint32_t last_received_timestamp;
+    CAN_RxCallback_t rx_callback;  // Optional: called from RX task when message received
 } CAN_message_S;
 
 // CAN pin definitions

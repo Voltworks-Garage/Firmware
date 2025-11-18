@@ -1,6 +1,11 @@
 #include "touch.h"
 #include "src/msg/messaging.h"
 #include "driver/gpio.h"
+#include "soc/gpio_struct.h"  // For direct GPIO register access
+#include "soc/gpio_sig_map.h"
+#include "soc/io_mux_reg.h"
+#include "soc/gpio_reg.h"
+#include "hal/gpio_hal.h"
 #include "esp_adc/adc_continuous.h"
 #include "esp_log.h"
 
@@ -29,11 +34,17 @@ static const char *TAG = "TOUCH";
 
 #define NO_TOUCH_THRESHOLD 4000
 
+#define ADC_BUFFER_SIZE 128
+
 
 void setXpins(void);
 void setYpins(void);
 uint16_t map(uint16_t x, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max);
 
+// ADC result buffer - sized for ~1ms worth of samples
+// 10kHz sample rate × 1ms = 10 samples × 4 bytes/sample = 40 bytes
+// Using 128 bytes (32 samples) for safety margin
+static uint8_t result[ADC_BUFFER_SIZE];
 
 NEW_LOW_PASS_FILTER(x_reading_filter, 5000.0f, 10000.0f); // 5 kHz cutoff, 10 kHz sample rate
 NEW_LOW_PASS_FILTER(y_reading_filter, 5000.0f, 10000.0f); // 5 kHz cutoff, 10 kHz sample rate
@@ -43,8 +54,8 @@ static bool x_y_toggle = false;
 static adc_continuous_handle_t adc_handle = NULL;
 static adc_continuous_config_t dig_cfg;
 static adc_continuous_handle_cfg_t cfg = {
-    .max_store_buf_size = 4096,
-    .conv_frame_size = 1024,
+    .max_store_buf_size = ADC_BUFFER_SIZE*4,
+    .conv_frame_size = ADC_BUFFER_SIZE,
 };
 static adc_digi_pattern_config_t adc_patterns[] = {
     { .atten = ADC_ATTEN_DB_11, .channel = X_ADC_PLUS, .unit = ADC_UNIT, .bit_width = SOC_ADC_DIGI_MAX_BITWIDTH },
@@ -102,7 +113,6 @@ void Touch_DeInit(void) {
 
 void Touch_Run_1ms(void) {
 
-    uint8_t result[1024];
     uint32_t ret_num = 0;
 
     esp_err_t ret = adc_continuous_read(adc_handle, result, sizeof(result), &ret_num, 0);
@@ -174,35 +184,65 @@ bool Touch_GetXY(uint16_t* x, uint16_t* y) {
 }
 
 void setXpins(void) {
+    // OPTIMIZED VERSION - Direct register access for critical operations (~2-5 µs total)
 
-    // Configure pins as ADC
+    // Reset Y_Plus to HI-Z
     gpio_reset_pin(Y_PLUS);
 
-    // Set X pins to output
-    gpio_set_direction(X_PLUS, GPIO_MODE_OUTPUT);
-    gpio_set_direction(X_MINUS, GPIO_MODE_OUTPUT);
-    gpio_set_level(X_PLUS, 0);
-    gpio_set_level(X_MINUS, 1);
+    // Set X pins to output (GPIO 4 and 5) - FAST register access
+    GPIO.enable_w1ts = (1ULL << X_PLUS) | (1ULL << X_MINUS);  // Enable output
 
-    // Set extra Y pin to input pullup
-    gpio_set_direction(Y_MINUS, GPIO_MODE_INPUT);
-    gpio_set_pull_mode(Y_MINUS, GPIO_PULLUP_ONLY);
+    // Set levels: X_PLUS=LOW, X_MINUS=HIGH - FAST register access
+    GPIO.out_w1tc = (1ULL << X_PLUS);   // Clear (set to 0)
+    GPIO.out_w1ts = (1ULL << X_MINUS);  // Set (set to 1)
 
+    // Set Y_MINUS (GPIO 7) to input with pullup
+    GPIO.enable_w1tc = (1ULL << Y_MINUS);  // Disable output (make input) - FAST
+    gpio_set_pull_mode(Y_MINUS, GPIO_PULLUP_ONLY);  // HAL function - acceptable overhead
+
+    // // SLOW VERSION - Kept for reference (was ~20-50 µs)
+    // gpio_reset_pin(Y_PLUS);
+
+    // // Set X pins to output
+    // gpio_set_direction(X_PLUS, GPIO_MODE_OUTPUT);
+    // gpio_set_direction(X_MINUS, GPIO_MODE_OUTPUT);
+    // gpio_set_level(X_PLUS, 0);
+    // gpio_set_level(X_MINUS, 1);
+
+    // // Set extra Y pin to input pullup
+    // gpio_set_direction(Y_MINUS, GPIO_MODE_INPUT);
+    // gpio_set_pull_mode(Y_MINUS, GPIO_PULLUP_ONLY);
 }
 
 void setYpins(void) {
-    // Configure pins as ADC
+    // OPTIMIZED VERSION - Direct register access for critical operations (~2-5 µs total)
+
+    // Reset X_PLUS to HI-Z
     gpio_reset_pin(X_PLUS);
 
-    // Set Y pins to output
-    gpio_set_direction(Y_PLUS, GPIO_MODE_OUTPUT);
-    gpio_set_direction(Y_MINUS, GPIO_MODE_OUTPUT);
-    gpio_set_level(Y_PLUS, 1);
-    gpio_set_level(Y_MINUS, 0);
+    // Set Y pins to output (GPIO 6 and 7) - FAST register access
+    GPIO.enable_w1ts = (1ULL << Y_PLUS) | (1ULL << Y_MINUS);  // Enable output
 
-    // Set extra X pin to input pullup
-    gpio_set_direction(X_MINUS, GPIO_MODE_INPUT);
-    gpio_set_pull_mode(X_MINUS, GPIO_PULLUP_ONLY);
+    // Set levels: Y_PLUS=HIGH, Y_MINUS=LOW - FAST register access
+    GPIO.out_w1ts = (1ULL << Y_PLUS);   // Set (set to 1)
+    GPIO.out_w1tc = (1ULL << Y_MINUS);  // Clear (set to 0)
+
+    // Set X_MINUS (GPIO 5) to input with pullup
+    GPIO.enable_w1tc = (1ULL << X_MINUS);  // Disable output (make input) - FAST
+    gpio_set_pull_mode(X_MINUS, GPIO_PULLUP_ONLY);  // HAL function - acceptable overhead
+
+    // // SLOW VERSION - Kept for reference (was ~20-50 µs)
+    // gpio_reset_pin(X_PLUS);
+
+    // // Set Y pins to output
+    // gpio_set_direction(Y_PLUS, GPIO_MODE_OUTPUT);
+    // gpio_set_direction(Y_MINUS, GPIO_MODE_OUTPUT);
+    // gpio_set_level(Y_PLUS, 1);
+    // gpio_set_level(Y_MINUS, 0);
+
+    // // Set extra X pin to input pullup
+    // gpio_set_direction(X_MINUS, GPIO_MODE_INPUT);
+    // gpio_set_pull_mode(X_MINUS, GPIO_PULLUP_ONLY);
 }
 
 uint16_t map(uint16_t x, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max) {

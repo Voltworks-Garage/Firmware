@@ -178,19 +178,57 @@ class BusmasterDBFParser:
         return data
     
     def encode_message_from_signals(self, msg_id, signal_values):
-        """Encode a complete CAN message from signal values"""
+        """Encode a complete CAN message from signal values
+
+        For multiplexed messages, this will:
+        1. Encode the multiplexor signal
+        2. Encode only signals from the current mux group (based on multiplexor value)
+        3. Clear bits for signals in other mux groups by encoding them as 0
+        """
         if msg_id not in self.messages:
             return None
-        
+
         msg_def = self.messages[msg_id]
         data = [0] * msg_def['dlc']  # Initialize with zeros
-        
+
+        # Determine current mux value if this is a multiplexed message
+        current_mux_value = None
+        if msg_def.get('is_multiplexed', False):
+            # Find multiplexor signal value
+            for signal in msg_def['signals']:
+                if signal.get('is_multiplexor', False):
+                    multiplexor_name = signal['name']
+                    if multiplexor_name in signal_values:
+                        current_mux_value = signal_values[multiplexor_name]
+                    break
+
         # Encode each signal into the data array
         for signal in msg_def['signals']:
             signal_name = signal['name']
-            if signal_name in signal_values:
-                data = self.encode_signal_value(signal, signal_values[signal_name], data)
-        
+
+            # For multiplexed messages, handle mux groups carefully
+            if msg_def.get('is_multiplexed', False) and current_mux_value is not None:
+                # Always encode the multiplexor signal
+                if signal.get('is_multiplexor', False):
+                    if signal_name in signal_values:
+                        data = self.encode_signal_value(signal, signal_values[signal_name], data)
+                    continue
+
+                # For other signals, check if they belong to current mux group
+                signal_mux_value = signal.get('multiplex_value')
+                if signal_mux_value is not None:
+                    if signal_mux_value == current_mux_value:
+                        # This signal belongs to current mux group - encode its value if provided
+                        if signal_name in signal_values:
+                            data = self.encode_signal_value(signal, signal_values[signal_name], data)
+                        # Note: If signal not in signal_values, we leave those bits as 0
+                    # Note: We do NOT encode signals from other mux groups because they
+                    # share the same bit positions as the current mux group's signals!
+            else:
+                # Non-multiplexed message - encode all provided signals
+                if signal_name in signal_values:
+                    data = self.encode_signal_value(signal, signal_values[signal_name], data)
+
         return data
     
     def decode_message(self, msg_id, data):

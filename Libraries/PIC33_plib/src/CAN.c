@@ -753,9 +753,14 @@ void __attribute__((__interrupt__, auto_psv)) _C1Interrupt(void) {
             }
             ecanRXMsgBuf[filterHit][7] |= 0x01; /* Set fresh message flag */
             
-            /* Update timestamp if callback available and message configured */
-            if (can_getTimestamp && can_mailboxLookup[filterHit]) {
-                can_mailboxLookup[filterHit]->last_received_timestamp = can_getTimestamp();
+            /* Update timestamp and invoke callback if message configured */
+            if (can_mailboxLookup[filterHit]) {
+                if (can_getTimestamp) {
+                    can_mailboxLookup[filterHit]->last_received_timestamp = can_getTimestamp();
+                }
+                if (can_mailboxLookup[filterHit]->rx_callback) {
+                    can_mailboxLookup[filterHit]->rx_callback(can_mailboxLookup[filterHit]);
+                }
             }
 
             can_rxDataReady |= 1 << (thisBuff-CAN_TX_FIFO_BUFFER_SIZE); //TODO get rid of this.
@@ -775,10 +780,15 @@ void __attribute__((__interrupt__, auto_psv)) _C1Interrupt(void) {
                     ecanRXMsgBuf[sw_buffer_index][j] = ecanMsgBuf[i][j];
                 }
                 ecanRXMsgBuf[sw_buffer_index][7] |= 0x01; /* Set fresh message flag */
-                
-                /* Update timestamp if callback available and message configured */
-                if (can_getTimestamp && can_mailboxLookup[sw_buffer_index]) {
-                    can_mailboxLookup[sw_buffer_index]->last_received_timestamp = can_getTimestamp();
+
+                /* Update timestamp and invoke callback if message configured */
+                if (can_mailboxLookup[sw_buffer_index]) {
+                    if (can_getTimestamp) {
+                        can_mailboxLookup[sw_buffer_index]->last_received_timestamp = can_getTimestamp();
+                    }
+                    if (can_mailboxLookup[sw_buffer_index]->rx_callback) {
+                        can_mailboxLookup[sw_buffer_index]->rx_callback(can_mailboxLookup[sw_buffer_index]);
+                    }
                 }
 
                 can_rxDataReady |= 1 << sw_buffer_index; //TODO: get rid of this

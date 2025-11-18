@@ -23,9 +23,10 @@ void MsgBus_Subscribe(ModuleId_t sub2module, ModuleId_t module, QueueHandle_t qu
 }
 
 void MsgBus_Send(const Message_t *msg) {
-    if (msg->destination < MODULE_COUNT) {
+    if (msg->destination < MODULE_COUNT && msg_queues[msg->destination] != NULL) {
         xQueueSend(msg_queues[msg->destination], msg, 0);
     }
+    // Silently drop message if queue is NULL (module not initialized)
 }
 
 void MsgBus_Publish(const Message_t *msg) {

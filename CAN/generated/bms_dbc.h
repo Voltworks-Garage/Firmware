@@ -25,6 +25,8 @@ typedef enum{
 #define CAN_MCU_STATUS_NUM_MUX_VALUES 5
 uint8_t CAN_mcu_status_checkDataIsUnread(void);
 uint8_t CAN_mcu_status_checkDataIsStale(void);
+uint8_t CAN_mcu_status_checkMuxUnread(uint8_t mux_index);
+uint8_t CAN_mcu_status_checkMuxStale(uint8_t mux_index);
 uint16_t CAN_mcu_status_multiplex_get(void);
 uint16_t CAN_mcu_status_vehicleState_get(void);
 uint16_t CAN_mcu_status_highBeam_get(void);
@@ -94,6 +96,8 @@ uint16_t CAN_mcu_command_go_to_sleep_get(void);
 #define CAN_MCU_MCU_DEBUG_NUM_MUX_VALUES 4
 uint8_t CAN_mcu_mcu_debug_checkDataIsUnread(void);
 uint8_t CAN_mcu_mcu_debug_checkDataIsStale(void);
+uint8_t CAN_mcu_mcu_debug_checkMuxUnread(uint8_t mux_index);
+uint8_t CAN_mcu_mcu_debug_checkMuxStale(uint8_t mux_index);
 uint16_t CAN_mcu_mcu_debug_Multiplex_get(void);
 float CAN_mcu_mcu_debug_cpu_usage_percent_get(void);
 float CAN_mcu_mcu_debug_cpu_peak_percent_get(void);

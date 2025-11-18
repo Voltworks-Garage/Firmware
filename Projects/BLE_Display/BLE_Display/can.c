@@ -244,6 +244,11 @@ static void CAN_RxTask(void* parameter) {
             }
             RX_Mailboxes[i]->last_received_timestamp = pdTICKS_TO_MS(xTaskGetTickCount());
 
+            // Call user callback if registered (inside critical section to protect payload)
+            if (RX_Mailboxes[i]->rx_callback != NULL) {
+              RX_Mailboxes[i]->rx_callback(RX_Mailboxes[i]);
+            }
+
             taskEXIT_CRITICAL(&can_mux);
 
             ESP_LOGD(TAG, "Matched mailbox %d", i);

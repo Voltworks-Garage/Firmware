@@ -28,6 +28,12 @@ typedef struct {
    uint16_t word3;
 } CAN_payload_S;
 
+// Forward declaration
+struct CAN_message_S;
+
+// RX callback function pointer type
+typedef void (*CAN_RxCallback_t)(struct CAN_message_S* msg);
+
 typedef struct CAN_message_S {
     uint32_t canID;
     uint8_t canXID;
@@ -35,6 +41,7 @@ typedef struct CAN_message_S {
     volatile CAN_payload_S * payload;
     volatile uint8_t * canMessageStatus;
     volatile uint32_t last_received_timestamp;
+    CAN_RxCallback_t rx_callback;  // Optional: called from ISR when message received
 } CAN_message_S;
 
 /* mode types */

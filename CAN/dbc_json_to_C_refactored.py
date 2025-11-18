@@ -269,86 +269,67 @@ def write_setter_function(dot_h: Any, dot_c: Any, message_id: str, signal: Dict[
     dot_c.write("}\n")
 
 
-def write_getter_function(dot_h: Any, dot_c: Any, message_id: str, signal: Dict[str, Any], 
+def write_getter_function(dot_h: Any, dot_c: Any, message_id: str, signal: Dict[str, Any],
                          function_name_suffix: str, signal_define_name: str, node_name: str, message_name: str,
-                         is_multiplexed: bool = False, multiplex_value: Optional[int] = None, 
+                         is_multiplexed: bool = False, multiplex_value: Optional[int] = None,
                          is_consumer: bool = True, is_producer: bool = False) -> None:
     """Write a getter function for a signal."""
     signal_name = signal["name"]
     units = signal["units"]
-    
+
     datatype, internal_datatype = determine_signal_datatype(signal)
-    
+
     dot_h.write(f"{datatype} {message_id}_{function_name_suffix}_get(void);\n")
     dot_c.write(f"{datatype} {message_id}_{function_name_suffix}_get(void){{\n")
-    
-    # For consumer nodes, add data unreadness checking
-    if is_consumer and not is_producer and is_multiplexed:
-        dot_c.write(f"\t// Check for unread data and update payload arrays if needed\n")
-        dot_c.write(f"\tif (*{message_id}.canMessageStatus) {{\n")
-        dot_c.write(f"\t\t// Unread data received - determine which mux payload to update\n")
-        dot_c.write(f"\t\tuint16_t mux_value = get_bits((size_t*){message_id}.payload, ")
-        dot_c.write(f"{message_id.upper()}_MULTIPLEX_OFFSET, {message_id.upper()}_MULTIPLEX_RANGE);\n")  
-        dot_c.write(f"\t\t// Copy unread payload data to appropriate mux payload array\n")
-        dot_c.write(f"\t\tif (mux_value < {message_id.upper()}_NUM_MUX_VALUES) {{\n")
-        dot_c.write(f"\t\t\t// Copy the entire payload structure to the appropriate mux array\n")
-        dot_c.write(f"\t\t\t{message_id}_payloads[mux_value] = *{message_id}.payload;\n")
-        dot_c.write(f"\t\t}}\n")
-        dot_c.write(f"\t}}\n")
-        dot_c.write(f"\t\n")
-    
+
+    # For RX multiplexed messages with callback-based demuxing, use simplified direct access
+    # The ISR callback handles copying to the correct mux buffer, so no copy-on-read needed
+
     # Determine the correct payload source
-    if is_multiplexed and multiplex_value is not None:
-        # For multiplexed signals, read from specific payload array
-        payload_source = f"&{message_id}_payloads[{multiplex_value}]"
+    if is_multiplexed and multiplex_value is not None and is_consumer and not is_producer:
+        # For RX multiplexed signals, read from mux-specific payload array (ISR populates this)
+        payload_access = f"{message_id}_mux_payloads[{multiplex_value}]"
+        accessor = "."  # Direct struct access
     elif is_multiplexed and signal["name"].lower() == "multiplex":
         # For multiplex signal itself, read from main payload (current message)
-        payload_source = f"{message_id}.payload"
-    else:
-        # For non-multiplexed messages, use main payload
-        payload_source = f"{message_id}.payload"
-    
-    # Generate hardcoded bit extraction for arbitrary bit lengths
-    bit_offset = signal["bitOffset"]
-    bit_length = signal["length"]
-    
-    # Determine payload access pattern
-    if is_multiplexed and multiplex_value is not None:
-        # For multiplexed signals, access specific payload array element directly
+        payload_access = f"{message_id}.payload"
+        accessor = "->"  # Pointer access
+    elif is_multiplexed and multiplex_value is not None:
+        # TX multiplexed signal (producer reading own message)
         payload_access = f"{message_id}_payloads[{multiplex_value}]"
         accessor = "."  # Direct struct access
     else:
-        # For non-multiplexed or main payload access
-        if payload_source.endswith(".payload"):
-            payload_access = payload_source
-            accessor = "->"  # Pointer access
-        else:
-            payload_access = f"(*{payload_source})"
-            accessor = "."  # Dereferenced struct access
-    
+        # For non-multiplexed messages, use main payload
+        payload_access = f"{message_id}.payload"
+        accessor = "->"  # Pointer access
+
+    # Generate hardcoded bit extraction for arbitrary bit lengths
+    bit_offset = signal["bitOffset"]
+    bit_length = signal["length"]
+
     # Generate hardcoded bit extraction for arbitrary lengths
     dot_c.write(f"\t// Extract {bit_length}-bit signal at bit offset {bit_offset}\n")
     dot_c.write(f"\t{internal_datatype} data = 0;\n")
-    
+
     remaining_bits = bit_length
     current_offset = bit_offset
     shift_accumulator = 0
-    
+
     while remaining_bits > 0:
         word_index = current_offset // 16
         bit_in_word = current_offset % 16
         bits_available = 16 - bit_in_word
         bits_to_extract = min(remaining_bits, bits_available)
-        
+
         # Create mask for this extraction
         mask = ((1 << bits_to_extract) - 1) << bit_in_word
-        
+
         dot_c.write(f"\tdata |= ({internal_datatype})(({payload_access}{accessor}word{word_index} & 0x{mask:04X}) >> {bit_in_word}) << {shift_accumulator};\n")
-        
+
         remaining_bits -= bits_to_extract
         current_offset += bits_to_extract
         shift_accumulator += bits_to_extract
-    
+
     dot_c.write(f"\treturn (data * {signal['scale']}) + {signal['offset']};\n}}\n")
 
 
@@ -416,7 +397,7 @@ def process_message_signals(dot_h: Any, dot_c: Any, node: Dict[str, Any], messag
         dot_h.write(f"uint8_t {message_id}_checkDataIsUnread(void);\n")
         dot_c.write(f"uint8_t {message_id}_checkDataIsUnread(void){{\n")
         dot_c.write(f"\treturn CAN_checkDataIsUnread(&{message_id});\n}}\n")
-        
+
         # Add staleness detection function if message has a cycle time
         message_freq = message.get("freq")
         if message_freq:
@@ -424,6 +405,26 @@ def process_message_signals(dot_h: Any, dot_c: Any, node: Dict[str, Any], messag
             dot_h.write(f"uint8_t {message_id}_checkDataIsStale(void);\n")
             dot_c.write(f"uint8_t {message_id}_checkDataIsStale(void){{\n")
             dot_c.write(f"\treturn CAN_checkDataIsStale(&{message_id}, {staleness_timeout});\n}}\n")
+
+        # For RX multiplexed messages, add per-mux staleness and unread check functions
+        is_rx_mux = multiplex_signal and node_idx != current_node_idx
+        if is_rx_mux:
+            max_mux_value = max((signal.get("multiplex", -1) for signal in signals
+                               if signal.get("multiplex") is not None), default=0)
+            num_mux_groups = max_mux_value + 1
+
+            # Per-mux unread check
+            dot_h.write(f"uint8_t {message_id}_checkMuxUnread(uint8_t mux_index);\n")
+            dot_c.write(f"uint8_t {message_id}_checkMuxUnread(uint8_t mux_index){{\n")
+            dot_c.write(f"\tif (mux_index >= {num_mux_groups}) return 0;\n")
+            dot_c.write(f"\treturn CAN_checkDataIsUnread(&{message_id}_mux[mux_index]);\n}}\n")
+
+            # Per-mux staleness check
+            if message_freq:
+                dot_h.write(f"uint8_t {message_id}_checkMuxStale(uint8_t mux_index);\n")
+                dot_c.write(f"uint8_t {message_id}_checkMuxStale(uint8_t mux_index){{\n")
+                dot_c.write(f"\tif (mux_index >= {num_mux_groups}) return 1;\n")
+                dot_c.write(f"\treturn CAN_checkDataIsStale(&{message_id}_mux[mux_index], {staleness_timeout});\n}}\n")
         
         for signal in signals:
             function_name_suffix = signal["name"]
@@ -450,23 +451,63 @@ def process_message_signals(dot_h: Any, dot_c: Any, node: Dict[str, Any], messag
         dot_c.write("\n")
 
 
+def write_mux_rx_callback(dot_c: Any, message_id: str, message: Dict[str, Any]) -> None:
+    """Generate ISR callback for RX multiplexed message demultiplexing."""
+    signals = message["signals"]
+
+    # Find multiplex signal for bit extraction
+    mux_signal = None
+    for signal in signals:
+        if signal["name"].lower() == "multiplex":
+            mux_signal = signal
+            break
+
+    if not mux_signal:
+        return
+
+    max_mux_value = max((signal.get("multiplex", -1) for signal in signals
+                       if signal.get("multiplex") is not None), default=0)
+    num_mux_groups = max_mux_value + 1
+
+    # Generate callback function
+    dot_c.write(f"// ISR callback for mux message demultiplexing\n")
+    dot_c.write(f"static void {message_id}_rx_callback(CAN_message_S* msg) {{\n")
+    dot_c.write(f"\t// Extract mux value from received message\n")
+    dot_c.write(f"\tuint16_t mux_value = get_bits((size_t*)msg->payload, ")
+    dot_c.write(f"{message_id.upper()}_MULTIPLEX_OFFSET, {message_id.upper()}_MULTIPLEX_RANGE);\n")
+    dot_c.write(f"\t\n")
+    dot_c.write(f"\t// Copy to appropriate mux buffer\n")
+    dot_c.write(f"\tif (mux_value < {num_mux_groups}) {{\n")
+    dot_c.write(f"\t\t// Copy payload to mux-specific buffer\n")
+    dot_c.write(f"\t\t{message_id}_mux_payloads[mux_value] = *msg->payload;\n")
+    dot_c.write(f"\t\t// Update mux message metadata\n")
+    dot_c.write(f"\t\t{message_id}_mux[mux_value].last_received_timestamp = msg->last_received_timestamp;\n")
+    dot_c.write(f"\t\t*{message_id}_mux[mux_value].canMessageStatus = 1;  // Mark unread\n")
+    dot_c.write(f"\t}}\n")
+    dot_c.write(f"}}\n\n")
+
+
 def setup_message_payload(dot_c: Any, message_id: str, message: Dict[str, Any]) -> str:
     """Setup message payload structure and return payload initialization string."""
     signals = message["signals"]
-    
+
     # Check for multiplex
     has_multiplex = any(signal.get("multiplex") is not None for signal in signals)
     multiplex_signal_found = any(signal["name"].lower() == "multiplex" for signal in signals)
-    
+
     if has_multiplex and multiplex_signal_found:
-        # Multiplexed message - create payload array
-        max_mux_value = max((signal.get("multiplex", -1) for signal in signals 
+        # Multiplexed RX message - create array of CAN_message_S structures
+        max_mux_value = max((signal.get("multiplex", -1) for signal in signals
                            if signal.get("multiplex") is not None), default=0)
         num_mux_groups = max_mux_value + 1
-        
-        dot_c.write(f"static CAN_payload_S {message_id}_payloads[{num_mux_groups}] __attribute__((aligned(sizeof(CAN_payload_S))));\n")
-        dot_c.write(f"static uint8_t {message_id}_mux = 0;\n")
-        
+
+        # Create payload array for mux variants
+        dot_c.write(f"static CAN_payload_S {message_id}_mux_payloads[{num_mux_groups}] __attribute__((aligned(sizeof(CAN_payload_S))));\n")
+        # Create status array for mux variants
+        dot_c.write(f"static volatile uint8_t {message_id}_mux_status[{num_mux_groups}] = {{0}};\n")
+        # Create array of CAN_message_S for mux variants (for per-mux timestamps and status)
+        dot_c.write(f"static CAN_message_S {message_id}_mux[{num_mux_groups}];\n")
+
         return ".payload = 0"
     else:
         # Non-multiplexed message
@@ -627,13 +668,23 @@ def process_node_messages(dot_h: Any, dot_c: Any, nodes: List[Dict[str, Any]], c
                 else:
                     payload_init = ".payload = 0"
                 is_tx = False
-            
+
             write_message_structure(dot_c, dot_h, message_id, message, payload_init, is_tx)
-            
+
             # checkDataIsUnread is now generated in process_message_signals when getters are needed
-            
+
             # Process all signals in this message
             process_message_signals(dot_h, dot_c, node, message, current_node_idx, node_idx, current_node_name)
+
+            # Generate ISR callback for RX multiplexed messages
+            if node_idx != current_node_idx:
+                generate_getters = should_generate_getters(message, node_idx, current_node_idx, current_node_name)
+                if generate_getters:
+                    signals = message["signals"]
+                    has_multiplex = any(signal.get("multiplex") is not None for signal in signals)
+                    multiplex_signal_found = any(signal["name"].lower() == "multiplex" for signal in signals)
+                    if has_multiplex and multiplex_signal_found:
+                        write_mux_rx_callback(dot_c, message_id, message)
             
             # Generate send functions for our node's messages
             if node_idx == current_node_idx:
@@ -698,15 +749,35 @@ def write_initialization_function(dot_c: Any, nodes: List[Dict[str, Any]], curre
     for node_idx, node in enumerate(nodes):
         if node_idx == current_node_idx:
             continue
-            
+
         for message in node["messages"]:
             # Check if we should include this message
             if not should_include_message(message, node_idx, current_node_idx, current_node_name):
                 continue
-                
+
             message_id = f"CAN_{node['name']}_{message['name']}"
+            signals = message["signals"]
+
+            # Check if this is a multiplexed message we're consuming
+            has_multiplex = any(signal.get("multiplex") is not None for signal in signals)
+            multiplex_signal_found = any(signal["name"].lower() == "multiplex" for signal in signals)
+
+            if has_multiplex and multiplex_signal_found:
+                # Initialize mux array for RX multiplexed message
+                max_mux_value = max((signal.get("multiplex", -1) for signal in signals
+                                   if signal.get("multiplex") is not None), default=0)
+                num_mux_groups = max_mux_value + 1
+
+                dot_c.write(f"\t// Initialize RX multiplexed message: {message['name']}\n")
+                dot_c.write(f"\tfor (int i = 0; i < {num_mux_groups}; i++) {{\n")
+                dot_c.write(f"\t\t{message_id}_mux[i].payload = &{message_id}_mux_payloads[i];\n")
+                dot_c.write(f"\t\t{message_id}_mux[i].canMessageStatus = &{message_id}_mux_status[i];\n")
+                dot_c.write(f"\t}}\n")
+                dot_c.write(f"\t// Register ISR callback for mux demultiplexing\n")
+                dot_c.write(f"\t{message_id}.rx_callback = {message_id}_rx_callback;\n")
+
             dot_c.write(f"\tCAN_configureMailbox(&{message_id});\n")
-    
+
     dot_c.write("}\n")
 
 
