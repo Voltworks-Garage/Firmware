@@ -1,5 +1,6 @@
 #include "display.h"
 #include "display_state_machine.h"
+#include "styles.h"
 #include "lcd_module.h"
 #include "touch.h"
 #include "esp_log.h"
@@ -56,6 +57,10 @@ void LVGL_Init(void) {
 
     Serial.printf("LVGL_Init: Complete! %dx%d, buffer=%d bytes\n",
                   LVGL_HOR_RES, LVGL_VER_RES, BUFFER_SIZE * sizeof(lv_color_t));
+
+    // Initialize shared styles
+    Styles_Init();
+    ESP_LOGI("LVGL", "Styles initialized");
 
     // Initialize the display state machine
     DisplayStateMachine_Init();

@@ -41,6 +41,7 @@ extern lv_style_t style_power_bar_background;
 extern lv_style_t style_label_large_white;
 extern lv_style_t style_label_large_blue;
 extern lv_style_t style_label_large_green;
+extern lv_style_t style_label_large_gray;
 extern lv_style_t style_label_small_white;
 extern lv_style_t style_label_small_gray;
 extern lv_style_t style_label_small_green;

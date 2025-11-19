@@ -67,26 +67,23 @@ void ScreenRunning_Create(void) {
     // Set background to black
     lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(COLOR_BACKGROUND), 0);
 
-    // ===== Title at top =====
+    // ===== Title at top - uses shared style =====
     label_title = lv_label_create(lv_screen_active());
     lv_label_set_text(label_title, "RUNNING");
-    lv_obj_set_style_text_font(label_title, FONT_SMALL, 0);
-    lv_obj_set_style_text_color(label_title, lv_color_hex(COLOR_TEXT_WHITE), 0);
+    lv_obj_add_style(label_title, &style_label_small_white, 0);
     lv_obj_align(label_title, LV_ALIGN_TOP_MID, 0, MARGIN_TOP);
 
     // ===== Turn Signals (upper corners) =====
-    // Left turn signal
+    // Left turn signal - color set dynamically in Update
     label_turn_left = lv_label_create(lv_screen_active());
     lv_label_set_text(label_turn_left, LV_SYMBOL_LEFT);
-    lv_obj_set_style_text_font(label_turn_left, FONT_LARGE, 0);
-    lv_obj_set_style_text_color(label_turn_left, lv_color_hex(COLOR_TEXT_GRAY), 0);
+    lv_obj_add_style(label_turn_left, &style_label_large_gray, 0);
     lv_obj_align(label_turn_left, LV_ALIGN_TOP_LEFT, 5, TURN_SIGNAL_Y);
 
-    // Right turn signal
+    // Right turn signal - color set dynamically in Update
     label_turn_right = lv_label_create(lv_screen_active());
     lv_label_set_text(label_turn_right, LV_SYMBOL_RIGHT);
-    lv_obj_set_style_text_font(label_turn_right, FONT_LARGE, 0);
-    lv_obj_set_style_text_color(label_turn_right, lv_color_hex(COLOR_TEXT_GRAY), 0);
+    lv_obj_add_style(label_turn_right, &style_label_large_gray, 0);
     lv_obj_align(label_turn_right, LV_ALIGN_TOP_RIGHT, -5, TURN_SIGNAL_Y);
 
     // ===== Speed Arc (center) =====
@@ -101,20 +98,18 @@ void ScreenRunning_Create(void) {
     lv_obj_set_style_arc_width(arc_speed, SPEED_ARC_WIDTH, LV_PART_INDICATOR);
     lv_obj_set_style_arc_width(arc_speed, SPEED_ARC_WIDTH, LV_PART_MAIN);
 
-    // Speed number (center of arc)
+    // Speed number (center of arc) - uses shared style
     label_speed = lv_label_create(lv_screen_active());
     lv_label_set_text(label_speed, "0");
-    lv_obj_set_style_text_font(label_speed, FONT_LARGE, 0);
-    lv_obj_set_style_text_color(label_speed, lv_color_hex(COLOR_BATTERY_GREEN), 0);
+    lv_obj_add_style(label_speed, &style_label_large_green, 0);
     lv_obj_set_width(label_speed, SPEED_ARC_SIZE);  // Fixed width for centering
     lv_obj_set_style_text_align(label_speed, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_align_to(label_speed, arc_speed, LV_ALIGN_CENTER, 0, -10);
 
-    // Speed unit (below number, smaller font)
+    // Speed unit (below number, smaller font) - uses shared style
     label_speed_unit = lv_label_create(lv_screen_active());
     lv_label_set_text(label_speed_unit, "mph");
-    lv_obj_set_style_text_font(label_speed_unit, FONT_SMALL, 0);
-    lv_obj_set_style_text_color(label_speed_unit, lv_color_hex(COLOR_BATTERY_GREEN), 0);
+    lv_obj_add_style(label_speed_unit, &style_label_small_green, 0);
     lv_obj_set_width(label_speed_unit, SPEED_ARC_SIZE);  // Fixed width for centering
     lv_obj_set_style_text_align(label_speed_unit, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_align_to(label_speed_unit, arc_speed, LV_ALIGN_CENTER, 0, 25);
@@ -126,75 +121,59 @@ void ScreenRunning_Create(void) {
     lv_bar_set_value(bar_battery, BATTERY_BAR_MIN, LV_ANIM_OFF);
     lv_obj_align(bar_battery, LV_ALIGN_RIGHT_MID, BATTERY_BAR_X_OFFSET, 0);
 
-    // Style the indicator (filled part)
-    lv_obj_set_style_bg_color(bar_battery, lv_color_hex(COLOR_BATTERY_GREEN), LV_PART_INDICATOR);
-    lv_obj_set_style_radius(bar_battery, 8, LV_PART_INDICATOR);
+    // Apply shared bar styles
+    lv_obj_add_style(bar_battery, &style_bar_indicator_green, LV_PART_INDICATOR);
+    lv_obj_add_style(bar_battery, &style_bar_background, LV_PART_MAIN);
 
-    // Style the background (empty part)
-    lv_obj_set_style_bg_color(bar_battery, lv_color_hex(0x2a2a2a), LV_PART_MAIN);
-    lv_obj_set_style_radius(bar_battery, 8, LV_PART_MAIN);
-    lv_obj_set_style_border_width(bar_battery, 2, LV_PART_MAIN);
-    lv_obj_set_style_border_color(bar_battery, lv_color_hex(0x555555), LV_PART_MAIN);
-
-    // Battery percentage below bar
+    // Battery percentage below bar - uses shared style
     label_battery_percent = lv_label_create(lv_screen_active());
     lv_label_set_text(label_battery_percent, "---%");
-    lv_obj_set_style_text_font(label_battery_percent, FONT_SMALL, 0);
-    lv_obj_set_style_text_color(label_battery_percent, lv_color_hex(COLOR_BATTERY_GREEN), 0);
+    lv_obj_add_style(label_battery_percent, &style_label_small_green, 0);
     lv_obj_align(label_battery_percent, LV_ALIGN_RIGHT_MID, BATTERY_PERCENT_X_OFFSET, BATTERY_BAR_HEIGHT / 2 + 20);
 
     // ===== Power Bar (bottom, horizontal) =====
-    // Power label (right-aligned, left of bar)
+    // Power label (right-aligned, left of bar) - color set dynamically in Update
     label_power = lv_label_create(lv_screen_active());
     lv_label_set_text(label_power, "0.0 kW");
-    lv_obj_set_style_text_font(label_power, FONT_SMALL, 0);
-    lv_obj_set_style_text_color(label_power, lv_color_hex(COLOR_POWER_POSITIVE), 0);
+    lv_obj_add_style(label_power, &style_label_small_green, 0);
     lv_obj_set_width(label_power, POWER_LABEL_WIDTH);
     lv_obj_set_style_text_align(label_power, LV_TEXT_ALIGN_RIGHT, 0);
     lv_obj_align(label_power, LV_ALIGN_BOTTOM_LEFT, MARGIN_LEFT, POWER_BAR_Y_OFFSET);
 
-    // Power bar
+    // Power bar - uses shared power bar styles
     bar_power = lv_bar_create(lv_screen_active());
     lv_obj_set_size(bar_power, POWER_BAR_WIDTH, POWER_BAR_HEIGHT);
     lv_bar_set_range(bar_power, 0, POWER_MAX_KW * 10);  // Range in 0.1 kW units
     lv_bar_set_value(bar_power, 0, LV_ANIM_OFF);
     lv_obj_align(bar_power, LV_ALIGN_BOTTOM_LEFT, MARGIN_LEFT + POWER_LABEL_WIDTH + 10, POWER_BAR_Y_OFFSET);
 
-    // Style power bar
-    lv_obj_set_style_bg_color(bar_power, lv_color_hex(COLOR_POWER_POSITIVE), LV_PART_INDICATOR);
-    lv_obj_set_style_radius(bar_power, 4, LV_PART_INDICATOR);
-    lv_obj_set_style_bg_color(bar_power, lv_color_hex(0x2a2a2a), LV_PART_MAIN);
-    lv_obj_set_style_radius(bar_power, 4, LV_PART_MAIN);
-    lv_obj_set_style_border_width(bar_power, 1, LV_PART_MAIN);
-    lv_obj_set_style_border_color(bar_power, lv_color_hex(0x555555), LV_PART_MAIN);
+    // Apply shared power bar styles
+    lv_obj_add_style(bar_power, &style_power_bar_indicator, LV_PART_INDICATOR);
+    lv_obj_add_style(bar_power, &style_power_bar_background, LV_PART_MAIN);
 
-    // ===== Idiot Lights (left column) =====
-    // Low beam (use minus/dash symbol for low)
+    // ===== Idiot Lights (left column) - uses shared style =====
+    // Low beam
     label_light_low = lv_label_create(lv_screen_active());
     lv_label_set_text(label_light_low, LV_SYMBOL_EYE_CLOSE);
-    lv_obj_set_style_text_font(label_light_low, FONT_SMALL, 0);
-    lv_obj_set_style_text_color(label_light_low, lv_color_hex(COLOR_TEXT_GRAY), 0);
+    lv_obj_add_style(label_light_low, &style_label_small_gray, 0);
     lv_obj_align(label_light_low, LV_ALIGN_LEFT_MID, IDIOT_LIGHT_X, IDIOT_LIGHT_START_Y);
 
-    // High beam (use plus symbol for high/brights)
+    // High beam
     label_light_high = lv_label_create(lv_screen_active());
     lv_label_set_text(label_light_high, LV_SYMBOL_EYE_CLOSE);
-    lv_obj_set_style_text_font(label_light_high, FONT_SMALL, 0);
-    lv_obj_set_style_text_color(label_light_high, lv_color_hex(COLOR_TEXT_GRAY), 0);
+    lv_obj_add_style(label_light_high, &style_label_small_gray, 0);
     lv_obj_align(label_light_high, LV_ALIGN_LEFT_MID, IDIOT_LIGHT_X, IDIOT_LIGHT_START_Y + IDIOT_LIGHT_SPACING);
 
     // Hazard
     label_hazard = lv_label_create(lv_screen_active());
     lv_label_set_text(label_hazard, LV_SYMBOL_WARNING);
-    lv_obj_set_style_text_font(label_hazard, FONT_SMALL, 0);
-    lv_obj_set_style_text_color(label_hazard, lv_color_hex(COLOR_TEXT_GRAY), 0);
+    lv_obj_add_style(label_hazard, &style_label_small_gray, 0);
     lv_obj_align(label_hazard, LV_ALIGN_LEFT_MID, IDIOT_LIGHT_X, IDIOT_LIGHT_START_Y + IDIOT_LIGHT_SPACING * 2);
 
     // Bluetooth
     label_bluetooth = lv_label_create(lv_screen_active());
     lv_label_set_text(label_bluetooth, LV_SYMBOL_BLUETOOTH);
-    lv_obj_set_style_text_font(label_bluetooth, FONT_SMALL, 0);
-    lv_obj_set_style_text_color(label_bluetooth, lv_color_hex(COLOR_TEXT_GRAY), 0);
+    lv_obj_add_style(label_bluetooth, &style_label_small_gray, 0);
     lv_obj_align(label_bluetooth, LV_ALIGN_LEFT_MID, IDIOT_LIGHT_X, IDIOT_LIGHT_START_Y + IDIOT_LIGHT_SPACING * 3);
 
     ESP_LOGI(TAG, "Running screen created");

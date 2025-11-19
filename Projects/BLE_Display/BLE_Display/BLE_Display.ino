@@ -64,14 +64,8 @@ void setup() {
   BLE_AllowNewDevices();
   // BLE_RestrictToBonded();
 
-
-  //TODO: move this somewhere else
-  // Show initial test screen
-  // LCD_ShowTestScreen();
-
+  // Create FreeRTOS tasks for scheduling
   createSchedulerTasks();
-
-
 }
 
 void loop() {

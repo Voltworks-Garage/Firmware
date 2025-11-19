@@ -14,6 +14,7 @@ lv_style_t style_power_bar_background;
 lv_style_t style_label_large_white;
 lv_style_t style_label_large_blue;
 lv_style_t style_label_large_green;
+lv_style_t style_label_large_gray;
 lv_style_t style_label_small_white;
 lv_style_t style_label_small_gray;
 lv_style_t style_label_small_green;
@@ -67,6 +68,10 @@ void Styles_Init(void) {
     lv_style_init(&style_label_large_green);
     lv_style_set_text_font(&style_label_large_green, FONT_LARGE);
     lv_style_set_text_color(&style_label_large_green, lv_color_hex(COLOR_BATTERY_GREEN));
+
+    lv_style_init(&style_label_large_gray);
+    lv_style_set_text_font(&style_label_large_gray, FONT_LARGE);
+    lv_style_set_text_color(&style_label_large_gray, lv_color_hex(COLOR_TEXT_GRAY));
 
     // ========== Small Labels ==========
     lv_style_init(&style_label_small_white);

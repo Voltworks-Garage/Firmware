@@ -45,11 +45,10 @@ void ScreenHome_Create(void) {
     // Set background color
     lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(COLOR_BACKGROUND), 0);
 
-    // Title at top
+    // Title at top - uses shared style
     label_title = lv_label_create(lv_screen_active());
     lv_label_set_text(label_title, "HOME");
-    lv_obj_set_style_text_font(label_title, FONT_SMALL, 0);
-    lv_obj_set_style_text_color(label_title, lv_color_hex(COLOR_TEXT_WHITE), 0);
+    lv_obj_add_style(label_title, &style_label_small_white, 0);
     lv_obj_align(label_title, LV_ALIGN_TOP_MID, 0, MARGIN_TOP);
 
     // Battery bar on right side
@@ -59,42 +58,32 @@ void ScreenHome_Create(void) {
     lv_bar_set_value(bar_battery, BATTERY_BAR_MIN, LV_ANIM_OFF);
     lv_obj_align(bar_battery, LV_ALIGN_RIGHT_MID, -MARGIN_RIGHT_BAR, 0);
 
-    // Style the indicator (filled part)
-    lv_obj_set_style_bg_color(bar_battery, lv_color_hex(COLOR_BATTERY_GREEN), LV_PART_INDICATOR);
-    lv_obj_set_style_radius(bar_battery, 8, LV_PART_INDICATOR);  // Rounded corners
+    // Apply shared bar styles
+    lv_obj_add_style(bar_battery, &style_bar_indicator_green, LV_PART_INDICATOR);
+    lv_obj_add_style(bar_battery, &style_bar_background, LV_PART_MAIN);
 
-    // Style the background (empty part)
-    lv_obj_set_style_bg_color(bar_battery, lv_color_hex(0x2a2a2a), LV_PART_MAIN);  // Dark gray background
-    lv_obj_set_style_radius(bar_battery, 8, LV_PART_MAIN);  // Rounded corners
-    lv_obj_set_style_border_width(bar_battery, 2, LV_PART_MAIN);  // Border thickness
-    lv_obj_set_style_border_color(bar_battery, lv_color_hex(0x555555), LV_PART_MAIN);  // Border color
-
-    // Battery percentage below bar
+    // Battery percentage below bar - uses shared style
     label_battery_percent = lv_label_create(lv_screen_active());
     lv_label_set_text(label_battery_percent, "---%");
-    lv_obj_set_style_text_font(label_battery_percent, FONT_SMALL, 0);
-    lv_obj_set_style_text_color(label_battery_percent, lv_color_hex(COLOR_BATTERY_GREEN), 0);
+    lv_obj_add_style(label_battery_percent, &style_label_small_green, 0);
     lv_obj_align(label_battery_percent, LV_ALIGN_RIGHT_MID, BATTERY_PERCENT_X_OFFSET, BATTERY_BAR_HEIGHT / 2 + 20);
 
-    // Left side labels - HV Voltage
+    // Left side labels - HV Voltage - uses shared style
     label_hv_voltage = lv_label_create(lv_screen_active());
     lv_label_set_text(label_hv_voltage, "HV: --.- V");
-    lv_obj_set_style_text_font(label_hv_voltage, FONT_SMALL, 0);
-    lv_obj_set_style_text_color(label_hv_voltage, lv_color_hex(COLOR_TEXT_WHITE), 0);
+    lv_obj_add_style(label_hv_voltage, &style_label_small_white, 0);
     lv_obj_align(label_hv_voltage, LV_ALIGN_LEFT_MID, MARGIN_LEFT, LEFT_LABEL_Y_HV);
 
-    // Left side labels - LV Voltage
+    // Left side labels - LV Voltage - uses shared style
     label_lv_voltage = lv_label_create(lv_screen_active());
     lv_label_set_text(label_lv_voltage, "LV: --.- V");
-    lv_obj_set_style_text_font(label_lv_voltage, FONT_SMALL, 0);
-    lv_obj_set_style_text_color(label_lv_voltage, lv_color_hex(COLOR_TEXT_WHITE), 0);
+    lv_obj_add_style(label_lv_voltage, &style_label_small_white, 0);
     lv_obj_align(label_lv_voltage, LV_ALIGN_LEFT_MID, MARGIN_LEFT, LEFT_LABEL_Y_LV);
 
-    // Left side labels - Bluetooth
+    // Left side labels - Bluetooth - uses shared style
     label_bluetooth = lv_label_create(lv_screen_active());
     lv_label_set_text(label_bluetooth, LV_SYMBOL_BLUETOOTH " Disconnected");
-    lv_obj_set_style_text_font(label_bluetooth, FONT_SMALL, 0);
-    lv_obj_set_style_text_color(label_bluetooth, lv_color_hex(COLOR_TEXT_GRAY), 0);
+    lv_obj_add_style(label_bluetooth, &style_label_small_gray, 0);
     lv_obj_align(label_bluetooth, LV_ALIGN_LEFT_MID, MARGIN_LEFT, LEFT_LABEL_Y_BT);
 
     ESP_LOGI(TAG, "Home screen created");
@@ -141,7 +130,7 @@ void ScreenHome_Update(void) {
                               GET_WHOLE(lv_voltage_x10), GET_FRAC(lv_voltage_x10));
     }
 
-    // Update Bluetooth connection status
+    // Update Bluetooth connection status (dynamic colors override style)
     if (label_bluetooth != NULL) {
         bool connected = BLE_IsConnected();
         if (connected) {

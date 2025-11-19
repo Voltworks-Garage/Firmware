@@ -21,14 +21,13 @@ static lv_obj_t* label_status = NULL;
 void ScreenCharging_Create(void) {
     ESP_LOGI(TAG, "Creating charging screen");
 
-    // Set background to dark green
+    // Set background to black
     lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(COLOR_BACKGROUND), 0);
 
-    // Title
+    // Title - uses shared style
     label_title = lv_label_create(lv_screen_active());
     lv_label_set_text(label_title, "CHARGING");
-    lv_obj_set_style_text_font(label_title, FONT_SMALL, 0);
-    lv_obj_set_style_text_color(label_title, lv_color_hex(COLOR_TEXT_WHITE), 0);
+    lv_obj_add_style(label_title, &style_label_small_white, 0);
     lv_obj_align(label_title, LV_ALIGN_TOP_MID, 0, 10);
 
     // SOC arc (center)
@@ -43,32 +42,28 @@ void ScreenCharging_Create(void) {
     lv_obj_set_style_arc_width(arc_soc, 20, LV_PART_INDICATOR);
     lv_obj_set_style_arc_width(arc_soc, 20, LV_PART_MAIN);
 
-    // SOC label (center of arc)
+    // SOC label (center of arc) - uses shared style
     label_soc = lv_label_create(lv_screen_active());
     lv_label_set_text(label_soc, "0%");
-    lv_obj_set_style_text_font(label_soc, &lv_font_montserrat_48, 0);
-    lv_obj_set_style_text_color(label_soc, lv_color_hex(COLOR_BATTERY_GREEN), 0);
+    lv_obj_add_style(label_soc, &style_label_large_green, 0);
     lv_obj_align_to(label_soc, arc_soc, LV_ALIGN_CENTER, 0, 0);
 
-    // Voltage label (bottom left)
+    // Voltage label (bottom left) - uses shared style
     label_voltage = lv_label_create(lv_screen_active());
     lv_label_set_text(label_voltage, "Voltage: --.-V");
-    lv_obj_set_style_text_font(label_voltage, FONT_SMALL, 0);
-    lv_obj_set_style_text_color(label_voltage, lv_color_hex(COLOR_TEXT_WHITE), 0);
+    lv_obj_add_style(label_voltage, &style_label_small_white, 0);
     lv_obj_align(label_voltage, LV_ALIGN_BOTTOM_LEFT, 10, -40);
 
-    // Current label (bottom left)
+    // Current label (bottom left) - uses shared style
     label_current = lv_label_create(lv_screen_active());
     lv_label_set_text(label_current, "Current: --.-A");
-    lv_obj_set_style_text_font(label_current, FONT_SMALL, 0);
-    lv_obj_set_style_text_color(label_current, lv_color_hex(COLOR_TEXT_WHITE), 0);
+    lv_obj_add_style(label_current, &style_label_small_white, 0);
     lv_obj_align(label_current, LV_ALIGN_BOTTOM_LEFT, 10, -10);
 
-    // Status label (bottom right)
+    // Status label (bottom right) - uses shared style
     label_status = lv_label_create(lv_screen_active());
     lv_label_set_text(label_status, "Charging...");
-    lv_obj_set_style_text_font(label_status, FONT_SMALL, 0);
-    lv_obj_set_style_text_color(label_status, lv_color_hex(COLOR_BATTERY_GREEN), 0);
+    lv_obj_add_style(label_status, &style_label_small_green, 0);
     lv_obj_align(label_status, LV_ALIGN_BOTTOM_RIGHT, -10, -20);
 
     ESP_LOGI(TAG, "Charging screen created");
