@@ -544,7 +544,8 @@ Plugins:
                 print(f"Error notifying plugin {plugin.tab_name} of message: {e}")
         
         # Update message data immediately (for accurate counting and timing)
-        can_msg = self.message_manager.update_message(msg_id, msg.dlc, msg.data)
+        # Use hardware timestamp from CAN interface for accurate interval measurements
+        can_msg = self.message_manager.update_message(msg_id, msg.dlc, msg.data, msg.timestamp)
         
         # Notify graphing window of received message
         if self.graphing_window is not None and self.graphing_window.window is not None:

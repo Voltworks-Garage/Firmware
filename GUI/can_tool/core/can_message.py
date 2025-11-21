@@ -57,9 +57,16 @@ class CANMessageManager:
             'message_rates': {}  # msg_id -> bits/second
         }
     
-    def update_message(self, msg_id: int, dlc: int, data: bytes) -> CANMessage:
-        """Update or create a CAN message"""
-        now = time.time()
+    def update_message(self, msg_id: int, dlc: int, data: bytes, timestamp: float = None) -> CANMessage:
+        """Update or create a CAN message
+
+        Args:
+            msg_id: CAN message ID
+            dlc: Data length code
+            data: Message data bytes
+            timestamp: Hardware timestamp from CAN interface (if available), otherwise uses time.time()
+        """
+        now = timestamp if timestamp is not None else time.time()
         
         # Decode the message
         decoded = self.dbf_parser.decode_message(msg_id, data)
