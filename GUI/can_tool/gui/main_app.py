@@ -96,6 +96,7 @@ class CANApp:
         ttk.Button(control_frame, text="Connect", command=self.connect).pack(side=tk.LEFT, padx=5)
         ttk.Button(control_frame, text="Disconnect", command=self.disconnect).pack(side=tk.LEFT, padx=5)
         ttk.Button(control_frame, text="Wake Bus", command=self.send_wake_message).pack(side=tk.LEFT, padx=5)
+        ttk.Button(control_frame, text="Reset Bus", command=self.reset_bus).pack(side=tk.LEFT, padx=5)
         ttk.Button(control_frame, text="Clear Console", command=lambda: self.console.delete("1.0", tk.END)).pack(side=tk.LEFT, padx=5)
         ttk.Button(control_frame, text="Clear RX Table", command=self.clear_rx_table).pack(side=tk.LEFT, padx=5)
         ttk.Checkbutton(control_frame, text="Log RX to Console", variable=self.console_rx_enabled).pack(side=tk.LEFT, padx=5)
@@ -1430,6 +1431,40 @@ Plugins:
         except Exception as e:
             self.log(f"❌ TX Update Error: {e}")
     
+    def reset_bus(self):
+        """Reset the CAN bus to clear error states"""
+        if not self.bus:
+            messagebox.showinfo("Not Connected", "Please connect to CAN bus first.")
+            return
+
+        try:
+            # Store connection parameters
+            channel = self.device_var.get()
+            baud = self.baud_var.get()
+
+            self.log("🔄 Resetting CAN bus to clear error states...")
+
+            # Disconnect and reconnect to reset the hardware
+            self.disconnect()
+
+            # Small delay to ensure clean disconnect
+            self.root.after(100, lambda: self._complete_bus_reset(channel, baud))
+
+        except Exception as e:
+            self.log(f"❌ Bus reset failed: {e}")
+            messagebox.showerror("Reset Error", f"Failed to reset bus: {e}")
+
+    def _complete_bus_reset(self, channel, baud):
+        """Complete the bus reset by reconnecting"""
+        try:
+            # Reconnect with same parameters
+            self.device_var.set(channel)
+            self.baud_var.set(baud)
+            self.connect()
+            self.log("✅ Bus reset complete")
+        except Exception as e:
+            self.log(f"❌ Bus reset reconnection failed: {e}")
+
     def send_wake_message(self):
         """Send a wake message to address 0x000 with no payload"""
         was_connected = self.running and self.bus is not None
@@ -1492,19 +1527,33 @@ Plugins:
         """Update bus status from CAN interface"""
         if not self.running or not self.bus:
             return
-        
+
         try:
-            # Get current bus state
+            # Get current bus state and status
             current_state = self.bus.state
-            
+
+            # For PCAN, also check detailed status for error conditions
+            detailed_status = None
+            if hasattr(self.bus, 'status'):
+                try:
+                    detailed_status = self.bus.status
+                except:
+                    pass
+
+            # Combine state and detailed status for display
+            status_info = {
+                'state': current_state,
+                'detailed_status': detailed_status
+            }
+
             # Only update display if state changed
-            if current_state != self.last_bus_state:
-                self.table_view.update_bus_status_display(current_state)
-                self.last_bus_state = current_state
-                
+            if status_info != self.last_bus_state:
+                self.table_view.update_bus_status_display(status_info)
+                self.last_bus_state = status_info
+
             # Schedule next update (200ms = 5Hz)
             self.bus_status_timer = self.root.after(200, self._update_bus_status)
-            
+
         except Exception as e:
             # Some CAN interfaces might not support state queries
             # Log once and stop monitoring to avoid spam

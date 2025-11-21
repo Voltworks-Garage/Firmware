@@ -209,25 +209,76 @@ class CANTableView:
         self.bus_util_label.config(text=utilization_text)
         self.bus_details_label.config(text=details_text)
     
-    def update_bus_status_display(self, bus_state):
-        """Update the bus status display"""
+    def update_bus_status_display(self, status_info):
+        """Update the bus status display
+
+        Args:
+            status_info: Either a BusState enum, a dict with 'state' and 'detailed_status', or None
+        """
         import can
-        
-        # Map bus state to user-friendly text and colors
-        if bus_state == can.BusState.ACTIVE:
-            status_text = "Bus Status: Active"
-            status_color = "green"
-        elif bus_state == can.BusState.PASSIVE:
-            status_text = "Bus Status: Error Passive"  
-            status_color = "orange"
-        elif bus_state == can.BusState.ERROR:
-            status_text = "Bus Status: Bus Off"
-            status_color = "red"
-        else:
+
+        # Handle different input formats
+        if status_info is None:
             status_text = "Bus Status: Unknown"
             status_color = "gray"
-        
+        elif isinstance(status_info, dict):
+            # Enhanced status with PCAN details
+            bus_state = status_info.get('state')
+            detailed_status = status_info.get('detailed_status')
+
+            # Check for PCAN-specific error conditions
+            if detailed_status is not None:
+                try:
+                    # Import PCAN constants
+                    from can.interfaces.pcan.basic import (
+                        PCAN_ERROR_OK, PCAN_ERROR_BUSLIGHT,
+                        PCAN_ERROR_BUSHEAVY, PCAN_ERROR_BUSOFF,
+                        PCAN_ERROR_BUSPASSIVE
+                    )
+
+                    # Check detailed status flags
+                    if detailed_status & PCAN_ERROR_BUSOFF:
+                        status_text = "Bus Status: Bus Off"
+                        status_color = "red"
+                    elif detailed_status & PCAN_ERROR_BUSHEAVY:
+                        status_text = "Bus Status: Error Heavy ⚠️"
+                        status_color = "orange"
+                    elif detailed_status & PCAN_ERROR_BUSPASSIVE:
+                        status_text = "Bus Status: Error Passive"
+                        status_color = "orange"
+                    elif detailed_status & PCAN_ERROR_BUSLIGHT:
+                        status_text = "Bus Status: Error Light ⚠️"
+                        status_color = "yellow"
+                    elif detailed_status == PCAN_ERROR_OK:
+                        status_text = "Bus Status: Active"
+                        status_color = "green"
+                    else:
+                        # Fall back to basic state
+                        status_text, status_color = self._get_basic_status(bus_state)
+                except:
+                    # If PCAN imports fail, use basic state
+                    status_text, status_color = self._get_basic_status(bus_state)
+            else:
+                # No detailed status, use basic state
+                status_text, status_color = self._get_basic_status(bus_state)
+        else:
+            # Legacy: direct BusState enum
+            status_text, status_color = self._get_basic_status(status_info)
+
         self.bus_status_label.config(text=status_text, foreground=status_color)
+
+    def _get_basic_status(self, bus_state):
+        """Get basic status text and color from BusState enum"""
+        import can
+
+        if bus_state == can.BusState.ACTIVE:
+            return "Bus Status: Active", "green"
+        elif bus_state == can.BusState.PASSIVE:
+            return "Bus Status: Error Passive", "orange"
+        elif bus_state == can.BusState.ERROR:
+            return "Bus Status: Bus Off", "red"
+        else:
+            return "Bus Status: Unknown", "gray"
     
     def clear_all(self):
         """Clear all items from the tree"""
