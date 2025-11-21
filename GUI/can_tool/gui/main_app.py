@@ -701,7 +701,8 @@ Plugins:
             return  # Already stopped
         
         # Stop the timer if it exists
-        if msg_info["timer"]:
+        msg_info["cyclic_task"].stop()
+        if msg_info["timer"] is not None:
             self.root.after_cancel(msg_info["timer"])
             msg_info["timer"] = None
         
@@ -798,14 +799,24 @@ Plugins:
                     data=bytes(int(b, 16) for b in current_data.split()),
                     is_extended_id=False
                 )
-                self.bus.send(msg)
-                
-                # Schedule next transmission
-                if tx_cycle > 0 and msg_info["running"]:
-                    msg_info["timer"] = self.root.after(tx_cycle, send_message)
+
+                # tx_cycle is your period in milliseconds
+                period_sec = tx_cycle / 1000.0  # convert ms to seconds
+
+                if tx_cycle == 0:
+                    # One-shot transmission
+                    self.bus.send(msg)
                 else:
-                    # One-shot message - stop after sending
-                    self.stop_tx_message(msg_id)
+                    msg_info["cyclic_task"] = self.bus.send_periodic(msg, period_sec)
+                    msg_info["cyclic_task"].start()
+                    msg_info["timer"] = self.root.after(tx_cycle, lambda: self.update_cyclic_message(tx_msg_id))
+
+                # # Schedule value updates
+                # if tx_cycle > 0 and msg_info["running"]:
+                #     msg_info["timer"] = self.root.after(tx_cycle, send_message)
+                # else:
+                #     # One-shot message - stop after sending
+                #     self.stop_tx_message(msg_id)
                     
             except Exception as e:
                 self.log(f"❌ TX Error: {e}")
@@ -1353,14 +1364,26 @@ Plugins:
                     data=bytes(int(b, 16) for b in current_data.split()),
                     is_extended_id=False
                 )
-                self.bus.send(msg)
-                
-                # Schedule next transmission
-                if tx_cycle > 0 and msg_info["running"]:
-                    msg_info["timer"] = self.root.after(tx_cycle, send_dbf_message)
+
+                # tx_cycle is your period in milliseconds
+                period_sec = tx_cycle / 1000.0  # convert ms to seconds
+
+                if tx_cycle == 0:
+                    # One-shot transmission
+                    self.bus.send(msg)
                 else:
-                    # One-shot message - stop after sending
-                    self.stop_tx_message(tx_msg_id)
+                    msg_info["cyclic_task"] = self.bus.send_periodic(msg, period_sec)
+                    msg_info["cyclic_task"].start()
+                    msg_info["timer"] = self.root.after(tx_cycle, lambda: self.update_cyclic_message(tx_msg_id))
+
+                # self.bus.send(msg)
+                
+                # # Schedule next transmission
+                # if tx_cycle > 0 and msg_info["running"]:
+                #     msg_info["timer"] = self.root.after(tx_cycle, send_dbf_message)
+                # else:
+                #     # One-shot message - stop after sending
+                #     self.stop_tx_message(tx_msg_id)
                     
             except Exception as e:
                 self.log(f"❌ DBF TX Error: {e}")
@@ -1368,6 +1391,43 @@ Plugins:
         
         # Start sending
         send_dbf_message()
+    
+    def update_cyclic_message(self, tx_msg_id):
+        """Update the data of a cyclic TX message"""
+        if tx_msg_id not in self.tx_messages:
+            return 
+        msg_info = self.tx_messages[tx_msg_id]
+
+        if msg_info["running"] is False:
+            return  # Not running
+
+        # Re-read values each time in case user changed them while running
+        current_id = msg_info["widgets"]["id_var"].get().strip()
+        current_data = msg_info["widgets"]["data_var"].get().strip()
+        tx_cycle_str = msg_info["widgets"]["cycle_var"].get().strip()
+        
+        # Handle placeholder text
+        if current_id.startswith("e.g."):
+            current_id = tx_id  # Use validated value from start
+        if current_data.startswith("e.g."):
+            current_data = tx_data  # Use validated value from start
+        
+        msg = can.Message(
+            arbitration_id=int(current_id, 16),
+            data=bytes(int(b, 16) for b in current_data.split()),
+            is_extended_id=False
+        )
+
+        tx_cycle = int(tx_cycle_str)
+        
+        try:
+            # Update data field
+            msg_info["cyclic_task"].modify_data(msg)
+
+            msg_info["timer"] = self.root.after(tx_cycle, lambda: self.update_cyclic_message(tx_msg_id))
+
+        except Exception as e:
+            self.log(f"❌ TX Update Error: {e}")
     
     def send_wake_message(self):
         """Send a wake message to address 0x000 with no payload"""
