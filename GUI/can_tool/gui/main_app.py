@@ -401,7 +401,8 @@ Plugins:
                         pass
                 self.root.after(0, lambda: self._scan_complete(channels, scan_btn))
             except Exception as e:
-                self.root.after(0, lambda: self._scan_error(str(e), scan_btn))
+                error_msg = str(e)
+                self.root.after(0, lambda msg=error_msg: self._scan_error(msg, scan_btn))
 
         scan_btn = None
         for widget in self.root.winfo_children():
