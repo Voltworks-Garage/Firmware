@@ -109,9 +109,9 @@ void EV_CHARGER_calculate_max_dc_current_from_pilot(void);
  * Function DefinitionsW
  *******************************************************************************/
 void EV_Charger_Init(void) {
-    static EV_CHARGER_states_E prevState = idle_state; /* initialize previous state */
-    static EV_CHARGER_states_E curState = idle_state; /* initialize current state */
-    static EV_CHARGER_states_E nextState = idle_state; /* initialize current state */
+    prevState = idle_state; /* initialize previous state */
+    curState = idle_state; /* initialize current state */
+    nextState = idle_state; /* initialize current state */
     state_functions[curState](ENTRY);
 }
 
@@ -309,7 +309,9 @@ void charging(EV_CHARGER_entry_types_E entry_type) {
             }
 
             // If the pack is fully charged, stop charging
-            //TODO: implement this
+            if (CAN_bms_status_charge_complete_get() == 1){
+                nextState = complete_state;
+            }
 
             //Always set the charge request to BMS or MCU command, whichever is less.
             uint32_t charging_current = MIN(maximumChargerCurrentAllowedmA,

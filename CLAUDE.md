@@ -4,11 +4,15 @@
 Use the automated build script for easy project building:
 ```bash
 # Build specific projects
-./build_commands.sh BMS_APP      # Build BMS Application
-./build_commands.sh BMS_BOOT     # Build BMS Bootloader
-./build_commands.sh MCU_APP      # Build MCU Application  
-./build_commands.sh MCU_BOOT     # Build MCU Bootloader
-./build_commands.sh ALL          # Build all main projects
+./build_commands.sh BMS_APP           # Build BMS Application
+./build_commands.sh BMS_BOOT          # Build BMS Bootloader
+./build_commands.sh MCU_APP           # Build MCU Application
+./build_commands.sh MCU_BOOT          # Build MCU Bootloader
+./build_commands.sh BLE_APP           # Build BLE Application (ESP32-S3)
+./build_commands.sh BLE_UPLOAD        # Upload BLE Application (auto-detect port)
+./build_commands.sh BLE_BUILD_UPLOAD  # Build and upload BLE Application
+./build_commands.sh DBC               # Generate DBC files from JSON
+./build_commands.sh ALL               # Build all main projects
 
 # Show help
 ./build_commands.sh help
@@ -42,6 +46,19 @@ cd "/mnt/c/REPOS/Voltworks_Garage/Firmware/Projects/MCU_App.X"
 cd "/mnt/c/REPOS/Voltworks_Garage/Firmware/Projects/MCU_Bootloader.X"
 "/mnt/c/Program Files/Microchip/MPLABX/v6.20/gnuBins/GnuWin32/bin/make.exe" -f nbproject/Makefile-default.mk CONF=default clean
 "/mnt/c/Program Files/Microchip/MPLABX/v6.20/gnuBins/GnuWin32/bin/make.exe" -f nbproject/Makefile-default.mk CONF=default
+```
+
+### BLE_Display (Arduino ESP32-S3) Project Build
+```bash
+cd "/mnt/c/REPOS/Voltworks_Garage/Firmware/Projects/BLE_Display/BLE_Display"
+"/mnt/c/Scripts/arduino-cli_1.3.1_Windows_64bit/arduino-cli.exe" compile --fqbn esp32:esp32:esp32s3 BLE_Display.ino
+```
+
+### BLE_Display Upload (with auto-detect)
+```bash
+cd "/mnt/c/REPOS/Voltworks_Garage/Firmware/Projects/BLE_Display/BLE_Display"
+PORT=$("/mnt/c/Scripts/arduino-cli_1.3.1_Windows_64bit/arduino-cli.exe" board list | grep -i "esp32" | head -n 1 | awk '{print $1}')
+"/mnt/c/Scripts/arduino-cli_1.3.1_Windows_64bit/arduino-cli.exe" upload -p "$PORT" --fqbn esp32:esp32:esp32s3 BLE_Display.ino
 ```
 
 ## Notes

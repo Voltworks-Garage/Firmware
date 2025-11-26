@@ -785,12 +785,14 @@ static CAN_message_S CAN_bms_status={
 #define CAN_BMS_STATUS_M3_CHARGE_ALLOWED_OFFSET 39
 #define CAN_BMS_STATUS_M3_DISCHARGE_ALLOWED_RANGE 1
 #define CAN_BMS_STATUS_M3_DISCHARGE_ALLOWED_OFFSET 40
+#define CAN_BMS_STATUS_M3_CHARGE_COMPLETE_RANGE 1
+#define CAN_BMS_STATUS_M3_CHARGE_COMPLETE_OFFSET 41
 #define CAN_BMS_STATUS_M3_FAULT_SUMMARY_RANGE 12
-#define CAN_BMS_STATUS_M3_FAULT_SUMMARY_OFFSET 41
+#define CAN_BMS_STATUS_M3_FAULT_SUMMARY_OFFSET 42
 #define CAN_BMS_STATUS_M3_IS_BALANCING_RANGE 1
-#define CAN_BMS_STATUS_M3_IS_BALANCING_OFFSET 53
+#define CAN_BMS_STATUS_M3_IS_BALANCING_OFFSET 54
 #define CAN_BMS_STATUS_M3_CELL_A_BALANCING_RANGE 5
-#define CAN_BMS_STATUS_M3_CELL_A_BALANCING_OFFSET 54
+#define CAN_BMS_STATUS_M3_CELL_A_BALANCING_OFFSET 55
 #define CAN_BMS_STATUS_M4_CELL_B_BALANCING_RANGE 5
 #define CAN_BMS_STATUS_M4_CELL_B_BALANCING_OFFSET 3
 #define CAN_BMS_STATUS_M4_CELL_C_BALANCING_RANGE 5
@@ -954,25 +956,31 @@ void CAN_bms_status_discharge_allowed_set(uint16_t discharge_allowed){
 	CAN_bms_status_payloads[3].word2 &= ~0x0100;
 	CAN_bms_status_payloads[3].word2 |= (data_scaled << 8) & 0x0100;
 }
+void CAN_bms_status_charge_complete_set(uint16_t charge_complete){
+	uint16_t data_scaled = charge_complete * 1.0;
+	// Set 1-bit signal at bit offset 41
+	CAN_bms_status_payloads[3].word2 &= ~0x0200;
+	CAN_bms_status_payloads[3].word2 |= (data_scaled << 9) & 0x0200;
+}
 void CAN_bms_status_fault_summary_set(uint16_t fault_summary){
 	uint16_t data_scaled = fault_summary * 1.0;
-	// Set 12-bit signal at bit offset 41
-	CAN_bms_status_payloads[3].word2 &= ~0xFE00;
-	CAN_bms_status_payloads[3].word2 |= (data_scaled << 9) & 0xFE00;
-	CAN_bms_status_payloads[3].word3 &= ~0x001F;
-	CAN_bms_status_payloads[3].word3 |= (data_scaled >> 7) & 0x001F;
+	// Set 12-bit signal at bit offset 42
+	CAN_bms_status_payloads[3].word2 &= ~0xFC00;
+	CAN_bms_status_payloads[3].word2 |= (data_scaled << 10) & 0xFC00;
+	CAN_bms_status_payloads[3].word3 &= ~0x003F;
+	CAN_bms_status_payloads[3].word3 |= (data_scaled >> 6) & 0x003F;
 }
 void CAN_bms_status_is_balancing_set(uint16_t is_balancing){
 	uint16_t data_scaled = is_balancing * 1.0;
-	// Set 1-bit signal at bit offset 53
-	CAN_bms_status_payloads[3].word3 &= ~0x0020;
-	CAN_bms_status_payloads[3].word3 |= (data_scaled << 5) & 0x0020;
+	// Set 1-bit signal at bit offset 54
+	CAN_bms_status_payloads[3].word3 &= ~0x0040;
+	CAN_bms_status_payloads[3].word3 |= (data_scaled << 6) & 0x0040;
 }
 void CAN_bms_status_cell_A_balancing_set(uint16_t cell_A_balancing){
 	uint16_t data_scaled = cell_A_balancing * 1.0;
-	// Set 5-bit signal at bit offset 54
-	CAN_bms_status_payloads[3].word3 &= ~0x07C0;
-	CAN_bms_status_payloads[3].word3 |= (data_scaled << 6) & 0x07C0;
+	// Set 5-bit signal at bit offset 55
+	CAN_bms_status_payloads[3].word3 &= ~0x0F80;
+	CAN_bms_status_payloads[3].word3 |= (data_scaled << 7) & 0x0F80;
 }
 void CAN_bms_status_cell_B_balancing_set(uint16_t cell_B_balancing){
 	uint16_t data_scaled = cell_B_balancing * 1.0;
@@ -1155,23 +1163,29 @@ uint16_t CAN_bms_status_discharge_allowed_get(void){
 	data |= (uint16_t)((CAN_bms_status_payloads[3].word2 & 0x0100) >> 8) << 0;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_bms_status_fault_summary_get(void){
-	// Extract 12-bit signal at bit offset 41
+uint16_t CAN_bms_status_charge_complete_get(void){
+	// Extract 1-bit signal at bit offset 41
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[3].word2 & 0xFE00) >> 9) << 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[3].word3 & 0x001F) >> 0) << 7;
+	data |= (uint16_t)((CAN_bms_status_payloads[3].word2 & 0x0200) >> 9) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_status_fault_summary_get(void){
+	// Extract 12-bit signal at bit offset 42
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[3].word2 & 0xFC00) >> 10) << 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[3].word3 & 0x003F) >> 0) << 6;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_status_is_balancing_get(void){
-	// Extract 1-bit signal at bit offset 53
+	// Extract 1-bit signal at bit offset 54
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[3].word3 & 0x0020) >> 5) << 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[3].word3 & 0x0040) >> 6) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_status_cell_A_balancing_get(void){
-	// Extract 5-bit signal at bit offset 54
+	// Extract 5-bit signal at bit offset 55
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_payloads[3].word3 & 0x07C0) >> 6) << 0;
+	data |= (uint16_t)((CAN_bms_status_payloads[3].word3 & 0x0F80) >> 7) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_status_cell_B_balancing_get(void){
@@ -2956,99 +2970,102 @@ uint16_t CAN_boot_host_bms_byte7_get(void){
 	return (data * 1.0) + 0;
 }
 
-void CAN_DBC_init(void) {
-	// Initialize multiplexed message: status
-	CAN_bms_status.payload = &CAN_bms_status_payloads[0];
-	// Pre-set mux value 0 in payload 0
+static void CAN_DBC_initMuxValues(void) {
+	// Pre-set mux value 0 in payload 0 for status
 	// Set 3-bit signal at bit offset 0
 	CAN_bms_status_payloads[0].word0 &= ~0x0007;
 	CAN_bms_status_payloads[0].word0 |= 0 & 0x0007;
-	// Pre-set mux value 1 in payload 1
+	// Pre-set mux value 1 in payload 1 for status
 	// Set 3-bit signal at bit offset 0
 	CAN_bms_status_payloads[1].word0 &= ~0x0007;
 	CAN_bms_status_payloads[1].word0 |= 1 & 0x0007;
-	// Pre-set mux value 2 in payload 2
+	// Pre-set mux value 2 in payload 2 for status
 	// Set 3-bit signal at bit offset 0
 	CAN_bms_status_payloads[2].word0 &= ~0x0007;
 	CAN_bms_status_payloads[2].word0 |= 2 & 0x0007;
-	// Pre-set mux value 3 in payload 3
+	// Pre-set mux value 3 in payload 3 for status
 	// Set 3-bit signal at bit offset 0
 	CAN_bms_status_payloads[3].word0 &= ~0x0007;
 	CAN_bms_status_payloads[3].word0 |= 3 & 0x0007;
-	// Pre-set mux value 4 in payload 4
+	// Pre-set mux value 4 in payload 4 for status
 	// Set 3-bit signal at bit offset 0
 	CAN_bms_status_payloads[4].word0 &= ~0x0007;
 	CAN_bms_status_payloads[4].word0 |= 4 & 0x0007;
-	// Initialize multiplexed message: debug
-	CAN_bms_debug.payload = &CAN_bms_debug_payloads[0];
-	// Pre-set mux value 0 in payload 0
+	// Pre-set mux value 0 in payload 0 for debug
 	// Set 2-bit signal at bit offset 0
 	CAN_bms_debug_payloads[0].word0 &= ~0x0003;
 	CAN_bms_debug_payloads[0].word0 |= 0 & 0x0003;
-	// Pre-set mux value 1 in payload 1
+	// Pre-set mux value 1 in payload 1 for debug
 	// Set 2-bit signal at bit offset 0
 	CAN_bms_debug_payloads[1].word0 &= ~0x0003;
 	CAN_bms_debug_payloads[1].word0 |= 1 & 0x0003;
-	// Pre-set mux value 2 in payload 2
+	// Pre-set mux value 2 in payload 2 for debug
 	// Set 2-bit signal at bit offset 0
 	CAN_bms_debug_payloads[2].word0 &= ~0x0003;
 	CAN_bms_debug_payloads[2].word0 |= 2 & 0x0003;
-	// Initialize multiplexed message: cell_voltages
-	CAN_bms_cell_voltages.payload = &CAN_bms_cell_voltages_payloads[0];
-	// Pre-set mux value 0 in payload 0
+	// Pre-set mux value 0 in payload 0 for cell_voltages
 	// Set 3-bit signal at bit offset 0
 	CAN_bms_cell_voltages_payloads[0].word0 &= ~0x0007;
 	CAN_bms_cell_voltages_payloads[0].word0 |= 0 & 0x0007;
-	// Pre-set mux value 1 in payload 1
+	// Pre-set mux value 1 in payload 1 for cell_voltages
 	// Set 3-bit signal at bit offset 0
 	CAN_bms_cell_voltages_payloads[1].word0 &= ~0x0007;
 	CAN_bms_cell_voltages_payloads[1].word0 |= 1 & 0x0007;
-	// Pre-set mux value 2 in payload 2
+	// Pre-set mux value 2 in payload 2 for cell_voltages
 	// Set 3-bit signal at bit offset 0
 	CAN_bms_cell_voltages_payloads[2].word0 &= ~0x0007;
 	CAN_bms_cell_voltages_payloads[2].word0 |= 2 & 0x0007;
-	// Pre-set mux value 3 in payload 3
+	// Pre-set mux value 3 in payload 3 for cell_voltages
 	// Set 3-bit signal at bit offset 0
 	CAN_bms_cell_voltages_payloads[3].word0 &= ~0x0007;
 	CAN_bms_cell_voltages_payloads[3].word0 |= 3 & 0x0007;
-	// Pre-set mux value 4 in payload 4
+	// Pre-set mux value 4 in payload 4 for cell_voltages
 	// Set 3-bit signal at bit offset 0
 	CAN_bms_cell_voltages_payloads[4].word0 &= ~0x0007;
 	CAN_bms_cell_voltages_payloads[4].word0 |= 4 & 0x0007;
-	// Pre-set mux value 5 in payload 5
+	// Pre-set mux value 5 in payload 5 for cell_voltages
 	// Set 3-bit signal at bit offset 0
 	CAN_bms_cell_voltages_payloads[5].word0 &= ~0x0007;
 	CAN_bms_cell_voltages_payloads[5].word0 |= 5 & 0x0007;
-	// Initialize multiplexed message: cell_temperatures
-	CAN_bms_cell_temperatures.payload = &CAN_bms_cell_temperatures_payloads[0];
-	// Pre-set mux value 0 in payload 0
+	// Pre-set mux value 0 in payload 0 for cell_temperatures
 	// Set 3-bit signal at bit offset 0
 	CAN_bms_cell_temperatures_payloads[0].word0 &= ~0x0007;
 	CAN_bms_cell_temperatures_payloads[0].word0 |= 0 & 0x0007;
-	// Pre-set mux value 1 in payload 1
+	// Pre-set mux value 1 in payload 1 for cell_temperatures
 	// Set 3-bit signal at bit offset 0
 	CAN_bms_cell_temperatures_payloads[1].word0 &= ~0x0007;
 	CAN_bms_cell_temperatures_payloads[1].word0 |= 1 & 0x0007;
-	// Pre-set mux value 2 in payload 2
+	// Pre-set mux value 2 in payload 2 for cell_temperatures
 	// Set 3-bit signal at bit offset 0
 	CAN_bms_cell_temperatures_payloads[2].word0 &= ~0x0007;
 	CAN_bms_cell_temperatures_payloads[2].word0 |= 2 & 0x0007;
-	// Pre-set mux value 3 in payload 3
+	// Pre-set mux value 3 in payload 3 for cell_temperatures
 	// Set 3-bit signal at bit offset 0
 	CAN_bms_cell_temperatures_payloads[3].word0 &= ~0x0007;
 	CAN_bms_cell_temperatures_payloads[3].word0 |= 3 & 0x0007;
-	// Pre-set mux value 4 in payload 4
+	// Pre-set mux value 4 in payload 4 for cell_temperatures
 	// Set 3-bit signal at bit offset 0
 	CAN_bms_cell_temperatures_payloads[4].word0 &= ~0x0007;
 	CAN_bms_cell_temperatures_payloads[4].word0 |= 4 & 0x0007;
-	// Pre-set mux value 5 in payload 5
+	// Pre-set mux value 5 in payload 5 for cell_temperatures
 	// Set 3-bit signal at bit offset 0
 	CAN_bms_cell_temperatures_payloads[5].word0 &= ~0x0007;
 	CAN_bms_cell_temperatures_payloads[5].word0 |= 5 & 0x0007;
-	// Pre-set mux value 6 in payload 6
+	// Pre-set mux value 6 in payload 6 for cell_temperatures
 	// Set 3-bit signal at bit offset 0
 	CAN_bms_cell_temperatures_payloads[6].word0 &= ~0x0007;
 	CAN_bms_cell_temperatures_payloads[6].word0 |= 6 & 0x0007;
+}
+
+void CAN_DBC_init(void) {
+	// Initialize multiplexed message: status
+	CAN_bms_status.payload = &CAN_bms_status_payloads[0];
+	// Initialize multiplexed message: debug
+	CAN_bms_debug.payload = &CAN_bms_debug_payloads[0];
+	// Initialize multiplexed message: cell_voltages
+	CAN_bms_cell_voltages.payload = &CAN_bms_cell_voltages_payloads[0];
+	// Initialize multiplexed message: cell_temperatures
+	CAN_bms_cell_temperatures.payload = &CAN_bms_cell_temperatures_payloads[0];
 	// Initialize RX multiplexed message: status
 	for (int i = 0; i < 5; i++) {
 		CAN_mcu_status_mux[i].payload = &CAN_mcu_status_mux_payloads[i];
@@ -3074,6 +3091,61 @@ void CAN_DBC_init(void) {
 	CAN_configureMailbox(&CAN_motorcontroller_motor_status_PDO4);
 	CAN_configureMailbox(&CAN_charger_status);
 	CAN_configureMailbox(&CAN_boot_host_bms);
+	// Initialize mux field values in all TX multiplexed message payloads
+	CAN_DBC_initMuxValues();
+}
+
+void CAN_DBC_clearAllMessages(void) {
+	// Clear multiplexed message: status
+	for (int i = 0; i < 5; i++) {
+		CAN_bms_status_payloads[i].word0 = 0;
+		CAN_bms_status_payloads[i].word1 = 0;
+		CAN_bms_status_payloads[i].word2 = 0;
+		CAN_bms_status_payloads[i].word3 = 0;
+	}
+	// Clear message: power_systems
+	CAN_bms_power_systems_payload.word0 = 0;
+	CAN_bms_power_systems_payload.word1 = 0;
+	CAN_bms_power_systems_payload.word2 = 0;
+	CAN_bms_power_systems_payload.word3 = 0;
+	// Clear multiplexed message: debug
+	for (int i = 0; i < 3; i++) {
+		CAN_bms_debug_payloads[i].word0 = 0;
+		CAN_bms_debug_payloads[i].word1 = 0;
+		CAN_bms_debug_payloads[i].word2 = 0;
+		CAN_bms_debug_payloads[i].word3 = 0;
+	}
+	// Clear message: boot_response
+	CAN_bms_boot_response_payload.word0 = 0;
+	CAN_bms_boot_response_payload.word1 = 0;
+	CAN_bms_boot_response_payload.word2 = 0;
+	CAN_bms_boot_response_payload.word3 = 0;
+	// Clear message: charger_request
+	CAN_bms_charger_request_payload.word0 = 0;
+	CAN_bms_charger_request_payload.word1 = 0;
+	CAN_bms_charger_request_payload.word2 = 0;
+	CAN_bms_charger_request_payload.word3 = 0;
+	// Clear multiplexed message: cell_voltages
+	for (int i = 0; i < 6; i++) {
+		CAN_bms_cell_voltages_payloads[i].word0 = 0;
+		CAN_bms_cell_voltages_payloads[i].word1 = 0;
+		CAN_bms_cell_voltages_payloads[i].word2 = 0;
+		CAN_bms_cell_voltages_payloads[i].word3 = 0;
+	}
+	// Clear multiplexed message: cell_temperatures
+	for (int i = 0; i < 7; i++) {
+		CAN_bms_cell_temperatures_payloads[i].word0 = 0;
+		CAN_bms_cell_temperatures_payloads[i].word1 = 0;
+		CAN_bms_cell_temperatures_payloads[i].word2 = 0;
+		CAN_bms_cell_temperatures_payloads[i].word3 = 0;
+	}
+	// Clear message: SDO_request
+	CAN_bms_SDO_request_payload.word0 = 0;
+	CAN_bms_SDO_request_payload.word1 = 0;
+	CAN_bms_SDO_request_payload.word2 = 0;
+	CAN_bms_SDO_request_payload.word3 = 0;
+	// Restore mux field values in all TX multiplexed message payloads
+	CAN_DBC_initMuxValues();
 }
 
 void CAN_send_1ms(void){

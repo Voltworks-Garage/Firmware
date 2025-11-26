@@ -1,9 +1,16 @@
 #include "screen_running.h"
-#include "esp_log.h"
 #include "../../../CAN/generated/dash_dbc.h"
 #include "../../../ble_module.h"
 #include "../styles.h"
 
+//logging
+// #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+// #define LOG_LOCAL_LEVEL ESP_LOG_INFO
+// #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+// #define LOG_LOCAL_LEVEL ESP_LOG_WARN
+// #define LOG_LOCAL_LEVEL ESP_LOG_ERROR
+#define LOG_LOCAL_LEVEL ESP_LOG_NONE
+#include "esp_log.h"
 static const char* TAG = "SCREEN_RUNNING";
 
 // Helper macros for float to integer conversion (avoids float formatting)
@@ -121,9 +128,9 @@ void ScreenRunning_Create(void) {
     lv_bar_set_value(bar_battery, BATTERY_BAR_MIN, LV_ANIM_OFF);
     lv_obj_align(bar_battery, LV_ALIGN_RIGHT_MID, BATTERY_BAR_X_OFFSET, 0);
 
-    // Apply shared bar styles
-    lv_obj_add_style(bar_battery, &style_bar_indicator_green, LV_PART_INDICATOR);
-    lv_obj_add_style(bar_battery, &style_bar_background, LV_PART_MAIN);
+    // Apply battery bar styles
+    lv_obj_add_style(bar_battery, &style_battery_bar_indicator, LV_PART_INDICATOR);
+    lv_obj_add_style(bar_battery, &style_battery_bar_background, LV_PART_MAIN);
 
     // Battery percentage below bar - uses shared style
     label_battery_percent = lv_label_create(lv_screen_active());

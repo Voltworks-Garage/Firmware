@@ -32,8 +32,8 @@ extern "C" {
 // ============================================================================
 
 // Bar styles
-extern lv_style_t style_bar_indicator_green;
-extern lv_style_t style_bar_background;
+extern lv_style_t style_battery_bar_indicator;
+extern lv_style_t style_battery_bar_background;
 extern lv_style_t style_power_bar_indicator;
 extern lv_style_t style_power_bar_background;
 

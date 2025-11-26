@@ -184,6 +184,7 @@ void sleep(STATE_MACHINE_entry_types_E entry_type) {
         case ENTRY:
             halt_all_tasks();
             IO_SET_DEBUG_LED_EN(LOW);
+            CAN_DBC_clearAllMessages();
             break;
         case EXIT:
             resume_all_tasks();

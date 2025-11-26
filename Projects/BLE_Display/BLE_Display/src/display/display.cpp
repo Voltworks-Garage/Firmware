@@ -25,25 +25,25 @@ static void lvgl_touch_read_cb(lv_indev_t *indev, lv_indev_data_t *data);
 void LVGL_Update(void *parameter);
 
 void LVGL_Init(void) {
-    Serial.println("LVGL_Init: Starting...");
+    ESP_LOGI("LVGL", "Starting...");
 
     // Get TFT instance from your existing lcd_module
     tft = LCD_GetTFT();
-    Serial.println("LVGL_Init: Got TFT instance");
+    ESP_LOGI("LVGL", "Got TFT instance");
 
     // Initialize LVGL
     lv_init();
-    Serial.println("LVGL_Init: lv_init() complete");
+    ESP_LOGI("LVGL", "lv_init() complete");
 
     // Create display
     disp = lv_display_create(LVGL_HOR_RES, LVGL_VER_RES);
-    Serial.println("LVGL_Init: Display created");
+    ESP_LOGI("LVGL", "Display created");
 
     lv_display_set_flush_cb(disp, lvgl_flush_cb);
-    Serial.println("LVGL_Init: Flush callback set");
+    ESP_LOGI("LVGL", "Flush callback set");
 
     lv_display_set_buffers(disp, buf, NULL, BUFFER_SIZE * sizeof(lv_color_t), LV_DISPLAY_RENDER_MODE_PARTIAL);
-    Serial.println("LVGL_Init: Buffers configured");
+    ESP_LOGI("LVGL", "Buffers configured");
 
     // Create touch input device
     indev = lv_indev_create();
@@ -55,7 +55,7 @@ void LVGL_Init(void) {
 
     ESP_LOGI("LVGL", "Touch input device registered");
 
-    Serial.printf("LVGL_Init: Complete! %dx%d, buffer=%d bytes\n",
+    ESP_LOGI("LVGL", "Complete! %dx%d, buffer=%d bytes\n",
                   LVGL_HOR_RES, LVGL_VER_RES, BUFFER_SIZE * sizeof(lv_color_t));
 
     // Initialize shared styles
@@ -98,7 +98,7 @@ void LVGL_Update(void *parameter) {
         DisplayStateMachine_Run();
 
         // Run every 50ms
-        vTaskDelay(pdMS_TO_TICKS(50));
+        vTaskDelay(pdMS_TO_TICKS(20));
     }
 
 }

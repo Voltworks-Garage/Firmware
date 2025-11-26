@@ -9,7 +9,6 @@
 #include "IO.h"
 #include "pinSetup.h"
 #include "stdbool.h"
-#include <xc.h>
 
 #define BATTERY_GAUGE_DEFAULT_PERCENT       50   // Default SoC percentage (0-100)
 #define BATTERY_GAUGE_RAMP_STEP_PERCENT     1    // Percentage ramp step per 10ms

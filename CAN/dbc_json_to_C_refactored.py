@@ -701,31 +701,26 @@ def process_node_messages(dot_h: Any, dot_c: Any, nodes: List[Dict[str, Any]], c
     return send_message_dict
 
 
-def write_initialization_function(dot_c: Any, nodes: List[Dict[str, Any]], current_node_idx: int) -> None:
-    """Write the CAN DBC initialization function."""
-    dot_c.write("void CAN_DBC_init(void) {\n")
-    current_node_name = nodes[current_node_idx]["name"]
-    
-    # Initialize multiplexed message payloads for current node
+def write_mux_init_helper_function(dot_c: Any, nodes: List[Dict[str, Any]], current_node_idx: int) -> None:
+    """Write helper function to initialize mux values in TX multiplexed messages."""
+    dot_c.write("static void CAN_DBC_initMuxValues(void) {\n")
+
     current_node = nodes[current_node_idx]
     for message in current_node["messages"]:
         message_name = message["name"]
         message_id = f"CAN_{current_node['name']}_{message_name}"
         signals = message["signals"]
-        
+
         # Check if multiplexed
         has_multiplex = any(signal.get("multiplex") is not None for signal in signals)
         multiplex_signal_found = any(signal["name"].lower() == "multiplex" for signal in signals)
-        
+
         if has_multiplex and multiplex_signal_found:
-            dot_c.write(f"\t// Initialize multiplexed message: {message_name}\n")
-            dot_c.write(f"\t{message_id}.payload = &{message_id}_payloads[0];\n")
-            
             # Pre-set mux values in each payload
-            max_mux_value = max((signal.get("multiplex", -1) for signal in signals 
+            max_mux_value = max((signal.get("multiplex", -1) for signal in signals
                                if signal.get("multiplex") is not None), default=0)
             num_mux_groups = max_mux_value + 1
-            
+
             # Find multiplex signal for bit manipulation
             for signal in signals:
                 if signal["name"].lower() == "multiplex":
@@ -733,10 +728,10 @@ def write_initialization_function(dot_c: Any, nodes: List[Dict[str, Any]], curre
                     bit_length = signal["length"]
                     word = bit_offset // 16
                     shift = bit_offset % 16
-                    
+
                     # Pre-set mux value in each payload
                     for mux_val in range(num_mux_groups):
-                        dot_c.write(f"\t// Pre-set mux value {mux_val} in payload {mux_val}\n")
+                        dot_c.write(f"\t// Pre-set mux value {mux_val} in payload {mux_val} for {message_name}\n")
                         bit_code = generate_bit_manipulation_code(
                             signal, f"{message_id}_payloads[{mux_val}]", ".")
                         for line in bit_code:
@@ -744,6 +739,29 @@ def write_initialization_function(dot_c: Any, nodes: List[Dict[str, Any]], curre
                             modified_line = line.replace("data_scaled", str(mux_val))
                             dot_c.write(modified_line + "\n")
                     break
+
+    dot_c.write("}\n\n")
+
+
+def write_initialization_function(dot_c: Any, nodes: List[Dict[str, Any]], current_node_idx: int) -> None:
+    """Write the CAN DBC initialization function."""
+    dot_c.write("void CAN_DBC_init(void) {\n")
+    current_node_name = nodes[current_node_idx]["name"]
+
+    # Initialize multiplexed message payloads for current node
+    current_node = nodes[current_node_idx]
+    for message in current_node["messages"]:
+        message_name = message["name"]
+        message_id = f"CAN_{current_node['name']}_{message_name}"
+        signals = message["signals"]
+
+        # Check if multiplexed
+        has_multiplex = any(signal.get("multiplex") is not None for signal in signals)
+        multiplex_signal_found = any(signal["name"].lower() == "multiplex" for signal in signals)
+
+        if has_multiplex and multiplex_signal_found:
+            dot_c.write(f"\t// Initialize multiplexed message: {message_name}\n")
+            dot_c.write(f"\t{message_id}.payload = &{message_id}_payloads[0];\n")
     
     # Configure mailboxes for received messages
     for node_idx, node in enumerate(nodes):
@@ -778,6 +796,53 @@ def write_initialization_function(dot_c: Any, nodes: List[Dict[str, Any]], curre
 
             dot_c.write(f"\tCAN_configureMailbox(&{message_id});\n")
 
+    # Initialize mux values in TX multiplexed messages
+    dot_c.write("\t// Initialize mux field values in all TX multiplexed message payloads\n")
+    dot_c.write("\tCAN_DBC_initMuxValues();\n")
+    dot_c.write("}\n")
+
+
+def write_clear_all_messages_function(dot_h: Any, dot_c: Any, nodes: List[Dict[str, Any]], current_node_idx: int) -> None:
+    """Write function to clear all TX message payloads to 0."""
+    dot_h.write("\n/**\n * Clears all TX CAN message payloads to 0\n */\n")
+    dot_h.write("void CAN_DBC_clearAllMessages(void);\n")
+
+    dot_c.write("\nvoid CAN_DBC_clearAllMessages(void) {\n")
+
+    current_node = nodes[current_node_idx]
+    for message in current_node["messages"]:
+        message_name = message["name"]
+        message_id = f"CAN_{current_node['name']}_{message_name}"
+        signals = message["signals"]
+
+        # Check if multiplexed
+        has_multiplex = any(signal.get("multiplex") is not None for signal in signals)
+        multiplex_signal_found = any(signal["name"].lower() == "multiplex" for signal in signals)
+
+        if has_multiplex and multiplex_signal_found:
+            # Multiplexed message - clear all mux payloads
+            max_mux_value = max((signal.get("multiplex", -1) for signal in signals
+                               if signal.get("multiplex") is not None), default=0)
+            num_mux_groups = max_mux_value + 1
+
+            dot_c.write(f"\t// Clear multiplexed message: {message_name}\n")
+            dot_c.write(f"\tfor (int i = 0; i < {num_mux_groups}; i++) {{\n")
+            dot_c.write(f"\t\t{message_id}_payloads[i].word0 = 0;\n")
+            dot_c.write(f"\t\t{message_id}_payloads[i].word1 = 0;\n")
+            dot_c.write(f"\t\t{message_id}_payloads[i].word2 = 0;\n")
+            dot_c.write(f"\t\t{message_id}_payloads[i].word3 = 0;\n")
+            dot_c.write(f"\t}}\n")
+        else:
+            # Non-multiplexed message - clear single payload
+            dot_c.write(f"\t// Clear message: {message_name}\n")
+            dot_c.write(f"\t{message_id}_payload.word0 = 0;\n")
+            dot_c.write(f"\t{message_id}_payload.word1 = 0;\n")
+            dot_c.write(f"\t{message_id}_payload.word2 = 0;\n")
+            dot_c.write(f"\t{message_id}_payload.word3 = 0;\n")
+
+    # Restore mux values after clearing
+    dot_c.write("\t// Restore mux field values in all TX multiplexed message payloads\n")
+    dot_c.write("\tCAN_DBC_initMuxValues();\n")
     dot_c.write("}\n")
 
 
@@ -836,11 +901,17 @@ def process_single_node(nodes: List[Dict[str, Any]], node_idx: int) -> None:
         
         # Process all messages
         send_message_dict = process_node_messages(dot_h, dot_c, nodes, node_idx)
-        
+
+        # Write helper function for mux initialization (static, before other functions)
+        write_mux_init_helper_function(dot_c, nodes, node_idx)
+
         # Write initialization function
         dot_h.write("void CAN_DBC_init();\n\n")
         write_initialization_function(dot_c, nodes, node_idx)
-        
+
+        # Write clear all messages function
+        write_clear_all_messages_function(dot_h, dot_c, nodes, node_idx)
+
         # Write frequency-based send functions
         write_frequency_send_functions(dot_h, dot_c, send_message_dict)
         

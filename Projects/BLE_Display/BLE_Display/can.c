@@ -16,6 +16,8 @@
 #include "esp_log.h"
 static const char* TAG = "myCAN";
 
+#define LOG_TWAI_ERRORS 0
+
 
 #define CAN_STBY GPIO_NUM_17
 
@@ -42,6 +44,9 @@ static void CAN_RxTask(void* parameter);
 void CAN_Init(void) {
   esp_log_level_set("myCAN", LOG_LOCAL_LEVEL); // This has to be here to take effect due to .c file type
   ESP_LOGI(TAG, "Initializing CAN...");
+#ifdef LOG_TWAI_ERRORS
+  esp_log_level_set("twai", ESP_LOG_DEBUG);
+#endif
   gpio_set_direction(CAN_STBY, GPIO_MODE_OUTPUT);
   gpio_set_level(CAN_STBY, 0);
 
@@ -59,6 +64,8 @@ void CAN_Init(void) {
   // Override default queue sizes (default is 5 each)
   g_config.tx_queue_len = CAN_TX_QUEUE_LEN;
   g_config.rx_queue_len = CAN_RX_QUEUE_LEN;
+  g_config.intr_flags = ESP_INTR_FLAG_LEVEL3;// | ESP_INTR_FLAG_IRAM; // put ISR in high priority
+  // g_config.alerts_enabled = TWAI_ALERT_AND_LOG | TWAI_ALERT_ALL;
 
   // Timing configuration for 500kbit/s
   twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
@@ -128,6 +135,19 @@ uint8_t CAN_write(CAN_message_S *msg) {
   }
 
   esp_err_t result = twai_transmit(&message, 0);
+
+  // Log transmission failures for diagnostics
+  if (result != ESP_OK) {
+    ESP_LOGW(TAG, "TX failed ID=0x%03lX err=%d", msg->canID, result);
+
+    // Check bus status to identify error conditions
+    twai_status_info_t status;
+    if (twai_get_status_info(&status) == ESP_OK) {
+      ESP_LOGW(TAG, "Bus state=%d tx_err=%lu rx_err=%lu pending=%lu",
+               status.state, status.tx_error_counter, status.rx_error_counter, status.msgs_to_tx);
+    }
+  }
+
   return (result == ESP_OK) ? 1 : 0;  // Return 1 for success, 0 for failure
 }
 
@@ -152,6 +172,19 @@ bool CAN_write_simple(uint32_t id, uint8_t* data, uint8_t length) {
   }
 
   esp_err_t result = twai_transmit(&message, 0);
+
+  // Log transmission failures for diagnostics
+  if (result != ESP_OK) {
+    ESP_LOGW(TAG, "TX failed (simple) ID=0x%03lX err=%d", id, result);
+
+    // Check bus status to identify error conditions
+    twai_status_info_t status;
+    if (twai_get_status_info(&status) == ESP_OK) {
+      ESP_LOGW(TAG, "Bus state=%d tx_err=%lu rx_err=%lu pending=%lu",
+               status.state, status.tx_error_counter, status.rx_error_counter, status.msgs_to_tx);
+    }
+  }
+
   return (result == ESP_OK);
 }
 
@@ -188,7 +221,7 @@ void CAN_CreateRxTask(void) {
     "CAN_RxTask",
     4096,
     NULL,
-    5,
+    configMAX_PRIORITIES-2,
     &RX_TaskHandle
   );
 
@@ -212,16 +245,17 @@ static void CAN_RxTask(void* parameter) {
 
   while (1) {
 
+    // Update global timestamp for ANY message received
+    uint32_t last_message_received_timestamp_temp = pdTICKS_TO_MS(xTaskGetTickCount());
+
     esp_err_t result = twai_receive(&message, pdMS_TO_TICKS(1));
 
     if (result == ESP_OK) {
-      // Update global timestamp for ANY message received
-      last_message_received_timestamp = pdTICKS_TO_MS(xTaskGetTickCount());
-
-      ESP_LOGI(TAG, "RX: ID=0x%03lX, DLC=%d, Data=%02X %02X %02X %02X %02X %02X %02X %02X",
-                    message.identifier, message.data_length_code,
-                    message.data[0], message.data[1], message.data[2], message.data[3],
-                    message.data[4], message.data[5], message.data[6], message.data[7]);
+      last_message_received_timestamp = last_message_received_timestamp_temp;
+      // ESP_LOGI(TAG, "RX: ID=0x%03lX, DLC=%d, Data=%02X %02X %02X %02X %02X %02X %02X %02X",
+      //               message.identifier, message.data_length_code,
+      //               message.data[0], message.data[1], message.data[2], message.data[3],
+      //               message.data[4], message.data[5], message.data[6], message.data[7]);
 
       // Linear search through RX mailboxes to find matching CAN ID
       bool found = false;
@@ -232,7 +266,7 @@ static void CAN_RxTask(void* parameter) {
             // Enter critical section to protect shared data
             taskENTER_CRITICAL(&can_mux);
 
-            // Copy message data into the payload structure
+            // Copy message data into the payload structure, must cast to uint8_t*
             uint8_t* data = (uint8_t*)RX_Mailboxes[i]->payload;
             for (uint8_t j = 0; j < message.data_length_code && j < 8; j++) {
               data[j] = message.data[j];
@@ -242,7 +276,7 @@ static void CAN_RxTask(void* parameter) {
             if (RX_Mailboxes[i]->canMessageStatus != NULL) {
               *RX_Mailboxes[i]->canMessageStatus = 1; // Mark as received
             }
-            RX_Mailboxes[i]->last_received_timestamp = pdTICKS_TO_MS(xTaskGetTickCount());
+            RX_Mailboxes[i]->last_received_timestamp = last_message_received_timestamp;
 
             // Call user callback if registered (inside critical section to protect payload)
             if (RX_Mailboxes[i]->rx_callback != NULL) {
@@ -251,7 +285,7 @@ static void CAN_RxTask(void* parameter) {
 
             taskEXIT_CRITICAL(&can_mux);
 
-            ESP_LOGD(TAG, "Matched mailbox %d", i);
+            // ESP_LOGD(TAG, "Matched mailbox %d time: %lu", i, last_message_received_timestamp);
             found = true;
           }
           break;
@@ -259,11 +293,11 @@ static void CAN_RxTask(void* parameter) {
       }
 
       if (!found) {
-        ESP_LOGW(TAG, "No mailbox configured for ID 0x%03lX", message.identifier);
+        // ESP_LOGW(TAG, "No mailbox configured for ID 0x%03lX", message.identifier);
       }
     } else if (result != ESP_ERR_TIMEOUT) {
       // Log errors other than timeout (timeout is normal when no messages)
-      ESP_LOGE(TAG, "Receive error: %d", result);
+      // ESP_LOGE(TAG, "Receive error: %d", result);
     }
   }
 }
@@ -310,14 +344,20 @@ uint8_t CAN_checkDataIsUnread(CAN_message_S * data) {
 
 uint32_t CAN_timeSinceLastMessageReceived(void) {
     uint32_t current_time = pdTICKS_TO_MS(xTaskGetTickCount());
+    ESP_LOGI(TAG, "CAN current time: %lu", current_time);
+    ESP_LOGI(TAG, "CAN last message received time: %lu", last_message_received_timestamp);
+
+    uint32_t delta = current_time - last_message_received_timestamp;
+    ESP_LOGI(TAG, "CAN time since last message received: %lu ms", delta);
 
     // If no messages received yet, return max value
     if (last_message_received_timestamp == 0) {
-        return 0xFFFFFFFF;
+      ESP_LOGW(TAG, "No CAN messages received yet");
+      return 0xFFFFFFFF;
     }
 
     // Unsigned subtraction naturally handles wrap-around
-    return current_time - last_message_received_timestamp;
+    return delta;
 }
 
 void CAN_setMode(CAN_Mode_t mode) {

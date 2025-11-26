@@ -1061,6 +1061,14 @@
                             "multiplex": 3
                         },
                         {
+                            "name": "charge_complete",
+                            "length": 1,
+                            "scale": 1.0,
+                            "offset": 0,
+                            "units": "bool",
+                            "multiplex": 3
+                        },
+                        {
                             "name": "fault_summary",
                             "length": 12,
                             "scale": 1.0,

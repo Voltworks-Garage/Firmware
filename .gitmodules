@@ -1,0 +1,3 @@
+[submodule "Libraries/Submodules/ble-protocol-schema"]
+	path = Libraries/Submodules/ble-protocol-schema
+	url = https://github.com/Voltworks-Garage/ble-protocol-schema.git

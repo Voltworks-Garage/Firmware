@@ -928,6 +928,9 @@ void CAN_motorcontroller_motor_status_PDO4_send(void){
 /**********************************************************
  * boot_host NODE MESSAGES
  */
+static void CAN_DBC_initMuxValues(void) {
+}
+
 void CAN_DBC_init(void) {
 	CAN_configureMailbox(&CAN_mcu_command);
 	CAN_configureMailbox(&CAN_mcu_motorControllerRequest);
@@ -948,6 +951,48 @@ void CAN_DBC_init(void) {
 	CAN_bms_debug.rx_callback = CAN_bms_debug_rx_callback;
 	CAN_configureMailbox(&CAN_bms_debug);
 	CAN_configureMailbox(&CAN_bms_SDO_request);
+	// Initialize mux field values in all TX multiplexed message payloads
+	CAN_DBC_initMuxValues();
+}
+
+void CAN_DBC_clearAllMessages(void) {
+	// Clear message: heartbeat
+	CAN_motorcontroller_heartbeat_payload.word0 = 0;
+	CAN_motorcontroller_heartbeat_payload.word1 = 0;
+	CAN_motorcontroller_heartbeat_payload.word2 = 0;
+	CAN_motorcontroller_heartbeat_payload.word3 = 0;
+	// Clear message: SYNC
+	CAN_motorcontroller_SYNC_payload.word0 = 0;
+	CAN_motorcontroller_SYNC_payload.word1 = 0;
+	CAN_motorcontroller_SYNC_payload.word2 = 0;
+	CAN_motorcontroller_SYNC_payload.word3 = 0;
+	// Clear message: SDO_response
+	CAN_motorcontroller_SDO_response_payload.word0 = 0;
+	CAN_motorcontroller_SDO_response_payload.word1 = 0;
+	CAN_motorcontroller_SDO_response_payload.word2 = 0;
+	CAN_motorcontroller_SDO_response_payload.word3 = 0;
+	// Clear message: Emergency
+	CAN_motorcontroller_Emergency_payload.word0 = 0;
+	CAN_motorcontroller_Emergency_payload.word1 = 0;
+	CAN_motorcontroller_Emergency_payload.word2 = 0;
+	CAN_motorcontroller_Emergency_payload.word3 = 0;
+	// Clear message: motorStatus_PDO1
+	CAN_motorcontroller_motorStatus_PDO1_payload.word0 = 0;
+	CAN_motorcontroller_motorStatus_PDO1_payload.word1 = 0;
+	CAN_motorcontroller_motorStatus_PDO1_payload.word2 = 0;
+	CAN_motorcontroller_motorStatus_PDO1_payload.word3 = 0;
+	// Clear message: motorStatus_PDO2
+	CAN_motorcontroller_motorStatus_PDO2_payload.word0 = 0;
+	CAN_motorcontroller_motorStatus_PDO2_payload.word1 = 0;
+	CAN_motorcontroller_motorStatus_PDO2_payload.word2 = 0;
+	CAN_motorcontroller_motorStatus_PDO2_payload.word3 = 0;
+	// Clear message: motor_status_PDO4
+	CAN_motorcontroller_motor_status_PDO4_payload.word0 = 0;
+	CAN_motorcontroller_motor_status_PDO4_payload.word1 = 0;
+	CAN_motorcontroller_motor_status_PDO4_payload.word2 = 0;
+	CAN_motorcontroller_motor_status_PDO4_payload.word3 = 0;
+	// Restore mux field values in all TX multiplexed message payloads
+	CAN_DBC_initMuxValues();
 }
 
 void CAN_send_1ms(void){

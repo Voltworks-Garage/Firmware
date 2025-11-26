@@ -6,3 +6,4 @@
 #include "../../../Libraries/Standard/utils.c"
 #include "../../../CAN/generated/dash_dbc.c"
 #include "../../../Libraries/Standard/movingAverage.c"
+#include "../../../Libraries/Submodules/ble-protocol-schema/generated/c/ble_protocol.c"

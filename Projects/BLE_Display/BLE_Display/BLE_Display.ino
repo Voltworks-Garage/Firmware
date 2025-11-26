@@ -15,6 +15,7 @@
 
 //Library includes
 #include "../../../CAN/generated/dash_dbc.h"
+#include "../../../Libraries/Submodules/ble-protocol-schema/generated/c/ble_protocol.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
@@ -40,15 +41,9 @@ void task_1000ms(void *parameter);
 
 void setup() {
   Serial.begin(921600);
-  delay(100);  // Give serial time to initialize
-
-  // Configure ESP-IDF logging levels (must be set before module initialization)
-  // esp_log_level_set("TOUCH", ESP_LOG_VERBOSE);  // Specifically enable TOUCH tag
-  // esp_log_level_set("CAN", ESP_LOG_INFO);  // Enable CAN module info logging
-  esp_log_level_set("DASH", ESP_LOG_VERBOSE);  // Enable DASH verbose logging
+  // delay(100);  // Give serial time to initialize
 
   // Initialize hardware modules
-  BLE_Init();
   LCD_Init();
   CAN_Init();
   Touch_Init();
@@ -56,20 +51,16 @@ void setup() {
   // Initialize IO
   LVGL_Init();  // Initialize LVGL (includes state machine init)
   CAN_DBC_init();
-  Begode_Init();
-  // Kingsong_Init();
-  // Dash_Init();
 
-  //TODO: move this somewhere else
-  BLE_AllowNewDevices();
-  // BLE_RestrictToBonded();
+  //Init BLE later because its slow (in the 1000ms task entry)
+  ble_encode_heartbeat_begin();
 
   // Create FreeRTOS tasks for scheduling
   createSchedulerTasks();
 }
 
 void loop() {
-  // Check if MCU has commanded us to go to sleep
+  // Check if MCU has commanded us to go to sleep. This message is sent out for 1 second.
   if (CAN_mcu_command_go_to_sleep_get() && !CAN_mcu_command_checkDataIsStale()) {
     Serial.println("Sleep command received - entering deep sleep mode");
     Serial.flush(); // Ensure message is sent before sleeping
@@ -77,12 +68,14 @@ void loop() {
     CAN_setMode(CAN_LISTEN_MODE); // Set CAN to listen-only to avoid bus interference
     bool actuallyGoingToSleep = true;
     // Give time for any pending operations to complete
-      vTaskDelay(pdMS_TO_TICKS(1000));
-      if (CAN_timeSinceLastMessageReceived() >= 1000) {
+      vTaskDelay(pdMS_TO_TICKS(2000));
+      if (CAN_timeSinceLastMessageReceived() >= 900) {
         Serial.println("No CAN messages received in last 1 second");
+
       } else {
-        Serial.println("CAN activity detected recently - aborting sleep");
+        Serial.println("CAN activity detected recently - aborting sleep: ");
         actuallyGoingToSleep = false;
+        Serial.print(CAN_timeSinceLastMessageReceived());
         CAN_setMode(CAN_NORMAL_MODE); // Restore normal CAN operation
       }
 
@@ -188,6 +181,14 @@ void task_1000ms(void *parameter) {
   float speed_increment = 0.5f; // Increase by 0.5 m/s per second (realistic acceleration)
   bool speed_increasing = true;
 
+  BLE_Init();
+  Begode_Init();
+  // Kingsong_Init();
+
+  //TODO: move this somewhere else
+  BLE_AllowNewDevices();
+  // BLE_RestrictToBonded();
+
   while(1) {
     CAN_send_1000ms();
     print_cpu_stats();
@@ -213,6 +214,9 @@ void task_1000ms(void *parameter) {
     Begode_SetSpeed(current_speed);
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
+
+    BLE_SendUartData("Hi DADA poopoo you are a silly one does this work?\n");
+    BLE_SendUartData("Another message from 1000ms task!\n");
 
     // Update CPU statistics
     CPUMonitor_Update(&cpu1000msMonitor);

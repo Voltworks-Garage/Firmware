@@ -1,6 +1,6 @@
 #include "display_state_machine.h"
-#include "esp_log.h"
 #include <lvgl.h>
+#include "../utils/rtos_utils.h"
 
 // Screen includes
 #include "screens/screen_logo.h"
@@ -11,7 +11,10 @@
 // CAN DBC includes
 #include "../../../CAN/generated/dash_dbc.h"
 
-static const char* TAG = "DISPLAY_SM";
+//logging
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+#include "esp_log.h"
+static const char* TAG = "DISPLAYsm";
 
 // MCU vehicle state enum (matches MCU_App.X StateMachine order)
 typedef enum {
@@ -60,6 +63,141 @@ static DISPLAY_states_E display_curState = screen_welcome_state;
 static DISPLAY_states_E display_nextState = screen_welcome_state;
 
 /******************************************************************************
+ * Timers
+ *******************************************************************************/
+NEW_TIMER(welcome_timer, 3000);
+
+/******************************************************************************
+ * Function Prototypes
+ *******************************************************************************/
+static DISPLAY_states_E map_vehicle_state_to_screen(uint8_t vehicle_state);
+static void check_vehicle_state_transition(void);
+
+
+/******************************************************************************
+ * Public Functions
+ *******************************************************************************/
+
+void DisplayStateMachine_Init(void) {
+    ESP_LOGI(TAG, "Initializing display state machine");
+
+    display_curState = screen_welcome_state;
+    display_prevState = screen_welcome_state;
+    display_nextState = screen_welcome_state;
+
+    // Call ENTRY for initial state
+    display_state_functions[display_curState](ENTRY);
+}
+
+void DisplayStateMachine_Run(void) {
+    // Check for state transitions
+    if (display_nextState != display_curState) {
+        display_state_functions[display_curState](EXIT);
+        display_prevState = display_curState;
+        display_curState = display_nextState;
+        display_state_functions[display_curState](ENTRY);
+    }
+
+    // Regular RUN call for current state
+    display_state_functions[display_curState](RUN);
+}
+
+/******************************************************************************
+ * State Functions
+ *******************************************************************************/
+
+void screen_welcome(DISPLAY_entry_types_E entry_type) {
+    switch (entry_type) {
+        case ENTRY:
+            ESP_LOGI(TAG, "Entering WELCOME state");
+            ScreenLogo_Create();
+            TIMER_START(welcome_timer);
+            break;
+
+        case EXIT:
+            ESP_LOGI(TAG, "Exiting WELCOME state");
+            ScreenLogo_Destroy();
+            break;
+
+        case RUN:
+            // Auto-transition to HOME after 3 seconds
+            if (TIMER_IS_UP(welcome_timer)) {
+                display_nextState = screen_home_state;
+            }
+            break;
+
+        default:
+            break;
+    }
+}
+
+void screen_home(DISPLAY_entry_types_E entry_type) {
+    switch (entry_type) {
+        case ENTRY:
+            ESP_LOGI(TAG, "Entering HOME state");
+            ScreenHome_Create();
+            break;
+
+        case EXIT:
+            ESP_LOGI(TAG, "Exiting HOME state");
+            ScreenHome_Destroy();
+            break;
+
+        case RUN:
+            ScreenHome_Update();
+            check_vehicle_state_transition();
+            break;
+
+        default:
+            break;
+    }
+}
+
+void screen_running(DISPLAY_entry_types_E entry_type) {
+    switch (entry_type) {
+        case ENTRY:
+            ESP_LOGI(TAG, "Entering RUNNING state");
+            ScreenRunning_Create();
+            break;
+
+        case EXIT:
+            ESP_LOGI(TAG, "Exiting RUNNING state");
+            ScreenRunning_Destroy();
+            break;
+
+        case RUN:
+            ScreenRunning_Update();
+            check_vehicle_state_transition();
+            break;
+
+        default:
+            break;
+    }
+}
+
+void screen_charging(DISPLAY_entry_types_E entry_type) {
+    switch (entry_type) {
+        case ENTRY:
+            ESP_LOGI(TAG, "Entering CHARGING state");
+            ScreenCharging_Create();
+            break;
+
+        case EXIT:
+            ESP_LOGI(TAG, "Exiting CHARGING state");
+            ScreenCharging_Destroy();
+            break;
+
+        case RUN:
+            ScreenCharging_Update();
+            check_vehicle_state_transition();
+            break;
+
+        default:
+            break;
+    }
+}
+
+/******************************************************************************
  * Helper Functions
  *******************************************************************************/
 
@@ -88,23 +226,9 @@ static DISPLAY_states_E map_vehicle_state_to_screen(uint8_t vehicle_state) {
     }
 }
 
-/******************************************************************************
- * Public Functions
- *******************************************************************************/
-
-void DisplayStateMachine_Init(void) {
-    ESP_LOGI(TAG, "Initializing display state machine");
-
-    display_curState = screen_welcome_state;
-    display_prevState = screen_welcome_state;
-    display_nextState = screen_welcome_state;
-
-    // Call ENTRY for initial state
-    display_state_functions[display_curState](ENTRY);
-}
-
-void DisplayStateMachine_Run(void) {
-    // Check CAN message for vehicle state and update display accordingly
+// Check CAN vehicle state and request screen transition if needed
+// Call this from states that should respond to vehicle state changes
+static void check_vehicle_state_transition(void) {
     if (!CAN_mcu_status_checkDataIsStale()) {
         uint8_t vehicle_state = CAN_mcu_status_vehicleState_get();
         DISPLAY_states_E requested_screen = map_vehicle_state_to_screen(vehicle_state);
@@ -114,115 +238,8 @@ void DisplayStateMachine_Run(void) {
             ESP_LOGI(TAG, "CAN vehicle state %d -> requesting screen %d", vehicle_state, requested_screen);
             display_nextState = requested_screen;
         }
-    }
-
-    // Check for state transitions
-    if (display_nextState != display_curState) {
-        display_state_functions[display_curState](EXIT);
-        display_prevState = display_curState;
-        display_curState = display_nextState;
-        display_state_functions[display_curState](ENTRY);
-    }
-
-    // Regular RUN call for current state
-    display_state_functions[display_curState](RUN);
-}
-
-/******************************************************************************
- * State Functions
- *******************************************************************************/
-
-void screen_welcome(DISPLAY_entry_types_E entry_type) {
-    switch (entry_type) {
-        case ENTRY:
-            ESP_LOGI(TAG, "Entering WELCOME state");
-            ScreenLogo_Create();
-            break;
-
-        case EXIT:
-            ESP_LOGI(TAG, "Exiting WELCOME state");
-            ScreenLogo_Destroy();
-            break;
-
-        case RUN:
-            // TODO: Add auto-transition to HOME after delay or button press
-            // For now, manually transition after some time
-            // static uint32_t welcome_start_time = 0;
-            // if (welcome_start_time == 0) {
-            //     welcome_start_time = lv_tick_get();
-            // }
-
-            // // Auto-transition to HOME after 3 seconds
-            // if (lv_tick_elaps(welcome_start_time) > 3000) {
-            //     display_nextState = screen_home_state;
-            //     welcome_start_time = 0;  // Reset for next time
-            // }
-            break;
-
-        default:
-            break;
-    }
-}
-
-void screen_home(DISPLAY_entry_types_E entry_type) {
-    switch (entry_type) {
-        case ENTRY:
-            ESP_LOGI(TAG, "Entering HOME state");
-            ScreenHome_Create();
-            break;
-
-        case EXIT:
-            ESP_LOGI(TAG, "Exiting HOME state");
-            ScreenHome_Destroy();
-            break;
-
-        case RUN:
-            ScreenHome_Update();
-            break;
-
-        default:
-            break;
-    }
-}
-
-void screen_running(DISPLAY_entry_types_E entry_type) {
-    switch (entry_type) {
-        case ENTRY:
-            ESP_LOGI(TAG, "Entering RUNNING state");
-            ScreenRunning_Create();
-            break;
-
-        case EXIT:
-            ESP_LOGI(TAG, "Exiting RUNNING state");
-            ScreenRunning_Destroy();
-            break;
-
-        case RUN:
-            ScreenRunning_Update();
-            break;
-
-        default:
-            break;
-    }
-}
-
-void screen_charging(DISPLAY_entry_types_E entry_type) {
-    switch (entry_type) {
-        case ENTRY:
-            ESP_LOGI(TAG, "Entering CHARGING state");
-            ScreenCharging_Create();
-            break;
-
-        case EXIT:
-            ESP_LOGI(TAG, "Exiting CHARGING state");
-            ScreenCharging_Destroy();
-            break;
-
-        case RUN:
-            ScreenCharging_Update();
-            break;
-
-        default:
-            break;
+    } else {
+        ESP_LOGW(TAG, "CAN MCU status data is stale, cannot determine vehicle state");
+        display_nextState = screen_home_state; // Default to home screen on stale data
     }
 }

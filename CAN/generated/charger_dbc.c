@@ -612,6 +612,9 @@ void CAN_charger_status_send(void){
 /**********************************************************
  * boot_host NODE MESSAGES
  */
+static void CAN_DBC_initMuxValues(void) {
+}
+
 void CAN_DBC_init(void) {
 	CAN_configureMailbox(&CAN_mcu_command);
 	// Initialize RX multiplexed message: mcu_debug
@@ -631,6 +634,18 @@ void CAN_DBC_init(void) {
 	CAN_bms_debug.rx_callback = CAN_bms_debug_rx_callback;
 	CAN_configureMailbox(&CAN_bms_debug);
 	CAN_configureMailbox(&CAN_bms_charger_request);
+	// Initialize mux field values in all TX multiplexed message payloads
+	CAN_DBC_initMuxValues();
+}
+
+void CAN_DBC_clearAllMessages(void) {
+	// Clear message: status
+	CAN_charger_status_payload.word0 = 0;
+	CAN_charger_status_payload.word1 = 0;
+	CAN_charger_status_payload.word2 = 0;
+	CAN_charger_status_payload.word3 = 0;
+	// Restore mux field values in all TX multiplexed message payloads
+	CAN_DBC_initMuxValues();
 }
 
 void CAN_send_1ms(void){

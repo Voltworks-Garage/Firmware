@@ -874,6 +874,9 @@ void CAN_boot_host_dash_send(void){
 	CAN_write(&CAN_boot_host_dash);
 }
 
+static void CAN_DBC_initMuxValues(void) {
+}
+
 void CAN_DBC_init(void) {
 	CAN_configureMailbox(&CAN_mcu_command);
 	CAN_configureMailbox(&CAN_mcu_boot_response);
@@ -894,6 +897,28 @@ void CAN_DBC_init(void) {
 	CAN_bms_debug.rx_callback = CAN_bms_debug_rx_callback;
 	CAN_configureMailbox(&CAN_bms_debug);
 	CAN_configureMailbox(&CAN_bms_boot_response);
+	// Initialize mux field values in all TX multiplexed message payloads
+	CAN_DBC_initMuxValues();
+}
+
+void CAN_DBC_clearAllMessages(void) {
+	// Clear message: bms
+	CAN_boot_host_bms_payload.word0 = 0;
+	CAN_boot_host_bms_payload.word1 = 0;
+	CAN_boot_host_bms_payload.word2 = 0;
+	CAN_boot_host_bms_payload.word3 = 0;
+	// Clear message: mcu
+	CAN_boot_host_mcu_payload.word0 = 0;
+	CAN_boot_host_mcu_payload.word1 = 0;
+	CAN_boot_host_mcu_payload.word2 = 0;
+	CAN_boot_host_mcu_payload.word3 = 0;
+	// Clear message: dash
+	CAN_boot_host_dash_payload.word0 = 0;
+	CAN_boot_host_dash_payload.word1 = 0;
+	CAN_boot_host_dash_payload.word2 = 0;
+	CAN_boot_host_dash_payload.word3 = 0;
+	// Restore mux field values in all TX multiplexed message payloads
+	CAN_DBC_initMuxValues();
 }
 
 void CAN_send_1ms(void){

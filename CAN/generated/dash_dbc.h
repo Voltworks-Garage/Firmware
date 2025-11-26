@@ -171,6 +171,7 @@ uint16_t CAN_bms_status_contactors_closed_get(void);
 uint16_t CAN_bms_status_precharge_active_get(void);
 uint16_t CAN_bms_status_charge_allowed_get(void);
 uint16_t CAN_bms_status_discharge_allowed_get(void);
+uint16_t CAN_bms_status_charge_complete_get(void);
 uint16_t CAN_bms_status_fault_summary_get(void);
 uint16_t CAN_bms_status_is_balancing_get(void);
 uint16_t CAN_bms_status_cell_A_balancing_get(void);
@@ -321,6 +322,11 @@ uint16_t CAN_boot_host_dash_byte7_get(void);
 
 void CAN_DBC_init();
 
+
+/**
+ * Clears all TX CAN message payloads to 0
+ */
+void CAN_DBC_clearAllMessages(void);
 void CAN_send_1ms(void);
 void CAN_send_10ms(void);
 void CAN_send_100ms(void);

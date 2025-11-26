@@ -5,8 +5,8 @@
 // ============================================================================
 
 // Bar styles
-lv_style_t style_bar_indicator_green;
-lv_style_t style_bar_background;
+lv_style_t style_battery_bar_indicator;
+lv_style_t style_battery_bar_background;
 lv_style_t style_power_bar_indicator;
 lv_style_t style_power_bar_background;
 
@@ -32,17 +32,19 @@ static bool styles_initialized = false;
 void Styles_Init(void) {
     if (styles_initialized) return;
 
-    // ========== Bar Indicator (Green) ==========
-    lv_style_init(&style_bar_indicator_green);
-    lv_style_set_bg_color(&style_bar_indicator_green, lv_color_hex(COLOR_BATTERY_GREEN));
-    lv_style_set_radius(&style_bar_indicator_green, 8);
+    // ========== Battery Bar Background ==========
+    lv_style_init(&style_battery_bar_background);
+    lv_style_set_border_color(&style_battery_bar_background, lv_color_hex(COLOR_TEXT_WHITE));
+    lv_style_set_border_width(&style_battery_bar_background, 2);
+    lv_style_set_pad_all(&style_battery_bar_background, 6);  // Makes indicator smaller, border appears outside
+    lv_style_set_radius(&style_battery_bar_background, 8);
+    lv_style_set_bg_opa(&style_battery_bar_background, LV_OPA_TRANSP);  // Transparent background
 
-    // ========== Bar Background ==========
-    lv_style_init(&style_bar_background);
-    lv_style_set_bg_color(&style_bar_background, lv_color_hex(0x2a2a2a));
-    lv_style_set_radius(&style_bar_background, 8);
-    lv_style_set_border_width(&style_bar_background, 2);
-    lv_style_set_border_color(&style_bar_background, lv_color_hex(0x555555));
+    // ========== Battery Bar Indicator ==========
+    lv_style_init(&style_battery_bar_indicator);
+    lv_style_set_bg_opa(&style_battery_bar_indicator, LV_OPA_COVER);
+    lv_style_set_bg_color(&style_battery_bar_indicator, lv_color_hex(COLOR_BATTERY_GREEN));
+    lv_style_set_radius(&style_battery_bar_indicator, 3);  // Smaller radius than background
 
     // ========== Power Bar Indicator ==========
     lv_style_init(&style_power_bar_indicator);

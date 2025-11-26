@@ -159,14 +159,15 @@ void PinSetup_Init(void) {
     // pwmOCinit(KICKSTAND_SWITCH_IN, CLOCK_PeripheralFrequencyGet(), OC_CLOCK_PERIPHERAL);
     pwmOCwriteFreq(PWM_1_OUT, 2000); //2kHz
     pwmOCwriteFreq(PWM_2_OUT, 2000); //2kHz
-    pwmOCwriteFreq(CHARGE_PORT_LOCK_PWM, 2000); //2kHz
+    pwmOCwriteFreq(CHARGE_PORT_LOCK_PWM, 20000); //20kHz
     // pwmOCwriteFreq(KICKSTAND_SWITCH_IN, 2000); //2kHz
     // pwmOCwriteDuty(KICKSTAND_SWITCH_IN, 5);
 
         // Initialize PWM using Output Compare module with Timer4 clock source
     uint32_t clock_freq = CLOCK_PeripheralFrequencyGet()/256; // Peripheral clock divided by prescaler);
    pwmOCinit(KICKSTAND_SWITCH_IN, clock_freq, OC_CLOCK_T4CLK);
-       //pwmOCinit(CHARGE_PORT_LOCK_PWM, clock_freq, OC_CLOCK_T4CLK);
+    //    pwmOCinit(CHARGE_PORT_LOCK_PWM, clock_freq, OC_CLOCK_T4CLK);
+    //    pwmOCwriteFreq(CHARGE_PORT_LOCK_PWM, 200); //200Hz
 
    /*Timers*/
     timer3_init(10, CLOCK_SystemFrequencyGet());

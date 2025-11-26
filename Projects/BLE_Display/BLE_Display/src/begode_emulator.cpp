@@ -11,7 +11,9 @@ static uint8_t g_frame_seq = 1;  // 0, 1, 2, 3 cycle
 static bool g_streaming_active = false;
 
 // Internal frame buffer
-static uint8_t g_frame_buffer[24];
+#define FRAME_BUFFER_SIZE 24
+static uint8_t g_frame_buffer[FRAME_BUFFER_SIZE];
+static uint8_t checksum;
 
 // Response buffers for commands
 static const char FIRMWARE_STRING[] = "GW2002001";
@@ -89,7 +91,7 @@ const uint8_t* Begode_SendFrame(void) {
     return NULL;
   }
   // Clear frame
-  memset(g_frame_buffer, 0, 24);
+  memset(g_frame_buffer, 0, FRAME_BUFFER_SIZE);
 
   // Common header and footer
   g_frame_buffer[0] = 0x55;
@@ -201,7 +203,14 @@ const uint8_t* Begode_SendFrame(void) {
     ESP_LOGI(TAG, "Frame 0x07: BattCurr=%d cA, HW_PWM=%d%%", batt_cA, hw_pwm);
   }
 
-  BLE_SendHM10Data(g_frame_buffer, 24);
+  // Calculate checksum (simple sum of all bytes except last)
+  checksum = 0;
+  for (int i = 2; i < FRAME_BUFFER_SIZE - 1; i++) {
+    checksum += g_frame_buffer[i];
+  }
+  // g_frame_buffer[FRAME_BUFFER_SIZE - 1] = checksum;
+
+  BLE_SendHM10Data(g_frame_buffer, FRAME_BUFFER_SIZE);
 
   return g_frame_buffer;
 }
@@ -235,7 +244,7 @@ void Begode_HandleCommand(uint8_t command) {
     Begode_ResetSequence();
 
     // First, send a data frame
-    BLE_SendHM10Data(g_frame_buffer, 24);
+    BLE_SendHM10Data(g_frame_buffer, FRAME_BUFFER_SIZE);
 
     // Return firmware string
     const char* fw = "GW2002001";

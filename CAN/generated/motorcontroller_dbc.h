@@ -180,6 +180,11 @@ void CAN_motorcontroller_motor_status_PDO4_send(void);
  */
 void CAN_DBC_init();
 
+
+/**
+ * Clears all TX CAN message payloads to 0
+ */
+void CAN_DBC_clearAllMessages(void);
 void CAN_send_1ms(void);
 void CAN_send_10ms(void);
 void CAN_send_100ms(void);

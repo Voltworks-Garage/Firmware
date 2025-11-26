@@ -927,12 +927,14 @@ static CAN_message_S CAN_bms_status={
 #define CAN_BMS_STATUS_M3_CHARGE_ALLOWED_OFFSET 39
 #define CAN_BMS_STATUS_M3_DISCHARGE_ALLOWED_RANGE 1
 #define CAN_BMS_STATUS_M3_DISCHARGE_ALLOWED_OFFSET 40
+#define CAN_BMS_STATUS_M3_CHARGE_COMPLETE_RANGE 1
+#define CAN_BMS_STATUS_M3_CHARGE_COMPLETE_OFFSET 41
 #define CAN_BMS_STATUS_M3_FAULT_SUMMARY_RANGE 12
-#define CAN_BMS_STATUS_M3_FAULT_SUMMARY_OFFSET 41
+#define CAN_BMS_STATUS_M3_FAULT_SUMMARY_OFFSET 42
 #define CAN_BMS_STATUS_M3_IS_BALANCING_RANGE 1
-#define CAN_BMS_STATUS_M3_IS_BALANCING_OFFSET 53
+#define CAN_BMS_STATUS_M3_IS_BALANCING_OFFSET 54
 #define CAN_BMS_STATUS_M3_CELL_A_BALANCING_RANGE 5
-#define CAN_BMS_STATUS_M3_CELL_A_BALANCING_OFFSET 54
+#define CAN_BMS_STATUS_M3_CELL_A_BALANCING_OFFSET 55
 #define CAN_BMS_STATUS_M4_CELL_B_BALANCING_RANGE 5
 #define CAN_BMS_STATUS_M4_CELL_B_BALANCING_OFFSET 3
 #define CAN_BMS_STATUS_M4_CELL_C_BALANCING_RANGE 5
@@ -1105,23 +1107,29 @@ uint16_t CAN_bms_status_discharge_allowed_get(void){
 	data |= (uint16_t)((CAN_bms_status_mux_payloads[3].word2 & 0x0100) >> 8) << 0;
 	return (data * 1.0) + 0;
 }
-uint16_t CAN_bms_status_fault_summary_get(void){
-	// Extract 12-bit signal at bit offset 41
+uint16_t CAN_bms_status_charge_complete_get(void){
+	// Extract 1-bit signal at bit offset 41
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_mux_payloads[3].word2 & 0xFE00) >> 9) << 0;
-	data |= (uint16_t)((CAN_bms_status_mux_payloads[3].word3 & 0x001F) >> 0) << 7;
+	data |= (uint16_t)((CAN_bms_status_mux_payloads[3].word2 & 0x0200) >> 9) << 0;
+	return (data * 1.0) + 0;
+}
+uint16_t CAN_bms_status_fault_summary_get(void){
+	// Extract 12-bit signal at bit offset 42
+	uint16_t data = 0;
+	data |= (uint16_t)((CAN_bms_status_mux_payloads[3].word2 & 0xFC00) >> 10) << 0;
+	data |= (uint16_t)((CAN_bms_status_mux_payloads[3].word3 & 0x003F) >> 0) << 6;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_status_is_balancing_get(void){
-	// Extract 1-bit signal at bit offset 53
+	// Extract 1-bit signal at bit offset 54
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_mux_payloads[3].word3 & 0x0020) >> 5) << 0;
+	data |= (uint16_t)((CAN_bms_status_mux_payloads[3].word3 & 0x0040) >> 6) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_status_cell_A_balancing_get(void){
-	// Extract 5-bit signal at bit offset 54
+	// Extract 5-bit signal at bit offset 55
 	uint16_t data = 0;
-	data |= (uint16_t)((CAN_bms_status_mux_payloads[3].word3 & 0x07C0) >> 6) << 0;
+	data |= (uint16_t)((CAN_bms_status_mux_payloads[3].word3 & 0x0F80) >> 7) << 0;
 	return (data * 1.0) + 0;
 }
 uint16_t CAN_bms_status_cell_B_balancing_get(void){
@@ -2186,6 +2194,9 @@ uint16_t CAN_boot_host_dash_byte7_get(void){
 	return (data * 1.0) + 0;
 }
 
+static void CAN_DBC_initMuxValues(void) {
+}
+
 void CAN_DBC_init(void) {
 	// Initialize RX multiplexed message: status
 	for (int i = 0; i < 5; i++) {
@@ -2239,6 +2250,23 @@ void CAN_DBC_init(void) {
 	CAN_bms_cell_temperatures.rx_callback = CAN_bms_cell_temperatures_rx_callback;
 	CAN_configureMailbox(&CAN_bms_cell_temperatures);
 	CAN_configureMailbox(&CAN_boot_host_dash);
+	// Initialize mux field values in all TX multiplexed message payloads
+	CAN_DBC_initMuxValues();
+}
+
+void CAN_DBC_clearAllMessages(void) {
+	// Clear message: status
+	CAN_dash_status_payload.word0 = 0;
+	CAN_dash_status_payload.word1 = 0;
+	CAN_dash_status_payload.word2 = 0;
+	CAN_dash_status_payload.word3 = 0;
+	// Clear message: command
+	CAN_dash_command_payload.word0 = 0;
+	CAN_dash_command_payload.word1 = 0;
+	CAN_dash_command_payload.word2 = 0;
+	CAN_dash_command_payload.word3 = 0;
+	// Restore mux field values in all TX multiplexed message payloads
+	CAN_DBC_initMuxValues();
 }
 
 void CAN_send_1ms(void){

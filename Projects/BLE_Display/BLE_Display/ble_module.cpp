@@ -1,6 +1,12 @@
 #include "ble_module.h"
-#include "esp_log.h"
+
 #include "src/msg/messaging.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+#include "freertos/semphr.h"
+
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#include "esp_log.h"
 
 static const char* TAG = "BLE";
 
@@ -13,6 +19,17 @@ static const char* TAG = "BLE";
 #define HM10_SERVICE_UUID           "FFE0"
 #define HM10_CHAR_UUID              "FFE1"
 
+// UART TX Queue configuration
+#define UART_TX_QUEUE_SIZE          10
+#define UART_TX_MAX_MESSAGE_LEN     512
+
+// UART TX message structure
+typedef struct {
+  char message[UART_TX_MAX_MESSAGE_LEN];  // Storage for the message
+  const char* data_pointer;                // Pointer to current position
+  uint16_t length;                         // Remaining bytes to send
+} UartTxMessage_t;
+
 // Module-level variables
 static NimBLECharacteristic *pUartTxCharacteristic = nullptr;
 static NimBLECharacteristic *pHM10Characteristic = nullptr;
@@ -21,28 +38,41 @@ static uint16_t currentConnHandle = 0;
 static bool whitelistEnabled = false;  // Track whitelist state
 static void (*uartCallback)(const uint8_t* data, uint16_t len) = nullptr;  // Callback when UART data received
 static void (*hm10Callback)(const uint8_t* data, uint16_t len) = nullptr;  // Callback when HM-10 data received
+static uint16_t mtuSize = 23;  // Default MTU size before negotiation
+
+// UART TX Queue variables
+static QueueHandle_t uartTxQueue = nullptr;
+static UartTxMessage_t currentTxMessage;
+static SemaphoreHandle_t txSemaphore = nullptr;
 
 //Helpers
 static bool isConnectionEncrypted(void);
 static void populateWhitelistFromBonds(void);
+static void ble_sendUartPacket(void);
 
 // Connection callbacks
 class MyServerCallbacks: public NimBLEServerCallbacks {
   void onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) {
     deviceConnected = true;
     currentConnHandle = connInfo.getConnHandle();
+    mtuSize = connInfo.getMTU();
     ESP_LOGI(TAG, "Device connected (handle: %d)", currentConnHandle);
     ESP_LOGI(TAG, "Connected to address: %s", connInfo.getAddress().toString().c_str());
-    ESP_LOGI(TAG, "Current MTU: %d bytes", connInfo.getMTU());
+    ESP_LOGI(TAG, "Current MTU: %d bytes", mtuSize);
+
+    xQueueReset(uartTxQueue);  // Clear TX queue on connect
+    // Take semaphore if available, then give it back to reset state
+    xSemaphoreTake(txSemaphore, 0);
+    xSemaphoreGive(txSemaphore);  // Ensure semaphore is available
 
     // Try to initiate MTU exchange from server side
     // This requests the client to increase MTU to support 24-byte frames
-    int rc = ble_gattc_exchange_mtu(connInfo.getConnHandle(), NULL, NULL);
-    if (rc == 0) {
-      ESP_LOGI(TAG, "MTU exchange initiated from server");
-    } else {
-      ESP_LOGW(TAG, "MTU exchange failed: %d", rc);
-    }
+    // int rc = ble_gattc_exchange_mtu(connInfo.getConnHandle(), NULL, NULL);
+    // if (rc == 0) {
+    //   ESP_LOGI(TAG, "MTU exchange initiated from server");
+    // } else {
+    //   ESP_LOGW(TAG, "MTU exchange failed: %d", rc);
+    // }
     const Message_t connect_message = {
       .source = MODULE_BLE,
       .destination = MODULE_UI,   // MODULE_BROADCAST for pub-sub
@@ -52,12 +82,15 @@ class MyServerCallbacks: public NimBLEServerCallbacks {
   }
 
   void onMTUChange(uint16_t MTU, NimBLEConnInfo& connInfo) {
+    mtuSize = MTU;
     ESP_LOGI(TAG, "MTU updated to: %d bytes", MTU);
   }
 
   void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) {
     deviceConnected = false;
     currentConnHandle = 0;
+    xQueueReset(uartTxQueue);  // Clear TX queue on disconnect
+    xSemaphoreGive(txSemaphore);  // Release semaphore in case waiting
     ESP_LOGI(TAG, "Device disconnected (reason: %d)", reason);
 
     // Use the last whitelist setting instead of auto-enabling
@@ -107,8 +140,27 @@ class MyServerCallbacks: public NimBLEServerCallbacks {
   }
 };
 
+// UART TX callback (for tracking notification sent status)
+class UartTxCallbacks: public NimBLECharacteristicCallbacks {
+  void onStatus(NimBLECharacteristic* pCharacteristic, int code) {
+    // Code 0 = success for notifications
+    if (code == 0) {
+      ESP_LOGD(TAG, "[UART TX] Notification sent successfully");
+      // Give semaphore to signal we can send the next chunk
+      ble_sendUartPacket();
+    } else {
+      ESP_LOGW(TAG, "[UART TX] Notification failed: %d (%s)",
+               code, NimBLEUtils::returnCodeToString(code));
+      // Still give semaphore to avoid getting stuck
+      if (txSemaphore != nullptr) {
+        xSemaphoreGiveFromISR(txSemaphore, NULL);
+      }
+    }
+  }
+};
+
 // UART RX callback (receive data from phone)
-class UartCallbacks: public NimBLECharacteristicCallbacks {
+class UartRxCallbacks: public NimBLECharacteristicCallbacks {
   void onWrite(NimBLECharacteristic *pCharacteristic, NimBLEConnInfo& connInfo) {
     std::string rxValue = pCharacteristic->getValue();
 
@@ -156,6 +208,7 @@ class HM10Callbacks: public NimBLECharacteristicCallbacks {
 };
 
 void BLE_Init(void) {
+  esp_log_level_set(TAG, ESP_LOG_INFO);
   ESP_LOGI(TAG, "Starting setup...");
 
   // Initialize BLE
@@ -166,13 +219,13 @@ void BLE_Init(void) {
   ESP_LOGI(TAG, "MTU set to 256 bytes");
 
   // Configure security for bonding with numeric comparison
-  // DISABLED FOR HM-10 COMPATIBILITY - DarknessBot expects open connection
-  // NimBLEDevice::setSecurityAuth(true, true, true);  // bonding=true, MITM=true, secure connections=true
-  // NimBLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_YESNO);  // Display passkey, user confirms yes/no on both devices
-  // NimBLEDevice::setSecurityInitKey(BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID);
-  // NimBLEDevice::setSecurityRespKey(BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID);
+  // HM-10 service remains open (no _ENC flags), UART service requires encryption
+  NimBLEDevice::setSecurityAuth(true, true, true);  // bonding=true, MITM=true, secure connections=true
+  NimBLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_YESNO);  // Display passkey, user confirms yes/no on both devices
+  NimBLEDevice::setSecurityInitKey(BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID);
+  NimBLEDevice::setSecurityRespKey(BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID);
 
-  // ESP_LOGI(TAG, "Security enabled - numeric comparison mode (display passkey + confirm)");
+  ESP_LOGI(TAG, "Security enabled - numeric comparison mode (display passkey + confirm)");
 
   // Create BLE Server
   NimBLEServer *pServer = NimBLEDevice::createServer();
@@ -284,6 +337,9 @@ void BLE_Init(void) {
   ESP_LOGI(TAG, "Device Information Service (0x180A) created");
 
   // ===== UART Service =====
+  uartTxQueue = xQueueCreate(UART_TX_QUEUE_SIZE, sizeof(UartTxMessage_t));
+  txSemaphore = xSemaphoreCreateBinary();
+  xSemaphoreGive(txSemaphore);  // Initialize semaphore as available
   NimBLEService *pUartService = pServer->createService(UART_SERVICE_UUID);
 
   // TX Characteristic (ESP32 transmits to phone) - requires encryption
@@ -291,13 +347,14 @@ void BLE_Init(void) {
     UART_TX_CHAR_UUID,
     NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::READ_ENC
   );
+  pUartTxCharacteristic->setCallbacks(new UartTxCallbacks());
 
   // RX Characteristic (ESP32 receives from phone) - requires encryption
   NimBLECharacteristic *pUartRxCharacteristic = pUartService->createCharacteristic(
     UART_RX_CHAR_UUID,
     NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_ENC
   );
-  pUartRxCharacteristic->setCallbacks(new UartCallbacks());
+  pUartRxCharacteristic->setCallbacks(new UartRxCallbacks());
 
   pUartService->start();
   
@@ -350,9 +407,73 @@ void BLE_Init(void) {
 
 void BLE_SendUartData(String message) {
   if (deviceConnected && pUartTxCharacteristic != nullptr && isConnectionEncrypted()) {
-    pUartTxCharacteristic->setValue(message.c_str());
-    pUartTxCharacteristic->notify();
-    ESP_LOGI(TAG, "[UART] Sent: %s", message.c_str());
+    //create message struct
+    UartTxMessage_t newMessage;
+    size_t len = message.length();
+    if (len >= UART_TX_MAX_MESSAGE_LEN) {
+      len = UART_TX_MAX_MESSAGE_LEN - 1;
+      ESP_LOGW(TAG, "Message truncated to %d bytes", len);
+    }
+    memcpy(newMessage.message, message.c_str(), len);
+    newMessage.message[len] = '\0';
+    newMessage.length = len;
+    newMessage.data_pointer = newMessage.message;
+
+    //enqueue message
+    xQueueSend(uartTxQueue, &newMessage, 0);
+
+    // try to take semaphore to start sending
+    if (xSemaphoreTake(txSemaphore, 0) == pdTRUE) {
+
+      // Send first chunk immediately
+      if(xQueueReceive(uartTxQueue, &currentTxMessage, 0)) {
+        currentTxMessage.data_pointer = currentTxMessage.message;  // Fix pointer after queue copy
+        // Send message in chunks based on MTU size
+        ble_sendUartPacket();
+      }
+      
+    } else {
+      ESP_LOGD(TAG, "[UART] Transmission in progress, message queued");
+    }
+  }
+}
+
+static void ble_sendUartPacket(void) {
+  if (deviceConnected && pUartTxCharacteristic != nullptr && isConnectionEncrypted()) {
+    // Check if there's data to send
+    if (currentTxMessage.length == 0) {
+      // Try to get next message from queue
+      if (xQueueReceive(uartTxQueue, &currentTxMessage, 0) == pdTRUE) {
+        currentTxMessage.data_pointer = currentTxMessage.message;  // Fix pointer after queue copy
+      } else {
+        // No more messages in queue, release semaphore
+        xSemaphoreGiveFromISR(txSemaphore, NULL);
+        ESP_LOGD(TAG, "[UART] All messages sent");
+        return;
+      }
+    }
+
+    // Calculate chunk size and get data pointer
+    uint16_t chunkSize = currentTxMessage.length > mtuSize - 3 ? mtuSize - 3 : currentTxMessage.length;
+    uint8_t* chunkData = (uint8_t*)currentTxMessage.data_pointer;
+
+    // Update state BEFORE notify (so onStatus sees correct state)
+    currentTxMessage.data_pointer += chunkSize;
+    currentTxMessage.length -= chunkSize;
+
+    // Now send the chunk
+    pUartTxCharacteristic->setValue(chunkData, chunkSize);
+    bool result = pUartTxCharacteristic->notify();
+
+    if (!result) {
+      ESP_LOGW(TAG, "[UART] Notify failed");
+      // On failure, release semaphore to allow retry
+      xSemaphoreGiveFromISR(txSemaphore, NULL);
+    } else {
+      ESP_LOGD(TAG, "[UART] Sent %d bytes, %d remaining", chunkSize, currentTxMessage.length);
+    }
+
+    // onStatus callback will call us again for next chunk
   }
 }
 
@@ -363,27 +484,33 @@ void BLE_SetUartCallback(void (*callback)(const uint8_t* data, uint16_t len)) {
 void BLE_SendHM10Data(const uint8_t* data, uint16_t len) {
   if (deviceConnected && pHM10Characteristic != nullptr) {
     // Set the characteristic value (can be larger than MTU for read operations)
-    pHM10Characteristic->setValue(data, len);
+    while(len > 0)  {
+        uint16_t chunkSize = len > mtuSize - 3 ? mtuSize - 3 : len; // 244 = 247 MTU - 3 overhead
+        pHM10Characteristic->setValue(data, chunkSize);
+        // Send via notify (now that MTU is negotiated)
+        bool result = pHM10Characteristic->notify();
 
-    // Send via notify (now that MTU is negotiated)
-    bool result = pHM10Characteristic->notify();
+        if (!result) {
+          ESP_LOGW(TAG, "[HM10] Notify failed");
+        } else {
+          // Log frame type for debugging
+          ESP_LOGD(TAG, "[HM10] Sent %d bytes (header: 0x%02X 0x%02X)", chunkSize, data[0], data[1]);
+        }
+        data += chunkSize;
+        len -= chunkSize;
+      // pHM10Characteristic->setValue(data, len);
 
-    if (!result) {
-      ESP_LOGW(TAG, "[HM10] Notify failed");
-    } else {
-      // Log frame type for debugging
-      if (len == 20 && data[0] == 0xAA && data[1] == 0x55) {
-        // KingSong 20-byte frame - type at offset 16
-        uint8_t frame_type = data[16];
-        ESP_LOGD(TAG, "[HM10] Sent KingSong frame type 0x%02X (%d bytes)", frame_type, len);
-      } else if (len == 24 && data[0] == 0x55 && data[1] == 0xAA) {
-        // Begode 24-byte frame - type at offset 18
-        uint8_t frame_type = data[18];
-        ESP_LOGD(TAG, "[HM10] Sent Begode frame type 0x%02X (%d bytes)", frame_type, len);
-      } else {
-        ESP_LOGD(TAG, "[HM10] Sent %d bytes (header: 0x%02X 0x%02X)", len, data[0], data[1]);
-      }
+      // Send via notify (now that MTU is negotiated)
+      // bool result = pHM10Characteristic->notify();
+
+      // if (!result) {
+      //   ESP_LOGW(TAG, "[HM10] Notify failed");
+      // } else {
+      //   // Log frame type for debugging
+      //   ESP_LOGD(TAG, "[HM10] Sent %d bytes (header: 0x%02X 0x%02X)", len, data[0], data[1]);
+      // }
     }
+      
   }
 }
 
@@ -441,11 +568,11 @@ static bool isConnectionEncrypted(void) {
     bool encrypted = connInfo.isEncrypted();
     bool authenticated = connInfo.isAuthenticated();
 
-    ESP_LOGD(TAG, "Security state (handle %d) - Bonded: %s, Encrypted: %s, Authenticated: %s",
-             currentConnHandle,
-             bonded ? "YES" : "NO",
-             encrypted ? "YES" : "NO",
-             authenticated ? "YES" : "NO");
+    // ESP_LOGD(TAG, "Security state (handle %d) - Bonded: %s, Encrypted: %s, Authenticated: %s",
+    //          currentConnHandle,
+    //          bonded ? "YES" : "NO",
+    //          encrypted ? "YES" : "NO",
+    //          authenticated ? "YES" : "NO");
 
     // Return true only if encrypted
     return encrypted;

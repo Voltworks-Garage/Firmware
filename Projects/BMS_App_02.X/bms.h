@@ -70,10 +70,4 @@ bool BMS_GetChargingAllowed(void);
  */
 bool BMS_GetDischargingAllowed(void);
 
-/**
- * @brief Check if the pack is fully charged
- * @return true if the pack is considered fully charged, false otherwise
- */
-bool BMS_GetPackIsCharged(void);
-
 #endif // BMS_H

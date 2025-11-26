@@ -317,14 +317,14 @@ void charging(STATE_MACHINE_entry_types_E entry_type) {
 }
 
 void goingToSleep(STATE_MACHINE_entry_types_E entry_type) {
-    NEW_TIMER(quietTimer, 3000);
-    NEW_TIMER(goingToSleepTimer, 6000);
+    NEW_TIMER(quietTimer, 1000);
+    NEW_TIMER(goingToSleepTimer, 3000);
     switch (entry_type) {
         case ENTRY:
             SysTick_TimerStart(quietTimer);
             SysTick_TimerStart(goingToSleepTimer);
-            CAN_changeOpMode(CAN_LISTEN);
             IO_SET_BMS_CONTROLLER_EN(LOW);
+            CAN_mcu_command_go_to_sleep_set(true);
             break;
         case EXIT:
             break;
@@ -332,6 +332,9 @@ void goingToSleep(STATE_MACHINE_entry_types_E entry_type) {
             // Allow for time for CAN to go quiet on the bus.
             if (CAN_RxDataIsReady() && SysTick_TimeOut(quietTimer)) {
                 sm_nextState = boot_state;
+            }
+            if (SysTick_TimeOut(quietTimer)) {
+                CAN_changeOpMode(CAN_LISTEN);
             }
             // If can goes quiet and we hit this timer, actually go to sleep.
             if (SysTick_TimeOut(goingToSleepTimer)) {
@@ -369,6 +372,8 @@ void sleep(STATE_MACHINE_entry_types_E entry_type) {
             CAN_changeOpMode(CAN_DISABLE);
             IO_SET_CAN_SLEEP_EN(HIGH);
             IO_SET_DEBUG_LED_EN(LOW);
+
+            CAN_DBC_clearAllMessages();
             break;
 
         case EXIT:
