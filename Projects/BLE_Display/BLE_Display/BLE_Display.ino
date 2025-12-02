@@ -1,17 +1,15 @@
 //Hardware Abstraction Layer includes
-#include "ble_module.h"
-#include "lcd_module.h"
-#include "src/display/display.h"
+#include "src/peripheral/ble_module.h"
+#include "src/peripheral/lcd_module.h"
+#include "src/peripheral/touch.h"
 #include "can.h"
-#include "touch.h"
-#include <driver/gpio.h>
 
 //Project includes
-#include "src/dash.h"
-#include "src/begode_emulator.h"
-#include "src/kingsong_emulator.h"
-#include "src/cpu_monitor.h"
-
+#include "src/display/display.h"
+#include "src/ble_handler/begode_emulator.h"
+#include "src/ble_handler/kingsong_emulator.h"
+#include "src/utils/cpu_monitor.h"
+#include "src/ble_handler/app_handler.h"
 
 //Library includes
 #include "../../../CAN/generated/dash_dbc.h"
@@ -20,6 +18,7 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include <esp_sleep.h>
+#include <driver/gpio.h>
 
 #define TASK_MS_FREQ(ms)   TickType_t xLastWakeTime = xTaskGetTickCount();\
                            const TickType_t xFrequency = pdMS_TO_TICKS(ms);\
@@ -54,6 +53,10 @@ void setup() {
 
   //Init BLE later because its slow (in the 1000ms task entry)
   ble_encode_heartbeat_begin();
+  ble_encode_server_message_begin();
+
+  // Initialize app handler (must be after BLE init)
+  app_handler_init();
 
   // Create FreeRTOS tasks for scheduling
   createSchedulerTasks();
@@ -145,6 +148,9 @@ void task_10ms(void *parameter) {
 
     Touch_Run_10ms();
 
+    // Send BLE messages with motor/safety data
+    app_handler_run_10ms();
+
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
 
     // Update CPU statistics
@@ -159,9 +165,12 @@ void task_100ms(void *parameter) {
   CPUMonitor_Init(&cpu100msMonitor);
 
   while(1) {
-    CAN_send_1000ms();
+    CAN_send_100ms();
     Begode_SendFrame();
     // Kingsong_SendNextPacket();
+
+    // Send BLE messages with BMS data
+    app_handler_run_100ms();
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
 
@@ -213,10 +222,10 @@ void task_1000ms(void *parameter) {
     // Kingsong_SetSpeed(speed_kmh);
     Begode_SetSpeed(current_speed);
 
-    vTaskDelayUntil(&xLastWakeTime, xFrequency);
+    // Send BLE messages with heartbeat and performance data
+    app_handler_run_1000ms();
 
-    BLE_SendUartData("Hi DADA poopoo you are a silly one does this work?\n");
-    BLE_SendUartData("Another message from 1000ms task!\n");
+    vTaskDelayUntil(&xLastWakeTime, xFrequency);
 
     // Update CPU statistics
     CPUMonitor_Update(&cpu1000msMonitor);

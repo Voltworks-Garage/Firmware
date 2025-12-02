@@ -7,7 +7,7 @@
 void BLE_Init(void);
 
 // Send UART data over BLE (Nordic UART Service)
-void BLE_SendUartData(String message);
+void BLE_SendUartData(const uint8_t* data, uint16_t length);
 
 // Register a callback function to be called when UART data is received
 // Callback receives pointer to data and length

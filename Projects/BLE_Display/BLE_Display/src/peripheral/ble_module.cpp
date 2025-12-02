@@ -20,8 +20,8 @@ static const char* TAG = "BLE";
 #define HM10_CHAR_UUID              "FFE1"
 
 // UART TX Queue configuration
-#define UART_TX_QUEUE_SIZE          10
-#define UART_TX_MAX_MESSAGE_LEN     512
+#define UART_TX_QUEUE_SIZE          64
+#define UART_TX_MAX_MESSAGE_LEN     128
 
 // UART TX message structure
 typedef struct {
@@ -44,6 +44,11 @@ static uint16_t mtuSize = 23;  // Default MTU size before negotiation
 static QueueHandle_t uartTxQueue = nullptr;
 static UartTxMessage_t currentTxMessage;
 static SemaphoreHandle_t txSemaphore = nullptr;
+
+// UART TX Queue statistics
+static uint32_t tx_queue_drops = 0;
+static uint32_t tx_messages_sent = 0;
+static uint32_t tx_bytes_sent = 0;
 
 //Helpers
 static bool isConnectionEncrypted(void);
@@ -145,11 +150,11 @@ class UartTxCallbacks: public NimBLECharacteristicCallbacks {
   void onStatus(NimBLECharacteristic* pCharacteristic, int code) {
     // Code 0 = success for notifications
     if (code == 0) {
-      ESP_LOGD(TAG, "[UART TX] Notification sent successfully");
+      ESP_EARLY_LOGD(TAG, "[UART TX] Notification sent successfully");
       // Give semaphore to signal we can send the next chunk
       ble_sendUartPacket();
     } else {
-      ESP_LOGW(TAG, "[UART TX] Notification failed: %d (%s)",
+      ESP_EARLY_LOGW(TAG, "[UART TX] Notification failed: %d (%s)",
                code, NimBLEUtils::returnCodeToString(code));
       // Still give semaphore to avoid getting stuck
       if (txSemaphore != nullptr) {
@@ -165,7 +170,7 @@ class UartRxCallbacks: public NimBLECharacteristicCallbacks {
     std::string rxValue = pCharacteristic->getValue();
 
     if (rxValue.length() > 0) {
-      ESP_LOGI(TAG, "[UART] RX %d bytes", rxValue.length());
+      ESP_EARLY_LOGI(TAG, "[UART] RX %d bytes", rxValue.length());
 
       // Call user callback if registered - they can queue/process the data as needed
       if (uartCallback != nullptr) {
@@ -405,22 +410,30 @@ void BLE_Init(void) {
   ESP_LOGI(TAG, "Device advertising. Ready to connect!");
 }
 
-void BLE_SendUartData(String message) {
+void BLE_SendUartData(const uint8_t* data, uint16_t length) {
   if (deviceConnected && pUartTxCharacteristic != nullptr && isConnectionEncrypted()) {
     //create message struct
     UartTxMessage_t newMessage;
-    size_t len = message.length();
+    uint16_t len = length;
     if (len >= UART_TX_MAX_MESSAGE_LEN) {
       len = UART_TX_MAX_MESSAGE_LEN - 1;
       ESP_LOGW(TAG, "Message truncated to %d bytes", len);
     }
-    memcpy(newMessage.message, message.c_str(), len);
-    newMessage.message[len] = '\0';
+    memcpy(newMessage.message, data, len);
+    newMessage.message[len] = '\0';  // Null terminate for safety
     newMessage.length = len;
     newMessage.data_pointer = newMessage.message;
 
     //enqueue message
-    xQueueSend(uartTxQueue, &newMessage, 0);
+    if (xQueueSend(uartTxQueue, &newMessage, 0) != pdTRUE) {
+      tx_queue_drops++;
+      ESP_LOGW(TAG, "[UART] TX queue full - message dropped! (%d bytes, total drops: %lu)",
+               len, tx_queue_drops);
+      return;  // Queue full, message lost
+    }
+
+    tx_messages_sent++;
+    tx_bytes_sent += len;
 
     // try to take semaphore to start sending
     if (xSemaphoreTake(txSemaphore, 0) == pdTRUE) {
@@ -431,7 +444,7 @@ void BLE_SendUartData(String message) {
         // Send message in chunks based on MTU size
         ble_sendUartPacket();
       }
-      
+
     } else {
       ESP_LOGD(TAG, "[UART] Transmission in progress, message queued");
     }
@@ -448,7 +461,7 @@ static void ble_sendUartPacket(void) {
       } else {
         // No more messages in queue, release semaphore
         xSemaphoreGiveFromISR(txSemaphore, NULL);
-        ESP_LOGD(TAG, "[UART] All messages sent");
+        ESP_EARLY_LOGD(TAG, "[UART] All messages sent");
         return;
       }
     }
@@ -466,11 +479,11 @@ static void ble_sendUartPacket(void) {
     bool result = pUartTxCharacteristic->notify();
 
     if (!result) {
-      ESP_LOGW(TAG, "[UART] Notify failed");
+      ESP_EARLY_LOGW(TAG, "[UART] Notify failed");
       // On failure, release semaphore to allow retry
       xSemaphoreGiveFromISR(txSemaphore, NULL);
     } else {
-      ESP_LOGD(TAG, "[UART] Sent %d bytes, %d remaining", chunkSize, currentTxMessage.length);
+      ESP_EARLY_LOGD(TAG, "[UART] Sent %d bytes, %d remaining", chunkSize, currentTxMessage.length);
     }
 
     // onStatus callback will call us again for next chunk

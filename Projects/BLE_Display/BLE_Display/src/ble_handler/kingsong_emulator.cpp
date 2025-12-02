@@ -1,7 +1,7 @@
 #include "kingsong_emulator.h"
 #include <string.h>
 #include "esp_log.h"
-#include "ble_module.h"
+#include "src/peripheral/ble_module.h"
 
 static const char* TAG = "Kingsong";
 

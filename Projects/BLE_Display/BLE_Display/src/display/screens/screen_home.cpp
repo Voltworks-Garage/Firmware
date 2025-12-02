@@ -1,7 +1,7 @@
 #include "screen_home.h"
 
 #include "../../../CAN/generated/dash_dbc.h"
-#include "../../../ble_module.h"
+#include "src/peripheral/ble_module.h"
 #include "../styles.h"
 
 //logging

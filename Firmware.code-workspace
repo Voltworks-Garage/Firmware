@@ -1,0 +1,52 @@
+{
+    "folders": [
+        {
+            "name": "BMS Application",
+            "path": "Projects/BMS_App_02.X"
+        },
+        {
+            "name": "BMS Bootloader",
+            "path": "Projects/BMS_Bootloader_02.X"
+        },
+        {
+            "name": "MCU Application",
+            "path": "Projects/MCU_App.X"
+        },
+        {
+            "name": "MCU Bootloader",
+            "path": "Projects/MCU_Bootloader.X"
+        },
+        {
+            "name": "BLE Display (Arduino)",
+            "path": "Projects/BLE_Display/BLE_Display"
+        },
+        {
+            "name": "BLE Display (ESP-IDF)",
+            "path": "Projects/BLE_Display_IDF",
+            "settings": {
+                "C_Cpp.default.cppStandard": "c++17",
+                "C_Cpp.default.cStandard": "c11",
+                "idf.adapterTargetName": "esp32s3",
+                "idf.portWin": "COM3"
+            }
+        },
+        {
+            "name": "Shared Libraries",
+            "path": "Libraries"
+        }
+    ],
+    "settings": {
+        "files.associations": {
+            "*.h": "c",
+            "*.c": "c"
+        },
+        "C_Cpp.default.cStandard": "c99",
+        "C_Cpp.default.intelliSenseMode": "gcc-x64"
+    },
+    "extensions": {
+        "recommendations": [
+            "ms-vscode.cpptools",
+            "espressif.esp-idf-extension"
+        ]
+    }
+}
