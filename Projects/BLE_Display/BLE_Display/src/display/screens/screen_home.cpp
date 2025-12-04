@@ -111,6 +111,10 @@ void ScreenHome_Destroy(void) {
 }
 
 void ScreenHome_Update(void) {
+                float hv_voltage2 = CAN_bms_status_pack_voltage_get();
+            int hv_voltage_x102 = FLOAT_TO_INT_TENTHS(hv_voltage2);
+            lv_label_set_text_fmt(label_hv_voltage, "HV: %d.%d V",
+                                  GET_WHOLE(hv_voltage_x102), GET_FRAC(hv_voltage_x102));
     // Update HV battery voltage and SOC
     if (!CAN_bms_status_checkDataIsStale()) {
         // Update HV voltage

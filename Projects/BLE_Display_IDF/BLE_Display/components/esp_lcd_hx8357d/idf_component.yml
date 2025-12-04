@@ -1,0 +1,4 @@
+description: ESP LCD HX8357D Panel Driver
+dependencies:
+  idf: ">=5.0"
+version: "1.0.0"

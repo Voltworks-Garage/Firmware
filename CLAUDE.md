@@ -1,5 +1,19 @@
 # Claude Build Commands
 
+## Environment Detection
+**IMPORTANT:** Before executing ANY build commands:
+1. Check the actual OS using `uname -a` or `cmd.exe /c ver`
+2. Detect environment type:
+   - **Windows Native (cmd/PowerShell)**: Use Windows paths like `C:\path\to\file`
+   - **MinGW/Git Bash**: Running on Windows but in MSYS environment - use Windows paths (NOT /mnt/c)
+   - **WSL**: Linux subsystem on Windows - use `/mnt/c/` paths
+   - **Native Linux/Mac**: Use standard Unix paths
+
+**Current typical environment:** MinGW64 on Windows 10/11
+- Use Windows-style paths: `c:/REPOS/...` or `C:\REPOS\...`
+- Do NOT use `/mnt/c/` prefix (that's for WSL only)
+- Git Bash understands both forward slashes and backslashes in paths
+
 ## Quick Build Script (Recommended)
 Use the automated build script for easy project building:
 ```bash
