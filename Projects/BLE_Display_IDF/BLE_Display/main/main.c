@@ -17,6 +17,7 @@ static const char* TAG = "MAIN";
 #include "display.h"
 #include "touch.h"
 #include "cpu_monitor.h"
+#include "display_state_machine.h"
 
 // FreeRTOS
 #include "freertos/FreeRTOS.h"
@@ -53,6 +54,7 @@ static CPUMonitor_t cpu1000msMonitor = {0};
 
 void app_main(void) {
     esp_log_level_set(TAG, LOG_LOCAL_LEVEL);
+    vTaskPrioritySet(NULL, 3);
     // CRITICAL: Reclaim JTAG pins for LCD use
     ESP_LOGI(TAG, "Reclaiming JTAG pins (GPIO 39-42) for LCD use...");
     gpio_reset_pin(GPIO_NUM_39);  // RD (MTCK)
@@ -66,14 +68,24 @@ void app_main(void) {
     CAN_DBC_init();
     ESP_LOGI(TAG, "CAN module initialized successfully!");
 
+    ESP_LOGI(TAG, "Initializing UI styles and state machine...");
+    Display_RegisterUICallback(DisplayStateMachine_Run);
+    ESP_LOGI(TAG, "UI initialized and registered with display");
+
     ESP_LOGI(TAG, "Initializing display with LVGL...");
     Display_Init();
+    vTaskDelay(pdMS_TO_TICKS(1));  // Yield after display init
     Touch_Init();
     ESP_LOGI(TAG, "Display initialized successfully!");
 
+
     ESP_LOGI(TAG, "Initializing BLE module...");
+    vTaskDelay(pdMS_TO_TICKS(1));  // Yield before BLE init
     BLE_Init();
     ESP_LOGI(TAG, "BLE module initialized successfully!");
+
+    // Yield to allow watchdog to be fed after BLE initialization
+    vTaskDelay(pdMS_TO_TICKS(1));
 
     ESP_LOGI(TAG, "Initializing BLE app handler...");
     app_handler_init();

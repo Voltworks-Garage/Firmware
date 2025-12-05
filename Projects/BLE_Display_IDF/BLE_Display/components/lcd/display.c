@@ -1,23 +1,35 @@
 #include "display.h"
 #include "lcd_esp.h"
 #include "touch.h"
-#include "display_state_machine.h"
-#include "styles.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "lvgl.h"
+#include "esp_heap_caps.h"
 
 static const char *TAG = "DISPLAY";
 
+// UI callback for state machine updates
+static Display_UICallback_t s_ui_callback = NULL;
+
 // Display buffer - 1/10 of screen for partial rendering
 // Display is 480x320 in landscape (matching Arduino setup)
+// lv_color16_t is 3 bytes
 #define LVGL_HOR_RES 480
 #define LVGL_VER_RES 320
-#define BUFFER_SIZE (LVGL_HOR_RES * 32)  // 64 lines of pixels
+#define PIXEL_BYTES 2  // RGB565 = 2 bytes per pixel
+#define LINES_IN_BUFFER 32  // Number of lines in each buffer
+#define BUFFER_SIZE_PIXELS (LVGL_HOR_RES * LINES_IN_BUFFER)  // 32 lines of pixels
+#define BUFFER_SIZE (BUFFER_SIZE_PIXELS * PIXEL_BYTES)  // Buffer size in bytes
 
-static lv_color_t buf1[BUFFER_SIZE];
-static lv_color_t buf2[BUFFER_SIZE];  // Double buffering
+#define USE_PSRAM_BUFFERS 1  // Set to 1 to allocate buffers in PSRAM, 0 for internal RAM
+#if USE_PSRAM_BUFFERS
+static EXT_RAM_BSS_ATTR lv_color16_t buf1[BUFFER_SIZE_PIXELS];
+static EXT_RAM_BSS_ATTR lv_color16_t buf2[BUFFER_SIZE_PIXELS];  // Double buffering
+#else
+static lv_color16_t buf1[BUFFER_SIZE_PIXELS];
+static lv_color16_t buf2[BUFFER_SIZE_PIXELS];  // Double buffering
+#endif
 static lv_display_t* disp = NULL;
 static lv_indev_t* indev = NULL;  // Touch input device
 
@@ -41,9 +53,21 @@ void Display_Init(void) {
     ESP_LOGI(TAG, "LVGL display created (%dx%d)", LVGL_HOR_RES, LVGL_VER_RES);
 
     // Set display buffers (partial rendering with double buffering)
+    ESP_LOGI(TAG, "buf1 @ %p (PSRAM: %s, aligned: 64B, size: %d bytes)",
+             buf1,
+             esp_ptr_external_ram(buf1) ? "YES" : "NO",
+             BUFFER_SIZE_PIXELS * sizeof(lv_color16_t));
+    ESP_LOGI(TAG, "buf2 @ %p (PSRAM: %s, aligned: 64B, size: %d bytes)",
+             buf2,
+             esp_ptr_external_ram(buf2) ? "YES" : "NO",
+             BUFFER_SIZE_PIXELS * sizeof(lv_color16_t));
     lv_display_set_buffers(disp, buf1, buf2,
-                          sizeof(buf1), LV_DISPLAY_RENDER_MODE_PARTIAL);
-    ESP_LOGI(TAG, "Display buffers configured (2x %d bytes)", sizeof(buf1));
+                          BUFFER_SIZE, LV_DISPLAY_RENDER_MODE_PARTIAL);
+    ESP_LOGI(TAG, "Display buffers configured (2x %d pixels = %d bytes)",
+             BUFFER_SIZE, BUFFER_SIZE * sizeof(lv_color16_t));
+
+    // Set screen to all black
+    lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x000000), 0);
 
     // Set the flush callback to HX8357D driver
     lv_display_set_flush_cb(disp, hx8357d_lvgl_flush);
@@ -68,24 +92,15 @@ void Display_Init(void) {
 
     ESP_LOGI(TAG, "Touch input device registered");
 
-    // Initialize shared styles
-    Styles_Init();
-    ESP_LOGI(TAG, "Styles initialized");
-
-    // Initialize the display state machine
-    DisplayStateMachine_Init();
-    ESP_LOGI(TAG, "Display state machine initialized");
-
     // Create single LVGL task - handles tick updates and timer processing
     // No locking needed since this is the only task accessing LVGL
-    xTaskCreatePinnedToCore(
+    xTaskCreate(
         lvgl_task,
         "LVGL",
         8192,   // Stack size for LVGL processing
         NULL,
         2,      // Medium priority
-        NULL,
-        0       // Core 0
+        NULL
     );
 
     ESP_LOGI(TAG, "Display initialization complete");
@@ -97,7 +112,7 @@ void Display_Init(void) {
 static void lvgl_task(void *parameter) {
     TickType_t xLastWakeTime = xTaskGetTickCount();
     const TickType_t tick_period = pdMS_TO_TICKS(2);
-    uint32_t tick_counter = 0;
+    uint32_t tick_counter = 25;
 
     while (1) {
         // Increment LVGL tick every 2ms
@@ -108,11 +123,29 @@ static void lvgl_task(void *parameter) {
         if (tick_counter >= 25) {
             tick_counter = 0;
             lv_timer_handler();  // Process LVGL timers, animations, and rendering
-            DisplayStateMachine_Run();  // Update display state machine
+
+            // Call UI update callback if registered
+            if (s_ui_callback != NULL) {
+                s_ui_callback();
+            }
+
         }
 
         vTaskDelayUntil(&xLastWakeTime, tick_period);
     }
+}
+
+void Display_RegisterUICallback(Display_UICallback_t callback) {
+    s_ui_callback = callback;
+    if (callback != NULL) {
+        ESP_LOGI(TAG, "UI callback registered");
+    } else {
+        ESP_LOGI(TAG, "UI callback unregistered");
+    }
+}
+
+void Display_SetBrightness(uint8_t brightness_percent){
+    hx8357d_set_backlight(brightness_percent);
 }
 
 // Callback to read touch input
@@ -136,9 +169,4 @@ static void lvgl_touch_read_cb(lv_indev_t *indev_drv, lv_indev_data_t *data) {
         data->point.x = last_x;
         data->point.y = last_y;
     }
-}
-
-// Get the LVGL display object (for creating UI elements)
-lv_display_t* Display_GetLVGL(void) {
-    return disp;
 }

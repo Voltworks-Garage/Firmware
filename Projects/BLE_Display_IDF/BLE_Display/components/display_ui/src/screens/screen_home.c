@@ -55,17 +55,19 @@ static bool cached_bt_connected = false;
 void ScreenHome_Create(void) {
     ESP_LOGI(TAG, "Creating home screen");
 
+    lv_obj_t* screen = lv_screen_active();
+
     // Set background color
-    lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(COLOR_BACKGROUND), 0);
+    lv_obj_set_style_bg_color(screen, lv_color_hex(COLOR_BACKGROUND), 0);
 
     // Title at top - uses shared style
-    label_title = lv_label_create(lv_screen_active());
+    label_title = lv_label_create(screen);
     lv_label_set_text(label_title, "HOME");
     lv_obj_add_style(label_title, &style_label_small_white, 0);
     lv_obj_align(label_title, LV_ALIGN_TOP_MID, 0, MARGIN_TOP);
 
     // Battery bar on right side
-    bar_battery = lv_bar_create(lv_screen_active());
+    bar_battery = lv_bar_create(screen);
     lv_obj_set_size(bar_battery, BATTERY_BAR_WIDTH, BATTERY_BAR_HEIGHT);
     lv_bar_set_range(bar_battery, BATTERY_BAR_MIN, BATTERY_BAR_MAX);
     lv_bar_set_value(bar_battery, BATTERY_BAR_MIN, LV_ANIM_OFF);
@@ -76,25 +78,25 @@ void ScreenHome_Create(void) {
     lv_obj_add_style(bar_battery, &style_battery_bar_background, LV_PART_MAIN);
 
     // Battery percentage below bar - uses shared style
-    label_battery_percent = lv_label_create(lv_screen_active());
+    label_battery_percent = lv_label_create(screen);
     lv_label_set_text(label_battery_percent, "---%");
     lv_obj_add_style(label_battery_percent, &style_label_small_green, 0);
     lv_obj_align(label_battery_percent, LV_ALIGN_RIGHT_MID, BATTERY_PERCENT_X_OFFSET, BATTERY_BAR_HEIGHT / 2 + 20);
 
     // Left side labels - HV Voltage - uses shared style
-    label_hv_voltage = lv_label_create(lv_screen_active());
+    label_hv_voltage = lv_label_create(screen);
     lv_label_set_text(label_hv_voltage, "HV: --.- V");
     lv_obj_add_style(label_hv_voltage, &style_label_small_white, 0);
     lv_obj_align(label_hv_voltage, LV_ALIGN_LEFT_MID, MARGIN_LEFT, LEFT_LABEL_Y_HV);
 
     // Left side labels - LV Voltage - uses shared style
-    label_lv_voltage = lv_label_create(lv_screen_active());
+    label_lv_voltage = lv_label_create(screen);
     lv_label_set_text(label_lv_voltage, "LV: --.- V");
     lv_obj_add_style(label_lv_voltage, &style_label_small_white, 0);
     lv_obj_align(label_lv_voltage, LV_ALIGN_LEFT_MID, MARGIN_LEFT, LEFT_LABEL_Y_LV);
 
     // Left side labels - Bluetooth - uses shared style
-    label_bluetooth = lv_label_create(lv_screen_active());
+    label_bluetooth = lv_label_create(screen);
     lv_label_set_text(label_bluetooth, LV_SYMBOL_BLUETOOTH " Disconnected");
     lv_obj_add_style(label_bluetooth, &style_label_small_gray, 0);
     lv_obj_align(label_bluetooth, LV_ALIGN_LEFT_MID, MARGIN_LEFT, LEFT_LABEL_Y_BT);

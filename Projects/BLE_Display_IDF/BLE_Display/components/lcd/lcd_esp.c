@@ -1,7 +1,11 @@
 #include "lcd_esp.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
-// #include "esp_lcd_types.h"
+
+// FreeRTOS
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_hx8357d.h"
@@ -62,7 +66,7 @@ static bool hx_on_color_trans_done(esp_lcd_panel_io_handle_t panel_io,
         /* Notify LVGL that the flush (DMA write) is complete */
         lv_display_flush_ready(disp);
     }
-    return true;
+    return false;
 }
 
 /* ----------------- Public API ----------------- */
@@ -107,7 +111,7 @@ esp_err_t hx8357d_init_panel(esp_lcd_panel_handle_t *out_panel, lv_display_t *lv
             HX8357D_PIN_D0, HX8357D_PIN_D1, HX8357D_PIN_D2, HX8357D_PIN_D3,
             HX8357D_PIN_D4, HX8357D_PIN_D5, HX8357D_PIN_D6, HX8357D_PIN_D7
         },
-        .max_transfer_bytes = HX8357D_V_RES * 51 * 3, // 80 lines worth of pixels (51,200 bytes)
+        .max_transfer_bytes = (480 * 32 * 2), // LVGL partial buffer (30,720 bytes, driver uses <=)
         .dma_burst_size = 64,  // Maximum for external peripherals (128 only works for internal SRAM)
     };
 
@@ -132,7 +136,7 @@ esp_err_t hx8357d_init_panel(esp_lcd_panel_handle_t *out_panel, lv_display_t *lv
     ESP_LOGI(TAG, "Step 3: Creating panel IO...");
     esp_lcd_panel_io_i80_config_t io_cfg = {
         .cs_gpio_num = HX8357D_PIN_CS,
-        .pclk_hz = 16000000, // 8 MHz (anything faster causes tear lines)
+        .pclk_hz = 20000000, // 20 MHz
         .trans_queue_depth = 128,
         .on_color_trans_done = hx_on_color_trans_done,
         .user_ctx = (void *)s_lv_disp, // user context passed to callback
@@ -201,10 +205,10 @@ esp_err_t hx8357d_init_panel(esp_lcd_panel_handle_t *out_panel, lv_display_t *lv
 
     ESP_LOGI(TAG, "Display turned on");
 
-    /* Turn on backlight after display is initialized */
-    ESP_LOGI(TAG, "Step 8: Enabling backlight...");
-    gpio_set_level(HX8357D_PIN_BACKLIGHT, 1);
-    ESP_LOGI(TAG, "Backlight enabled");
+    // // /* Turn on backlight after display is initialized */
+    // ESP_LOGI(TAG, "Step 8: Enabling backlight...");
+    // gpio_set_level(HX8357D_PIN_BACKLIGHT, 1);
+    // ESP_LOGI(TAG, "Backlight enabled");
 
     ESP_LOGI(TAG, "===================================");
     ESP_LOGI(TAG, "=== HX8357D Init COMPLETE ===");
@@ -250,6 +254,21 @@ esp_err_t hx8357d_deinit_panel(void)
     return ESP_OK;
 }
 
+esp_err_t hx8357d_set_backlight(uint8_t brightness_percent)
+{
+    if (brightness_percent > 100) brightness_percent = 100;
+
+    // For simple on/off backlight control, just turn on if >0%, off if 0%
+    if (brightness_percent == 0) {
+        gpio_set_level(HX8357D_PIN_BACKLIGHT, 0);
+    } else {
+        gpio_set_level(HX8357D_PIN_BACKLIGHT, 1);
+    }
+
+    ESP_LOGI(TAG, "Backlight set to %d%%", brightness_percent);
+    return ESP_OK;
+}
+
 esp_lcd_panel_handle_t hx8357d_get_panel(void)
 {
     return s_panel;
@@ -279,6 +298,13 @@ void hx8357d_lvgl_flush(lv_display_t *disp, const lv_area_t *area, uint8_t *colo
     int x2 = area->x2;
     int y2 = area->y2;
 
+    // Calculate transfer size for debugging
+    int width = x2 - x1 + 1;
+    int height = y2 - y1 + 1;
+    int transfer_bytes = width * height * 2;
+    ESP_LOGI(TAG, "Flush area: (%d,%d)-(%d,%d) = %dx%d pixels = %d bytes",
+             x1, y1, x2, y2, width, height, transfer_bytes);
+
     /* Enqueue DMA transfer to draw the rectangle.
        esp_lcd_panel_draw_bitmap queues the transfer and returns immediately. */
     esp_err_t err = esp_lcd_panel_draw_bitmap(s_panel, x1, y1, x2 + 1, y2 + 1, color_p);
@@ -288,6 +314,9 @@ void hx8357d_lvgl_flush(lv_display_t *disp, const lv_area_t *area, uint8_t *colo
         lv_display_flush_ready(disp);
         return;
     }
+    ESP_LOGI(TAG, "FLUSH TRIGGERED");
+
+    vTaskDelay(0);
 
     /* Do NOT call lv_display_flush_ready() here — wait until the DMA callback fires. */
 }

@@ -1,8 +1,6 @@
 #ifndef SCREEN_RUNNING_H
 #define SCREEN_RUNNING_H
 
-#include <lvgl.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif

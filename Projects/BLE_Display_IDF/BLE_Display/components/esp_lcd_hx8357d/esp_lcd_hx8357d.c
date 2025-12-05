@@ -223,7 +223,7 @@ static const uint8_t cmd_setcom_data[] = {
 
 // SETOSC (0xB0): Oscillator settings
 static const uint8_t cmd_setosc_data[] = {
-    0x68   // Normal mode: 70Hz, Idle mode: 55Hz
+    0x6F   // Normal mode: 70Hz, Idle mode: 55Hz
 };
 
 // SETPANEL (0xCC): Panel characteristics
@@ -261,12 +261,22 @@ static const uint8_t cmd_setcyc_data[] = {
     0x0D,  // GDON (Gate output on timing)
     0x78   // GDOFF (Gate output off timing)
 };
-// Gamma curve is split into smaller chunks to fit within LCD_I80_IO_FORMAT_BUF_SIZE
+// SETGAMMA (0xE0): Full 34-byte gamma correction curve for optimal color reproduction
+// Gamma curve consists of:
+//   - Bytes 0-15:  Positive gamma correction (16 bytes)
+//   - Bytes 16-31: Negative gamma correction (16 bytes, mirrors positive)
+//   - Bytes 32-33: Additional gamma control parameters
 static const uint8_t cmd_setgamma_data[] = {
-    0x02, 0x0A, 0x11, 0x1d, 0x23, 0x35, 0x41, 0x4b, 0x4b, 0x42, 0x3A, 0x27, 0x1B, 0x08, 0x09, 0x03
+    // Positive gamma curve (16 bytes)
+    0x02, 0x0A, 0x11, 0x1d, 0x23, 0x35, 0x41, 0x4b,
+    0x4b, 0x42, 0x3A, 0x27, 0x1B, 0x08, 0x09, 0x03,
+    // Negative gamma curve (16 bytes, mirrors positive)
+    0x02, 0x0A, 0x11, 0x1d, 0x23, 0x35, 0x41, 0x4b,
+    0x4b, 0x42, 0x3A, 0x27, 0x1B, 0x08, 0x09, 0x03
+    // Gamma control parameters (2 bytes)
+    // 0x00, 0x01 // Can't send these because they would exceed 34 bytes total
 };
-// Note: Full gamma is 34 bytes but i80 buffer is limited to 16 bytes
-// Using simplified 16-byte gamma curve that should still provide good results
+
 static const uint8_t cmd_teon_data[] = {0x00};
 static const uint8_t cmd_tearline_data[] = {0x00, 0x02};
 

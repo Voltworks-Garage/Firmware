@@ -1,8 +1,6 @@
 #ifndef SCREEN_HOME_H
 #define SCREEN_HOME_H
 
-#include <lvgl.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif

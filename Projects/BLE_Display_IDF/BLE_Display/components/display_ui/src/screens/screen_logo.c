@@ -1,6 +1,7 @@
 #include "screens/screen_logo.h"
 #include "logo.h"
 #include "esp_log.h"
+#include "styles.h"
 
 // LVGL image object to hold the logo
 static lv_obj_t* logo_img = NULL;

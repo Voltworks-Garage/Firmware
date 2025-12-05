@@ -7,5 +7,5 @@ idf_component_register(
          "src/screens/screen_charging.c"
     INCLUDE_DIRS "include"
                  "src/screens"
-    REQUIRES lvgl can ble_module utils
+    REQUIRES lvgl can ble_module utils lcd
 )

@@ -10,8 +10,9 @@
 static const char* TAG = "DISPLAYsm";
 
 #include "display_state_machine.h"
-#include "lvgl.h"
+#include "styles.h"
 #include "rtos_utils.h"
+#include "display.h"
 
 // Screen includes
 #include "screens/screen_logo.h"
@@ -66,14 +67,17 @@ typedef void(*displayStatePtr)(DISPLAY_entry_types_E);
 DISPLAY_STATES(FUNCTION_FORM)
 static displayStatePtr display_state_functions[] = {DISPLAY_STATES(FUNC_PTR_FORM)};
 
-static DISPLAY_states_E display_prevState = screen_welcome_state;
-static DISPLAY_states_E display_curState = screen_welcome_state;
-static DISPLAY_states_E display_nextState = screen_welcome_state;
+static DISPLAY_states_E display_prevState = 0;
+static DISPLAY_states_E display_curState = 0;
+static DISPLAY_states_E display_nextState = 0;
+
+static bool init = false;
 
 /******************************************************************************
  * Timers
  *******************************************************************************/
 NEW_TIMER(welcome_timer, 3000);
+NEW_TIMER(backlight_delay, 30);
 
 /******************************************************************************
  * Function Prototypes
@@ -86,18 +90,12 @@ static void check_vehicle_state_transition(void);
  * Public Functions
  *******************************************************************************/
 
-void DisplayStateMachine_Init(void) {
-    ESP_LOGI(TAG, "Initializing display state machine");
-
-    display_curState = screen_welcome_state;
-    display_prevState = screen_welcome_state;
-    display_nextState = screen_welcome_state;
-
-    // Call ENTRY for initial state
-    display_state_functions[display_curState](ENTRY);
-}
-
 void DisplayStateMachine_Run(void) {
+    if(!init){
+        display_state_functions[display_curState](ENTRY);
+        init = true;
+    }
+
     // Check for state transitions
     if (display_nextState != display_curState) {
         display_state_functions[display_curState](EXIT);
@@ -113,13 +111,35 @@ void DisplayStateMachine_Run(void) {
 /******************************************************************************
  * State Functions
  *******************************************************************************/
+// void init(DISPLAY_entry_types_E entry_type){
+//         switch (entry_type) {
+//         case ENTRY:
+//             ESP_LOGI(TAG, "init_entry");
+//             break;
+
+//         case EXIT:
+//             ESP_LOGI(TAG, "init_exit");
+//             break;
+
+//         case RUN:
+//             ESP_LOGI(TAG, "init_running styles");
+
+//             display_nextState = screen_welcome_state;
+//             break;
+
+//         default:
+//             break;
+//     }
+// }
 
 void screen_welcome(DISPLAY_entry_types_E entry_type) {
     switch (entry_type) {
         case ENTRY:
             ESP_LOGI(TAG, "Entering WELCOME state");
+            Styles_Init();
             ScreenLogo_Create();
             TIMER_START(welcome_timer);
+            TIMER_START(backlight_delay);
             break;
 
         case EXIT:
@@ -128,6 +148,11 @@ void screen_welcome(DISPLAY_entry_types_E entry_type) {
             break;
 
         case RUN:
+            // Delay backlight so we dont see a flash of white.
+            if (TIMER_IS_UP(backlight_delay)){
+                Display_SetBrightness(100);
+            }
+
             // Auto-transition to HOME after 3 seconds
             if (TIMER_IS_UP(welcome_timer)) {
                 display_nextState = screen_home_state;

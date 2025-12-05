@@ -1,7 +1,7 @@
 #ifndef DISPLAY_STYLES_H
 #define DISPLAY_STYLES_H
 
-#include <lvgl.h>
+#include "lvgl.h"
 
 #ifdef __cplusplus
 extern "C" {

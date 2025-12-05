@@ -1,8 +1,6 @@
 #ifndef SCREEN_CHARGING_H
 #define SCREEN_CHARGING_H
 
-#include <lvgl.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif

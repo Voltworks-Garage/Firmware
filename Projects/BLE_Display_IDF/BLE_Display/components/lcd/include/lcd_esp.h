@@ -5,6 +5,7 @@
 #include "esp_err.h"
 #include "esp_lcd_types.h"
 #include "lvgl.h"
+#include "stdint.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,6 +27,9 @@ esp_err_t hx8357d_init_panel(esp_lcd_panel_handle_t *out_panel, lv_display_t *lv
 
 /** Deinitialize panel and release resources. */
 esp_err_t hx8357d_deinit_panel(void);
+
+/** Set backlight brightness (0-100%) */
+esp_err_t hx8357d_set_backlight(uint8_t brightness_percent);
 
 /**
  * LVGL v9 flush callback (use with lv_display_set_flush_cb):
