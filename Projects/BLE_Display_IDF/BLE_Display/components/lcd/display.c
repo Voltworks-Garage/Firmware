@@ -18,7 +18,7 @@ static Display_UICallback_t s_ui_callback = NULL;
 #define LVGL_HOR_RES 480
 #define LVGL_VER_RES 320
 #define PIXEL_BYTES 2  // RGB565 = 2 bytes per pixel
-#define LINES_IN_BUFFER 32  // Number of lines in each buffer
+#define LINES_IN_BUFFER 320  // Number of lines in each buffer
 #define BUFFER_SIZE_PIXELS (LVGL_HOR_RES * LINES_IN_BUFFER)  // 32 lines of pixels
 #define BUFFER_SIZE (BUFFER_SIZE_PIXELS * PIXEL_BYTES)  // Buffer size in bytes
 
@@ -67,11 +67,14 @@ void Display_Init(void) {
              BUFFER_SIZE, BUFFER_SIZE * sizeof(lv_color16_t));
 
     // Set screen to all black
-    lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x000000), 0);
+    // lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x000000), 0);
 
     // Set the flush callback to HX8357D driver
     lv_display_set_flush_cb(disp, hx8357d_lvgl_flush);
     ESP_LOGI(TAG, "Flush callback set to hx8357d_lvgl_flush");
+
+    // Set the tick callback
+    lv_tick_set_cb(xTaskGetTickCount);
 
     // Initialize the HX8357D panel with LVGL integration
     esp_lcd_panel_handle_t panel = NULL;
@@ -111,27 +114,25 @@ void Display_Init(void) {
 // This enables LV_USE_FREERTOS_TASK_NOTIFY for 45% faster DMA synchronization
 static void lvgl_task(void *parameter) {
     TickType_t xLastWakeTime = xTaskGetTickCount();
-    const TickType_t tick_period = pdMS_TO_TICKS(2);
-    uint32_t tick_counter = 25;
 
     while (1) {
-        // Increment LVGL tick every 2ms
-        lv_tick_inc(2);
-        tick_counter++;
-
-        // Run timer handler every 50ms (25 ticks × 2ms = 50ms)
-        if (tick_counter >= 25) {
-            tick_counter = 0;
-            lv_timer_handler();  // Process LVGL timers, animations, and rendering
-
-            // Call UI update callback if registered
-            if (s_ui_callback != NULL) {
-                s_ui_callback();
-            }
-
+         // Call UI update callback if registered
+        if (s_ui_callback != NULL) {
+            s_ui_callback();
         }
 
-        vTaskDelayUntil(&xLastWakeTime, tick_period);
+        uint32_t time_till_next = lv_timer_handler();  // Process LVGL timers, animations, and rendering (returns ms)
+
+        // Convert milliseconds to ticks and ensure minimum delay of 1 tick
+        // lv_timer_handler() returns ms, but vTaskDelayUntil expects ticks
+        TickType_t delay_ticks = pdMS_TO_TICKS(time_till_next);
+        if (delay_ticks == 0) {
+            delay_ticks = 1;  // Minimum 1 ms delay to prevent assertion failure
+        } else if (delay_ticks > pdMS_TO_TICKS(50)){
+            delay_ticks = pdMS_TO_TICKS(50); // Max 50 ms delay to prevent infinite delay
+        }
+
+        vTaskDelayUntil(&xLastWakeTime, delay_ticks);
     }
 }
 
@@ -146,6 +147,10 @@ void Display_RegisterUICallback(Display_UICallback_t callback) {
 
 void Display_SetBrightness(uint8_t brightness_percent){
     hx8357d_set_backlight(brightness_percent);
+}
+
+void Display_Enable(bool on) {
+    hx8357d_display_on_off(on);
 }
 
 // Callback to read touch input

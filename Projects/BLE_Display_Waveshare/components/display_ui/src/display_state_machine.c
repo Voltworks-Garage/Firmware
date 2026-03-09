@@ -254,6 +254,6 @@ static void check_vehicle_state_transition(void) {
         }
     } else {
         ESP_LOGW(TAG, "CAN MCU status data is stale, cannot determine vehicle state");
-        display_nextState = screen_home_state; // Default to home screen on stale data
+        display_nextState = screen_running_state; // Default to home screen on stale data
     }
 }

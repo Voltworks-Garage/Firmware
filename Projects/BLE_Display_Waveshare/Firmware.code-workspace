@@ -1,0 +1,63 @@
+{
+	"folders": [
+		{
+			"path": "../.."
+		},
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"xc.h": "c",
+			"ringbuffer.h": "c",
+			"stdint.h": "c",
+			"stddef.h": "c",
+			"commandservice.h": "c",
+			"p33ep256mu806.h": "c",
+			"dcdc.h": "c",
+			"bms.h": "c",
+			"bms_dbc.h": "c",
+			"systick.h": "c",
+			"adc.h": "c",
+			"ltc6802_1_nb.h": "c",
+			"io.h": "c",
+			"movingaverage.h": "c",
+			"can_iso_tp_lite.h": "c",
+			"commandservice_config.h": "c",
+			"typeinfo": "c",
+			"can.h": "c",
+			"compare": "c",
+			"ntc.h": "c",
+			"type_traits": "c",
+			"can_populate.h": "c",
+			"ev_charger.h": "c",
+			"watchdog.h": "c",
+			"mcu_dbc.h": "c",
+			"button.h": "c",
+			"statemachine.h": "c",
+			"clock.h": "c",
+			"oc.h": "c",
+			"timer.h": "c",
+			"cstdint": "c",
+			"ratio": "c",
+			"system_error": "c",
+			"array": "c",
+			"functional": "c",
+			"tuple": "c",
+			"utility": "c",
+			"executor": "c",
+			"movingaverageint.h": "c",
+			"pins.h": "c",
+			"pinsetup.h": "c",
+			"stdio.h": "c",
+			"cstdlib": "cpp",
+			"dash_dbc.c": "cpp",
+			"messaging.h": "c",
+			"string": "c",
+			"string_view": "c",
+			"utils.h": "c",
+			"optional": "cpp"
+		}
+	}
+}

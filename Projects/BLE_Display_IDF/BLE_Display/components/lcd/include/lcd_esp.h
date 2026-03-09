@@ -31,6 +31,9 @@ esp_err_t hx8357d_deinit_panel(void);
 /** Set backlight brightness (0-100%) */
 esp_err_t hx8357d_set_backlight(uint8_t brightness_percent);
 
+/** Set diplay pixels on or off */
+esp_err_t hx8357d_display_on_off(bool on);
+
 /**
  * LVGL v9 flush callback (use with lv_display_set_flush_cb):
  *   void (*flush_cb)(lv_display_t *disp, const lv_area_t *area, uint8_t *color_p)
@@ -39,12 +42,6 @@ esp_err_t hx8357d_set_backlight(uint8_t brightness_percent);
  *   lv_display_set_flush_cb(disp, hx8357d_lvgl_flush);
  */
 void hx8357d_lvgl_flush(lv_display_t *disp, const lv_area_t *area, uint8_t *color_p);
-
-/** Return the global panel handle (NULL if not initialized) */
-esp_lcd_panel_handle_t hx8357d_get_panel(void);
-
-/** Return the global IO handle (NULL if not initialized) - for debugging */
-esp_lcd_panel_io_handle_t hx8357d_get_io_handle(void);
 
 #ifdef __cplusplus
 }

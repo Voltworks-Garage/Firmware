@@ -55,12 +55,6 @@ static CPUMonitor_t cpu1000msMonitor = {0};
 void app_main(void) {
     esp_log_level_set(TAG, LOG_LOCAL_LEVEL);
     vTaskPrioritySet(NULL, 3);
-    // CRITICAL: Reclaim JTAG pins for LCD use
-    ESP_LOGI(TAG, "Reclaiming JTAG pins (GPIO 39-42) for LCD use...");
-    gpio_reset_pin(GPIO_NUM_39);  // RD (MTCK)
-    gpio_reset_pin(GPIO_NUM_40);  // WR (MTDO)
-    gpio_reset_pin(GPIO_NUM_41);  // DC (MTDI)
-    gpio_reset_pin(GPIO_NUM_42);  // CS (MTMS)
 
     ESP_LOGI(TAG, "=== BLE Display IDF ===");
 
@@ -69,9 +63,7 @@ void app_main(void) {
     ESP_LOGI(TAG, "UI initialized and registered with display");
 
     ESP_LOGI(TAG, "Initializing display with LVGL...");
-    Display_Init();
-    // vTaskDelay(pdMS_TO_TICKS(1));  // Yield after display init
-    Touch_Init();
+    Display_Init();  // Initializes RGB LCD, GT911 touch, and LVGL
     ESP_LOGI(TAG, "Display initialized successfully!");
 
     ESP_LOGI(TAG, "Initializing CAN module...");
@@ -111,9 +103,6 @@ void task_1ms(void *parameter) {
     // Send CAN messages
     CAN_send_1ms();
 
-    // Run touch hardware processing
-    Touch_Run_1ms();
-
     TASK_MS_DELAY();
   }
 }
@@ -130,9 +119,6 @@ void task_10ms(void *parameter) {
 
     // Send CAN messages
     CAN_send_10ms();
-
-    // Run touch hardware processing
-    Touch_Run_10ms();
 
     // Send BLE messages with motor/safety data
     app_handler_run_10ms();
